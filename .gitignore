@@ -18,3 +18,7 @@
 node_modules/
 dist/
 build/
+
+# Local AI-session state (.claude/skills IS tracked; these are per-machine)
+.claude/worktrees/
+.serena/
