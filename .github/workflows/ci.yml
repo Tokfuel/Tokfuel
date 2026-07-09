@@ -23,3 +23,12 @@ jobs:
 
       - name: Build
         run: swift build -c release
+
+  roadmap:
+    name: Roadmap lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint roadmap items (EN/JA pairs, metadata, index links)
+        run: bash scripts/lint_roadmap.sh
