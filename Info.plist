@@ -8,6 +8,8 @@
     <string>com.akidon0000.claude-usage-menubar</string>
     <key>CFBundleName</key>
     <string>Claude Usage</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleDisplayName</key>
     <string>Claude Usage</string>
     <key>CFBundleVersion</key>

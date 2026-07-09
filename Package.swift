@@ -7,7 +7,13 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "ClaudeUsageMenubar",
-            path: "ClaudeUsageMenubar/Sources"
+            path: "ClaudeUsageMenubar/Sources",
+            resources: [
+                .copy("Resources/retok.py"),
+                .copy("Resources/locales"),
+                .copy("Resources/LICENSE-retok"),
+                .copy("Resources/README-retok.md")
+            ]
         )
     ]
 )
