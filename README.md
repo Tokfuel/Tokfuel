@@ -31,22 +31,26 @@
 
 ## ✨ Why?
 
-Claude Code quietly accumulates a lot of usage signal — which skills you lean on, which MCP servers you hit, how often you reach for sub-agents, how many prompts you send — but that data just sits in JSON files under `~/.claude/usage/`. **Claude Usage Menubar** surfaces it: it lives in the menu bar, reads those files, and rolls them up into a popover you can glance at any time. No servers, no telemetry, no network — everything stays on your Mac.
+Claude Code quietly accumulates a lot of usage signal — how much each session costs, which skills you lean on, which MCP servers you hit, how often you reach for sub-agents — but that data just sits in transcript files under `~/.claude/projects/`. **Claude Usage Menubar** surfaces all of it with **zero setup**: install the app and it reads the transcripts directly. No hooks, no CLI install, no servers, no telemetry — everything stays on your Mac.
+
+Cost analysis is powered by a bundled copy of [retok](https://github.com/d-date/retok) by [Daiki Matsudate (@d-date)](https://github.com/d-date) — a token-efficiency analyzer for Claude Code logs (MIT License, see [Acknowledgements](#-acknowledgements--third-party-licenses)).
 
 ## 🚀 Features
 
-- 📊 **Menu-bar resident** — a bar-chart icon, no Dock clutter (`LSUIElement = YES`).
-- 🔢 **At-a-glance totals** — Skills, MCP, Agents, and Prompts as four summary cards.
-- 🗂 **Grouped by genre** — `work` / `personal` / `side-project` / other, tap to filter.
-- 📦 **Per-repo breakdown** — expand any repo to see its skill / MCP / agent / prompt counts plus top skills and top MCP tools.
-- 🔒 **100% local** — reads `~/.claude/usage/<org>/<repo>.json` directly; nothing leaves your machine.
-- 🔄 **One-click refresh** — re-read the logs whenever you want.
+- 💵 **Cost tab (via retok)** — today's / period cost in the menu bar and popover, cache-hit rate, cost per prompt, daily cost chart, per-model breakdown, most expensive sessions, and retok's actionable recommendations (cache TTL misses, oversized contexts, retry loops, …).
+- 🛠 **Tools tab** — daily Skills / MCP / sub-agent activity chart, most-used rankings, grouped by genre and per-repo breakdowns.
+- 🧹 **Skills tab** — inventory of every installed skill (global / plugin / project) cross-referenced with actual usage, so unused skills stand out as removal candidates. **Click any row to reveal its folder in Finder** and decide for yourself — the app never deletes anything.
+- ⚙️ **Zero setup** — scans `~/.claude/projects/` transcripts directly (with an incremental cache) and registers itself as a login item. Install and forget.
+- 🛠️ **Settings** — a gear button opens a settings window: launch-at-login, menu-bar display (cost / prompt count / icon only), default period (7 / 30 days), report language, and **scan locations** (Claude directory & repository root) so it works on any machine layout, not just `~/.claude` + `~/ghq`.
+- 🚨 **Budget alerts** — set a spending limit (USD) per period (rolling 30 days or calendar month). At a configurable threshold (70/80/90%) the menu-bar icon turns orange and a notification fires; over the limit it turns red. The Cost tab shows a budget progress bar with the threshold marker.
+- 📊 **Menu-bar resident** — shows today's estimated cost right in the menu bar, no Dock clutter (`LSUIElement = YES`), auto-refreshes every 10 minutes.
+- 🔒 **100% local** — nothing leaves your machine.
 
 ## 🧰 Requirements
 
 - macOS **14.0** Sonoma or later
 - Xcode **16+** / Swift **6.0** toolchain (to build)
-- Claude Code usage logs under `~/.claude/usage/` (this is what the app visualizes)
+- `python3` (ships with Xcode Command Line Tools) — used to run the bundled retok for the Cost tab; the Tools / Skills tabs work without it
 
 ## 📦 Install
 
@@ -72,48 +76,65 @@ swift run -c release
 
 ## 🖱 Usage
 
-1. Click the bar-chart icon in the menu bar.
-2. The top row shows your all-time totals: **Skills**, **MCP**, **Agents**, **Prompts**.
-3. Tap a **genre** row (`work`, `personal`, …) to filter the repo list below it.
-4. Tap a **repo** row to expand it and see its per-category counts, top skills, and top MCP tools.
-5. Hit **↻** to re-read the logs, or **⊗** to quit.
+1. The menu bar shows **today's estimated cost** at all times; click the icon to open the popover.
+2. **Cost** — period totals, cache-hit rate, daily cost chart, per-model costs, retok recommendations (tap to expand), and the most expensive sessions.
+3. **Tools** — today's counts with day-over-day deltas, a stacked daily chart of Skills / MCP / Agents, most-used rankings, and genre → repo drill-down.
+4. **Skills** — installed-skill inventory; unused skills are flagged red. Click any row to open its folder in Finder.
+5. Hit **↻** to rescan, **⚙** for settings, or **⊗** to quit. Data auto-refreshes every 10 minutes anyway.
 
 ## 🗂 Data source
 
-The app scans the following layout and decodes every `*.json` it finds:
+Everything is derived from the transcripts Claude Code already writes — no hooks or extra configuration:
 
 ```
-~/.claude/usage/
-└── <org>/
-    └── <repo>.json
+~/.claude/projects/
+└── <project-dir>/
+    └── <session>.jsonl   # scanned for tool_use (Skill / mcp__* / Agent) and prompts
 ```
 
-Each file is expected to carry `_repo`, `_org`, `_genre`, a `tools` map (keys prefixed `Skill:`, `MCP:`, `Subagent:`), and a `session` block (`Prompt`, `InstructionLoad`). Missing fields fall back to sensible defaults, so partial files won't crash the app.
+- The Swift scanner counts Skill / MCP / sub-agent calls and prompts per repo per day, with a per-file incremental cache in `~/Library/Application Support/ClaudeUsageMenubar/` so rescans are fast.
+- The bundled [retok](https://github.com/d-date/retok) script analyzes the same transcripts for token usage, cost estimates, cache efficiency, and recommendations (`retok --json`).
+- The **Claude directory** (`~/.claude`) and **repository root** (`~/ghq`, searched up to 3 levels deep for `.claude/skills`) are both configurable in Settings, so non-ghq layouts work too.
 
 ## 🏗 Architecture
 
 ```
 ClaudeUsageMenubar/Sources/
-├── App.swift          # @main, AppDelegate, NSStatusItem + NSPopover wiring
-├── PopoverView.swift  # SwiftUI popover: summary cards, genre rows, repo rows
-└── UsageStore.swift   # ObservableObject: scans ~/.claude/usage, decodes JSON, aggregates
+├── App.swift                # @main, AppDelegate, NSStatusItem + NSPopover, login item, refresh timer
+├── PopoverView.swift        # SwiftUI popover: Cost / Tools / Skills tabs
+├── UsageStore.swift         # ObservableObject: aggregates scanner + retok results
+├── TranscriptScanner.swift  # scans ~/.claude/projects JSONL for tool usage (incremental cache)
+├── RetokService.swift       # runs the bundled retok via python3, decodes the JSON report
+├── AppSettings.swift        # UserDefaults-backed settings (login item, display, period, language)
+├── SettingsView.swift       # SwiftUI settings window
+└── Resources/
+    ├── retok.py             # vendored, unmodified copy of d-date/retok (© Daiki Matsudate, MIT)
+    ├── locales/             # retok translations (recommendations follow your locale)
+    ├── LICENSE-retok        # retok's MIT license text (ships inside the app)
+    └── README-retok.md      # provenance: upstream repo, vendored commit, update procedure
 ```
 
-- `UsageStore` is the single source of truth: it reads the JSON files, builds `RepoUsage` / `GenreSummary` values, and publishes them.
+- `UsageStore` is the single source of truth: it merges the transcript scan and the retok report and publishes them.
 - `PopoverView` is pure presentation, driven by the store.
-- `AppDelegate` owns the status item and popover lifecycle; the app runs as an accessory (no Dock icon).
+- `AppDelegate` owns the status item and popover lifecycle; the app runs as an accessory (no Dock icon) and registers itself as a login item.
 
 ## 🤝 Contributing
 
 PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, coding style, and the PR checklist.
 
-A few open ideas:
+Planned and shipped features are tracked as **CU items** in [`roadmaps/`](roadmaps/README.md)
+(bilingual, Swift-Evolution-style proposals — a convention adapted from
+[bajutsu](https://github.com/bajutsu-e2e/bajutsu)). The Proposals table and "Unsorted ideas" there
+are the up-to-date backlog; a few starters:
 
-- A real `.icns` app icon.
-- Launch-at-login toggle.
 - A time-range filter (today / this week / all time).
 - Edit-metrics (added / deleted lines) visualization — the data is already decoded.
+- [CU-0002](roadmaps/CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis.md) — native Swift cost analysis (drops the python3 dependency).
+
+## 🙏 Acknowledgements / Third-party licenses
+
+This app bundles **[retok](https://github.com/d-date/retok)** — © [Daiki Matsudate (@d-date)](https://github.com/d-date), released under the [MIT License](ClaudeUsageMenubar/Sources/Resources/LICENSE-retok). The vendored copy is unmodified (only the filename differs: `retok` → `retok.py`); its license text ships inside the app bundle, and provenance (upstream commit, update procedure) is documented in [README-retok.md](ClaudeUsageMenubar/Sources/Resources/README-retok.md). All cost estimation, cache-efficiency analysis, and recommendations in the Cost tab are retok's work.
 
 ## 📄 License
 
-[MIT](LICENSE) © akidon0000
+[MIT](LICENSE) © akidon0000 — except the bundled retok (see above).

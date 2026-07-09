@@ -31,22 +31,26 @@
 
 ## ✨ なぜ作ったか
 
-Claude Code は普段から多くの利用シグナルを蓄積しています — どの Skill をよく使うか、どの MCP サーバーを叩いているか、サブエージェントをどれくらい呼ぶか、何回プロンプトを送ったか。ですがそのデータは `~/.claude/usage/` 配下の JSON に溜まったままです。**Claude Usage Menubar** はそれを可視化します。メニューバーに常駐してそれらのファイルを読み込み、いつでも確認できるポップオーバーに集計表示します。サーバーもテレメトリもネットワークも無し — すべて Mac の中で完結します。
+Claude Code は普段から多くの利用シグナルを蓄積しています — 各セッションにいくらかかったか、どの Skill をよく使うか、どの MCP サーバーを叩いているか、サブエージェントをどれくらい呼ぶか。ですがそのデータは `~/.claude/projects/` 配下のトランスクリプトに溜まったままです。**Claude Usage Menubar** は**セットアップ不要**でそれを可視化します。アプリを入れるだけでトランスクリプトを直接読み込みます。フックも CLI のインストールもサーバーもテレメトリも無し — すべて Mac の中で完結します。
+
+コスト分析には、[Daiki Matsudate (@d-date)](https://github.com/d-date) さん作の Claude Code ログのトークン効率アナライザ **[retok](https://github.com/d-date/retok)** を同梱して利用しています（MIT License。詳細は[謝辞](#-謝辞--サードパーティライセンス)を参照）。
 
 ## 🚀 特長
 
-- 📊 **メニューバー常駐** — 棒グラフアイコンのみ、Dock を汚さない（`LSUIElement = YES`）。
-- 🔢 **合計を一目で** — Skills / MCP / Agents / Prompts を 4 枚のサマリーカードで表示。
-- 🗂 **ジャンル別に集約** — `work` / `personal` / `side-project` / その他。タップで絞り込み。
-- 📦 **リポジトリ別の内訳** — 各リポジトリを開くと Skill / MCP / Agent / Prompt の回数に加え、Top Skills・Top MCP ツールを表示。
-- 🔒 **100% ローカル** — `~/.claude/usage/<org>/<repo>.json` を直接読むだけ。データは外に出ません。
-- 🔄 **ワンクリック再読み込み** — いつでもログを読み直せます。
+- 💵 **Cost タブ（retok 連携）** — 今日/期間のコスト、キャッシュヒット率、プロンプト単価、日次コストグラフ、モデル別内訳、高コストセッション、そして retok の改善提案（キャッシュ TTL 切れ・巨大コンテキスト・リトライループなど）。
+- 🛠 **Tools タブ** — Skills / MCP / サブエージェントの日次アクティビティグラフ、よく使うツールランキング、ジャンル別・リポジトリ別の内訳。
+- 🧹 **Skills タブ** — インストール済み Skill（グローバル / プラグイン / プロジェクト）の棚卸し。実際の使用回数と突き合わせ、未使用 Skill を削除候補として洗い出します。**行をクリックすると Finder で該当フォルダを開く**ので、中身を確認して自分で判断できます（アプリが勝手に削除することはありません）。
+- ⚙️ **セットアップ不要** — `~/.claude/projects/` のトランスクリプトを直接走査（増分キャッシュ付き）し、ログイン項目にも自動登録。入れるだけで動きます。
+- 🛠️ **設定** — 歯車ボタンから設定ウィンドウを開けます: ログイン時起動、メニューバー表示（コスト / プロンプト数 / アイコンのみ）、既定の集計期間（7 / 30 日）、レポート言語、そして**スキャン場所**（Claude ディレクトリ / リポジトリルート）。`~/.claude` + `~/ghq` 以外の構成でも動きます。
+- 🚨 **予算アラート** — 期間ごとの上限金額 (USD) を設定できます。期間は「過去 30 日（ローリング）」か「今月（1 日から）」を選択。しきい値（70/80/90%）に達するとメニューバーのアイコンがオレンジになり通知、上限超過で赤になります。Cost タブにはしきい値目盛り付きの予算バーを表示。
+- 📊 **メニューバー常駐** — 今日の推定コストをメニューバーに常時表示。Dock を汚さず（`LSUIElement = YES`）、10 分ごとに自動更新。
+- 🔒 **100% ローカル** — データは外に出ません。
 
 ## 🧰 動作環境
 
 - macOS **14.0** Sonoma 以降
 - Xcode **16+** / Swift **6.0** ツールチェイン（ビルド用）
-- `~/.claude/usage/` 配下の Claude Code 利用ログ（これが可視化対象）
+- `python3`（Xcode Command Line Tools に同梱）— Cost タブの retok 実行に使用。Tools / Skills タブは無くても動作
 
 ## 📦 インストール
 
@@ -72,48 +76,65 @@ swift run -c release
 
 ## 🖱 使い方
 
-1. メニューバーの棒グラフアイコンをクリック。
-2. 上段に累計が表示されます: **Skills** / **MCP** / **Agents** / **Prompts**。
-3. **ジャンル**行（`work`, `personal` …）をタップすると、下のリポジトリ一覧を絞り込めます。
-4. **リポジトリ**行をタップすると展開され、カテゴリ別の回数・Top Skills・Top MCP ツールが見られます。
-5. **↻** でログを読み直し、**⊗** で終了。
+1. メニューバーには常に**今日の推定コスト**が表示されます。アイコンをクリックでポップオーバーを開きます。
+2. **Cost** — 期間合計・キャッシュヒット率・日次コストグラフ・モデル別コスト・retok の改善提案（タップで詳細）・高コストセッション。
+3. **Tools** — 今日の利用量と前日比、Skills / MCP / Agents の日次積み上げグラフ、ランキング、ジャンル → リポジトリのドリルダウン。
+4. **Skills** — インストール済み Skill の棚卸し。未使用 Skill は赤で表示。行をクリックすると Finder で該当フォルダを開きます。
+5. **↻** で再走査、**⚙** で設定、**⊗** で終了。放っておいても 10 分ごとに自動更新されます。
 
 ## 🗂 データソース
 
-アプリは以下のレイアウトを走査し、見つかった `*.json` をすべてデコードします:
+すべて Claude Code が普段から書き出しているトランスクリプトから導出します。フックや追加設定は不要です:
 
 ```
-~/.claude/usage/
-└── <org>/
-    └── <repo>.json
+~/.claude/projects/
+└── <project-dir>/
+    └── <session>.jsonl   # tool_use（Skill / mcp__* / Agent）とプロンプトを走査
 ```
 
-各ファイルは `_repo`・`_org`・`_genre`、`tools` マップ（キーは `Skill:` / `MCP:` / `Subagent:` で始まる）、`session` ブロック（`Prompt`・`InstructionLoad`）を持つ想定です。欠けたフィールドは無難なデフォルトにフォールバックするため、部分的なファイルでもクラッシュしません。
+- Swift 製スキャナが Skill / MCP / サブエージェント呼び出しとプロンプト数をリポジトリ×日単位で集計。`~/Library/Application Support/ClaudeUsageMenubar/` にファイル単位の増分キャッシュを持つため再走査は高速です。
+- 同梱の [retok](https://github.com/d-date/retok) が同じトランスクリプトからトークン使用量・コスト推定・キャッシュ効率・改善提案を算出します（`retok --json`）。
+- **Claude ディレクトリ**（`~/.claude`）と**リポジトリルート**（`~/ghq`。`.claude/skills` を最大 3 階層まで探索）は設定で変更でき、ghq 以外の構成でも動きます。
 
 ## 🏗 アーキテクチャ
 
 ```
 ClaudeUsageMenubar/Sources/
-├── App.swift          # @main、AppDelegate、NSStatusItem + NSPopover の配線
-├── PopoverView.swift  # SwiftUI のポップオーバー: サマリーカード・ジャンル行・リポジトリ行
-└── UsageStore.swift   # ObservableObject: ~/.claude/usage を走査し JSON をデコード・集計
+├── App.swift                # @main、AppDelegate、NSStatusItem + NSPopover、ログイン項目、自動更新
+├── PopoverView.swift        # SwiftUI ポップオーバー: Cost / Tools / Skills タブ
+├── UsageStore.swift         # ObservableObject: スキャナと retok の結果を統合・集計
+├── TranscriptScanner.swift  # ~/.claude/projects の JSONL を走査（増分キャッシュ付き）
+├── RetokService.swift       # 同梱 retok を python3 で実行し JSON レポートをデコード
+├── AppSettings.swift        # UserDefaults 永続化の設定（ログイン起動・表示・期間・言語）
+├── SettingsView.swift       # SwiftUI の設定ウィンドウ
+└── Resources/
+    ├── retok.py             # d-date/retok の無改変同梱コピー（© Daiki Matsudate, MIT）
+    ├── locales/             # retok の翻訳（改善提案がロケールに追従）
+    ├── LICENSE-retok        # retok の MIT ライセンス全文（アプリに同梱される）
+    └── README-retok.md      # 出所の記録: 上流リポジトリ・取り込みコミット・更新手順
 ```
 
-- `UsageStore` が単一の信頼できる情報源（SSOT）。JSON を読み、`RepoUsage` / `GenreSummary` を構築して publish します。
+- `UsageStore` が単一の信頼できる情報源（SSOT）。トランスクリプト走査と retok レポートを統合して publish します。
 - `PopoverView` は純粋な表示層で、ストアに駆動されます。
-- `AppDelegate` がステータスアイテムとポップオーバーのライフサイクルを保持。アプリはアクセサリ（Dock アイコン無し）として動作します。
+- `AppDelegate` がステータスアイテムとポップオーバーのライフサイクルを保持。アクセサリ（Dock アイコン無し）として動作し、ログイン項目に自動登録します。
 
 ## 🤝 コントリビュート
 
 PR 歓迎です！開発環境・コーディングスタイル・PR チェックリストは [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
-アイデアの一例:
+計画中・実装済みの機能は [`roadmaps/`](roadmaps/README-ja.md) の **CU 項目**（二言語の
+Swift-Evolution 形式提案。[bajutsu](https://github.com/bajutsu-e2e/bajutsu) の規約を参考にした
+もの）として管理しています。そこの Proposals 表と「未整理のアイデア」が最新のバックログです。
+初手の一例:
 
-- 本物の `.icns` アプリアイコン。
-- ログイン時起動トグル。
 - 期間フィルタ（今日 / 今週 / 全期間）。
-- 編集メトリクス（追加 / 削除行数）の可視化 — データはすでにデコード済み。
+- 編集メトリクス（追加 / 削除行数）の可視化。データはすでにデコード済み。
+- [CU-0002](roadmaps/CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis-ja.md) — コスト分析の Swift ネイティブ再実装（python3 依存の廃止）。
+
+## 🙏 謝辞 / サードパーティライセンス
+
+本アプリは **[retok](https://github.com/d-date/retok)** を同梱しています — © [Daiki Matsudate (@d-date)](https://github.com/d-date) さんの著作物で、[MIT License](ClaudeUsageMenubar/Sources/Resources/LICENSE-retok) の下で公開されています。同梱コピーは無改変（ファイル名のみ `retok` → `retok.py`）で、ライセンス全文をアプリバンドル内に同梱し、出所（取り込みコミット・更新手順）は [README-retok.md](ClaudeUsageMenubar/Sources/Resources/README-retok.md) に記録しています。Cost タブのコスト推定・キャッシュ効率分析・改善提案はすべて retok の成果です。
 
 ## 📄 ライセンス
 
-[MIT](LICENSE) © akidon0000
+[MIT](LICENSE) © akidon0000 — ただし同梱の retok は上記の通り。

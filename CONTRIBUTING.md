@@ -27,7 +27,7 @@ swift run -c release   # run the app from source
 ./build.sh             # package + install Claude Usage.app to /Applications
 ```
 
-The app reads `~/.claude/usage/<org>/<repo>.json`. If you don't have real logs, drop a sample JSON there to exercise the UI.
+The app reads Claude Code transcripts under `~/.claude/projects/` directly (no hooks or extra setup) — if you use Claude Code at all, you already have data to exercise the UI. The Cost tab additionally needs `python3` (ships with the Xcode Command Line Tools) to run the bundled retok.
 
 ### Coding style
 
@@ -48,10 +48,21 @@ The app reads `~/.claude/usage/<org>/<repo>.json`. If you don't have real logs, 
 - [ ] UI changes include a screenshot or short GIF
 - [ ] README / README.ja.md updated if user-visible behavior changed
 - [ ] No new dependencies (or, if so, explained in the PR description)
+- [ ] Roadmap changes pass `bash scripts/lint_roadmap.sh` (CI checks this too)
+
+### Roadmap (CU items)
+
+Planned and shipped features are tracked as **CU items** under [`roadmaps/`](roadmaps/README.md) —
+one directory per item with an English file and a Japanese mirror. Pick an open **Proposal** from
+the index if you're looking for something to build, or add a new item (the README there documents
+the format and ID rules). A PR that implements an item flips its `Status` to `Implemented` and
+prefixes the PR title `[CU-NNNN]`.
 
 ### Good first issues
 
-The README "Contributing" section lists open ideas. A **launch-at-login toggle** or a **time-range filter** are nice self-contained starters.
+The [roadmap Proposals table](roadmaps/README.md#-proposals) and the "Unsorted ideas" list there
+are the up-to-date backlog. A **time-range filter** or the **edit-metrics visualization** are nice
+self-contained starters.
 
 ---
 
@@ -76,7 +87,7 @@ swift run -c release   # ソースから実行
 ./build.sh             # Claude Usage.app をパッケージして /Applications にインストール
 ```
 
-アプリは `~/.claude/usage/<org>/<repo>.json` を読みます。実ログが無い場合は、サンプル JSON を置けば UI を確認できます。
+アプリは `~/.claude/projects/` 配下の Claude Code トランスクリプトを直接読みます（フックや追加設定は不要）。Claude Code を使っていれば、UI を確認するデータはすでに手元にあります。Cost タブだけは同梱 retok の実行に `python3`（Xcode Command Line Tools に同梱）が必要です。
 
 ### コーディングスタイル
 
@@ -97,7 +108,16 @@ swift run -c release   # ソースから実行
 - [ ] UI 変更はスクリーンショットか短い GIF を添付
 - [ ] ユーザーから見える変更があれば README / README.ja.md も更新
 - [ ] 新規依存は追加しない（追加する場合は PR 本文で理由を説明）
+- [ ] roadmaps を触ったら `bash scripts/lint_roadmap.sh` が通る（CI でも確認します）
+
+### ロードマップ（CU 項目）
+
+計画中・実装済みの機能は [`roadmaps/`](roadmaps/README-ja.md) 配下の **CU 項目**として管理しています。
+項目ごとに 1 ディレクトリで、英語ファイルと日本語ミラーを持ちます。作るものを探すなら索引の
+**Proposal** から選ぶか、新しい項目を追加してください（形式と ID の規則はそこの README にあります）。
+項目を実装する PR は `状態` を「実装済み」に変え、PR タイトルに `[CU-NNNN]` を付けます。
 
 ### 最初の一歩におすすめ
 
-README の「コントリビュート」セクションにアイデアを並べています。「ログイン時起動トグル」や「期間フィルタ」は単体で完結しやすい初手としておすすめです。
+[ロードマップの Proposals 表](roadmaps/README-ja.md)と「未整理のアイデア」が最新のバックログです。
+「期間フィルタ」や「編集メトリクスの可視化」は単体で完結しやすい初手としておすすめです。
