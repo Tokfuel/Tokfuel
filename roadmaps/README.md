@@ -60,6 +60,9 @@ The roadmap workflow is driven by skills under [`.claude/skills/`](../.claude/sk
 | ID | Item | Topic |
 |---|---|---|
 | [CU-0002](CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis.md) | Reimplement cost analysis natively in Swift (drop the python3 dependency) | Cost & budget |
+| [CU-0006](CU-0006-session-block-tracking/CU-0006-session-block-tracking.md) | 5-hour session-block tracking with burn rate and limit forecast | Usage & quota |
+| [CU-0007](CU-0007-server-quota-readout/CU-0007-server-quota-readout.md) | Opt-in server-truth quota readout | Usage & quota |
+| [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown.md) | Per-project cost & activity breakdown | Cost & budget |
 
 ## 🚧 In progress
 
