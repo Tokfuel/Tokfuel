@@ -65,6 +65,8 @@ The roadmap workflow is driven by skills under [`.claude/skills/`](../.claude/sk
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown.md) | Per-project cost & activity breakdown | Cost & budget |
 | [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage.md) | Multi-provider usage comparison (Codex / Gemini CLI) | Providers |
 | [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost.md) | Plan info & per-token unit-cost readout | Cost & budget |
+| [CU-0011](CU-0011-today-usage/CU-0011-today-usage.md) | "Today" usage view | Settings & UX |
+| [CU-0012](CU-0012-unused-skills-audit/CU-0012-unused-skills-audit.md) | Unused-skills audit over user-designated repo roots | Skills & tools |
 
 ## 🚧 In progress
 
@@ -78,7 +80,6 @@ _None yet._
 
 Rough thoughts not yet shaped into an item. Promote to a numbered item once the scope is clear.
 
-- Time-range filter (today / this week / all time) for the Tools tab.
 - Edit-metrics (added / deleted lines) visualization — the data is already decoded.
 - Signed / notarized release build automation (see [`release.sh`](../release.sh)).
 </content>

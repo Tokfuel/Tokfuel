@@ -63,6 +63,8 @@
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown-ja.md) | プロジェクト別のコスト・アクティビティ内訳 | コストと予算 |
 | [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage-ja.md) | マルチプロバイダ使用量比較（Codex / Gemini CLI） | プロバイダ |
 | [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost-ja.md) | プラン情報とトークン単価の表示 | コストと予算 |
+| [CU-0011](CU-0011-today-usage/CU-0011-today-usage-ja.md) | 「今日」の使用量表示 | 設定と UX |
+| [CU-0012](CU-0012-unused-skills-audit/CU-0012-unused-skills-audit-ja.md) | 指定リポジトリルート配下の未使用スキル調査 | スキルとツール |
 
 ## 🚧 In progress（進行中）
 
@@ -76,7 +78,6 @@ _まだありません。_
 
 まだ項目に落とし込めていない着想です。スコープが固まったら採番して項目に昇格します。
 
-- Tools タブの期間フィルタ（今日 / 今週 / 全期間）。
 - 編集メトリクス（追加 / 削除行数）の可視化。データはすでにデコード済み。
 - 署名・公証済みリリースビルドの自動化（[`release.sh`](../release.sh) 参照）。
 </content>
