@@ -61,6 +61,8 @@
 | [CU-0006](CU-0006-session-block-tracking/CU-0006-session-block-tracking-ja.md) | 5 時間セッションブロックの追跡（バーンレートと到達予測つき） | 使用量とクォータ |
 | [CU-0007](CU-0007-server-quota-readout/CU-0007-server-quota-readout-ja.md) | サーバー真値クォータ表示（オプトイン） | 使用量とクォータ |
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown-ja.md) | プロジェクト別のコスト・アクティビティ内訳 | コストと予算 |
+| [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage-ja.md) | マルチプロバイダ使用量比較（Codex / Gemini CLI） | プロバイダ |
+| [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost-ja.md) | プラン情報とトークン単価の表示 | コストと予算 |
 
 ## 🚧 In progress（進行中）
 

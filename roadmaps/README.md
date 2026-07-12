@@ -63,6 +63,8 @@ The roadmap workflow is driven by skills under [`.claude/skills/`](../.claude/sk
 | [CU-0006](CU-0006-session-block-tracking/CU-0006-session-block-tracking.md) | 5-hour session-block tracking with burn rate and limit forecast | Usage & quota |
 | [CU-0007](CU-0007-server-quota-readout/CU-0007-server-quota-readout.md) | Opt-in server-truth quota readout | Usage & quota |
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown.md) | Per-project cost & activity breakdown | Cost & budget |
+| [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage.md) | Multi-provider usage comparison (Codex / Gemini CLI) | Providers |
+| [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost.md) | Plan info & per-token unit-cost readout | Cost & budget |
 
 ## 🚧 In progress
 
