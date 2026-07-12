@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClaudeUsageMenubar",
+    name: "Tokfuel",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "ClaudeUsageMenubar",
-            path: "ClaudeUsageMenubar/Sources",
+            name: "Tokfuel",
+            path: "Tokfuel/Sources",
             resources: [
                 .copy("Resources/retok.py"),
                 .copy("Resources/locales"),

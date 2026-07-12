@@ -33,7 +33,7 @@
 
   <!-- Title block -->
   <g transform="translate(340,140)" font-family="-apple-system, SF Pro Display, Helvetica, sans-serif" fill="#FFFFFF">
-    <text font-size="60" font-weight="700">Claude Usage</text>
+    <text font-size="60" font-weight="700">Tokfuel</text>
     <text y="46" font-size="22" fill="#E8C8BC">See how you actually use Claude Code — from the menu bar.</text>
     <g transform="translate(0,92)">
       <rect width="150" height="32" rx="16" fill="#2E2018" stroke="#D97757" stroke-width="1"/>

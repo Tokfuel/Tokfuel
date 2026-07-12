@@ -66,9 +66,9 @@ would make the alert move when the user just changes what they're looking at.
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/BudgetMonitor.swift`
-- `ClaudeUsageMenubar/Sources/AppSettings.swift` (`BudgetPeriod`, budget settings)
-- `ClaudeUsageMenubar/Sources/UsageStore.swift` (`reloadBudget`, `budgetLevel`)
-- `ClaudeUsageMenubar/Sources/App.swift` (`updateStatusIcon`, `evaluateBudget`)
+- `Tokfuel/Sources/BudgetMonitor.swift`
+- `Tokfuel/Sources/AppSettings.swift` (`BudgetPeriod`, budget settings)
+- `Tokfuel/Sources/UsageStore.swift` (`reloadBudget`, `budgetLevel`)
+- `Tokfuel/Sources/App.swift` (`updateStatusIcon`, `evaluateBudget`)
 - [CU-0002](../CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis.md) — would remove the retok dependency this feature reads from.
 </content>

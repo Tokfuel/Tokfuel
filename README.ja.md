@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Claude Usage" width="100%"/>
+  <img src="assets/banner.svg" alt="Tokfuel" width="100%"/>
 </p>
 
-<h1 align="center">Claude Usage Menubar</h1>
+<h1 align="center">Tokfuel</h1>
 
 <p align="center">
   <strong>Claude Code の「使い方」をメニューバーから一目で。</strong><br/>
@@ -15,7 +15,7 @@
   <img alt="UI" src="https://img.shields.io/badge/SwiftUI-NSStatusItem-D97757?style=flat-square"/>
   <img alt="License" src="https://img.shields.io/badge/License-MIT-2E2018?style=flat-square"/>
   <img alt="PRs" src="https://img.shields.io/badge/PRs-welcome-E8927C?style=flat-square"/>
-  <a href="https://github.com/akidon0000/claude-usage-menubar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/claude-usage-menubar/actions/workflows/ci.yml/badge.svg"/></a>
+  <a href="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml/badge.svg"/></a>
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@
 
 ## ✨ なぜ作ったか
 
-Claude Code は普段から多くの利用シグナルを蓄積しています — 各セッションにいくらかかったか、どの Skill をよく使うか、どの MCP サーバーを叩いているか、サブエージェントをどれくらい呼ぶか。ですがそのデータは `~/.claude/projects/` 配下のトランスクリプトに溜まったままです。**Claude Usage Menubar** は**セットアップ不要**でそれを可視化します。アプリを入れるだけでトランスクリプトを直接読み込みます。フックも CLI のインストールもサーバーもテレメトリも無し — すべて Mac の中で完結します。
+Claude Code は普段から多くの利用シグナルを蓄積しています — 各セッションにいくらかかったか、どの Skill をよく使うか、どの MCP サーバーを叩いているか、サブエージェントをどれくらい呼ぶか。ですがそのデータは `~/.claude/projects/` 配下のトランスクリプトに溜まったままです。**Tokfuel** は**セットアップ不要**でそれを可視化します。アプリを入れるだけでトランスクリプトを直接読み込みます。フックも CLI のインストールもサーバーもテレメトリも無し — すべて Mac の中で完結します。
 
 コスト分析には、[Daiki Matsudate (@d-date)](https://github.com/d-date) さん作の Claude Code ログのトークン効率アナライザ **[retok](https://github.com/d-date/retok)** を同梱して利用しています（MIT License。詳細は[謝辞](#-謝辞--サードパーティライセンス)を参照）。
 
@@ -57,13 +57,13 @@ Claude Code は普段から多くの利用シグナルを蓄積しています �
 ### 方法 1: スクリプトでビルド & インストール（おすすめ）
 
 ```bash
-git clone https://github.com/akidon0000/claude-usage-menubar.git
-cd claude-usage-menubar
+git clone https://github.com/akidon0000/tokfuel.git
+cd tokfuel
 
 ./build.sh
 ```
 
-`build.sh` はリリースビルドを行い、`Claude Usage.app` を `/Applications` にパッケージし、アドホック署名して起動します。
+`build.sh` はリリースビルドを行い、`Tokfuel.app` を `/Applications` にパッケージし、アドホック署名して起動します。
 
 ### 方法 2: ソースから実行
 
@@ -92,14 +92,14 @@ swift run -c release
     └── <session>.jsonl   # tool_use（Skill / mcp__* / Agent）とプロンプトを走査
 ```
 
-- Swift 製スキャナが Skill / MCP / サブエージェント呼び出しとプロンプト数をリポジトリ×日単位で集計。`~/Library/Application Support/ClaudeUsageMenubar/` にファイル単位の増分キャッシュを持つため再走査は高速です。
+- Swift 製スキャナが Skill / MCP / サブエージェント呼び出しとプロンプト数をリポジトリ×日単位で集計。`~/Library/Application Support/Tokfuel/` にファイル単位の増分キャッシュを持つため再走査は高速です。
 - 同梱の [retok](https://github.com/d-date/retok) が同じトランスクリプトからトークン使用量・コスト推定・キャッシュ効率・改善提案を算出します（`retok --json`）。
 - **Claude ディレクトリ**（`~/.claude`）と**リポジトリルート**（`~/ghq`。`.claude/skills` を最大 3 階層まで探索）は設定で変更でき、ghq 以外の構成でも動きます。
 
 ## 🏗 アーキテクチャ
 
 ```
-ClaudeUsageMenubar/Sources/
+Tokfuel/Sources/
 ├── App.swift                # @main、AppDelegate、NSStatusItem + NSPopover、ログイン項目、自動更新
 ├── PopoverView.swift        # SwiftUI ポップオーバー: Cost / Tools / Skills タブ
 ├── UsageStore.swift         # ObservableObject: スキャナと retok の結果を統合・集計
@@ -133,7 +133,7 @@ Swift-Evolution 形式提案。[bajutsu](https://github.com/bajutsu-e2e/bajutsu)
 
 ## 🙏 謝辞 / サードパーティライセンス
 
-本アプリは **[retok](https://github.com/d-date/retok)** を同梱しています — © [Daiki Matsudate (@d-date)](https://github.com/d-date) さんの著作物で、[MIT License](ClaudeUsageMenubar/Sources/Resources/LICENSE-retok) の下で公開されています。同梱コピーは無改変（ファイル名のみ `retok` → `retok.py`）で、ライセンス全文をアプリバンドル内に同梱し、出所（取り込みコミット・更新手順）は [README-retok.md](ClaudeUsageMenubar/Sources/Resources/README-retok.md) に記録しています。Cost タブのコスト推定・キャッシュ効率分析・改善提案はすべて retok の成果です。
+本アプリは **[retok](https://github.com/d-date/retok)** を同梱しています — © [Daiki Matsudate (@d-date)](https://github.com/d-date) さんの著作物で、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok) の下で公開されています。同梱コピーは無改変（ファイル名のみ `retok` → `retok.py`）で、ライセンス全文をアプリバンドル内に同梱し、出所（取り込みコミット・更新手順）は [README-retok.md](Tokfuel/Sources/Resources/README-retok.md) に記録しています。Cost タブのコスト推定・キャッシュ効率分析・改善提案はすべて retok の成果です。
 
 ## 📄 ライセンス
 

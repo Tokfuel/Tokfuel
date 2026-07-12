@@ -1,10 +1,10 @@
 **English** · [日本語](README-ja.md)
 
-# Claude Usage Menubar — roadmap / backlog
+# Tokfuel — roadmap / backlog
 
 This directory tracks features planned, in progress, and shipped. Each item is a directory
 `CU-NNNN-<slug>/` holding an English file `CU-NNNN-<slug>.md` and its Japanese mirror
-`CU-NNNN-<slug>-ja.md` (same ID and slug). **CU** stands for *Claude Usage* and `NNNN` is a
+`CU-NNNN-<slug>-ja.md` (same ID and slug). **CU** stands for *Claude Usage* (the app's original name, kept for ID stability) and `NNNN` is a
 zero-padded, 4-digit, monotonically increasing ID.
 
 The convention is adapted from [bajutsu-e2e/bajutsu](https://github.com/bajutsu-e2e/bajutsu)'s

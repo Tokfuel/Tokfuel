@@ -67,9 +67,9 @@ retok の `--json` 計算を Swift に移植し、既存の `TranscriptScanner` 
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/RetokService.swift` — 置き換える対象のサブプロセス。
-- `ClaudeUsageMenubar/Sources/RetokReport`（`RetokService.swift` 内）— 合わせるべき出力形。
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift` — 土台にする既存のネイティブ JSONL 読み取り。
+- `Tokfuel/Sources/RetokService.swift` — 置き換える対象のサブプロセス。
+- `Tokfuel/Sources/RetokReport`（`RetokService.swift` 内）— 合わせるべき出力形。
+- `Tokfuel/Sources/TranscriptScanner.swift` — 土台にする既存のネイティブ JSONL 読み取り。
 - [retok](https://github.com/d-date/retok) — ロジックの移植元となる上流アナライザ（© Daiki Matsudate, MIT）。
 - [CU-0001](../CU-0001-budget-alerts/CU-0001-budget-alerts-ja.md) — retok の日次コストを読む予算機能。ネイティブレポートを読むよう切り替わる。
 </content>

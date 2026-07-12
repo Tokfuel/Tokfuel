@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Claude Usage" width="100%"/>
+  <img src="assets/banner.svg" alt="Tokfuel" width="100%"/>
 </p>
 
-<h1 align="center">Claude Usage Menubar</h1>
+<h1 align="center">Tokfuel</h1>
 
 <p align="center">
   <strong>See how you actually use Claude Code — from the menu bar.</strong><br/>
@@ -15,7 +15,7 @@
   <img alt="UI" src="https://img.shields.io/badge/SwiftUI-NSStatusItem-D97757?style=flat-square"/>
   <img alt="License" src="https://img.shields.io/badge/License-MIT-2E2018?style=flat-square"/>
   <img alt="PRs" src="https://img.shields.io/badge/PRs-welcome-E8927C?style=flat-square"/>
-  <a href="https://github.com/akidon0000/claude-usage-menubar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/claude-usage-menubar/actions/workflows/ci.yml/badge.svg"/></a>
+  <a href="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml/badge.svg"/></a>
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@
 
 ## ✨ Why?
 
-Claude Code quietly accumulates a lot of usage signal — how much each session costs, which skills you lean on, which MCP servers you hit, how often you reach for sub-agents — but that data just sits in transcript files under `~/.claude/projects/`. **Claude Usage Menubar** surfaces all of it with **zero setup**: install the app and it reads the transcripts directly. No hooks, no CLI install, no servers, no telemetry — everything stays on your Mac.
+Claude Code quietly accumulates a lot of usage signal — how much each session costs, which skills you lean on, which MCP servers you hit, how often you reach for sub-agents — but that data just sits in transcript files under `~/.claude/projects/`. **Tokfuel** surfaces all of it with **zero setup**: install the app and it reads the transcripts directly. No hooks, no CLI install, no servers, no telemetry — everything stays on your Mac.
 
 Cost analysis is powered by a bundled copy of [retok](https://github.com/d-date/retok) by [Daiki Matsudate (@d-date)](https://github.com/d-date) — a token-efficiency analyzer for Claude Code logs (MIT License, see [Acknowledgements](#-acknowledgements--third-party-licenses)).
 
@@ -57,13 +57,13 @@ Cost analysis is powered by a bundled copy of [retok](https://github.com/d-date/
 ### Option 1: Build & install with the script (recommended)
 
 ```bash
-git clone https://github.com/akidon0000/claude-usage-menubar.git
-cd claude-usage-menubar
+git clone https://github.com/akidon0000/tokfuel.git
+cd tokfuel
 
 ./build.sh
 ```
 
-`build.sh` runs a release build, packages a `Claude Usage.app` bundle into `/Applications`, ad-hoc signs it, and launches it.
+`build.sh` runs a release build, packages a `Tokfuel.app` bundle into `/Applications`, ad-hoc signs it, and launches it.
 
 ### Option 2: Run from source
 
@@ -92,14 +92,14 @@ Everything is derived from the transcripts Claude Code already writes — no hoo
     └── <session>.jsonl   # scanned for tool_use (Skill / mcp__* / Agent) and prompts
 ```
 
-- The Swift scanner counts Skill / MCP / sub-agent calls and prompts per repo per day, with a per-file incremental cache in `~/Library/Application Support/ClaudeUsageMenubar/` so rescans are fast.
+- The Swift scanner counts Skill / MCP / sub-agent calls and prompts per repo per day, with a per-file incremental cache in `~/Library/Application Support/Tokfuel/` so rescans are fast.
 - The bundled [retok](https://github.com/d-date/retok) script analyzes the same transcripts for token usage, cost estimates, cache efficiency, and recommendations (`retok --json`).
 - The **Claude directory** (`~/.claude`) and **repository root** (`~/ghq`, searched up to 3 levels deep for `.claude/skills`) are both configurable in Settings, so non-ghq layouts work too.
 
 ## 🏗 Architecture
 
 ```
-ClaudeUsageMenubar/Sources/
+Tokfuel/Sources/
 ├── App.swift                # @main, AppDelegate, NSStatusItem + NSPopover, login item, refresh timer
 ├── PopoverView.swift        # SwiftUI popover: Cost / Tools / Skills tabs
 ├── UsageStore.swift         # ObservableObject: aggregates scanner + retok results
@@ -133,7 +133,7 @@ are the up-to-date backlog; a few starters:
 
 ## 🙏 Acknowledgements / Third-party licenses
 
-This app bundles **[retok](https://github.com/d-date/retok)** — © [Daiki Matsudate (@d-date)](https://github.com/d-date), released under the [MIT License](ClaudeUsageMenubar/Sources/Resources/LICENSE-retok). The vendored copy is unmodified (only the filename differs: `retok` → `retok.py`); its license text ships inside the app bundle, and provenance (upstream commit, update procedure) is documented in [README-retok.md](ClaudeUsageMenubar/Sources/Resources/README-retok.md). All cost estimation, cache-efficiency analysis, and recommendations in the Cost tab are retok's work.
+This app bundles **[retok](https://github.com/d-date/retok)** — © [Daiki Matsudate (@d-date)](https://github.com/d-date), released under the [MIT License](Tokfuel/Sources/Resources/LICENSE-retok). The vendored copy is unmodified (only the filename differs: `retok` → `retok.py`); its license text ships inside the app bundle, and provenance (upstream commit, update procedure) is documented in [README-retok.md](Tokfuel/Sources/Resources/README-retok.md). All cost estimation, cache-efficiency analysis, and recommendations in the Cost tab are retok's work.
 
 ## 📄 License
 

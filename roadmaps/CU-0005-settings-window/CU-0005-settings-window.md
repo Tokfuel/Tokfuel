@@ -62,6 +62,6 @@ a value the user knows; a configurable root with a sensible default is cheaper a
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/AppSettings.swift` · `SettingsView.swift` · `App.swift` (observers)
+- `Tokfuel/Sources/AppSettings.swift` · `SettingsView.swift` · `App.swift` (observers)
 - [CU-0004](../CU-0004-zero-setup-transcript-scanning/CU-0004-zero-setup-transcript-scanning.md) — the scanner these paths feed.
 </content>

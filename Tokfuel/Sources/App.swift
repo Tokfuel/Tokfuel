@@ -2,7 +2,7 @@ import SwiftUI
 import Combine
 
 @main
-struct ClaudeUsageMenubarApp: App {
+struct TokfuelApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "Claude Usage")
+            button.image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "Tokfuel")
             button.image?.size = NSSize(width: 16, height: 16)
             button.imagePosition = .imageLeading
             button.action = #selector(togglePopover)
@@ -116,7 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateStatusIcon() {
         guard let button = statusItem.button else { return }
         let base = NSImage(systemSymbolName: "chart.bar.fill",
-                           accessibilityDescription: "Claude Usage")
+                           accessibilityDescription: "Tokfuel")
         let image: NSImage?
         switch usageStore.budgetLevel {
         case .warning:
@@ -139,7 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch settings.menuBarDisplay {
         case .iconOnly:
             button.title = ""
-            button.toolTip = "Claude Usage"
+            button.toolTip = "Tokfuel"
         case .prompts:
             let prompts = usageStore.today.prompts
             button.title = " \(prompts)"
@@ -173,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settingsWindow == nil {
             let hosting = NSHostingController(rootView: SettingsView())
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Claude Usage 設定"
+            window.title = "Tokfuel 設定"
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()

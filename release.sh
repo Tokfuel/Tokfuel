@@ -12,18 +12,18 @@ set -euo pipefail
 #
 #  2) 公証用の認証情報を Keychain プロファイルに保存（App 用パスワードは
 #     https://account.apple.com → サインインとセキュリティ → App 用パスワード で発行）:
-#       xcrun notarytool store-credentials claude-usage-notary \
+#       xcrun notarytool store-credentials tokfuel-notary \
 #         --apple-id "you@example.com" --team-id "TEAMID" --password "xxxx-xxxx-xxxx-xxxx"
 #
 # ── 使い方 ───────────────────────────────────────────────────────────
 #   DEV_ID="Developer ID Application: Your Name (TEAMID)" \
-#   NOTARY_PROFILE="claude-usage-notary" \
+#   NOTARY_PROFILE="tokfuel-notary" \
 #   ./release.sh
 #
-# 出力: dist/Claude Usage.app（公証・ステープル済み）と dist/ClaudeUsageMenubar.zip
+# 出力: dist/Tokfuel.app（公証・ステープル済み）と dist/Tokfuel.zip
 
-APP_NAME="Claude Usage"
-BUNDLE_NAME="ClaudeUsageMenubar"
+APP_NAME="Tokfuel"
+BUNDLE_NAME="Tokfuel"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 DIST_DIR="$PROJECT_DIR/dist"

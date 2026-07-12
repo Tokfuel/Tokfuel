@@ -1,7 +1,7 @@
 ---
 name: task-select
 description: >-
-  Select the next task to work on from the Claude Usage Menubar roadmap (and, if present, open
+  Select the next task to work on from the Tokfuel roadmap (and, if present, open
   GitHub Issues / PRs). Use when the user says "次のタスクを検討して", "タスクを選定して", "次に
   進めるべきタスクを", or asks to pick the next item to implement. Reads roadmap status and any open
   issues, filters by criteria (e.g. Proposal status), and presents ranked candidates with rationale.

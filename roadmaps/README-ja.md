@@ -1,10 +1,10 @@
 [English](README.md) · **日本語**
 
-# Claude Usage Menubar — ロードマップ / バックログ
+# Tokfuel — ロードマップ / バックログ
 
 このディレクトリは、計画中・進行中・実装済みの機能を管理します。各項目はディレクトリ
 `CU-NNNN-<slug>/` で、英語ファイル `CU-NNNN-<slug>.md` と日本語ミラー
-`CU-NNNN-<slug>-ja.md`（同じ ID と slug）を持ちます。**CU** は *Claude Usage* の略で、`NNNN`
+`CU-NNNN-<slug>-ja.md`（同じ ID と slug）を持ちます。**CU** は旧アプリ名 *Claude Usage* の略（ID の安定のため据え置き）で、`NNNN`
 は 4 桁ゼロ埋めの単調増加 ID です。
 
 この規約は [bajutsu-e2e/bajutsu](https://github.com/bajutsu-e2e/bajutsu) のロードマップ体系

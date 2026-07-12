@@ -38,7 +38,7 @@ app's "install and it just works" foundation.
 - **Project identity** from the record's `cwd` (`org/repo` for ghq-style paths), falling back to
   the transcript directory name.
 - **Incremental cache.** Per-file summaries keyed by (path, mtime, size) persist in
-  `~/Library/Application Support/ClaudeUsageMenubar/transcript-cache.json`; unchanged files are
+  `~/Library/Application Support/Tokfuel/transcript-cache.json`; unchanged files are
   never re-read, and entries for deleted files are dropped.
 - Output is the existing `RepoUsage` shape, so the aggregation and UI layers were unchanged.
 
@@ -58,7 +58,7 @@ additional signal; the marker pre-filter reads the same records.
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift`
-- `ClaudeUsageMenubar/Sources/UsageStore.swift` (`reload`, aggregation)
+- `Tokfuel/Sources/TranscriptScanner.swift`
+- `Tokfuel/Sources/UsageStore.swift` (`reload`, aggregation)
 - [CU-0003](../CU-0003-retok-cost-tab/CU-0003-retok-cost-tab.md) — retok reads the same transcripts for cost.
 </content>

@@ -62,9 +62,9 @@ Cost タブには、レベルで色分けした進捗バーを表示し、警告
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/BudgetMonitor.swift`
-- `ClaudeUsageMenubar/Sources/AppSettings.swift`（`BudgetPeriod`、予算設定）
-- `ClaudeUsageMenubar/Sources/UsageStore.swift`（`reloadBudget`、`budgetLevel`）
-- `ClaudeUsageMenubar/Sources/App.swift`（`updateStatusIcon`、`evaluateBudget`）
+- `Tokfuel/Sources/BudgetMonitor.swift`
+- `Tokfuel/Sources/AppSettings.swift`（`BudgetPeriod`、予算設定）
+- `Tokfuel/Sources/UsageStore.swift`（`reloadBudget`、`budgetLevel`）
+- `Tokfuel/Sources/App.swift`（`updateStatusIcon`、`evaluateBudget`）
 - [CU-0002](../CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis-ja.md) — この機能が読む retok 依存を無くす提案。
 </content>

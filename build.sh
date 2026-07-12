@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_NAME="Claude Usage"
-BUNDLE_NAME="ClaudeUsageMenubar"
+APP_NAME="Tokfuel"
+BUNDLE_NAME="Tokfuel"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_DIR="/Applications/${APP_NAME}.app"

@@ -58,6 +58,6 @@ CU-0001 の仕組みをプロジェクト単位に流用できます。
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift`、`UsageStore.swift` — 集計の実装箇所。
+- `Tokfuel/Sources/TranscriptScanner.swift`、`UsageStore.swift` — 集計の実装箇所。
 - [ccusage](https://github.com/ryoppippi/ccusage)（`--breakdown`、プロジェクト別レポート）、[CCSeva](https://github.com/Iamshankhadeep/ccseva) — 先行事例。
 - [CU-0002](../CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis-ja.md) — python3 の注意書きを不要にするネイティブ価格計算。

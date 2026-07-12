@@ -65,7 +65,7 @@ ccusage には `blocks --live` があり、Claude Code Usage Monitor はバー�
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift` — データソース。
-- `ClaudeUsageMenubar/Sources/BudgetMonitor.swift` — 流用する通知状態機械のパターン。
+- `Tokfuel/Sources/TranscriptScanner.swift` — データソース。
+- `Tokfuel/Sources/BudgetMonitor.swift` — 流用する通知状態機械のパターン。
 - [ccusage blocks](https://github.com/ryoppippi/ccusage) / [Claude Code Usage Monitor](https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor) — ブロック検出とバーンレート予測の先行事例。
 - [CU-0001](../CU-0001-budget-alerts/CU-0001-budget-alerts-ja.md) — コスト側の対になる予算アラート。

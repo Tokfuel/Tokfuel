@@ -40,7 +40,7 @@
 - **プロジェクトの同定**はレコードの `cwd` から行い（ghq 形式のパスなら `org/repo`）、だめなら
   トランスクリプトのディレクトリ名にフォールバックします。
 - **増分キャッシュ。**（パス、mtime、サイズ）をキーにしたファイル別サマリを
-  `~/Library/Application Support/ClaudeUsageMenubar/transcript-cache.json` に永続化します。変化の
+  `~/Library/Application Support/Tokfuel/transcript-cache.json` に永続化します。変化の
   ないファイルは二度と読み直さず、消えたファイルのエントリは破棄します。
 - 出力は既存の `RepoUsage` の形なので、集計層と UI 層は無変更で済みました。
 
@@ -60,7 +60,7 @@
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift`
-- `ClaudeUsageMenubar/Sources/UsageStore.swift`（`reload`、集計）
+- `Tokfuel/Sources/TranscriptScanner.swift`
+- `Tokfuel/Sources/UsageStore.swift`（`reload`、集計）
 - [CU-0003](../CU-0003-retok-cost-tab/CU-0003-retok-cost-tab-ja.md) — retok も同じトランスクリプトからコストを読む。
 </content>

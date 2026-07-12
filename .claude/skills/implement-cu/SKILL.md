@@ -1,7 +1,7 @@
 ---
 name: implement-cu
 description: >-
-  Implement a Claude Usage Menubar roadmap (CU) item end to end, starting from its ID. Use when the
+  Implement a Tokfuel roadmap (CU) item end to end, starting from its ID. Use when the
   user names a roadmap item to build — "/implement-cu CU-0002", "implement CU-0002", "start on
   CU-0002", a bare number, or a slug — or otherwise asks to turn an existing CU proposal into shipped
   code. Treats the item's proposal as the spec, grounds the work in the project ground rules, plans

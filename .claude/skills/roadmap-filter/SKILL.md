@@ -1,7 +1,7 @@
 ---
 name: roadmap-filter
 description: >-
-  List Claude Usage Menubar roadmap (CU) items filtered by their Status, so a session can survey
+  List Tokfuel roadmap (CU) items filtered by their Status, so a session can survey
   everything that is a Proposal (or In progress / Implemented / Deferred) without reading the whole
   roadmaps/README.md. Use when you need an overview of the roadmap in one status — "what proposals
   are open?", "which items are implemented?", "list the deferred ones" — or to find the file path of

@@ -55,6 +55,6 @@ popover gets cramped.
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift`, `UsageStore.swift` — aggregation site.
+- `Tokfuel/Sources/TranscriptScanner.swift`, `UsageStore.swift` — aggregation site.
 - [ccusage](https://github.com/ryoppippi/ccusage) (`--breakdown`, per-project reports), [CCSeva](https://github.com/Iamshankhadeep/ccseva) — prior art.
 - [CU-0002](../CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis.md) — native pricing that removes the python3 caveat.

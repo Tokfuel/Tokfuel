@@ -1,7 +1,7 @@
 ---
 name: ideation
 description: >-
-  Sounding board for Claude Usage Menubar feature ideation. Use when the user wants to brainstorm
+  Sounding board for Tokfuel feature ideation. Use when the user wants to brainstorm
   potential features, explore what the app could do next, or turn a rough idea into a roadmap (CU)
   item. Grounds the conversation in the existing roadmap, proposes new items or seeds, folds
   overlapping ideas into existing items, and — when the user is happy — drafts the CU files (EN + JA)
@@ -11,14 +11,14 @@ description: >-
 
 # Ideation
 
-A sounding board for shaping Claude Usage Menubar features into roadmap (CU) items. You are the
+A sounding board for shaping Tokfuel features into roadmap (CU) items. You are the
 author and thinking partner, not the judge. Converse in the user's language; the roadmap is
 bilingual, so write both files as required below.
 
 ## Scope: roadmap authoring only — never implement
 
 This skill **only** authors and shapes roadmap (CU) items. It stops at the roadmap files under
-`roadmaps/`. **Do not write, modify, or refactor any product code** (`ClaudeUsageMenubar/Sources/`,
+`roadmaps/`. **Do not write, modify, or refactor any product code** (`Tokfuel/Sources/`,
 tests, build scripts) even if the implementation seems obvious. The deliverable is always the CU
 proposal, never a working feature.
 

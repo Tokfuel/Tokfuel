@@ -3,15 +3,15 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>ClaudeUsageMenubar</string>
+    <string>Tokfuel</string>
     <key>CFBundleIdentifier</key>
-    <string>com.akidon0000.claude-usage-menubar</string>
+    <string>com.akidon0000.tokfuel</string>
     <key>CFBundleName</key>
-    <string>Claude Usage</string>
+    <string>Tokfuel</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleDisplayName</key>
-    <string>Claude Usage</string>
+    <string>Tokfuel</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleShortVersionString</key>

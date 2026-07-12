@@ -62,6 +62,6 @@ skill は `~/ghq`、メニューバーは常にコスト、レポートは常に
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/AppSettings.swift` · `SettingsView.swift` · `App.swift`（監視）
+- `Tokfuel/Sources/AppSettings.swift` · `SettingsView.swift` · `App.swift`（監視）
 - [CU-0004](../CU-0004-zero-setup-transcript-scanning/CU-0004-zero-setup-transcript-scanning-ja.md) — これらのパスが供給するスキャナ。
 </content>

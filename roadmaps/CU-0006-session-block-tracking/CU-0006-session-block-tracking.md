@@ -65,7 +65,7 @@ no-new-dependencies rules. The block math is small enough to implement natively.
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift` — the data source.
-- `ClaudeUsageMenubar/Sources/BudgetMonitor.swift` — notification state-machine pattern to reuse.
+- `Tokfuel/Sources/TranscriptScanner.swift` — the data source.
+- `Tokfuel/Sources/BudgetMonitor.swift` — notification state-machine pattern to reuse.
 - [ccusage blocks](https://github.com/ryoppippi/ccusage) / [Claude Code Usage Monitor](https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor) — prior art for block detection and burn-rate forecasting.
 - [CU-0001](../CU-0001-budget-alerts/CU-0001-budget-alerts.md) — budget alerts (cost-side counterpart).

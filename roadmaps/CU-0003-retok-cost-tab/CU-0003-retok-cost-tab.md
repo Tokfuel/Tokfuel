@@ -54,7 +54,7 @@ path to Mac App Store eligibility.
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/RetokService.swift` · `PopoverView.swift` (Cost tab)
-- [`README-retok.md`](../../ClaudeUsageMenubar/Sources/Resources/README-retok.md) — provenance & update procedure.
+- `Tokfuel/Sources/RetokService.swift` · `PopoverView.swift` (Cost tab)
+- [`README-retok.md`](../../Tokfuel/Sources/Resources/README-retok.md) — provenance & update procedure.
 - [CU-0001](../CU-0001-budget-alerts/CU-0001-budget-alerts.md) — budget alerts read this report's daily costs.
 </content>

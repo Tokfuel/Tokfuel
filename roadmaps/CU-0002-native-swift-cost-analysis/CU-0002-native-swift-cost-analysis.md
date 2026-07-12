@@ -70,9 +70,9 @@ robustness becomes a goal.
 
 ## References
 
-- `ClaudeUsageMenubar/Sources/RetokService.swift` — the subprocess this replaces.
-- `ClaudeUsageMenubar/Sources/RetokReport` (in `RetokService.swift`) — the output shape to match.
-- `ClaudeUsageMenubar/Sources/TranscriptScanner.swift` — the existing native JSONL reader to build on.
+- `Tokfuel/Sources/RetokService.swift` — the subprocess this replaces.
+- `Tokfuel/Sources/RetokReport` (in `RetokService.swift`) — the output shape to match.
+- `Tokfuel/Sources/TranscriptScanner.swift` — the existing native JSONL reader to build on.
 - [retok](https://github.com/d-date/retok) — the upstream analyzer (© Daiki Matsudate, MIT) whose logic is ported.
 - [CU-0001](../CU-0001-budget-alerts/CU-0001-budget-alerts.md) — the budget feature that reads retok's daily cost; it would read the native report instead.
 </content>

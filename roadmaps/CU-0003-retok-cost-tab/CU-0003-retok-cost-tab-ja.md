@@ -54,7 +54,7 @@
 
 ## 参考
 
-- `ClaudeUsageMenubar/Sources/RetokService.swift` · `PopoverView.swift`（Cost タブ）
-- [`README-retok.md`](../../ClaudeUsageMenubar/Sources/Resources/README-retok.md) — 出所と更新手順。
+- `Tokfuel/Sources/RetokService.swift` · `PopoverView.swift`（Cost タブ）
+- [`README-retok.md`](../../Tokfuel/Sources/Resources/README-retok.md) — 出所と更新手順。
 - [CU-0001](../CU-0001-budget-alerts/CU-0001-budget-alerts-ja.md) — このレポートの日次コストを読む予算アラート。
 </content>

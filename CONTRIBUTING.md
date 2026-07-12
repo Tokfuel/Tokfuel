@@ -1,4 +1,4 @@
-# Contributing to Claude Usage Menubar
+# Contributing to Tokfuel
 
 Thanks for your interest! This is a small, personal-use macOS menu-bar app, but PRs that make it better for everyone are very welcome. This guide is intentionally short — keep it in mind, but don't sweat the small stuff.
 
@@ -19,12 +19,12 @@ Thanks for your interest! This is a small, personal-use macOS menu-bar app, but 
 ### Dev setup
 
 ```bash
-git clone https://github.com/akidon0000/claude-usage-menubar.git
-cd claude-usage-menubar
+git clone https://github.com/akidon0000/tokfuel.git
+cd tokfuel
 
 swift build            # debug build
 swift run -c release   # run the app from source
-./build.sh             # package + install Claude Usage.app to /Applications
+./build.sh             # package + install Tokfuel.app to /Applications
 ```
 
 The app reads Claude Code transcripts under `~/.claude/projects/` directly (no hooks or extra setup) — if you use Claude Code at all, you already have data to exercise the UI. The Cost tab additionally needs `python3` (ships with the Xcode Command Line Tools) to run the bundled retok.
@@ -34,7 +34,7 @@ The app reads Claude Code transcripts under `~/.claude/projects/` directly (no h
 - SwiftUI + Swift Concurrency. UI-touching state lives on `@MainActor`.
 - Keep `UsageStore` the single source of truth for parsing and aggregation; `PopoverView` stays pure presentation.
 - Don't add dependencies unless there's a strong reason — staying dependency-free keeps the app trivial to build.
-- Match the existing file layout under [`ClaudeUsageMenubar/Sources/`](ClaudeUsageMenubar/Sources/).
+- Match the existing file layout under [`Tokfuel/Sources/`](Tokfuel/Sources/).
 
 ### Commit messages
 
@@ -79,12 +79,12 @@ self-contained starters.
 ### 開発環境のセットアップ
 
 ```bash
-git clone https://github.com/akidon0000/claude-usage-menubar.git
-cd claude-usage-menubar
+git clone https://github.com/akidon0000/tokfuel.git
+cd tokfuel
 
 swift build            # デバッグビルド
 swift run -c release   # ソースから実行
-./build.sh             # Claude Usage.app をパッケージして /Applications にインストール
+./build.sh             # Tokfuel.app をパッケージして /Applications にインストール
 ```
 
 アプリは `~/.claude/projects/` 配下の Claude Code トランスクリプトを直接読みます（フックや追加設定は不要）。Claude Code を使っていれば、UI を確認するデータはすでに手元にあります。Cost タブだけは同梱 retok の実行に `python3`（Xcode Command Line Tools に同梱）が必要です。
@@ -94,7 +94,7 @@ swift run -c release   # ソースから実行
 - SwiftUI + Swift Concurrency。UI に触る状態は `@MainActor` に置く。
 - パースと集計は `UsageStore` に集約（SSOT）。`PopoverView` は純粋な表示層に保つ。
 - 依存パッケージは原則追加しない（ビルドを最小に保ちたい）。
-- ファイル配置は既存の [`ClaudeUsageMenubar/Sources/`](ClaudeUsageMenubar/Sources/) に揃える。
+- ファイル配置は既存の [`Tokfuel/Sources/`](Tokfuel/Sources/) に揃える。
 
 ### コミットメッセージ
 

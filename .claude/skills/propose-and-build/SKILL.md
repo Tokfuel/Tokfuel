@@ -1,7 +1,7 @@
 ---
 name: propose-and-build
 description: >-
-  Author a Claude Usage Menubar roadmap (CU) proposal and its implementation in one pass, for a
+  Author a Tokfuel roadmap (CU) proposal and its implementation in one pass, for a
   small, well-scoped feature the author is confident in. Use when the user wants to "propose and
   build at once", "write the CU and the code together", instead of the serial ideation → implement-cu
   path. Composes the ideation skill (author the CU files) and the implement-cu skill (ship the code),
