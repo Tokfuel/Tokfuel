@@ -88,6 +88,12 @@ final class AppSettings: ObservableObject {
         didSet { persist(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
     }
 
+    /// サーバー真値クォータの取得（CU-0007）。唯一のネットワーク機能のため既定 OFF。
+    /// 送るのは自分の OAuth トークンのみ・宛先は Anthropic のみ。
+    @Published var serverQuotaEnabled: Bool {
+        didSet { persist(serverQuotaEnabled, forKey: Keys.serverQuotaEnabled) }
+    }
+
     /// アプリ自身の UI 利用イベント記録（CU-0013）。ローカル限定・デフォルト有効。
     /// OFF にした事実は意図的に記録しない（オプトアウト後は 1 バイトも書かない）。
     /// 先に defaults へ書くため、続く logChange は enabled=false を読んで自然に落ちる。
@@ -106,6 +112,7 @@ final class AppSettings: ObservableObject {
         static let budgetLimit = "budgetLimit"
         static let budgetPeriod = "budgetPeriod"
         static let budgetWarnPercent = "budgetWarnPercent"
+        static let serverQuotaEnabled = "serverQuotaEnabled"
     }
 
     /// 既定の Claude ディレクトリ（~/.claude）。
@@ -146,6 +153,7 @@ final class AppSettings: ObservableObject {
             ?? .calendarMonth
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
+        serverQuotaEnabled = defaults.bool(forKey: Keys.serverQuotaEnabled)   // 既定 OFF
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
     }
 

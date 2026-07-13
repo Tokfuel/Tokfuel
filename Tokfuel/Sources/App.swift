@@ -87,6 +87,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.usageStore.reloadBudget()
             }
             .store(in: &cancellables)
+        // サーバー真値クォータのオプトインが切り替わったら即反映する。
+        settings.$serverQuotaEnabled
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.usageStore.reloadQuota() }
+            .store(in: &cancellables)
         // 予算消費額が更新されたらアイコン色と通知を評価する。
         usageStore.$budgetSpend
             .receive(on: RunLoop.main)

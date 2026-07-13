@@ -195,6 +195,12 @@ final class UsageStore: ObservableObject {
     /// Codex CLI の日別使用量（CU-0009）。ログが無いマシンでは空のまま。
     @Published var codexDaily: [ProviderDayUsage] = []
 
+    /// サーバー側クォータ（CU-0007）。オプトイン OFF・取得失敗時は nil。
+    @Published var quota: ClaudeQuotaSnapshot?
+    @Published var quotaError: String?
+    /// ローカル検出したプラン名（例: "Max 5x"）。ネットワークは使わない。
+    @Published var claudePlan: String?
+
     private enum Keys {
         static let reportDays = "reportDays"
         static let toolsPeriod = "toolsPeriod"
@@ -230,10 +236,31 @@ final class UsageStore: ObservableObject {
         Task.detached(priority: .userInitiated) {
             let records = TranscriptScanner.scan(projectsDir: projectsDir)
             let codex = CodexUsageReader.scan()
+            let plan = ClaudeQuotaService.detectPlan()
             await MainActor.run { [weak self] in
                 self?.apply(records: records)
                 self?.codexDaily = codex
+                self?.claudePlan = plan
                 self?.isLoading = false
+            }
+        }
+        reloadQuota()
+    }
+
+    /// サーバー側クォータを再取得する（CU-0007）。オプトインが OFF なら消すだけ。
+    func reloadQuota() {
+        guard AppSettings.shared.serverQuotaEnabled else {
+            quota = nil
+            quotaError = nil
+            return
+        }
+        Task {
+            do {
+                self.quota = try await ClaudeQuotaService.fetch()
+                self.quotaError = nil
+            } catch {
+                self.quota = nil
+                self.quotaError = error.localizedDescription
             }
         }
     }

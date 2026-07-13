@@ -7,8 +7,9 @@
 |---|---|
 | 提案 | [CU-0007](CU-0007-server-quota-readout-ja.md) |
 | 提案者 | [@akidon0000](https://github.com/akidon0000) |
-| 状態 | **提案** |
+| 状態 | **実装済み** |
 | トピック | 使用量とクォータ |
+| 実装 PR | —（ローカルで実装） |
 <!-- /CU-METADATA -->
 
 ## はじめに
@@ -59,7 +60,21 @@ Claude Code がローカルに保存している OAuth 認証情報を読み、A
 
 ## 進捗
 
-- [ ] TBD — 認証情報の検出、エンドポイントクライアント、設定トグル、UI 統合。
+- [x] Spike（CodexBar のソース調査による。MIT © Peter Steinberger）: エンドポイントは
+  `GET https://api.anthropic.com/api/oauth/usage`（`Authorization: Bearer` と
+  `anthropic-beta: oauth-2025-04-20`）。応答は `five_hour` / `seven_day` /
+  `seven_day_opus` の `{utilization, resets_at}`。認証情報は
+  `~/.claude/.credentials.json`（`claudeAiOauth.accessToken`）または Keychain の
+  `"Claude Code-credentials"`。トークンの更新は行いません（ローテーション競合のため。
+  CodexBar も同じ理由で CLI に委譲しています）。
+- [x] `ClaudeQuotaService`（認証情報の検出: ファイル → Keychain、取得、デコード）と
+  ユニットテスト（`tests/ClaudeQuotaTests.swift`）。
+- [x] 設定トグル（既定 OFF）。「何を送るか」を明記したフッター付き。
+- [x] Cost タブ先頭の「Limits」セクション: 5h / 7d / 7d-Opus のバーとリセットまでの時間。
+- [x] `~/.claude.json` の `oauthAccount.userRateLimitTier` によるローカルのプランバッジ
+  （ネットワーク不要。CU-0010 のプラン検出の先行実装でもあります）。
+- [ ] 後続: メニューバー・通知のサーバー値への切り替え（CU-0006 の Session ビュー側）、
+  アプリの更新間隔を超えるポーリングバックオフ。
 
 ## 参考
 
