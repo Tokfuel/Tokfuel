@@ -55,37 +55,44 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
     private let defaults = UserDefaults.standard
 
-    @Published var launchAtLogin: Bool { didSet { applyLaunchAtLogin() } }
+    @Published var launchAtLogin: Bool { didSet { applyLaunchAtLogin(); logChange(Keys.launchAtLogin) } }
     @Published var menuBarDisplay: MenuBarDisplay {
-        didSet { defaults.set(menuBarDisplay.rawValue, forKey: Keys.menuBarDisplay) }
+        didSet { persist(menuBarDisplay.rawValue, forKey: Keys.menuBarDisplay) }
     }
     @Published var defaultPeriodDays: Int {
-        didSet { defaults.set(defaultPeriodDays, forKey: Keys.defaultPeriodDays) }
+        didSet { persist(defaultPeriodDays, forKey: Keys.defaultPeriodDays) }
     }
     @Published var language: ReportLanguage {
-        didSet { defaults.set(language.rawValue, forKey: Keys.language) }
+        didSet { persist(language.rawValue, forKey: Keys.language) }
     }
 
     /// tool 集計元（transcripts）と skill（global/plugin）の読み取り元となる Claude ディレクトリ。
     @Published var claudeDirectory: String {
-        didSet { defaults.set(claudeDirectory, forKey: Keys.claudeDirectory) }
+        didSet { persist(claudeDirectory, forKey: Keys.claudeDirectory) }
     }
     /// プロジェクト単位の skill (`.claude/skills`) を探すリポジトリのルート。
     @Published var repositoryRoot: String {
-        didSet { defaults.set(repositoryRoot, forKey: Keys.repositoryRoot) }
+        didSet { persist(repositoryRoot, forKey: Keys.repositoryRoot) }
     }
 
     /// 期間あたりのコスト上限 (USD)。0 なら予算機能オフ。
     @Published var budgetLimit: Double {
-        didSet { defaults.set(budgetLimit, forKey: Keys.budgetLimit) }
+        didSet { persist(budgetLimit, forKey: Keys.budgetLimit) }
     }
     /// 予算の集計期間の起点（ローリング 30 日 / 暦月）。
     @Published var budgetPeriod: BudgetPeriod {
-        didSet { defaults.set(budgetPeriod.rawValue, forKey: Keys.budgetPeriod) }
+        didSet { persist(budgetPeriod.rawValue, forKey: Keys.budgetPeriod) }
     }
     /// 警告を出すしきい値（上限に対する %）。
     @Published var budgetWarnPercent: Int {
-        didSet { defaults.set(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
+        didSet { persist(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
+    }
+
+    /// アプリ自身の UI 利用イベント記録（CU-0013）。ローカル限定・デフォルト有効。
+    /// OFF にした事実は意図的に記録しない（オプトアウト後は 1 バイトも書かない）。
+    /// 先に defaults へ書くため、続く logChange は enabled=false を読んで自然に落ちる。
+    @Published var eventLogEnabled: Bool {
+        didSet { persist(eventLogEnabled, forKey: UsageEventLog.enabledKey) }
     }
 
     private enum Keys {
@@ -139,6 +146,19 @@ final class AppSettings: ObservableObject {
             ?? .calendarMonth
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
+        eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
+    }
+
+    /// 設定を保存し、変更を利用イベントとして記録する（値そのものは書かない）。
+    /// 新しい設定はこのヘルパー経由にすること（記録漏れを防ぐ）。
+    private func persist(_ value: Any?, forKey key: String) {
+        defaults.set(value, forKey: key)
+        logChange(key)
+    }
+
+    /// 設定変更を利用イベントとして記録する（値そのものは書かない）。
+    private func logChange(_ key: String) {
+        UsageEventLog.shared.log(.settingChange, meta: ["key": key])
     }
 
     /// 起動時に、保存済み設定と実際のログイン項目登録状態を突き合わせる。

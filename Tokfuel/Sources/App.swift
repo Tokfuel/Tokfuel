@@ -164,6 +164,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             usageStore.reload()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
+            UsageEventLog.shared.log(.popoverOpen)
         }
     }
 
@@ -181,5 +182,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        UsageEventLog.shared.log(.settingsOpen)
     }
 }

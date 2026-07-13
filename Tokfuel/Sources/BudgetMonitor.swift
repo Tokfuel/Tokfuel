@@ -108,6 +108,10 @@ enum BudgetMonitor {
         content.sound = .default
         let request = UNNotificationRequest(identifier: "budget-\(level.rawValue)",
                                             content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        // 掲示に失敗した通知（許可なし等）を「表示した」と数えないよう、成功時だけ記録する。
+        UNUserNotificationCenter.current().add(request) { error in
+            guard error == nil else { return }
+            UsageEventLog.shared.log(.notificationShown, meta: ["kind": "budget"])
+        }
     }
 }

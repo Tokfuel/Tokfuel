@@ -19,8 +19,7 @@ enum TranscriptScanner {
     }
 
     private static var cacheURL: URL {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Tokfuel")
+        let dir = AppSupport.directory
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("transcript-cache.json")
     }
