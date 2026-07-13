@@ -55,6 +55,7 @@
 | [CU-0013](CU-0013-local-feature-instrumentation/CU-0013-local-feature-instrumentation-ja.md) | アプリ自身の利用イベント記録（ローカル限定） | データパイプライン |
 | [CU-0011](CU-0011-today-usage/CU-0011-today-usage-ja.md) | 「今日」の使用量表示 | 設定と UX |
 | [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage-ja.md) | マルチプロバイダ使用量比較（Codex / Gemini CLI） | プロバイダ |
+| [CU-0007](CU-0007-server-quota-readout/CU-0007-server-quota-readout-ja.md) | サーバー真値クォータ表示（オプトイン） | 使用量とクォータ |
 
 ## 💡 Proposals（提案）
 
@@ -62,7 +63,6 @@
 |---|---|---|
 | [CU-0002](CU-0002-native-swift-cost-analysis/CU-0002-native-swift-cost-analysis-ja.md) | コスト分析の Swift ネイティブ再実装（python3 依存の廃止） | コストと予算 |
 | [CU-0006](CU-0006-session-block-tracking/CU-0006-session-block-tracking-ja.md) | 5 時間セッションブロックの追跡（バーンレートと到達予測つき） | 使用量とクォータ |
-| [CU-0007](CU-0007-server-quota-readout/CU-0007-server-quota-readout-ja.md) | サーバー真値クォータ表示（オプトイン） | 使用量とクォータ |
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown-ja.md) | プロジェクト別のコスト・アクティビティ内訳 | コストと予算 |
 | [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost-ja.md) | プラン情報とトークン単価の表示 | コストと予算 |
 | [CU-0012](CU-0012-unused-skills-audit/CU-0012-unused-skills-audit-ja.md) | 指定リポジトリルート配下の未使用スキル調査 | スキルとツール |

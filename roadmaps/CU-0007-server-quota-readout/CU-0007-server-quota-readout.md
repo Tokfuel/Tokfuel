@@ -7,8 +7,9 @@
 |---|---|
 | Proposal | [CU-0007](CU-0007-server-quota-readout.md) |
 | Author | [@akidon0000](https://github.com/akidon0000) |
-| Status | **Proposal** |
+| Status | **Implemented** |
 | Topic | Usage & quota |
+| Implementing PR | — (landed locally) |
 <!-- /CU-METADATA -->
 
 ## Introduction
@@ -59,7 +60,21 @@ backend; setup-heavy and aimed at teams.
 
 ## Progress
 
-- [ ] TBD — credential discovery, endpoint client, Settings toggle, UI integration.
+- [x] Spike (via CodexBar source study, MIT © Peter Steinberger): endpoint is
+  `GET https://api.anthropic.com/api/oauth/usage` with `Authorization: Bearer`,
+  `anthropic-beta: oauth-2025-04-20`; response carries `five_hour` / `seven_day` /
+  `seven_day_opus` `{utilization, resets_at}`. Credentials live in
+  `~/.claude/.credentials.json` (`claudeAiOauth.accessToken`) or the Keychain item
+  `"Claude Code-credentials"`; the token is never refreshed by us (rotation conflicts —
+  CodexBar delegates to the CLI the same way).
+- [x] `ClaudeQuotaService` (credential discovery file → Keychain, fetch, decode) + unit
+  tests (`tests/ClaudeQuotaTests.swift`).
+- [x] Settings toggle, off by default, with an explicit "what is sent" footer.
+- [x] "Limits" section atop the Cost tab: 5h / 7d / 7d-Opus bars with reset countdowns.
+- [x] Local plan badge from `~/.claude.json` `oauthAccount.userRateLimitTier` (no network;
+  also a first slice of CU-0010's plan detection).
+- [ ] Deferred: menu-bar/notification switch-over to server values (belongs to CU-0006's
+  session view), poll backoff beyond the app's refresh cadence.
 
 ## References
 

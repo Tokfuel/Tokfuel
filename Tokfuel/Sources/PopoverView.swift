@@ -25,6 +25,7 @@ struct PopoverView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     switch tab {
                     case .cost:
+                        quotaSection
                         costSection
                     case .tools:
                         toolsPeriodPicker
@@ -79,6 +80,46 @@ struct PopoverView: View {
             ForEach(PeriodFilter.allCases, id: \.self) { Text($0.label).tag($0) }
         }
         .pickerStyle(.segmented)
+    }
+
+    // MARK: - サーバー真値クォータ（CU-0007）
+
+    /// 公式 `/usage` と同じサーバー側の消費率。オプトイン有効時のみ現れる。
+    @ViewBuilder
+    private var quotaSection: some View {
+        if let quota = store.quota {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Limits")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let plan = store.claudePlan {
+                        Text(plan)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(.orange.opacity(0.15), in: Capsule())
+                    }
+                    Spacer()
+                    Text("server")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                if let w = quota.fiveHour {
+                    QuotaBar(label: "5h", window: w)
+                }
+                if let w = quota.sevenDay {
+                    QuotaBar(label: "7d", window: w)
+                }
+                if let w = quota.sevenDayOpus {
+                    QuotaBar(label: "7d Opus", window: w)
+                }
+            }
+        } else if let error = store.quotaError {
+            Label(error, systemImage: "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
     }
 
     // MARK: - Cost タブ（retok レポート）
@@ -618,6 +659,47 @@ struct PopoverView: View {
         case 1_000_000...: return String(format: "%.1fM", Double(value) / 1_000_000)
         case 1_000...: return String(format: "%.0fk", Double(value) / 1_000)
         default: return "\(value)"
+        }
+    }
+}
+
+/// サーバー側クォータ 1 窓ぶんのバー。80% でオレンジ、95% で赤になる。
+struct QuotaBar: View {
+    let label: String
+    let window: ClaudeQuotaSnapshot.Window
+
+    private var color: Color {
+        switch window.percent {
+        case 95...: return .red
+        case 80...: return .orange
+        default: return .green
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text(String(format: "%.0f%%", window.percent))
+                    .font(.caption.monospacedDigit())
+                if let resets = window.resetsAt {
+                    Text("resets \(resets, style: .relative)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color.opacity(0.15))
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color.opacity(0.7))
+                        .frame(width: geo.size.width * min(window.percent / 100, 1))
+                }
+            }
+            .frame(height: 5)
         }
     }
 }
