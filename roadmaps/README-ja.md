@@ -65,6 +65,9 @@
 | [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost-ja.md) | プラン情報とトークン単価の表示 | コストと予算 |
 | [CU-0011](CU-0011-today-usage/CU-0011-today-usage-ja.md) | 「今日」の使用量表示 | 設定と UX |
 | [CU-0012](CU-0012-unused-skills-audit/CU-0012-unused-skills-audit-ja.md) | 指定リポジトリルート配下の未使用スキル調査 | スキルとツール |
+| [CU-0013](CU-0013-local-feature-instrumentation/CU-0013-local-feature-instrumentation-ja.md) | アプリ自身の利用イベント記録（ローカル限定） | データパイプライン |
+| [CU-0014](CU-0014-self-experiments/CU-0014-self-experiments-ja.md) | 低頻度機能へのタイムスライス自己実験 | 洞察と実験 |
+| [CU-0015](CU-0015-roadmap-gardener/CU-0015-roadmap-gardener-ja.md) | roadmap gardener: 証拠駆動の定期自動起票 | ワークフローと自動化 |
 
 ## 🚧 In progress（進行中）
 
