@@ -18,6 +18,7 @@ struct PopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            todaySummaryLine
             tabBar
             Divider()
             ScrollView {
@@ -26,6 +27,7 @@ struct PopoverView: View {
                     case .cost:
                         costSection
                     case .tools:
+                        toolsPeriodPicker
                         todaySection
                         summaryCards
                         dailySection
@@ -61,6 +63,21 @@ struct PopoverView: View {
                     UsageEventLog.shared.log(.periodChange,
                                              meta: ["picker": "cost", "days": "\(days)"])
                 })
+    }
+
+    /// Tools タブの期間ピッカー（Today / 7d / 30d / All）。集計対象は
+    /// summaryCards・ランキング・ジャンル・リポジトリ。日次グラフは自前の窓を持つ。
+    private var toolsPeriodPicker: some View {
+        Picker("", selection: Binding(
+            get: { store.toolsPeriod },
+            set: { period in
+                store.toolsPeriod = period
+                UsageEventLog.shared.log(.periodChange,
+                                         meta: ["picker": "tools", "period": period.rawValue])
+            })) {
+            ForEach(PeriodFilter.allCases, id: \.self) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
     }
 
     // MARK: - Cost タブ（retok レポート）
@@ -103,11 +120,12 @@ struct PopoverView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Picker("", selection: reportDaysSelection) {
+                    Text("Today").tag(1)
                     Text("7d").tag(7)
                     Text("30d").tag(30)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 110)
+                .frame(width: 170)
             }
             HStack(spacing: 8) {
                 CostCard(label: "Today",
@@ -500,6 +518,26 @@ struct PopoverView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    /// どのタブ・期間を見ていても「今日いくら・どれだけ」が一目で分かる常設行（CU-0011）。
+    private var todaySummaryLine: some View {
+        let t = store.today
+        var parts: [String] = []
+        if let cost = store.todayCost { parts.append(Self.money(cost)) }
+        parts.append("\(t.prompts) prompts")
+        parts.append("\(t.sessions) sessions")
+        return HStack(spacing: 4) {
+            Text("Today")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(parts.joined(separator: " · "))
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 6)
     }
 
     private var summaryCards: some View {

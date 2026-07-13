@@ -45,8 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             })
         )
 
-        // 既定の集計期間を設定から反映してから初回ロードする。
-        usageStore.reportDays = settings.defaultPeriodDays
+        // 集計期間は UsageStore が「最後に選んだ値」を自分で復元する（CU-0011）。
+        // 設定の既定値は初回（未選択）時のフォールバックと、明示的な変更時のみ反映する。
 
         // データ更新のたびにメニューバーの「今日の数字」を更新する。
         usageStore.objectWillChange

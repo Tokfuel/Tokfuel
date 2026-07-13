@@ -170,8 +170,39 @@ final class UsageStore: ObservableObject {
     // retok によるコストレポート
     @Published var report: RetokReport?
     @Published var retokError: String?
-    @Published var reportDays: Int = 30 {
-        didSet { if oldValue != reportDays { reloadReport() } }
+    /// Cost タブの集計期間（日数。1 = 今日のみ）。最後に選んだ値を記憶する。
+    @Published var reportDays: Int {
+        didSet {
+            if oldValue != reportDays {
+                UserDefaults.standard.set(reportDays, forKey: Keys.reportDays)
+                reloadReport()
+            }
+        }
+    }
+    /// Tools タブの集計期間。最後に選んだ値を記憶する。
+    @Published var toolsPeriod: PeriodFilter {
+        didSet {
+            if oldValue != toolsPeriod {
+                UserDefaults.standard.set(toolsPeriod.rawValue, forKey: Keys.toolsPeriod)
+                reaggregate()
+            }
+        }
+    }
+
+    /// 走査済みの生レコード（リポジトリ×日）。期間切り替え時の再集計元。
+    private var allRecords: [RepoUsage] = []
+
+    private enum Keys {
+        static let reportDays = "reportDays"
+        static let toolsPeriod = "toolsPeriod"
+    }
+
+    init() {
+        let defaults = UserDefaults.standard
+        let stored = defaults.integer(forKey: Keys.reportDays)
+        reportDays = [1, 7, 30].contains(stored) ? stored : AppSettings.shared.defaultPeriodDays
+        toolsPeriod = PeriodFilter(rawValue: defaults.string(forKey: Keys.toolsPeriod) ?? "")
+            ?? .days30
     }
 
     // 予算期間内の消費額（予算オフ・未取得なら nil）
@@ -246,10 +277,38 @@ final class UsageStore: ObservableObject {
     }
 
     private func apply(records: [RepoUsage]) {
+        allRecords = records
+        reaggregate()
+
+        // --- 日付単位に集約（日次グラフ用・全期間。グラフの窓は trendDays が持つ） ---
+        var dayMap: [String: DailyUsage] = [:]
+        for r in records where !r.date.isEmpty {
+            var d = dayMap[r.date] ?? DailyUsage(date: r.date)
+            d.skills += r.skillCalls
+            d.mcp += r.mcpCalls
+            d.subagents += r.subagentCalls
+            d.prompts += r.promptCount
+            d.sessions += r.sessionCount
+            for v in r.edits.values {
+                d.editsAdded += v.added
+                d.editsDeleted += v.deleted
+            }
+            dayMap[r.date] = d
+        }
+        daily = dayMap.values.sorted { $0.date < $1.date }
+
+        reloadSkillInventory()
+        lastUpdated = Date()
+    }
+
+    /// Tools タブの期間（toolsPeriod）でレコードを絞り、リポジトリ・ジャンル集計を作り直す。
+    /// 日次グラフ（daily）と Skill 棚卸しは意図的に全期間のまま。
+    private func reaggregate() {
+        let filtered = allRecords.filter { toolsPeriod.includes(date: $0.date) }
 
         // --- リポジトリ単位に集約（日付をまたいでマージ） ---
         var repoMap: [String: RepoUsage] = [:]
-        for r in records {
+        for r in filtered {
             let key = "\(r.org)/\(r.repo)"
             repoMap[key] = repoMap[key].map { $0.merged(with: r) } ?? r
         }
@@ -272,26 +331,6 @@ final class UsageStore: ObservableObject {
             genreMap[repo.genre] = g
         }
         genres = genreMap.values.sorted { $0.totalTools > $1.totalTools }
-
-        // --- 日付単位に集約（日次グラフ用） ---
-        var dayMap: [String: DailyUsage] = [:]
-        for r in records where !r.date.isEmpty {
-            var d = dayMap[r.date] ?? DailyUsage(date: r.date)
-            d.skills += r.skillCalls
-            d.mcp += r.mcpCalls
-            d.subagents += r.subagentCalls
-            d.prompts += r.promptCount
-            d.sessions += r.sessionCount
-            for v in r.edits.values {
-                d.editsAdded += v.added
-                d.editsDeleted += v.deleted
-            }
-            dayMap[r.date] = d
-        }
-        daily = dayMap.values.sorted { $0.date < $1.date }
-
-        reloadSkillInventory()
-        lastUpdated = Date()
     }
 
     var totalSkills: Int { repos.reduce(0) { $0 + $1.skillCalls } }
@@ -354,9 +393,10 @@ final class UsageStore: ObservableObject {
 
     /// 全リポジトリ横断の Skill 使用回数を、末尾セグメントで正規化した辞書にする。
     /// 例: "Skill:yaml-to-html:generate-explainer-html" -> "generate-explainer-html"
+    /// 棚卸しは「本当に使われていないか」の判定なので、Tools タブの期間に関わらず全期間で数える。
     private func normalizedSkillUsage() -> [String: Int] {
         var counts: [String: Int] = [:]
-        for repo in repos {
+        for repo in allRecords {
             for (key, value) in repo.tools where key.hasPrefix("Skill:") {
                 let raw = String(key.dropFirst("Skill:".count))
                 let name = raw.split(separator: ":").last.map(String.init) ?? raw

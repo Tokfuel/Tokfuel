@@ -7,8 +7,9 @@
 |---|---|
 | 提案 | [CU-0011](CU-0011-today-usage-ja.md) |
 | 提案者 | [@akidon0000](https://github.com/akidon0000) |
-| 状態 | **提案** |
+| 状態 | **実装済み** |
 | トピック | 設定と UX |
+| 実装 PR | —（ローカルで実装） |
 <!-- /CU-METADATA -->
 
 ## はじめに
@@ -33,7 +34,8 @@ Raycast 拡張も今日の数字を先頭に出します。いまの Tokfuel は
 - **Cost タブ**: 既存のピッカーに `today` を追加します。予算ロジック（CU-0001）には影響
   しません（予算の期間は意図的に表示と独立です）。
 - **ヘッダーサマリー**: `PopoverView` の先頭に「Today」のコンパクトな 1 行 — 推定コスト・
-  トークン・セッション数 — を、選択中のタブや期間に関係なく常時表示します。
+  プロンプト数・セッション数（トークンは日別集計が未整備のため対象外）— を、選択中のタブや
+  期間に関係なく常時表示します。
 - **永続化**: 最後に選んだ期間を `AppSettings` に記憶します。
 - [CU-0006](../CU-0006-session-block-tracking/CU-0006-session-block-tracking-ja.md)（ブロック
   = 日内の残量）や [CU-0008](../CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown-ja.md)
@@ -49,7 +51,12 @@ Raycast 拡張も今日の数字を先頭に出します。いまの Tokfuel は
 
 ## 進捗
 
-- [ ] TBD — `today` を含む共有期間モデル、Tools タブのフィルタ、ヘッダーサマリー、永続化。
+- [x] `PeriodFilter`（today / 7d / 30d / all）とユニットテスト（`tests/PeriodFilterTests.swift`）。
+- [x] Tools タブのフィルタ（リポジトリ / ジャンル / ランキング / サマリーカードを再集計。
+  日次グラフと Skill 棚卸しは意図的に全期間のまま）。
+- [x] Cost タブの `Today` 選択肢（retok を 1 日窓で実行）。
+- [x] ヘッダーの「Today」行（コスト · プロンプト · セッション）を全タブで常時表示。
+- [x] 最後に選んだ期間の永続化（UserDefaults の `reportDays` / `toolsPeriod`）。
 
 ## 参考
 

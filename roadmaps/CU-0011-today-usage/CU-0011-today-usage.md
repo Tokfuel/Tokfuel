@@ -7,8 +7,9 @@
 |---|---|
 | Proposal | [CU-0011](CU-0011-today-usage.md) |
 | Author | [@akidon0000](https://github.com/akidon0000) |
-| Status | **Proposal** |
+| Status | **Implemented** |
 | Topic | Settings & UX |
+| Implementing PR | — (landed locally) |
 <!-- /CU-METADATA -->
 
 ## Introduction
@@ -32,8 +33,9 @@ day in the scan pipeline; this is UI surface, not new data.
   from Unsorted ideas: the same selector (today / 7d / 30d / all) applies to the Tools tab.
 - **Cost tab**: `today` option in the existing picker; budget logic (CU-0001) is unaffected
   (its period is deliberately independent).
-- **Header summary**: a compact "Today" line at the top of `PopoverView` — est. cost, tokens,
-  session count — visible regardless of the selected tab or period.
+- **Header summary**: a compact "Today" line at the top of `PopoverView` — est. cost, prompts,
+  session count (tokens are not aggregated per-day yet) — visible regardless of the selected
+  tab or period.
 - **Persistence**: remember the last-selected period in `AppSettings`.
 - Plays with [CU-0006](../CU-0006-session-block-tracking/CU-0006-session-block-tracking.md)
   (block = intraday runway) and [CU-0008](../CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown.md)
@@ -48,7 +50,12 @@ wants it for block runway); a Settings choice of *what* the menu-bar shows can c
 
 ## Progress
 
-- [ ] TBD — shared period model with `today`, Tools-tab filter, header summary, persistence.
+- [x] `PeriodFilter` (today / 7d / 30d / all) + unit tests (`tests/PeriodFilterTests.swift`).
+- [x] Tools-tab filter (repos / genres / rankings / summary cards re-aggregate; daily chart and
+  skill inventory intentionally stay all-time).
+- [x] Cost-tab `Today` option (retok over 1 day).
+- [x] Header "Today" summary line (cost · prompts · sessions) on every tab.
+- [x] Last-selected periods persisted (`reportDays` / `toolsPeriod` in UserDefaults).
 
 ## References
 

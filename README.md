@@ -41,7 +41,7 @@ Cost analysis is powered by a bundled copy of [retok](https://github.com/d-date/
 - 🛠 **Tools tab** — daily Skills / MCP / sub-agent activity chart, most-used rankings, grouped by genre and per-repo breakdowns.
 - 🧹 **Skills tab** — inventory of every installed skill (global / plugin / project) cross-referenced with actual usage, so unused skills stand out as removal candidates. **Click any row to reveal its folder in Finder** and decide for yourself — the app never deletes anything.
 - ⚙️ **Zero setup** — scans `~/.claude/projects/` transcripts directly (with an incremental cache) and registers itself as a login item. Install and forget.
-- 🛠️ **Settings** — a gear button opens a settings window: launch-at-login, menu-bar display (cost / prompt count / icon only), default period (7 / 30 days), report language, and **scan locations** (Claude directory & repository root) so it works on any machine layout, not just `~/.claude` + `~/ghq`.
+- 🛠️ **Settings** — a gear button opens a settings window: launch-at-login, menu-bar display (cost / prompt count / icon only), default period, report language, and **scan locations** (Claude directory & repository root) so it works on any machine layout, not just `~/.claude` + `~/ghq`.
 - 🚨 **Budget alerts** — set a spending limit (USD) per period (rolling 30 days or calendar month). At a configurable threshold (70/80/90%) the menu-bar icon turns orange and a notification fires; over the limit it turns red. The Cost tab shows a budget progress bar with the threshold marker.
 - 📊 **Menu-bar resident** — shows today's estimated cost right in the menu bar, no Dock clutter (`LSUIElement = YES`), auto-refreshes every 10 minutes.
 - 🪞 **Self-instrumentation** — Tokfuel records its *own* UI events (popover opens, tab switches, setting changes — never transcript content, project names, or costs) to a local JSONL under `~/Library/Application Support/Tokfuel/events/`, as evidence for future improvement decisions. On by default because it never leaves the Mac; Settings can view, disable, or erase it.
@@ -78,8 +78,8 @@ swift run -c release
 ## 🖱 Usage
 
 1. The menu bar shows **today's estimated cost** at all times; click the icon to open the popover.
-2. **Cost** — period totals, cache-hit rate, daily cost chart, per-model costs, retok recommendations (tap to expand), and the most expensive sessions.
-3. **Tools** — today's counts with day-over-day deltas, a stacked daily chart of Skills / MCP / Agents, most-used rankings, and genre → repo drill-down.
+2. **Cost** — period totals (Today / 7d / 30d), cache-hit rate, daily cost chart, per-model costs, retok recommendations (tap to expand), and the most expensive sessions.
+3. **Tools** — a period filter (Today / 7d / 30d / All), today's counts with day-over-day deltas, a stacked daily chart of Skills / MCP / Agents, most-used rankings, and genre → repo drill-down. A persistent "Today" line under the header shows today's cost, prompts, and sessions on every tab, and the last-selected periods are remembered.
 4. **Skills** — installed-skill inventory; unused skills are flagged red. Click any row to open its folder in Finder.
 5. Hit **↻** to rescan, **⚙** for settings, or **⊗** to quit. Data auto-refreshes every 10 minutes anyway.
 

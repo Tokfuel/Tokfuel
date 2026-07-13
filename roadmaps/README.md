@@ -55,6 +55,7 @@ The roadmap workflow is driven by skills under [`.claude/skills/`](../.claude/sk
 | [CU-0004](CU-0004-zero-setup-transcript-scanning/CU-0004-zero-setup-transcript-scanning.md) | Zero-setup transcript scanning | Data pipeline |
 | [CU-0005](CU-0005-settings-window/CU-0005-settings-window.md) | Settings window & configurable scan locations | Settings & UX |
 | [CU-0013](CU-0013-local-feature-instrumentation/CU-0013-local-feature-instrumentation.md) | Local feature-usage instrumentation | Data pipeline |
+| [CU-0011](CU-0011-today-usage/CU-0011-today-usage.md) | "Today" usage view | Settings & UX |
 
 ## 💡 Proposals
 
@@ -66,7 +67,6 @@ The roadmap workflow is driven by skills under [`.claude/skills/`](../.claude/sk
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown.md) | Per-project cost & activity breakdown | Cost & budget |
 | [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage.md) | Multi-provider usage comparison (Codex / Gemini CLI) | Providers |
 | [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost.md) | Plan info & per-token unit-cost readout | Cost & budget |
-| [CU-0011](CU-0011-today-usage/CU-0011-today-usage.md) | "Today" usage view | Settings & UX |
 | [CU-0012](CU-0012-unused-skills-audit/CU-0012-unused-skills-audit.md) | Unused-skills audit over user-designated repo roots | Skills & tools |
 | [CU-0014](CU-0014-self-experiments/CU-0014-self-experiments.md) | Time-sliced self-experiments on low-use features | Insights & experiments |
 | [CU-0015](CU-0015-roadmap-gardener/CU-0015-roadmap-gardener.md) | Roadmap gardener: scheduled, evidence-driven proposal authoring | Workflow & automation |
