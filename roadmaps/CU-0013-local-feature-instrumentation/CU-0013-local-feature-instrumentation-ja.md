@@ -7,8 +7,9 @@
 |---|---|
 | 提案 | [CU-0013](CU-0013-local-feature-instrumentation-ja.md) |
 | 提案者 | [@akidon0000](https://github.com/akidon0000) |
-| 状態 | **提案** |
+| 状態 | **実装済み** |
 | トピック | データパイプライン |
+| 実装 PR | —（ローカルで実装） |
 <!-- /CU-METADATA -->
 
 ## はじめに
@@ -32,9 +33,10 @@ Tokfuel は Claude Code の挙動を分析しますが、自分の挙動には�
   12 か月で削除）。小さな `UsageEventLog` 型（`@MainActor` 安全・バッファリングあり）から
   追記のみ行います。
 - **スキーマ**（バージョンつき）: `{"v":1,"ts":"ISO8601","event":"tab_open","meta":{"tab":"skills"}}`。
-  イベント名は閉じた列挙（まず 10 個ほど）: `popover_open`、`tab_open`、`period_change`、
-  `settings_open`、`setting_change`、`notification_shown`、`notification_clicked`、
-  `experiment_exposure`（CU-0014 用の予約）。
+  イベント名は閉じた列挙: `popover_open`、`tab_open`、`period_change`、`settings_open`、
+  `setting_change`、`notification_shown`、`experiment_exposure`（CU-0014 用の予約）。
+  `notification_clicked` は v1 から外しました。未配線の
+  `UNUserNotificationCenterDelegate` が必要なため、デリゲート導入時に一緒に足します。
 - **決して記録しないもの**: トランスクリプトの内容、プロジェクト名・パス、コスト。記録する
   のは Tokfuel の UI イベントだけです。ログは人間が読める JSON で、設定画面に「イベントログ
   を表示」ボタンを付けます。
@@ -55,8 +57,9 @@ Tokfuel は Claude Code の挙動を分析しますが、自分の挙動には�
 
 ## 進捗
 
-- [ ] TBD — `UsageEventLog`（書き込み / 読み出し / 削除）とユニットテスト、UI 各所への
-  記録呼び出し、設定のトグル + ビューア + 削除。
+- [x] `UsageEventLog`（書き込み / 読み出し / 削除）とユニットテスト（`tests/UsageEventLogTests.swift`）。
+- [x] UI 各所への記録呼び出し（ポップオーバー・タブ・期間ピッカー・設定・予算通知）。
+- [x] 設定のトグル（デフォルト有効）+「ログを表示」+「全イベントを削除」。
 
 ## 参考
 

@@ -84,6 +84,32 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section {
+                Toggle(isOn: $settings.eventLogEnabled) {
+                    Text("利用イベントを記録")
+                    Text("タブ切り替えなど Tokfuel 自身の操作イベントだけを記録します")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button("ログを表示") {
+                        NSWorkspace.shared.activateFileViewerSelecting(
+                            [UsageEventLog.shared.revealDirectoryURL()])
+                    }
+                    .controlSize(.small)
+                    Button("全イベントを削除", role: .destructive) {
+                        UsageEventLog.shared.deleteAll()
+                    }
+                    .controlSize(.small)
+                }
+            } header: {
+                Text("イベントログ")
+            } footer: {
+                Text("記録は常にこの Mac の中だけに保存され、外部には送信されません。トランスクリプトの内容・プロジェクト名・コストは記録しません。機能改善の判断（ロードマップ提案・実験）に使います。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("謝辞") {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {

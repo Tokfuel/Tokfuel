@@ -7,8 +7,9 @@
 |---|---|
 | Proposal | [CU-0013](CU-0013-local-feature-instrumentation.md) |
 | Author | [@akidon0000](https://github.com/akidon0000) |
-| Status | **Proposal** |
+| Status | **Implemented** |
 | Topic | Data pipeline |
+| Implementing PR | — (landed locally) |
 <!-- /CU-METADATA -->
 
 ## Introduction
@@ -32,9 +33,10 @@ is the substrate the automated-improvement pipeline (experiments, gardener) stan
   one file per month, pruned after 12 months. Append-only writes from a small
   `UsageEventLog` type (`@MainActor`-safe, buffered).
 - **Schema** (versioned): `{"v":1,"ts":"ISO8601","event":"tab_open","meta":{"tab":"skills"}}`.
-  Event names are a closed enum (~10 to start): `popover_open`, `tab_open`, `period_change`,
-  `settings_open`, `setting_change`, `notification_shown`, `notification_clicked`,
-  `experiment_exposure` (reserved for CU-0014).
+  Event names are a closed enum: `popover_open`, `tab_open`, `period_change`,
+  `settings_open`, `setting_change`, `notification_shown`, and `experiment_exposure`
+  (reserved for CU-0014). `notification_clicked` was dropped from v1 — it needs
+  `UNUserNotificationCenterDelegate` wiring that doesn't exist yet; add both together.
 - **What is never recorded**: no transcript content, no project names/paths, no costs — only
   Tokfuel UI events. The log is user-readable JSON; Settings gets a "show event log" button.
 - **Privacy stance**: strictly local (ground rule 1 — nothing leaves the Mac). Enabled by
@@ -54,8 +56,9 @@ Tokfuel usage; the question here is which *Tokfuel* features earn their keep.
 
 ## Progress
 
-- [ ] TBD — `UsageEventLog` (write/read/prune) + unit tests, event calls at UI sites,
-  Settings toggle + viewer + delete.
+- [x] `UsageEventLog` (write/read/prune) + unit tests (`tests/UsageEventLogTests.swift`).
+- [x] Event calls at UI sites (popover, tabs, period pickers, settings, budget notification).
+- [x] Settings toggle (default on) + "show log" + "delete all".
 
 ## References
 

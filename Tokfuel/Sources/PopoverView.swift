@@ -40,6 +40,27 @@ struct PopoverView: View {
             }
         }
         .frame(width: 420, height: 560)
+        // 初期表示のタブも数えるため、切り替えだけでなく表示時にも記録する。
+        .onAppear {
+            UsageEventLog.shared.log(.tabOpen, meta: ["tab": tab.rawValue.lowercased()])
+        }
+        .onChange(of: tab) { _, newTab in
+            UsageEventLog.shared.log(.tabOpen, meta: ["tab": newTab.rawValue.lowercased()])
+        }
+        .onChange(of: trendDays) { _, days in
+            UsageEventLog.shared.log(.periodChange, meta: ["picker": "trend", "days": "\(days)"])
+        }
+    }
+
+    /// Cost タブの期間ピッカー用バインディング。設定変更など画面外からの書き換えを
+    /// period_change として誤記録しないよう、ピッカー操作のときだけ記録する。
+    private var reportDaysSelection: Binding<Int> {
+        Binding(get: { store.reportDays },
+                set: { days in
+                    store.reportDays = days
+                    UsageEventLog.shared.log(.periodChange,
+                                             meta: ["picker": "cost", "days": "\(days)"])
+                })
     }
 
     // MARK: - Cost タブ（retok レポート）
@@ -81,7 +102,7 @@ struct PopoverView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Picker("", selection: $store.reportDays) {
+                Picker("", selection: reportDaysSelection) {
                     Text("7d").tag(7)
                     Text("30d").tag(30)
                 }
