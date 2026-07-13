@@ -192,6 +192,9 @@ final class UsageStore: ObservableObject {
     /// 走査済みの生レコード（リポジトリ×日）。期間切り替え時の再集計元。
     private var allRecords: [RepoUsage] = []
 
+    /// Codex CLI の日別使用量（CU-0009）。ログが無いマシンでは空のまま。
+    @Published var codexDaily: [ProviderDayUsage] = []
+
     private enum Keys {
         static let reportDays = "reportDays"
         static let toolsPeriod = "toolsPeriod"
@@ -226,11 +229,25 @@ final class UsageStore: ObservableObject {
         let projectsDir = AppSettings.shared.claudeDirectoryURL.appendingPathComponent("projects")
         Task.detached(priority: .userInitiated) {
             let records = TranscriptScanner.scan(projectsDir: projectsDir)
+            let codex = CodexUsageReader.scan()
             await MainActor.run { [weak self] in
                 self?.apply(records: records)
+                self?.codexDaily = codex
                 self?.isLoading = false
             }
         }
+    }
+
+    // MARK: - プロバイダ比較（CU-0009）
+
+    /// Tools タブの期間で絞った Codex の合計。ログが無ければ nil（セクション非表示）。
+    var codexSummary: (sessions: Int, input: Int, output: Int, lastDate: String)? {
+        guard let last = codexDaily.last else { return nil }
+        let window = codexDaily.filter { toolsPeriod.includes(date: $0.date) }
+        return (sessions: window.reduce(0) { $0 + $1.sessions },
+                input: window.reduce(0) { $0 + $1.inputTokens },
+                output: window.reduce(0) { $0 + $1.outputTokens },
+                lastDate: last.date)
     }
 
     /// retok レポートを再取得する（設定変更や言語変更からも呼べるよう公開）。
