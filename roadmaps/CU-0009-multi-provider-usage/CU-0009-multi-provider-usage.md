@@ -7,9 +7,10 @@
 |---|---|
 | Proposal | [CU-0009](CU-0009-multi-provider-usage.md) |
 | Author | [@akidon0000](https://github.com/akidon0000) |
-| Status | **Proposal** |
+| Status | **Implemented** |
 | Topic | Providers |
 | Origin | [steipete/CodexBar](https://github.com/steipete/CodexBar) |
+| Implementing PR | — (landed locally) |
 <!-- /CU-METADATA -->
 
 ## Introduction
@@ -58,7 +59,19 @@ against CLI output changes and requires the CLI binary; log files are the stable
 
 ## Progress
 
-- [ ] TBD — `UsageProvider` protocol, Codex reader, Gemini reader, comparison UI, settings.
+- [x] Codex reader (`CodexUsageReader`): daily sessions + input/output tokens from
+  `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` (last `total_token_usage` line per session,
+  which is cumulative; `info: null` trailers ignored). Unit tests with real-shape fixtures
+  (`tests/CodexUsageReaderTests.swift`) + verified against 40 real local sessions.
+- [x] "Providers" section on the Tools tab (appears only when Codex logs exist): sessions as
+  the cross-provider unit with a share bar, per-provider detail (Claude prompts / Codex
+  tokens), last activity; respects the CU-0011 period filter.
+- [x] **Gemini reader dropped, with evidence**: local Gemini CLI chat logs
+  (`~/.gemini/tmp/*/chats/session-*.json`) carry no token-usage fields at all, so there is
+  nothing to aggregate; revisit if Gemini CLI starts writing usage telemetry locally.
+- [ ] Deferred to follow-ups: per-provider settings/extra scan paths (CU-0005 pattern),
+  est. cost for Codex (needs the shared pricing JSON from CU-0002 — no guessed prices),
+  a full `UsageProvider` protocol (premature with a single extra provider).
 
 ## References
 

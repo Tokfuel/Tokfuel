@@ -7,9 +7,10 @@
 |---|---|
 | 提案 | [CU-0009](CU-0009-multi-provider-usage-ja.md) |
 | 提案者 | [@akidon0000](https://github.com/akidon0000) |
-| 状態 | **提案** |
+| 状態 | **実装済み** |
 | トピック | プロバイダ |
 | 由来 | [steipete/CodexBar](https://github.com/steipete/CodexBar) |
+| 実装 PR | —（ローカルで実装） |
 <!-- /CU-METADATA -->
 
 ## はじめに
@@ -62,7 +63,20 @@ Claude Code の読み取りは CLI を PTY で起動して `/usage` の出力を
 
 ## 進捗
 
-- [ ] TBD — `UsageProvider` プロトコル、Codex リーダー、Gemini リーダー、比較 UI、設定。
+- [x] Codex リーダー（`CodexUsageReader`）: `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`
+  から日別のセッション数と入出力トークンを集計します（各セッションの最後の
+  `total_token_usage` 行 = 累積値を採用。`info: null` の行は無視）。実データと同形の
+  フィクスチャによるユニットテスト（`tests/CodexUsageReaderTests.swift`）に加え、
+  実機の 40 セッションで検証済みです。
+- [x] Tools タブの「Providers」セクション（Codex のログがあるときだけ表示）。プロバイダ
+  共通の単位はセッション数（シェアバー）で、詳細は Claude がプロンプト数、Codex が
+  トークン数。最終活動日を添え、CU-0011 の期間フィルタに追従します。
+- [x] **Gemini リーダーは根拠付きで見送り**: ローカルの Gemini CLI チャットログ
+  （`~/.gemini/tmp/*/chats/session-*.json`）にはトークン使用量のフィールドが一切なく、
+  集計できるものがありません。Gemini CLI がローカルに使用量を書くようになったら再検討します。
+- [ ] 後続に回したもの: プロバイダ別の設定・追加スキャンパス（CU-0005 方式）、Codex の
+  コスト換算（CU-0002 の共通価格 JSON が前提。推測価格は出さない）、`UsageProvider`
+  プロトコルの本格導入（追加プロバイダが 1 つの段階では時期尚早）。
 
 ## 参考
 

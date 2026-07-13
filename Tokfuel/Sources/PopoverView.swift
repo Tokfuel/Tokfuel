@@ -34,6 +34,7 @@ struct PopoverView: View {
                         topToolsSection
                         genreSection
                         repoSection
+                        providersSection
                     case .skills:
                         skillInventorySection
                     }
@@ -585,6 +586,76 @@ struct PopoverView: View {
                 RepoRow(repo: repo)
             }
         }
+    }
+
+    /// 他プロバイダとの比較（CU-0009）。Codex のログがあるマシンでだけ現れる。
+    /// 共通単位はセッション数（シェアバー）。トークンはログが持つプロバイダのみ添える。
+    @ViewBuilder
+    private var providersSection: some View {
+        if let codex = store.codexSummary {
+            let claudeSessions = store.totalSessions
+            let total = max(claudeSessions + codex.sessions, 1)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Providers")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                ProviderRow(name: "Claude Code", color: .orange,
+                            sessions: claudeSessions, share: Double(claudeSessions) / Double(total),
+                            detail: "\(store.totalPrompts) prompts",
+                            lastDate: store.daily.last?.date ?? "–")
+                ProviderRow(name: "Codex CLI", color: .teal,
+                            sessions: codex.sessions, share: Double(codex.sessions) / Double(total),
+                            detail: "\(Self.tokens(codex.input)) in · \(Self.tokens(codex.output)) out",
+                            lastDate: codex.lastDate)
+            }
+        }
+    }
+
+    /// トークン数の略記（1.2M / 34k / 987）。
+    static func tokens(_ value: Int) -> String {
+        switch value {
+        case 1_000_000...: return String(format: "%.1fM", Double(value) / 1_000_000)
+        case 1_000...: return String(format: "%.0fk", Double(value) / 1_000)
+        default: return "\(value)"
+        }
+    }
+}
+
+/// プロバイダ比較の 1 行。名前・セッション数のシェアバー・プロバイダ固有の詳細。
+struct ProviderRow: View {
+    let name: String
+    let color: Color
+    let sessions: Int
+    let share: Double
+    let detail: String
+    let lastDate: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(name)
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text("\(sessions) sessions · \(detail)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color.opacity(0.15))
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color.opacity(0.7))
+                        .frame(width: geo.size.width * share)
+                }
+            }
+            .frame(height: 5)
+            Text("last: \(lastDate)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
     }
 }
 
