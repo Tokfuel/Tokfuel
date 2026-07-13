@@ -53,6 +53,7 @@
 | [CU-0004](CU-0004-zero-setup-transcript-scanning/CU-0004-zero-setup-transcript-scanning-ja.md) | セットアップ不要のトランスクリプト走査 | データパイプライン |
 | [CU-0005](CU-0005-settings-window/CU-0005-settings-window-ja.md) | 設定ウィンドウとスキャン場所の設定 | 設定と UX |
 | [CU-0013](CU-0013-local-feature-instrumentation/CU-0013-local-feature-instrumentation-ja.md) | アプリ自身の利用イベント記録（ローカル限定） | データパイプライン |
+| [CU-0011](CU-0011-today-usage/CU-0011-today-usage-ja.md) | 「今日」の使用量表示 | 設定と UX |
 
 ## 💡 Proposals（提案）
 
@@ -64,7 +65,6 @@
 | [CU-0008](CU-0008-project-cost-breakdown/CU-0008-project-cost-breakdown-ja.md) | プロジェクト別のコスト・アクティビティ内訳 | コストと予算 |
 | [CU-0009](CU-0009-multi-provider-usage/CU-0009-multi-provider-usage-ja.md) | マルチプロバイダ使用量比較（Codex / Gemini CLI） | プロバイダ |
 | [CU-0010](CU-0010-plan-and-unit-cost/CU-0010-plan-and-unit-cost-ja.md) | プラン情報とトークン単価の表示 | コストと予算 |
-| [CU-0011](CU-0011-today-usage/CU-0011-today-usage-ja.md) | 「今日」の使用量表示 | 設定と UX |
 | [CU-0012](CU-0012-unused-skills-audit/CU-0012-unused-skills-audit-ja.md) | 指定リポジトリルート配下の未使用スキル調査 | スキルとツール |
 | [CU-0014](CU-0014-self-experiments/CU-0014-self-experiments-ja.md) | 低頻度機能へのタイムスライス自己実験 | 洞察と実験 |
 | [CU-0015](CU-0015-roadmap-gardener/CU-0015-roadmap-gardener-ja.md) | roadmap gardener: 証拠駆動の定期自動起票 | ワークフローと自動化 |
