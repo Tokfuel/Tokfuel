@@ -86,15 +86,21 @@ struct SettingsView: View {
 
             Section {
                 Toggle(isOn: $settings.serverQuotaEnabled) {
-                    Text("サーバーの正確な使用率を取得")
+                    Text("Claude: サーバーの正確な使用率を取得")
                     Text("公式 /usage と同じ 5 時間・週次の消費率を Cost タブに表示します")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Toggle(isOn: $settings.codexQuotaEnabled) {
+                    Text("Codex: サーバーの正確な使用率を取得")
+                    Text("Codex CLI のトークンで 5 時間・週次の消費率とプランを表示します")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             } header: {
                 Text("サーバークォータ（オプトイン）")
             } footer: {
-                Text("有効にすると、Claude Code が保存済みの認証トークンだけを Anthropic の API に送って使用率を取得します（本アプリ唯一の通信機能）。使用データや個人情報は送信しません。トークンの更新はせず、失効時は Claude Code を開くと直ります。初回は Keychain へのアクセス許可を求められることがあります。")
+                Text("有効にすると、各 CLI が保存済みの認証トークンだけをそのベンダーの API（Claude → Anthropic、Codex → OpenAI）に送って使用率を取得します。それ以外の通信は一切ありません。使用データや個人情報は送信しません。トークンの更新はせず、失効時は各 CLI を一度開くと直ります。初回は Keychain へのアクセス許可を求められることがあります。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -73,6 +73,12 @@ Claude Code がローカルに保存している OAuth 認証情報を読み、A
 - [x] Cost タブ先頭の「Limits」セクション: 5h / 7d / 7d-Opus のバーとリセットまでの時間。
 - [x] `~/.claude.json` の `oauthAccount.userRateLimitTier` によるローカルのプランバッジ
   （ネットワーク不要。CU-0010 のプラン検出の先行実装でもあります）。
+- [x] Codex 版（`CodexQuotaService`、独立したオプトイントグル）: `~/.codex/auth.json` の
+  トークン（JWT の `exp` をローカル確認・更新はしない）で
+  `GET chatgpt.com/backend-api/wham/usage`（`ChatGPT-Account-Id` 付き）を叩き、プランと
+  5h / 週次の `used_percent` / `reset_at` バーを表示します。これにより CU-0009 の
+  「他ベンダーへのサーバー問い合わせはしない」という歯止めは「*ベンダーごとの明示
+  オプトインなしには*問い合わせない」に改訂されます。
 - [ ] 後続: メニューバー・通知のサーバー値への切り替え（CU-0006 の Session ビュー側）、
   アプリの更新間隔を超えるポーリングバックオフ。
 

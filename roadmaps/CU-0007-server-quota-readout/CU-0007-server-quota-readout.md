@@ -73,6 +73,11 @@ backend; setup-heavy and aimed at teams.
 - [x] "Limits" section atop the Cost tab: 5h / 7d / 7d-Opus bars with reset countdowns.
 - [x] Local plan badge from `~/.claude.json` `oauthAccount.userRateLimitTier` (no network;
   also a first slice of CU-0010's plan detection).
+- [x] Codex counterpart (`CodexQuotaService`, separate opt-in toggle): `~/.codex/auth.json`
+  token (JWT `exp` checked locally, never refreshed) → `GET chatgpt.com/backend-api/wham/usage`
+  with `ChatGPT-Account-Id`; shows plan + 5h/weekly `used_percent`/`reset_at` bars.
+  This supersedes CU-0009's "no server queries for other vendors" guard — the guard now
+  reads "no server queries *without an explicit per-vendor opt-in*".
 - [ ] Deferred: menu-bar/notification switch-over to server values (belongs to CU-0006's
   session view), poll backoff beyond the app's refresh cadence.
 
