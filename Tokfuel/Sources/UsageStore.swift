@@ -198,6 +198,9 @@ final class UsageStore: ObservableObject {
     /// サーバー側クォータ（CU-0007）。オプトイン OFF・取得失敗時は nil。
     @Published var quota: ClaudeQuotaSnapshot?
     @Published var quotaError: String?
+    /// Codex 側のサーバークォータ（独立オプトイン）。
+    @Published var codexQuota: CodexQuotaSnapshot?
+    @Published var codexQuotaError: String?
     /// ローカル検出したプラン名（例: "Max 5x"）。ネットワークは使わない。
     @Published var claudePlan: String?
 
@@ -247,21 +250,35 @@ final class UsageStore: ObservableObject {
         reloadQuota()
     }
 
-    /// サーバー側クォータを再取得する（CU-0007）。オプトインが OFF なら消すだけ。
+    /// サーバー側クォータを再取得する（CU-0007）。各プロバイダのオプトインが OFF なら消すだけ。
     func reloadQuota() {
-        guard AppSettings.shared.serverQuotaEnabled else {
+        if AppSettings.shared.serverQuotaEnabled {
+            Task {
+                do {
+                    self.quota = try await ClaudeQuotaService.fetch()
+                    self.quotaError = nil
+                } catch {
+                    self.quota = nil
+                    self.quotaError = error.localizedDescription
+                }
+            }
+        } else {
             quota = nil
             quotaError = nil
-            return
         }
-        Task {
-            do {
-                self.quota = try await ClaudeQuotaService.fetch()
-                self.quotaError = nil
-            } catch {
-                self.quota = nil
-                self.quotaError = error.localizedDescription
+        if AppSettings.shared.codexQuotaEnabled {
+            Task {
+                do {
+                    self.codexQuota = try await CodexQuotaService.fetch()
+                    self.codexQuotaError = nil
+                } catch {
+                    self.codexQuota = nil
+                    self.codexQuotaError = error.localizedDescription
+                }
             }
+        } else {
+            codexQuota = nil
+            codexQuotaError = nil
         }
     }
 

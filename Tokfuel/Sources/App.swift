@@ -88,10 +88,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         // サーバー真値クォータのオプトインが切り替わったら即反映する。
-        settings.$serverQuotaEnabled
-            .dropFirst()
+        Publishers.Merge(settings.$serverQuotaEnabled.dropFirst().map { _ in () },
+                         settings.$codexQuotaEnabled.dropFirst().map { _ in () })
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.usageStore.reloadQuota() }
+            .sink { [weak self] in self?.usageStore.reloadQuota() }
             .store(in: &cancellables)
         // 予算消費額が更新されたらアイコン色と通知を評価する。
         usageStore.$budgetSpend

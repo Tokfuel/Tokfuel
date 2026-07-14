@@ -120,6 +120,44 @@ struct PopoverView: View {
                 .font(.caption)
                 .foregroundStyle(.orange)
         }
+        codexQuotaSection
+    }
+
+    /// Codex 側のサーバークォータ（独立オプトイン有効時のみ）。
+    @ViewBuilder
+    private var codexQuotaSection: some View {
+        if let quota = store.codexQuota {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Codex Limits")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let plan = quota.planType {
+                        Text(plan.capitalized)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(.teal.opacity(0.15), in: Capsule())
+                    }
+                    Spacer()
+                    Text("server")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                if let w = quota.primary {
+                    QuotaBar(label: w.windowMinutes.map { "\($0 / 60)h" } ?? "5h",
+                             window: .init(percent: w.percent, resetsAt: w.resetsAt))
+                }
+                if let w = quota.secondary {
+                    QuotaBar(label: "weekly",
+                             window: .init(percent: w.percent, resetsAt: w.resetsAt))
+                }
+            }
+        } else if let error = store.codexQuotaError {
+            Label(error, systemImage: "exclamationmark.triangle")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
     }
 
     // MARK: - Cost タブ（retok レポート）

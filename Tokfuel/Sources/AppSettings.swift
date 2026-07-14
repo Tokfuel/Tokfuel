@@ -94,6 +94,11 @@ final class AppSettings: ObservableObject {
         didSet { persist(serverQuotaEnabled, forKey: Keys.serverQuotaEnabled) }
     }
 
+    /// Codex 側のサーバークォータ取得。Claude とは別の同意なので独立トグル・既定 OFF。
+    @Published var codexQuotaEnabled: Bool {
+        didSet { persist(codexQuotaEnabled, forKey: Keys.codexQuotaEnabled) }
+    }
+
     /// アプリ自身の UI 利用イベント記録（CU-0013）。ローカル限定・デフォルト有効。
     /// OFF にした事実は意図的に記録しない（オプトアウト後は 1 バイトも書かない）。
     /// 先に defaults へ書くため、続く logChange は enabled=false を読んで自然に落ちる。
@@ -113,6 +118,7 @@ final class AppSettings: ObservableObject {
         static let budgetPeriod = "budgetPeriod"
         static let budgetWarnPercent = "budgetWarnPercent"
         static let serverQuotaEnabled = "serverQuotaEnabled"
+        static let codexQuotaEnabled = "codexQuotaEnabled"
     }
 
     /// 既定の Claude ディレクトリ（~/.claude）。
@@ -154,6 +160,7 @@ final class AppSettings: ObservableObject {
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
         serverQuotaEnabled = defaults.bool(forKey: Keys.serverQuotaEnabled)   // 既定 OFF
+        codexQuotaEnabled = defaults.bool(forKey: Keys.codexQuotaEnabled)     // 既定 OFF
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
     }
 
