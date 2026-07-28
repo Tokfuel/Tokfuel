@@ -94,9 +94,16 @@ enum BudgetMonitor {
         post(kind: kind, level: level, spend: spend, limit: limit)
     }
 
-    /// UNUserNotificationCenter は .app バンドル外（swift run 等）だと使えないため確認する。
+    /// UNUserNotificationCenter が安全に使える環境かどうか。
+    /// - .app バンドル外（swift run 等）では使えない。
+    /// - Gatekeeper の App Translocation 中（quarantine 付きのままランダムパスから実行）は
+    ///   バンドルプロキシが引けず UNUserNotificationCenter.current() が
+    ///   NSInternalInconsistencyException で即クラッシュする（Swift では捕捉不可）。
+    ///   その場合は通知だけ静かに諦め、予算バーとアイコン色の警告は生かす。
     private static var notificationsAvailable: Bool {
-        Bundle.main.bundleIdentifier != nil && Bundle.main.bundlePath.hasSuffix(".app")
+        Bundle.main.bundleIdentifier != nil
+            && Bundle.main.bundlePath.hasSuffix(".app")
+            && !Bundle.main.bundlePath.contains("/AppTranslocation/")
     }
 
     /// 予算機能を有効にしたタイミングで通知許可を求める。
