@@ -5,8 +5,9 @@
 <h1 align="center">Tokfuel</h1>
 
 <p align="center">
-  <strong>Claude Code の「コスト」をメニューバーから一目で。</strong><br/>
-  Claude Code が <code>~/.claude/projects/</code> に書き出すトランスクリプトを読み、今日・期間のコストを表示する軽量な SwiftUI メニューバーアプリ（⛽️）です。セットアップ不要・テレメトリ無し — すべて Mac の中で完結します。
+  <strong>AI コーディングのコストをメニューバーから一目で。</strong><br/>
+  Claude Code が <code>~/.claude/projects/</code> に書き出すトランスクリプトを読み、<br/>
+  今日・期間のコストを表示する軽量な SwiftUI メニューバーアプリ（⛽️）です。セットアップ不要 — すべて Mac の中で完結します。
 </p>
 
 <p align="center">
@@ -28,19 +29,20 @@
 
 ## 特長
 
-- 💵 今日・期間のコスト、日次コストグラフ、モデル別内訳、高コストセッション、retok の節約ヒント
-- 🚨 **月と 1 日の予算上限**を独立に設定 — 上限が近づくと ⛽️ アイコンがオレンジ、超過で赤になり通知
-- 📊 メニューバーには今日のコスト・今月のコスト・両方を表示可能（プレビュー付きで選択）
-- 💱 表示通貨は USD / 日本円を選択可能（レートは [Frankfurter](https://frankfurter.dev) から 1 日 1 回取得）
-- 🔒 ローカルファースト — テレメトリなし。唯一の通信は日本円選択時の為替レート取得だけです
+- 💵 **コストが一目で** — 今日・期間のコスト、日次グラフ、モデル別内訳、高コストセッション、retok の節約ヒント
+- 🚨 **予算** — 月と 1 日の上限を独立に設定。上限が近づくと ⛽️ アイコンがオレンジ、超過で赤になり通知
+- 📊 **メニューバー表示** — 今日のコスト・今月・両方・「予算までの残り」を選択（設定にプレビュー付き）
+- 💱 **ドル / 日本円** — 予算入力を含む全金額の通貨を切り替え（レートは [Frankfurter](https://frankfurter.dev) から 1 日 1 回取得）
+- 🔒 **ローカルファースト** — テレメトリなし。唯一の通信は為替レート取得（オプトイン）だけです
 
 ## インストール
 
 [Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロードして展開し、`Tokfuel.app` を `/Applications` に入れるだけです。
 
-アドホック署名のため初回起動は Gatekeeper にブロックされます。右クリック →**開く**、または**システム設定 → プライバシーとセキュリティ**で許可してください。
+> [!NOTE]
+> アドホック署名のため初回起動は Gatekeeper にブロックされます。右クリック →**開く**、または**システム設定 → プライバシーとセキュリティ**で許可してください。ブラウザではなく `curl` でダウンロードすると警告自体が出ません。
 
-動作環境: macOS 14 以降。コスト分析に `python3`（Xcode Command Line Tools に同梱）を使います。
+**動作環境** — macOS 14 以降。コスト分析に `python3`（Xcode Command Line Tools に同梱）を使います。
 
 ソースからビルドする場合:
 
@@ -50,12 +52,12 @@ git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && bash script
 
 ## コントリビュート
 
-PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。テストは `swift test`。ロードマップは [`roadmaps/`](roadmaps/README-ja.md) にあります。
+PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。テストは `swift test` で実行できます。ロードマップは [`roadmaps/`](roadmaps/README-ja.md) にあります。
 
 ## 謝辞
 
-コスト分析には **[retok](https://github.com/d-date/retok)** を無改変で同梱しています — © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。出所と更新手順は [README-retok.md](Tokfuel/Sources/Resources/README-retok.md) に記録しています。
+コスト分析には **[retok](https://github.com/d-date/retok)** を無改変で同梱しています — © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。出所と更新手順は [README-retok.md](Tokfuel/Sources/Resources/README-retok.md) に記録しています。為替レートは [Frankfurter](https://frankfurter.dev) を利用しています。
 
 ## ライセンス
 
-[MIT](LICENSE) © akidon0000 — ただし同梱の retok は上記の通り。
+[MIT](LICENSE) © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000) — ただし同梱の retok は上記の通り。
