@@ -49,6 +49,9 @@ _まだありません（リセット後）。_
 |---|---|---|
 | [TF-0001](TF-0001-native-swift-cost-analysis/TF-0001-native-swift-cost-analysis-ja.md) | コスト分析の Swift ネイティブ再実装（python3 依存の廃止） | コストと予算 |
 | [TF-0002](TF-0002-notarized-distribution/TF-0002-notarized-distribution-ja.md) | Developer ID 署名と公証による警告なしインストール | 配布 |
+| [TF-0003](TF-0003-menubar-budget-gauge/TF-0003-menubar-budget-gauge-ja.md) | メニューバーの予算ゲージ（円グラフ） | メニューバーと UX |
+| [TF-0004](TF-0004-cursor-usage/TF-0004-cursor-usage-ja.md) | Cursor の利用データ収集 | プロバイダ |
+| [TF-0005](TF-0005-csv-export/TF-0005-csv-export-ja.md) | チーム・管理者向けの CSV 書き出し | コストと予算 |
 
 ## 🚧 進行中
 
