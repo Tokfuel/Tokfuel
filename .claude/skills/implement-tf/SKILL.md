@@ -84,7 +84,7 @@ every time:
 - Invoke the built-in **`simplify`** skill (reuse, dead code, over-abstraction) and apply its fixes.
 - Invoke the built-in **`code-review`** skill for correctness bugs the build can't see.
 - If the item's correctness depends on runtime behavior, drive the running app with the built-in
-  **`verify`** skill — build and install via [`build.sh`](../../../build.sh), exercise the behavior,
+  **`verify`** skill — build and install via [`build.sh`](../../.bash scripts/build.sh), exercise the behavior,
   and report what you saw — rather than claiming it works untested.
 
 ### 7. Flip the item to Implemented
@@ -98,11 +98,11 @@ renumber the item — its ID is permanent.
 
 ```bash
 swift build                    # must be green
-swift build -c release         # the release config build.sh uses
+swift build -c release         # the release config scripts/build.sh uses
 bash scripts/lint_roadmap.sh   # the Status flip touched roadmaps/ — CI checks this too
 ```
 
-Never leave the build red. Then, when the change is runtime-visible, `./build.sh` and confirm the
+Never leave the build red. Then, when the change is runtime-visible, `bash scripts/build.sh` and confirm the
 running app (via `verify`).
 
 ### 9. PR only when asked

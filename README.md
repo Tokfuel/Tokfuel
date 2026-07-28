@@ -45,7 +45,7 @@ Requirements: macOS 14+, and `python3` (ships with Xcode Command Line Tools) for
 To build from source instead:
 
 ```bash
-git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && ./build.sh
+git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && bash scripts/build.sh
 ```
 
 ## Contributing

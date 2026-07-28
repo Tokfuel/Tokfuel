@@ -33,13 +33,13 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
 
 ```bash
 swift test               # unit tests (Tokfuel/Tests, Swift Testing)
-swift build -c release   # the config build.sh packages
+swift build -c release   # the config scripts/build.sh packages
 bash scripts/lint_roadmap.sh   # when you touched roadmaps/
 ```
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the tests, the release build,
 and the roadmap lint on every PR. For runtime-visible changes, install and observe the real app:
-`./build.sh` packages `Tokfuel.app` into `/Applications` and launches it (use the built-in
+`bash scripts/build.sh` packages `Tokfuel.app` into `/Applications` and launches it (use the built-in
 `verify` skill rather than claiming untested behavior works). Headless-testable logic
 (e.g. `BudgetMonitor`, `RetokReport` decoding) lives in `Tokfuel/Tests` — add tests there for
 new logic. Avoid tests that touch real user state (`~/Library/Application Support/Tokfuel`).

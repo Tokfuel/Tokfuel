@@ -53,7 +53,7 @@ green. Re-read them in [`implement-tf`](../implement-tf/SKILL.md) before touchin
    tick `Progress` in both language files, and move the row from the Proposals table to the
    Implemented table in both READMEs.
 
-5. **Verify** (`implement-tf` step 8): `swift build` and `swift build -c release` green; `./build.sh`
+5. **Verify** (`implement-tf` step 8): `swift build` and `swift build -c release` green; `bash scripts/build.sh`
    + `verify` when the change is runtime-visible.
 
 6. **PR only when asked** — one PR carries both the proposal and the implementation. Title:
