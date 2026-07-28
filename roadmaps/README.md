@@ -49,6 +49,9 @@ _None yet (post-reset)._
 |---|---|---|
 | [TF-0001](TF-0001-native-swift-cost-analysis/TF-0001-native-swift-cost-analysis.md) | Reimplement cost analysis natively in Swift (drop the python3 dependency) | Cost & budget |
 | [TF-0002](TF-0002-notarized-distribution/TF-0002-notarized-distribution.md) | Developer ID signing & notarization for warning-free installs | Distribution |
+| [TF-0003](TF-0003-menubar-budget-gauge/TF-0003-menubar-budget-gauge.md) | Menu-bar budget gauge (ring chart) | Menu bar & UX |
+| [TF-0004](TF-0004-cursor-usage/TF-0004-cursor-usage.md) | Collect Cursor usage data | Providers |
+| [TF-0005](TF-0005-csv-export/TF-0005-csv-export.md) | CSV export for team/admin aggregation | Cost & budget |
 
 ## 🚧 In progress
 
