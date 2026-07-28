@@ -21,6 +21,9 @@ jobs:
           swift --version
           xcodebuild -version
 
+      - name: Test
+        run: swift test
+
       - name: Build
         run: swift build -c release
 

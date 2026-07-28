@@ -14,6 +14,11 @@ let package = Package(
                 .copy("Resources/LICENSE-retok"),
                 .copy("Resources/README-retok.md")
             ]
+        ),
+        .testTarget(
+            name: "TokfuelTests",
+            dependencies: ["Tokfuel"],
+            path: "Tokfuel/Tests"
         )
     ]
 )
