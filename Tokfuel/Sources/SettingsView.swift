@@ -38,7 +38,7 @@ struct SettingsView: View {
                 }
             }
 
-            Section {
+            Section("集計") {
                 Picker("既定の集計期間", selection: $settings.defaultPeriodDays) {
                     Text("7 日").tag(7)
                     Text("30 日").tag(30)
@@ -49,23 +49,19 @@ struct SettingsView: View {
                 Picker("レポート言語", selection: $settings.language) {
                     ForEach(ReportLanguage.allCases) { Text($0.label).tag($0) }
                 }
-
-                Picker("表示通貨", selection: $settings.displayCurrency) {
-                    ForEach(DisplayCurrency.allCases) { Text($0.label).tag($0) }
-                }
-            } header: {
-                Text("集計")
-            } footer: {
-                Text("日本円を選ぶと Frankfurter API から為替レートを 1 日 1 回取得します（送るのはレートの問い合わせだけで、使用データは含みません）。予算の上限は USD のまま入力します。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section {
+                Picker("入力・表示の通貨", selection: $settings.displayCurrency) {
+                    ForEach(DisplayCurrency.allCases) { Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
+
                 HStack {
-                    Text("月の上限 (USD)")
+                    Text("月の上限 (\(unitSymbol))")
                     Spacer()
-                    TextField("0 = オフ", value: $settings.budgetLimit, format: .number)
+                    TextField("0 = オフ", value: budgetField(\.budgetLimit), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 100)
                         .multilineTextAlignment(.trailing)
@@ -77,9 +73,9 @@ struct SettingsView: View {
                     .pickerStyle(.radioGroup)
                 }
                 HStack {
-                    Text("1日の上限 (USD)")
+                    Text("1日の上限 (\(unitSymbol))")
                     Spacer()
-                    TextField("0 = オフ", value: $settings.dailyBudgetLimit, format: .number)
+                    TextField("0 = オフ", value: budgetField(\.dailyBudgetLimit), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 100)
                         .multilineTextAlignment(.trailing)
@@ -96,7 +92,7 @@ struct SettingsView: View {
             } header: {
                 Text("予算")
             } footer: {
-                Text("月と 1 日の上限は独立に設定できます。どちらかがしきい値に達するとメニューバーのアイコンがオレンジになり通知します。上限を超えると赤になります。0 を設定するとその予算はオフです。")
+                Text("通貨はアプリ全体の金額表示と共通です。円を選ぶと Frankfurter API からレートを 1 日 1 回取得します（送るのはレートの問い合わせだけ）。上限は選択中の通貨で入力でき、内部では USD で保存します。月と 1 日の上限は独立で、しきい値でアイコンがオレンジ・通知、超過で赤になります。0 はオフです。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -157,6 +153,34 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 720)
+    }
+
+    /// 予算入力欄の単位。円を選んでいてもレート未取得なら USD 入力のまま。
+    private var unitSymbol: String {
+        settings.displayCurrency == .jpy
+            && UserDefaults.standard.double(forKey: Money.rateKey) > 0 ? "¥" : "$"
+    }
+
+    /// 予算上限（内部保存は USD）を、選択中の通貨で入出力するバインディング。
+    /// 円のときは取得済みレートで換算し、整数円に丸めて見せる。
+    private func budgetField(_ keyPath: ReferenceWritableKeyPath<AppSettings, Double>) -> Binding<Double> {
+        Binding(
+            get: {
+                let usd = settings[keyPath: keyPath]
+                let rate = UserDefaults.standard.double(forKey: Money.rateKey)
+                if settings.displayCurrency == .jpy, rate > 0 {
+                    return (usd * rate).rounded()
+                }
+                return usd
+            },
+            set: { value in
+                let rate = UserDefaults.standard.double(forKey: Money.rateKey)
+                if settings.displayCurrency == .jpy, rate > 0 {
+                    settings[keyPath: keyPath] = value / rate
+                } else {
+                    settings[keyPath: keyPath] = value
+                }
+            })
     }
 
     /// 各表示オプションでメニューバーに出る文字列。実データが無ければ "$–" を出す。
