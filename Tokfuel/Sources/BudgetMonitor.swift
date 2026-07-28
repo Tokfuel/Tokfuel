@@ -52,31 +52,46 @@ enum BudgetMonitor {
 
     // MARK: - 通知
 
-    private static let notifiedLevelKey = "budgetNotifiedLevel"
-    private static let notifiedPeriodKey = "budgetNotifiedPeriod"
+    /// 予算の種類。通知の重複抑止と文面を分ける。
+    enum Kind: String {
+        case monthly, daily
+        var scopeLabel: String { self == .daily ? "今日の" : "" }
+    }
+
+    /// 日次予算の期間キー（その日 1 回だけ通知し、日が替わると再アームする）。
+    static func dailyPeriodKey(now: Date = Date()) -> String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: now)
+    }
 
     /// レベルが前回通知より上がったときだけ通知を送る。
-    /// 期間キーが変わる（月が替わる等）か、レベルが ok に戻ると再アームする。
-    static func notifyIfNeeded(level: BudgetLevel, spend: Double, limit: Double,
-                               periodKey: String) {
+    /// 期間キーが変わる（月・日が替わる等）か、レベルが ok に戻ると再アームする。
+    static func notifyIfNeeded(kind: Kind = .monthly, level: BudgetLevel,
+                               spend: Double, limit: Double, periodKey: String) {
+        // monthly は従来キーを引き継ぎ、通知済み状態を移行後も保つ。
+        let levelKey = kind == .monthly ? "budgetNotifiedLevel" : "budgetNotifiedLevel-daily"
+        let periodStoreKey = kind == .monthly ? "budgetNotifiedPeriod" : "budgetNotifiedPeriod-daily"
         let defaults = UserDefaults.standard
-        let storedPeriod = defaults.string(forKey: notifiedPeriodKey)
-        var storedLevel = BudgetLevel(rawValue: defaults.integer(forKey: notifiedLevelKey)) ?? .ok
+        let storedPeriod = defaults.string(forKey: periodStoreKey)
+        var storedLevel = BudgetLevel(rawValue: defaults.integer(forKey: levelKey)) ?? .ok
         if storedPeriod != periodKey {
             storedLevel = .ok   // 新しい期間なので再アーム
         }
 
         if level == .ok {
             // 収まったらリセット（次にしきい値を越えたら再通知）
-            defaults.set(BudgetLevel.ok.rawValue, forKey: notifiedLevelKey)
-            defaults.set(periodKey, forKey: notifiedPeriodKey)
+            defaults.set(BudgetLevel.ok.rawValue, forKey: levelKey)
+            defaults.set(periodKey, forKey: periodStoreKey)
             return
         }
         guard level > storedLevel else { return }
 
-        defaults.set(level.rawValue, forKey: notifiedLevelKey)
-        defaults.set(periodKey, forKey: notifiedPeriodKey)
-        post(level: level, spend: spend, limit: limit)
+        defaults.set(level.rawValue, forKey: levelKey)
+        defaults.set(periodKey, forKey: periodStoreKey)
+        post(kind: kind, level: level, spend: spend, limit: limit)
     }
 
     /// UNUserNotificationCenter は .app バンドル外（swift run 等）だと使えないため確認する。
@@ -90,28 +105,28 @@ enum BudgetMonitor {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    private static func post(level: BudgetLevel, spend: Double, limit: Double) {
+    private static func post(kind: Kind, level: BudgetLevel, spend: Double, limit: Double) {
         guard notificationsAvailable else { return }
         let content = UNMutableNotificationContent()
         let spendStr = String(format: "$%.2f", spend)
         let limitStr = String(format: "$%.0f", limit)
         switch level {
         case .warning:
-            content.title = "Claude 利用額が上限に近づいています"
+            content.title = "\(kind.scopeLabel)Claude 利用額が上限に近づいています"
             content.body = "現在 \(spendStr) / 上限 \(limitStr)（\(Int(spend / limit * 100))%）"
         case .over:
-            content.title = "Claude 利用額が上限を超えました"
+            content.title = "\(kind.scopeLabel)Claude 利用額が上限を超えました"
             content.body = "現在 \(spendStr) / 上限 \(limitStr)"
         case .ok:
             return
         }
         content.sound = .default
-        let request = UNNotificationRequest(identifier: "budget-\(level.rawValue)",
+        let request = UNNotificationRequest(identifier: "budget-\(kind.rawValue)-\(level.rawValue)",
                                             content: content, trigger: nil)
         // 掲示に失敗した通知（許可なし等）を「表示した」と数えないよう、成功時だけ記録する。
         UNUserNotificationCenter.current().add(request) { error in
             guard error == nil else { return }
-            UsageEventLog.shared.log(.notificationShown, meta: ["kind": "budget"])
+            UsageEventLog.shared.log(.notificationShown, meta: ["kind": "budget-\(kind.rawValue)"])
         }
     }
 }
