@@ -91,9 +91,8 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
   © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
-  出所と更新手順は [README-retok.md](Tokfuel/Sources/Resources/README-retok.md)。
 - **為替レート** — [Frankfurter](https://frankfurter.dev)。
 
 ## ライセンス
 
-[MIT](LICENSE) © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000) — ただし同梱の retok は上記の通り。
+[MIT](LICENSE) © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000)

@@ -91,9 +91,8 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.
   © [Daiki Matsudate (@d-date)](https://github.com/d-date), [MIT License](Tokfuel/Sources/Resources/LICENSE-retok).
-  Provenance and update procedure: [README-retok.md](Tokfuel/Sources/Resources/README-retok.md).
 - **Exchange rates** — [Frankfurter](https://frankfurter.dev).
 
 ## License
 
-[MIT](LICENSE) © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000) — except the bundled retok (see above).
+[MIT](LICENSE) © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000).
