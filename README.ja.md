@@ -5,9 +5,13 @@
 <h1 align="center">Tokfuel</h1>
 
 <p align="center">
-  <strong>AI コーディングのコストをメニューバーから一目で。</strong><br/>
+  <strong>AI コーディングのコストをメニューバーから一目で。</strong>
+</p>
+
+<p align="center">
+  macOS 向けの軽量な SwiftUI メニューバーアプリ（⛽️）です。<br/>
   Claude Code が <code>~/.claude/projects/</code> に書き出すトランスクリプトを読み、<br/>
-  今日・期間のコストを表示する軽量な SwiftUI メニューバーアプリ（⛽️）です。セットアップ不要 — すべて Mac の中で完結します。
+  今日・期間のコストを表示します。セットアップ不要 — すべて Mac の中で完結します。
 </p>
 
 <p align="center">
@@ -29,34 +33,66 @@
 
 ## 特長
 
-- 💵 **コストが一目で** — 今日・期間のコスト、日次グラフ、モデル別内訳、高コストセッション、retok の節約ヒント
-- 🚨 **予算** — 月と 1 日の上限を独立に設定。上限が近づくと ⛽️ アイコンがオレンジ、超過で赤になり通知
-- 📊 **メニューバー表示** — 今日のコスト・今月・両方・「予算までの残り」を選択（設定にプレビュー付き）
-- 💱 **ドル / 日本円** — 予算入力を含む全金額の通貨を切り替え（レートは [Frankfurter](https://frankfurter.dev) から 1 日 1 回取得）
-- 🔒 **ローカルファースト** — テレメトリなし。唯一の通信は為替レート取得（オプトイン）だけです
+- 💵 **コストが一目で**
+
+  今日・期間のコスト、日次グラフ、モデル別内訳、高コストセッション、retok の節約ヒント。
+
+- 🚨 **予算**
+
+  月と 1 日の上限を独立に設定。
+  上限が近づくと ⛽️ アイコンがオレンジ、超過で赤になり通知します。
+
+- 📊 **メニューバー表示**
+
+  今日のコスト・今月・両方・「予算までの残り」から選択。
+  設定にプレビュー付き。
+
+- 💱 **ドル / 日本円**
+
+  予算入力を含む全金額の通貨を切り替え。
+  レートは [Frankfurter](https://frankfurter.dev) から 1 日 1 回取得します。
+
+- 🔒 **ローカルファースト**
+
+  テレメトリなし。唯一の通信は為替レート取得（オプトイン）だけです。
 
 ## インストール
 
-[Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロードして展開し、`Tokfuel.app` を `/Applications` に入れるだけです。
+1. [Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロード。
+2. 展開して `Tokfuel.app` を `/Applications` へドラッグ。
+3. 初回起動はアプリを右クリック →**開く**
+   （または**システム設定 → プライバシーとセキュリティ**で許可）。
 
 > [!NOTE]
-> アドホック署名のため初回起動は Gatekeeper にブロックされます。右クリック →**開く**、または**システム設定 → プライバシーとセキュリティ**で許可してください。ブラウザではなく `curl` でダウンロードすると警告自体が出ません。
+> 警告が出るのはアドホック署名のためです。
+> ブラウザではなく `curl` でダウンロードすると警告自体が出ません。
 
-**動作環境** — macOS 14 以降。コスト分析に `python3`（Xcode Command Line Tools に同梱）を使います。
+**動作環境**
 
-ソースからビルドする場合:
+- macOS 14 以降
+- コスト分析に `python3`（Xcode Command Line Tools に同梱）
+
+**ソースからビルド**
 
 ```bash
-git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && bash scripts/build.sh
+git clone https://github.com/akidon0000/Tokfuel.git
+cd Tokfuel
+bash scripts/build.sh
 ```
 
 ## コントリビュート
 
-PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。テストは `swift test` で実行できます。ロードマップは [`roadmaps/`](roadmaps/README-ja.md) にあります。
+PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+
+- テスト: `swift test`
+- ロードマップ: [`roadmaps/`](roadmaps/README-ja.md)
 
 ## 謝辞
 
-コスト分析には **[retok](https://github.com/d-date/retok)** を無改変で同梱しています — © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。出所と更新手順は [README-retok.md](Tokfuel/Sources/Resources/README-retok.md) に記録しています。為替レートは [Frankfurter](https://frankfurter.dev) を利用しています。
+- **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
+  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
+  出所と更新手順は [README-retok.md](Tokfuel/Sources/Resources/README-retok.md)。
+- **為替レート** — [Frankfurter](https://frankfurter.dev)。
 
 ## ライセンス
 

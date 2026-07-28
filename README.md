@@ -5,9 +5,13 @@
 <h1 align="center">Tokfuel</h1>
 
 <p align="center">
-  <strong>See what AI coding costs you — from the menu bar.</strong><br/>
-  A tiny SwiftUI menu-bar app (⛽️) that reads the transcripts Claude Code already writes under<br/>
-  <code>~/.claude/projects/</code> and shows today's and period cost. Zero setup — everything stays on your Mac.
+  <strong>See what AI coding costs you — from the menu bar.</strong>
+</p>
+
+<p align="center">
+  A tiny SwiftUI menu-bar app (⛽️) for macOS.<br/>
+  It reads the transcripts Claude Code already writes under <code>~/.claude/projects/</code><br/>
+  and shows today's and period cost. Zero setup — everything stays on your Mac.
 </p>
 
 <p align="center">
@@ -29,34 +33,66 @@
 
 ## Features
 
-- 💵 **Cost at a glance** — today's / period cost, daily chart, per-model breakdown, most expensive sessions, and retok's saving tips
-- 🚨 **Budgets** — independent monthly and daily limits; the ⛽️ icon turns orange near a limit and red over it, with a notification
-- 📊 **Menu-bar readout** — today's cost, this month's, both, or the *remaining* budget, with live previews in Settings
-- 💱 **USD or JPY** — budgets and all amounts switch currency (daily rate via [Frankfurter](https://frankfurter.dev))
-- 🔒 **Local-first** — no telemetry; the only network call is the opt-in exchange-rate fetch
+- 💵 **Cost at a glance**
+
+  Today's / period cost, daily chart, per-model breakdown, top sessions, and retok's saving tips.
+
+- 🚨 **Budgets**
+
+  Independent monthly and daily limits.
+  Near a limit the ⛽️ icon turns orange; over it, red — with a notification.
+
+- 📊 **Menu-bar readout**
+
+  Today's cost, this month's, both, or the *remaining* budget.
+  Live previews in Settings.
+
+- 💱 **USD or JPY**
+
+  Budgets and all amounts switch currency.
+  Daily rate via [Frankfurter](https://frankfurter.dev).
+
+- 🔒 **Local-first**
+
+  No telemetry. The only network call is the opt-in exchange-rate fetch.
 
 ## Install
 
-Download `Tokfuel-x.y.z.zip` from [Releases](https://github.com/akidon0000/Tokfuel/releases), unzip, and drag `Tokfuel.app` into `/Applications`.
+1. Download `Tokfuel-x.y.z.zip` from [Releases](https://github.com/akidon0000/Tokfuel/releases).
+2. Unzip it and drag `Tokfuel.app` into `/Applications`.
+3. First launch: right-click the app → **Open**
+   (or allow it in **System Settings → Privacy & Security**).
 
 > [!NOTE]
-> The app is ad-hoc signed, so Gatekeeper blocks the first launch: right-click → **Open**, or allow it in **System Settings → Privacy & Security**. Downloading with `curl` instead of a browser skips the warning entirely.
+> The Gatekeeper warning appears because the app is ad-hoc signed.
+> Downloading with `curl` instead of a browser skips the warning entirely.
 
-**Requirements** — macOS 14+, and `python3` (ships with the Xcode Command Line Tools) for the cost analysis.
+**Requirements**
 
-To build from source instead:
+- macOS 14 or later
+- `python3` for the cost analysis (ships with the Xcode Command Line Tools)
+
+**Build from source**
 
 ```bash
-git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && bash scripts/build.sh
+git clone https://github.com/akidon0000/Tokfuel.git
+cd Tokfuel
+bash scripts/build.sh
 ```
 
 ## Contributing
 
-PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Run the tests with `swift test`. The roadmap lives in [`roadmaps/`](roadmaps/README.md).
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+- Tests: `swift test`
+- Roadmap: [`roadmaps/`](roadmaps/README.md)
 
 ## Acknowledgements
 
-Cost analysis is powered by a bundled, unmodified copy of **[retok](https://github.com/d-date/retok)** — © [Daiki Matsudate (@d-date)](https://github.com/d-date), [MIT License](Tokfuel/Sources/Resources/LICENSE-retok). Provenance and the update procedure are in [README-retok.md](Tokfuel/Sources/Resources/README-retok.md). Exchange rates by [Frankfurter](https://frankfurter.dev).
+- **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.
+  © [Daiki Matsudate (@d-date)](https://github.com/d-date), [MIT License](Tokfuel/Sources/Resources/LICENSE-retok).
+  Provenance and update procedure: [README-retok.md](Tokfuel/Sources/Resources/README-retok.md).
+- **Exchange rates** — [Frankfurter](https://frankfurter.dev).
 
 ## License
 
