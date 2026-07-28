@@ -18,36 +18,37 @@ struct AboutView: View {
             Text("Version \(version)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("Claude Code のコストをメニューバーから一目で。")
+            Text("AI のコストをメニューバーから一目で。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             Divider()
                 .padding(.vertical, 8)
 
-            VStack(alignment: .leading, spacing: 10) {
-                LabeledContent {
+            Grid(alignment: .leadingFirstTextBaseline,
+                 horizontalSpacing: 16, verticalSpacing: 8) {
+                GridRow {
+                    Text("作者")
+                        .foregroundStyle(.secondary)
+                        .gridColumnAlignment(.trailing)
                     Link("Dan Akiyama (@akidon0000)",
                          destination: URL(string: "https://github.com/akidon0000")!)
-                } label: {
-                    Text("作者")
                 }
-
-                LabeledContent {
-                    VStack(alignment: .trailing, spacing: 2) {
+                GridRow {
+                    Text("コスト分析")
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
                         Link("retok", destination: URL(string: "https://github.com/d-date/retok")!)
                         Text("© Daiki Matsudate (MIT License)")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                } label: {
-                    Text("コスト分析")
                 }
-
-                LabeledContent {
+                GridRow {
+                    Text("為替レート")
+                        .foregroundStyle(.secondary)
                     Link("Frankfurter API",
                          destination: URL(string: "https://frankfurter.dev")!)
-                } label: {
-                    Text("為替レート")
                 }
             }
             .font(.callout)
@@ -55,10 +56,9 @@ struct AboutView: View {
             Divider()
                 .padding(.vertical, 8)
 
-            Text("MIT License © akidon0000 — ただし同梱の retok は上記の通り。")
+            Text("MIT License © akidon0000")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
         }
         .padding(24)
         .frame(width: 320)
