@@ -1,17 +1,17 @@
 ---
-name: implement-cu
+name: implement-tf
 description: >-
-  Implement a Tokfuel roadmap (CU) item end to end, starting from its ID. Use when the
-  user names a roadmap item to build — "/implement-cu CU-0002", "implement CU-0002", "start on
-  CU-0002", a bare number, or a slug — or otherwise asks to turn an existing CU proposal into shipped
+  Implement a Tokfuel roadmap (TF) item end to end, starting from its ID. Use when the
+  user names a roadmap item to build — "/implement-tf TF-0001", "implement TF-0001", "start on
+  TF-0001", a bare number, or a slug — or otherwise asks to turn an existing TF proposal into shipped
   code. Treats the item's proposal as the spec, grounds the work in the project ground rules, plans
   and confirms before writing, implements with the build/tests, reviews and refines the diff, flips
   the item to Implemented, and proves `swift build` is green. The counterpart to the ideation skill.
 ---
 
-# Implement a CU item
+# Implement a TF item
 
-Take one roadmap (CU) item from its proposal to shipped, green code. You are the implementer;
+Take one roadmap (TF) item from its proposal to shipped, green code. You are the implementer;
 `swift build` (plus the built-in review skills) is the check — never an LLM verdict. The proposal's
 **Detailed design** is your spec. Converse in the user's language; write code, commits, and PR text
 per the conventions below.
@@ -28,13 +28,13 @@ per the conventions below.
 
 ### 1. Resolve the item
 
-Accept a full ID (`CU-0002`), a bare number (`2` / `0002`), or a slug fragment:
+Accept a full ID (`TF-0001`), a bare number (`2` / `0002`), or a slug fragment:
 
 ```bash
-ls -d roadmaps/CU-*<id-or-slug>*/
+ls -d roadmaps/TF-*<id-or-slug>*/
 ```
 
-Read **both** language files; the English `CU-NNNN-<slug>.md` is the authoritative spec.
+Read **both** language files; the English `TF-NNNN-<slug>.md` is the authoritative spec.
 
 **Before anything else, explain the item to the user** — the ID and title, its Status/Topic, a
 plain-language summary of what it proposes and why, and its current state. Then note: if it is a
@@ -49,7 +49,7 @@ un-defer it.
 - Open every file the proposal references and read the surrounding code, so the change matches
   what exists. For a large item, fan the reading out to the `Explore` agent and draft the strategy
   with the `Plan` agent.
-- Check dependencies: if the design leans on another CU item still in `Proposal`, surface it as a
+- Check dependencies: if the design leans on another TF item still in `Proposal`, surface it as a
   blocker and ask how to proceed.
 
 ### 3. Set up a focused branch
@@ -108,7 +108,7 @@ running app (via `verify`).
 ### 9. PR only when asked
 
 Push to your branch. Don't open a PR unless the user asks. Title and commits are imperative and
-scoped, prefixed with the ID: `[CU-NNNN] feat(<scope>): …`.
+scoped, prefixed with the ID: `[TF-NNNN] feat(<scope>): …`.
 
 ## References
 

@@ -33,11 +33,11 @@ Survey the roadmap (and open issues, if the repo uses them) to recommend the nex
    - Ground-rule fit — an item that fits the project's local-only / zero-setup / retok-untouched
      constraints cleanly is lower-risk than one that strains them.
 
-4. **Present** a short ranked list (3–5 candidates), each with: the CU ID and title, a one-line
+4. **Present** a short ranked list (3–5 candidates), each with: the TF ID and title, a one-line
    rationale, and any blocker or dependency to be aware of.
 
 5. **Wait for the user's choice.** When they pick one, recommend
-   [`/implement-cu CU-NNNN`](../implement-cu/SKILL.md) to start (or
+   [`/implement-tf TF-NNNN`](../implement-tf/SKILL.md) to start (or
    [`/propose-and-build`](../propose-and-build/SKILL.md) for a small new idea not yet on the roadmap).
 
 ## What this skill does NOT do

@@ -44,14 +44,14 @@ new logic. Avoid tests that touch real user state (`~/Library/Application Suppor
 
 ## Roadmap workflow
 
-Features are tracked as **CU items** under [`roadmaps/`](roadmaps/README.md) — one directory
-`CU-NNNN-<slug>/` with an English file and a Japanese mirror (敬体, per the
+Features are tracked as **TF items** under [`roadmaps/`](roadmaps/README.md) — one directory
+`TF-NNNN-<slug>/` with an English file and a Japanese mirror (敬体, per the
 [`japanese-tech-writing`](.claude/skills/japanese-tech-writing/SKILL.md) skill). IDs are
 allocated by hand (highest + 1) and are permanent. The skills under
 [`.claude/skills/`](.claude/skills/) drive the cycle:
 
-- **`ideation`** — shape an idea into a CU proposal (authoring only).
-- **`implement-cu`** — ship a numbered item from its ID (proposal = spec).
+- **`ideation`** — shape an idea into a TF proposal (authoring only).
+- **`implement-tf`** — ship a numbered item from its ID (proposal = spec).
 - **`propose-and-build`** — both in one pass, for a small settled item.
 - **`roadmap-filter`** / **`task-select`** — survey by status / pick the next item.
 
@@ -59,7 +59,7 @@ allocated by hand (highest + 1) and are permanent. The skills under
 
 - One topic per branch (`claude/<short-topic>`), small focused PRs.
 - Commits: imperative subject < 72 chars; body says *why*. Roadmap-implementing PRs prefix the
-  title `[CU-NNNN]`.
+  title `[TF-NNNN]`.
 - UI state on `@MainActor`; `UsageStore` stays the single source of truth, `PopoverView` stays
   pure presentation; settings live in `AppSettings` (UserDefaults-backed).
 - Docs are bilingual: user-visible changes update `README.md` **and** `README.ja.md`.

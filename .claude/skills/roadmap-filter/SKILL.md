@@ -1,7 +1,7 @@
 ---
 name: roadmap-filter
 description: >-
-  List Tokfuel roadmap (CU) items filtered by their Status, so a session can survey
+  List Tokfuel roadmap (TF) items filtered by their Status, so a session can survey
   everything that is a Proposal (or In progress / Implemented / Deferred) without reading the whole
   roadmaps/README.md. Use when you need an overview of the roadmap in one status — "what proposals
   are open?", "which items are implemented?", "list the deferred ones" — or to find the file path of
@@ -16,21 +16,21 @@ one status so you can pick which to open in full.
 
 ## What it does
 
-Each CU item's status lives in its own metadata block (`| Status | … |` in the English file,
+Each TF item's status lives in its own metadata block (`| Status | … |` in the English file,
 `| 状態 | … |` in the Japanese). Rather than reading the whole index, grep the items directly.
 
 ```bash
 # STATUS is one of: Proposal | In progress | Implemented | Deferred
 STATUS="Proposal"
-grep -rl "^| Status | \*\*${STATUS}\*\* |" roadmaps/*/CU-*.md 2>/dev/null | sort
+grep -rl "^| Status | \*\*${STATUS}\*\* |" roadmaps/*/TF-*.md 2>/dev/null | sort
 ```
 
 For each hit, the path is the item's English `.md`; read it (swap `.md` → `-ja.md` for the Japanese
-mirror). To also show the title, read the first `# CU-NNNN — …` line of each match:
+mirror). To also show the title, read the first `# TF-NNNN — …` line of each match:
 
 ```bash
-for f in $(grep -rl "^| Status | \*\*${STATUS}\*\* |" roadmaps/*/CU-*.md); do
-  printf '%s\t%s\n' "$(grep -m1 '^# CU-' "$f")" "$f"
+for f in $(grep -rl "^| Status | \*\*${STATUS}\*\* |" roadmaps/*/TF-*.md); do
+  printf '%s\t%s\n' "$(grep -m1 '^# TF-' "$f")" "$f"
 done | sort
 ```
 
