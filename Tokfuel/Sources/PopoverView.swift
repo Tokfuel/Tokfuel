@@ -232,8 +232,8 @@ struct PopoverView: View {
             Menu {
                 Button("再読み込み") { store.reload() }
                 Divider()
-                Button("設定…") { onOpenSettings() }
-                Button("Tokfuel について…") { onOpenAbout() }
+                Button("設定") { onOpenSettings() }
+                Button("Tokfuel について") { onOpenAbout() }
                 Divider()
                 Button("Tokfuel を終了") { NSApplication.shared.terminate(nil) }
             } label: {

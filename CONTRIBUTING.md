@@ -19,8 +19,8 @@ Thanks for your interest! This is a small, personal-use macOS menu-bar app, but 
 ### Dev setup
 
 ```bash
-git clone https://github.com/akidon0000/tokfuel.git
-cd tokfuel
+git clone https://github.com/akidon0000/Tokfuel.git
+cd Tokfuel
 
 swift build            # debug build
 swift run -c release   # run the app from source
@@ -79,8 +79,8 @@ self-contained starters.
 ### 開発環境のセットアップ
 
 ```bash
-git clone https://github.com/akidon0000/tokfuel.git
-cd tokfuel
+git clone https://github.com/akidon0000/Tokfuel.git
+cd Tokfuel
 
 swift build            # デバッグビルド
 swift run -c release   # ソースから実行

@@ -11,8 +11,8 @@
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-1B1B1F?style=flat-square&logo=apple"/>
-  <a href="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml/badge.svg"/></a>
-  <a href="https://github.com/akidon0000/tokfuel/releases"><img alt="Release" src="https://img.shields.io/github/v/release/akidon0000/tokfuel?style=flat-square"/></a>
+  <a href="https://github.com/akidon0000/Tokfuel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/Tokfuel/actions/workflows/ci.yml/badge.svg"/></a>
+  <a href="https://github.com/akidon0000/Tokfuel/releases"><img alt="Release" src="https://img.shields.io/github/v/release/akidon0000/Tokfuel?style=flat-square"/></a>
 </p>
 
 <p align="center">
@@ -36,7 +36,7 @@
 
 ## インストール
 
-[Releases](https://github.com/akidon0000/tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロードして展開し、`Tokfuel.app` を `/Applications` に入れるだけです。
+[Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロードして展開し、`Tokfuel.app` を `/Applications` に入れるだけです。
 
 アドホック署名のため初回起動は Gatekeeper にブロックされます。右クリック →**開く**、または**システム設定 → プライバシーとセキュリティ**で許可してください。
 
@@ -45,7 +45,7 @@
 ソースからビルドする場合:
 
 ```bash
-git clone https://github.com/akidon0000/tokfuel.git && cd tokfuel && ./build.sh
+git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && ./build.sh
 ```
 
 ## コントリビュート

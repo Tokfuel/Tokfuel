@@ -11,8 +11,8 @@
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-1B1B1F?style=flat-square&logo=apple"/>
-  <a href="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/tokfuel/actions/workflows/ci.yml/badge.svg"/></a>
-  <a href="https://github.com/akidon0000/tokfuel/releases"><img alt="Release" src="https://img.shields.io/github/v/release/akidon0000/tokfuel?style=flat-square"/></a>
+  <a href="https://github.com/akidon0000/Tokfuel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/akidon0000/Tokfuel/actions/workflows/ci.yml/badge.svg"/></a>
+  <a href="https://github.com/akidon0000/Tokfuel/releases"><img alt="Release" src="https://img.shields.io/github/v/release/akidon0000/Tokfuel?style=flat-square"/></a>
 </p>
 
 <p align="center">
@@ -36,7 +36,7 @@
 
 ## Install
 
-Download `Tokfuel-x.y.z.zip` from [Releases](https://github.com/akidon0000/tokfuel/releases), unzip, and drag `Tokfuel.app` into `/Applications`.
+Download `Tokfuel-x.y.z.zip` from [Releases](https://github.com/akidon0000/Tokfuel/releases), unzip, and drag `Tokfuel.app` into `/Applications`.
 
 The app is ad-hoc signed, so Gatekeeper blocks the first launch: right-click → **Open**, or allow it in **System Settings → Privacy & Security**.
 
@@ -45,7 +45,7 @@ Requirements: macOS 14+, and `python3` (ships with Xcode Command Line Tools) for
 To build from source instead:
 
 ```bash
-git clone https://github.com/akidon0000/tokfuel.git && cd tokfuel && ./build.sh
+git clone https://github.com/akidon0000/Tokfuel.git && cd Tokfuel && ./build.sh
 ```
 
 ## Contributing
