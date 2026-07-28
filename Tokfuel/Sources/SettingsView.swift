@@ -4,6 +4,8 @@ import AppKit
 /// 初期設定を行うウィンドウ。ログイン起動・メニューバー表示・期間・言語・スキャン場所を切り替える。
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
+    /// メニューバー表示のプレビューに実データを出すためのストア（省略時はプレースホルダ表示）。
+    var store: UsageStore?
 
     var body: some View {
         Form {
@@ -17,10 +19,23 @@ struct SettingsView: View {
             }
 
             Section("メニューバー表示") {
-                Picker("表示内容", selection: $settings.menuBarDisplay) {
-                    ForEach(MenuBarDisplay.allCases) { Text($0.label).tag($0) }
+                ForEach(MenuBarDisplay.allCases) { option in
+                    Button {
+                        settings.menuBarDisplay = option
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: settings.menuBarDisplay == option
+                                  ? "inset.filled.circle" : "circle")
+                                .foregroundStyle(settings.menuBarDisplay == option
+                                                 ? Color.accentColor : Color.secondary)
+                            Text(option.label)
+                            Spacer()
+                            MenuBarPreviewChip(text: previewText(for: option))
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .pickerStyle(.radioGroup)
             }
 
             Section("集計") {
@@ -38,7 +53,7 @@ struct SettingsView: View {
 
             Section {
                 HStack {
-                    Text("上限金額 (USD)")
+                    Text("月の上限 (USD)")
                     Spacer()
                     TextField("0 = オフ", value: $settings.budgetLimit, format: .number)
                         .textFieldStyle(.roundedBorder)
@@ -50,7 +65,16 @@ struct SettingsView: View {
                         ForEach(BudgetPeriod.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.radioGroup)
-
+                }
+                HStack {
+                    Text("1日の上限 (USD)")
+                    Spacer()
+                    TextField("0 = オフ", value: $settings.dailyBudgetLimit, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 100)
+                        .multilineTextAlignment(.trailing)
+                }
+                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
                     Picker("警告しきい値", selection: $settings.budgetWarnPercent) {
                         Text("70%").tag(70)
                         Text("80%").tag(80)
@@ -62,45 +86,20 @@ struct SettingsView: View {
             } header: {
                 Text("予算")
             } footer: {
-                Text("しきい値に達するとメニューバーのアイコンがオレンジになり通知します。上限を超えると赤になります。0 を設定すると予算機能はオフです。")
+                Text("月と 1 日の上限は独立に設定できます。どちらかがしきい値に達するとメニューバーのアイコンがオレンジになり通知します。上限を超えると赤になります。0 を設定するとその予算はオフです。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
                 PathRow(title: "Claude ディレクトリ",
-                        note: "tool の集計元 (projects) と skill / plugin の読み取り元",
+                        note: "コスト集計元のトランスクリプト (projects) の読み取り元",
                         path: $settings.claudeDirectory,
                         defaultPath: AppSettings.defaultClaudeDirectory)
-                PathRow(title: "リポジトリルート",
-                        note: "プロジェクト単位の skill (.claude/skills) を探すルート",
-                        path: $settings.repositoryRoot,
-                        defaultPath: AppSettings.defaultRepositoryRoot)
             } header: {
                 Text("スキャン場所")
             } footer: {
                 Text("トランスクリプトを直接読み取ります。フックや追加設定は不要です。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Toggle(isOn: $settings.serverQuotaEnabled) {
-                    Text("Claude: サーバーの正確な使用率を取得")
-                    Text("公式 /usage と同じ 5 時間・週次の消費率を Cost タブに表示します")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Toggle(isOn: $settings.codexQuotaEnabled) {
-                    Text("Codex: サーバーの正確な使用率を取得")
-                    Text("Codex CLI のトークンで 5 時間・週次の消費率とプランを表示します")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("サーバークォータ（オプトイン）")
-            } footer: {
-                Text("有効にすると、各 CLI が保存済みの認証トークンだけをそのベンダーの API（Claude → Anthropic、Codex → OpenAI）に送って使用率を取得します。それ以外の通信は一切ありません。使用データや個人情報は送信しません。トークンの更新はせず、失効時は各 CLI を一度開くと直ります。初回は Keychain へのアクセス許可を求められることがあります。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -148,6 +147,38 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 720)
+    }
+
+    /// 各表示オプションでメニューバーに出る文字列。実データが無ければ "$–" を出す。
+    private func previewText(for option: MenuBarDisplay) -> String? {
+        let today = store?.todayCost.map(PopoverView.money)
+        let month = store?.budgetSpend.map(PopoverView.money)
+        switch option {
+        case .iconOnly: return nil
+        case .prompts: return "\(store?.today.prompts ?? 0)"
+        case .cost: return today ?? "$–"
+        case .monthlyCost: return month ?? "$–"
+        case .bothCosts: return "\(today ?? "$–") · 月 \(month ?? "$–")"
+        }
+    }
+}
+
+/// メニューバーの見た目を模したプレビューチップ（⛽️ アイコン + タイトル）。
+struct MenuBarPreviewChip: View {
+    let text: String?
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "fuelpump.fill")
+                .font(.system(size: 10))
+            if let text {
+                Text(text)
+                    .font(.caption.monospacedDigit())
+            }
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 5))
     }
 }
 

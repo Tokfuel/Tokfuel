@@ -170,6 +170,10 @@ final class UsageStore: ObservableObject {
     // retok によるコストレポート
     @Published var report: RetokReport?
     @Published var retokError: String?
+    /// retok 再解析（数秒かかる）の実行中フラグ。期間切り替え時のグラフに反映する。
+    @Published var isReportLoading = false
+    /// 連打時に古い結果が新しい結果を上書きしないようにする世代カウンタ。
+    private var reportGeneration = 0
     /// Cost タブの集計期間（日数。1 = 今日のみ）。最後に選んだ値を記憶する。
     @Published var reportDays: Int {
         didSet {
@@ -195,15 +199,6 @@ final class UsageStore: ObservableObject {
     /// Codex CLI の日別使用量（CU-0009）。ログが無いマシンでは空のまま。
     @Published var codexDaily: [ProviderDayUsage] = []
 
-    /// サーバー側クォータ（CU-0007）。オプトイン OFF・取得失敗時は nil。
-    @Published var quota: ClaudeQuotaSnapshot?
-    @Published var quotaError: String?
-    /// Codex 側のサーバークォータ（独立オプトイン）。
-    @Published var codexQuota: CodexQuotaSnapshot?
-    @Published var codexQuotaError: String?
-    /// ローカル検出したプラン名（例: "Max 5x"）。ネットワークは使わない。
-    @Published var claudePlan: String?
-
     private enum Keys {
         static let reportDays = "reportDays"
         static let toolsPeriod = "toolsPeriod"
@@ -217,15 +212,33 @@ final class UsageStore: ObservableObject {
             ?? .days30
     }
 
-    // 予算期間内の消費額（予算オフ・未取得なら nil）
+    // 予算期間内の消費額（月間予算・月表示ともオフ、または未取得なら nil）
     @Published var budgetSpend: Double?
 
-    /// 現在の予算レベル（予算オフ・未取得なら nil）。
+    /// 月間予算のレベル（予算オフ・未取得なら nil）。
     var budgetLevel: BudgetLevel? {
         let settings = AppSettings.shared
         guard settings.budgetLimit > 0, let spend = budgetSpend else { return nil }
         return BudgetMonitor.level(spend: spend, limit: settings.budgetLimit,
                                    warnPercent: settings.budgetWarnPercent)
+    }
+
+    /// 日次予算のレベル（予算オフ・コスト未取得なら nil）。今日のコストと比較する。
+    var dailyBudgetLevel: BudgetLevel? {
+        let settings = AppSettings.shared
+        guard settings.dailyBudgetLimit > 0, let spend = todayCost else { return nil }
+        return BudgetMonitor.level(spend: spend, limit: settings.dailyBudgetLimit,
+                                   warnPercent: settings.budgetWarnPercent)
+    }
+
+    /// アイコン色に使う総合レベル。月間・日次の悪い方。
+    var combinedBudgetLevel: BudgetLevel? {
+        switch (budgetLevel, dailyBudgetLevel) {
+        case let (m?, d?): return max(m, d)
+        case let (m?, nil): return m
+        case let (nil, d?): return d
+        case (nil, nil): return nil
+        }
     }
 
     /// トランスクリプト走査（バックグラウンド）→ 集計反映。retok も並行して実行する。
@@ -239,46 +252,11 @@ final class UsageStore: ObservableObject {
         Task.detached(priority: .userInitiated) {
             let records = TranscriptScanner.scan(projectsDir: projectsDir)
             let codex = CodexUsageReader.scan()
-            let plan = ClaudeQuotaService.detectPlan()
             await MainActor.run { [weak self] in
                 self?.apply(records: records)
                 self?.codexDaily = codex
-                self?.claudePlan = plan
                 self?.isLoading = false
             }
-        }
-        reloadQuota()
-    }
-
-    /// サーバー側クォータを再取得する（CU-0007）。各プロバイダのオプトインが OFF なら消すだけ。
-    func reloadQuota() {
-        if AppSettings.shared.serverQuotaEnabled {
-            Task {
-                do {
-                    self.quota = try await ClaudeQuotaService.fetch()
-                    self.quotaError = nil
-                } catch {
-                    self.quota = nil
-                    self.quotaError = error.localizedDescription
-                }
-            }
-        } else {
-            quota = nil
-            quotaError = nil
-        }
-        if AppSettings.shared.codexQuotaEnabled {
-            Task {
-                do {
-                    self.codexQuota = try await CodexQuotaService.fetch()
-                    self.codexQuotaError = nil
-                } catch {
-                    self.codexQuota = nil
-                    self.codexQuotaError = error.localizedDescription
-                }
-            }
-        } else {
-            codexQuota = nil
-            codexQuotaError = nil
         }
     }
 
@@ -303,14 +281,20 @@ final class UsageStore: ObservableObject {
         let isDefault = claudeDir.standardizedFileURL.path
             == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
         let projectsOverride = isDefault ? nil : claudeDir.appendingPathComponent("projects")
+        reportGeneration += 1
+        let generation = reportGeneration
+        isReportLoading = true
         Task {
             do {
                 let r = try await RetokService.run(days: days, lang: lang, projectsDir: projectsOverride)
+                guard generation == self.reportGeneration else { return }
                 self.report = r
                 self.retokError = nil
             } catch {
+                guard generation == self.reportGeneration else { return }
                 self.retokError = error.localizedDescription
             }
+            self.isReportLoading = false
         }
     }
 
@@ -318,11 +302,13 @@ final class UsageStore: ObservableObject {
     /// 暦月の最大長（31 日）を必ずカバーする 32 日分で retok を実行する。
     func reloadBudget() {
         let settings = AppSettings.shared
-        guard settings.budgetLimit > 0 else {
+        // 月間予算オフでも、メニューバーが今月のコスト表示なら消費額は必要。
+        guard settings.budgetLimit > 0 || settings.menuBarDisplay.showsMonthlyCost else {
             budgetSpend = nil
             return
         }
-        let period = settings.budgetPeriod
+        // 予算オフで表示だけ必要な場合は「今月（1 日から）」で数える。
+        let period = settings.budgetLimit > 0 ? settings.budgetPeriod : .calendarMonth
         let claudeDir = settings.claudeDirectoryURL
         let isDefault = claudeDir.standardizedFileURL.path
             == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
@@ -358,7 +344,6 @@ final class UsageStore: ObservableObject {
         }
         daily = dayMap.values.sorted { $0.date < $1.date }
 
-        reloadSkillInventory()
         lastUpdated = Date()
     }
 
@@ -448,154 +433,4 @@ final class UsageStore: ObservableObject {
             .sorted { $0.count > $1.count }
     }
 
-    // MARK: - Skill 棚卸し（不要 Skill の洗い出し）
-
-    @Published var skillInventory: [SkillInventoryItem] = []
-
-    /// 全リポジトリ横断の Skill 使用回数を、末尾セグメントで正規化した辞書にする。
-    /// 例: "Skill:yaml-to-html:generate-explainer-html" -> "generate-explainer-html"
-    /// 棚卸しは「本当に使われていないか」の判定なので、Tools タブの期間に関わらず全期間で数える。
-    private func normalizedSkillUsage() -> [String: Int] {
-        var counts: [String: Int] = [:]
-        for repo in allRecords {
-            for (key, value) in repo.tools where key.hasPrefix("Skill:") {
-                let raw = String(key.dropFirst("Skill:".count))
-                let name = raw.split(separator: ":").last.map(String.init) ?? raw
-                counts[name, default: 0] += value
-            }
-        }
-        return counts
-    }
-
-    /// ディスク上のインストール済み Skill を走査し、使用回数を突き合わせて棚卸しリストを作る。
-    /// 走査元（Claude ディレクトリ・リポジトリルート）は設定で変更できる。
-    func reloadSkillInventory() {
-        let fm = FileManager.default
-        let claudeDir = AppSettings.shared.claudeDirectoryURL
-        let repoRoot = AppSettings.shared.repositoryRootURL
-        let usage = normalizedSkillUsage()
-        var items: [SkillInventoryItem] = []
-
-        // グローバル個人 Skill: <claude>/skills/<name>/SKILL.md
-        let personalDir = claudeDir.appendingPathComponent("skills")
-        if let dirs = try? fm.contentsOfDirectory(at: personalDir, includingPropertiesForKeys: nil) {
-            for dir in dirs where dir.hasDirectoryPath {
-                let name = dir.lastPathComponent
-                guard fm.fileExists(atPath: dir.appendingPathComponent("SKILL.md").path) else { continue }
-                items.append(SkillInventoryItem(name: name, scope: .global, source: "global",
-                                                count: usage[name] ?? 0, url: dir))
-            }
-        }
-
-        // プラグイン Skill: <claude>/plugins/marketplaces/<market>/**/skills/<name>/SKILL.md
-        let marketsDir = claudeDir.appendingPathComponent("plugins/marketplaces")
-        if let markets = try? fm.contentsOfDirectory(at: marketsDir, includingPropertiesForKeys: nil) {
-            for market in markets where market.hasDirectoryPath {
-                let marketName = market.lastPathComponent
-                let skillMds = skillManifests(under: market, fm: fm)
-                for md in skillMds {
-                    let dir = md.deletingLastPathComponent()
-                    let name = dir.lastPathComponent
-                    items.append(SkillInventoryItem(name: name, scope: .plugin, source: marketName,
-                                                    count: usage[name] ?? 0, url: dir))
-                }
-            }
-        }
-
-        // プロジェクト Skill: <repoRoot>/**/.claude/skills/<name>/SKILL.md
-        // ルート直下〜3階層で .claude/skills を持つディレクトリを探す（深い再帰はしない）。
-        for repoDir in repositoriesWithSkills(under: repoRoot, fm: fm) {
-            let skillsDir = repoDir.appendingPathComponent(".claude/skills")
-            guard let dirs = try? fm.contentsOfDirectory(at: skillsDir, includingPropertiesForKeys: nil)
-            else { continue }
-            let repo = repoDir.lastPathComponent
-            for dir in dirs where dir.hasDirectoryPath {
-                guard fm.fileExists(atPath: dir.appendingPathComponent("SKILL.md").path) else { continue }
-                let name = dir.lastPathComponent
-                items.append(SkillInventoryItem(name: name, scope: .project, source: repo,
-                                                count: usage[name] ?? 0, url: dir))
-            }
-        }
-
-        // 使用数の少ない順（同数なら名前順）。未使用＝削除候補が上に来る。
-        skillInventory = items.sorted {
-            $0.count != $1.count ? $0.count < $1.count : $0.name < $1.name
-        }
-    }
-
-    /// スコープ（Global / Plugin / Project別）ごとにまとめた表示用グループ。
-    /// 各グループ内は使用数の少ない順。未使用のみ絞り込みにも対応。
-    func skillGroups(unusedOnly: Bool) -> [(title: String, items: [SkillInventoryItem])] {
-        let filtered = unusedOnly ? skillInventory.filter(\.isUnused) : skillInventory
-        let order: [SkillScope] = [.global, .plugin, .project]
-        var groups: [(title: String, items: [SkillInventoryItem])] = []
-        for scope in order {
-            let inScope = filtered.filter { $0.scope == scope }
-            // Plugin / Project はソース（マーケット名・リポ名）ごとにさらに分ける。
-            if scope == .global {
-                if !inScope.isEmpty { groups.append(("Global", inScope)) }
-            } else {
-                let bySource = Dictionary(grouping: inScope, by: \.source)
-                for source in bySource.keys.sorted() {
-                    let items = bySource[source]!.sorted {
-                        $0.count != $1.count ? $0.count < $1.count : $0.name < $1.name
-                    }
-                    groups.append(("\(scope.rawValue): \(source)", items))
-                }
-            }
-        }
-        return groups
-    }
-
-    /// あるディレクトリ配下の SKILL.md を再帰的に列挙する。
-    private func skillManifests(under dir: URL, fm: FileManager) -> [URL] {
-        guard let en = fm.enumerator(at: dir, includingPropertiesForKeys: nil) else { return [] }
-        return en.compactMap { $0 as? URL }.filter { $0.lastPathComponent == "SKILL.md" }
-    }
-
-    /// リポジトリルート直下〜3階層で `.claude/skills` を持つディレクトリを返す。
-    /// ~/ghq/<host>/<org>/<repo>（3階層）にも ~/src/<repo>（1階層）にも対応する。
-    /// 見つかったら以下は降りないので、深い再帰にはならない。
-    private func repositoriesWithSkills(under root: URL, fm: FileManager) -> [URL] {
-        func subdirs(_ url: URL) -> [URL] {
-            (try? fm.contentsOfDirectory(at: url, includingPropertiesForKeys: nil,
-                                         options: [.skipsHiddenFiles]))?
-                .filter { $0.hasDirectoryPath } ?? []
-        }
-        var result: [URL] = []
-        var frontier = subdirs(root)      // 深さ 1
-        for _ in 0..<3 {
-            var next: [URL] = []
-            for dir in frontier {
-                if fm.fileExists(atPath: dir.appendingPathComponent(".claude/skills").path) {
-                    result.append(dir)
-                } else {
-                    next.append(contentsOf: subdirs(dir))
-                }
-            }
-            frontier = next
-            if frontier.isEmpty { break }
-        }
-        return result
-    }
-}
-
-/// Skill の所在スコープ。
-enum SkillScope: String {
-    case global = "Global"
-    case plugin = "Plugin"
-    case project = "Project"
-}
-
-/// インストール済み Skill 1 件と、その使用回数。
-struct SkillInventoryItem: Identifiable {
-    var id: String { "\(scope.rawValue)/\(source)/\(name)" }
-    let name: String
-    let scope: SkillScope
-    let source: String   // "global" / マーケットプレイス名 / リポジトリ名
-    let count: Int
-    /// Skill の実体ディレクトリ（SKILL.md のある場所）。Finder で開く対象。
-    let url: URL
-
-    var isUnused: Bool { count == 0 }
 }

@@ -4,15 +4,19 @@ import ServiceManagement
 
 /// メニューバーに常時表示する内容。
 enum MenuBarDisplay: String, CaseIterable, Identifiable {
-    case cost, prompts, iconOnly
+    case cost, monthlyCost, bothCosts, prompts, iconOnly
     var id: String { rawValue }
     var label: String {
         switch self {
         case .cost: return "今日のコスト"
+        case .monthlyCost: return "今月のコスト"
+        case .bothCosts: return "今日と今月のコスト"
         case .prompts: return "今日のプロンプト数"
         case .iconOnly: return "アイコンのみ"
         }
     }
+    /// 月間消費額の算出（retok 32 日走査）が必要な表示か。
+    var showsMonthlyCost: Bool { self == .monthlyCost || self == .bothCosts }
 }
 
 /// retok の集計言語。auto は OS のロケールに従う。
@@ -70,14 +74,14 @@ final class AppSettings: ObservableObject {
     @Published var claudeDirectory: String {
         didSet { persist(claudeDirectory, forKey: Keys.claudeDirectory) }
     }
-    /// プロジェクト単位の skill (`.claude/skills`) を探すリポジトリのルート。
-    @Published var repositoryRoot: String {
-        didSet { persist(repositoryRoot, forKey: Keys.repositoryRoot) }
-    }
 
-    /// 期間あたりのコスト上限 (USD)。0 なら予算機能オフ。
+    /// 月間（budgetPeriod で定義する期間）のコスト上限 (USD)。0 なら月間予算オフ。
     @Published var budgetLimit: Double {
         didSet { persist(budgetLimit, forKey: Keys.budgetLimit) }
+    }
+    /// 1 日あたりのコスト上限 (USD)。0 なら日次予算オフ。月間とは独立。
+    @Published var dailyBudgetLimit: Double {
+        didSet { persist(dailyBudgetLimit, forKey: Keys.dailyBudgetLimit) }
     }
     /// 予算の集計期間の起点（ローリング 30 日 / 暦月）。
     @Published var budgetPeriod: BudgetPeriod {
@@ -86,17 +90,6 @@ final class AppSettings: ObservableObject {
     /// 警告を出すしきい値（上限に対する %）。
     @Published var budgetWarnPercent: Int {
         didSet { persist(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
-    }
-
-    /// サーバー真値クォータの取得（CU-0007）。唯一のネットワーク機能のため既定 OFF。
-    /// 送るのは自分の OAuth トークンのみ・宛先は Anthropic のみ。
-    @Published var serverQuotaEnabled: Bool {
-        didSet { persist(serverQuotaEnabled, forKey: Keys.serverQuotaEnabled) }
-    }
-
-    /// Codex 側のサーバークォータ取得。Claude とは別の同意なので独立トグル・既定 OFF。
-    @Published var codexQuotaEnabled: Bool {
-        didSet { persist(codexQuotaEnabled, forKey: Keys.codexQuotaEnabled) }
     }
 
     /// アプリ自身の UI 利用イベント記録（CU-0013）。ローカル限定・デフォルト有効。
@@ -113,30 +106,19 @@ final class AppSettings: ObservableObject {
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let claudeDirectory = "claudeDirectory"
-        static let repositoryRoot = "repositoryRoot"
         static let budgetLimit = "budgetLimit"
+        static let dailyBudgetLimit = "dailyBudgetLimit"
         static let budgetPeriod = "budgetPeriod"
         static let budgetWarnPercent = "budgetWarnPercent"
-        static let serverQuotaEnabled = "serverQuotaEnabled"
-        static let codexQuotaEnabled = "codexQuotaEnabled"
     }
 
     /// 既定の Claude ディレクトリ（~/.claude）。
     static var defaultClaudeDirectory: String {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude").path
     }
-    /// 既定のリポジトリルート（~/ghq）。
-    static var defaultRepositoryRoot: String {
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("ghq").path
-    }
-
     /// `~` を展開した Claude ディレクトリの URL。
     var claudeDirectoryURL: URL {
         URL(fileURLWithPath: (claudeDirectory as NSString).expandingTildeInPath)
-    }
-    /// `~` を展開したリポジトリルートの URL。
-    var repositoryRootURL: URL {
-        URL(fileURLWithPath: (repositoryRoot as NSString).expandingTildeInPath)
     }
 
     private init() {
@@ -153,14 +135,12 @@ final class AppSettings: ObservableObject {
         defaultPeriodDays = days == 7 || days == 30 ? days : 30
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
-        repositoryRoot = defaults.string(forKey: Keys.repositoryRoot) ?? Self.defaultRepositoryRoot
         budgetLimit = defaults.double(forKey: Keys.budgetLimit)
+        dailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)
         budgetPeriod = BudgetPeriod(rawValue: defaults.string(forKey: Keys.budgetPeriod) ?? "")
             ?? .calendarMonth
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
-        serverQuotaEnabled = defaults.bool(forKey: Keys.serverQuotaEnabled)   // 既定 OFF
-        codexQuotaEnabled = defaults.bool(forKey: Keys.codexQuotaEnabled)     // 既定 OFF
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
     }
 

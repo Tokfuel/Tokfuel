@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "Tokfuel")
+            button.image = NSImage(systemSymbolName: "fuelpump.fill", accessibilityDescription: "Tokfuel")
             button.image?.size = NSSize(width: 16, height: 16)
             button.imagePosition = .imageLeading
             button.action = #selector(togglePopover)
@@ -37,27 +37,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 420, height: 560)
+        popover.contentSize = NSSize(width: 360, height: 520)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
             rootView: PopoverView(store: usageStore, onOpenSettings: { [weak self] in
                 self?.openSettings()
             })
+            .tint(.orange)   // 燃料ブランドのアクセント 1 色に統一
         )
 
         // 集計期間は UsageStore が「最後に選んだ値」を自分で復元する（CU-0011）。
         // 設定の既定値は初回（未選択）時のフォールバックと、明示的な変更時のみ反映する。
 
-        // データ更新のたびにメニューバーの「今日の数字」を更新する。
+        // データ更新のたびにメニューバーの表示と予算通知を更新する（通知は内部で重複抑止）。
         usageStore.objectWillChange
             .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.updateStatusTitle() }
+            .sink { [weak self] in
+                self?.updateStatusTitle()
+                self?.evaluateBudget()
+            }
             .store(in: &cancellables)
 
-        // 設定変更を反映する。
+        // 設定変更を反映する。月表示に切り替えたら消費額の算出も必要になる。
         settings.$menuBarDisplay
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.updateStatusTitle() }
+            .sink { [weak self] _ in
+                self?.updateStatusTitle()
+                self?.usageStore.reloadBudget()
+            }
             .store(in: &cancellables)
         settings.$defaultPeriodDays
             .dropFirst()
@@ -70,35 +77,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .sink { [weak self] _ in self?.usageStore.reloadReport() }
             .store(in: &cancellables)
         // スキャン場所が変わったら再走査する。
-        Publishers.Merge(settings.$claudeDirectory.dropFirst().map { _ in () },
-                         settings.$repositoryRoot.dropFirst().map { _ in () })
+        settings.$claudeDirectory.dropFirst()
             .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.usageStore.reload() }
+            .sink { [weak self] _ in self?.usageStore.reload() }
             .store(in: &cancellables)
         // 予算設定が変わったら再計算。上限を新たに設定したら通知許可も求める。
-        Publishers.Merge3(settings.$budgetLimit.dropFirst().map { _ in () },
+        Publishers.Merge4(settings.$budgetLimit.dropFirst().map { _ in () },
+                          settings.$dailyBudgetLimit.dropFirst().map { _ in () },
                           settings.$budgetPeriod.dropFirst().map { _ in () },
                           settings.$budgetWarnPercent.dropFirst().map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] in
-                if AppSettings.shared.budgetLimit > 0 {
+                let s = AppSettings.shared
+                if s.budgetLimit > 0 || s.dailyBudgetLimit > 0 {
                     BudgetMonitor.requestAuthorizationIfNeeded()
                 }
                 self?.usageStore.reloadBudget()
             }
             .store(in: &cancellables)
-        // サーバー真値クォータのオプトインが切り替わったら即反映する。
-        Publishers.Merge(settings.$serverQuotaEnabled.dropFirst().map { _ in () },
-                         settings.$codexQuotaEnabled.dropFirst().map { _ in () })
-            .receive(on: RunLoop.main)
-            .sink { [weak self] in self?.usageStore.reloadQuota() }
-            .store(in: &cancellables)
-        // 予算消費額が更新されたらアイコン色と通知を評価する。
-        usageStore.$budgetSpend
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.evaluateBudget() }
-            .store(in: &cancellables)
-
         usageStore.reload()
         updateStatusTitle()
 
@@ -108,23 +104,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 予算レベルに応じてアイコン色を変え、必要なら通知を送る。
+    /// 予算レベルに応じてアイコン色を変え、必要なら通知を送る（月間・日次それぞれ）。
     private func evaluateBudget() {
         updateStatusIcon()
-        guard let level = usageStore.budgetLevel,
-              let spend = usageStore.budgetSpend else { return }
-        BudgetMonitor.notifyIfNeeded(
-            level: level, spend: spend, limit: settings.budgetLimit,
-            periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod))
+        if let level = usageStore.budgetLevel, let spend = usageStore.budgetSpend {
+            BudgetMonitor.notifyIfNeeded(
+                kind: .monthly, level: level, spend: spend, limit: settings.budgetLimit,
+                periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod))
+        }
+        if let level = usageStore.dailyBudgetLevel, let spend = usageStore.todayCost {
+            BudgetMonitor.notifyIfNeeded(
+                kind: .daily, level: level, spend: spend, limit: settings.dailyBudgetLimit,
+                periodKey: BudgetMonitor.dailyPeriodKey())
+        }
     }
 
     /// メニューバーアイコン。通常はテンプレート（自動色）、警告でオレンジ、超過で赤。
     private func updateStatusIcon() {
         guard let button = statusItem.button else { return }
-        let base = NSImage(systemSymbolName: "chart.bar.fill",
+        let base = NSImage(systemSymbolName: "fuelpump.fill",
                            accessibilityDescription: "Tokfuel")
         let image: NSImage?
-        switch usageStore.budgetLevel {
+        switch usageStore.combinedBudgetLevel {
         case .warning:
             image = base?.withSymbolConfiguration(.init(paletteColors: [.systemOrange]))
             image?.isTemplate = false
@@ -155,11 +156,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 button.title = " " + PopoverView.money(cost)
                 button.toolTip = "今日の推定コスト: \(String(format: "$%.2f", cost))"
             } else {
-                let prompts = usageStore.today.prompts
-                button.title = " \(prompts)"
-                button.toolTip = "今日のプロンプト数: \(prompts)"
+                fallbackToPrompts(button)
+            }
+        case .monthlyCost:
+            if let spend = usageStore.budgetSpend {
+                button.title = " " + PopoverView.money(spend)
+                button.toolTip = "今月の推定コスト: \(String(format: "$%.2f", spend))"
+            } else {
+                fallbackToPrompts(button)
+            }
+        case .bothCosts:
+            if let today = usageStore.todayCost, let month = usageStore.budgetSpend {
+                button.title = " \(PopoverView.money(today)) · 月 \(PopoverView.money(month))"
+                button.toolTip = "今日 \(String(format: "$%.2f", today)) / 今月 \(String(format: "$%.2f", month))"
+            } else if let today = usageStore.todayCost {
+                button.title = " " + PopoverView.money(today)
+                button.toolTip = "今日の推定コスト: \(String(format: "$%.2f", today))"
+            } else {
+                fallbackToPrompts(button)
             }
         }
+    }
+
+    /// コスト未取得時（retok 解析前・python3 なし）のフォールバック表示。
+    private func fallbackToPrompts(_ button: NSStatusBarButton) {
+        let prompts = usageStore.today.prompts
+        button.title = " \(prompts)"
+        button.toolTip = "今日のプロンプト数: \(prompts)"
     }
 
     @objc private func togglePopover() {
@@ -178,7 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func openSettings() {
         popover.performClose(nil)
         if settingsWindow == nil {
-            let hosting = NSHostingController(rootView: SettingsView())
+            let hosting = NSHostingController(rootView: SettingsView(store: usageStore))
             let window = NSWindow(contentViewController: hosting)
             window.title = "Tokfuel 設定"
             window.styleMask = [.titled, .closable]
