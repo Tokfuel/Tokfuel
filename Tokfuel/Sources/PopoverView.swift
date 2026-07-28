@@ -313,7 +313,8 @@ struct PopoverView: View {
             .replacingOccurrences(of: "-20251001", with: "")
     }
 
-    static func money(_ value: Double) -> String {
+    // 純粋なフォーマッタ。App 側やテストから actor 隔離なしで呼べるようにする。
+    nonisolated static func money(_ value: Double) -> String {
         value >= 100 ? String(format: "$%.0f", value) : String(format: "$%.2f", value)
     }
 }
