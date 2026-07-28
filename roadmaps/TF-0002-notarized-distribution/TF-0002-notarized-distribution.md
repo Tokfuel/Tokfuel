@@ -55,3 +55,4 @@ Prerequisite: Apple Developer Program membership (US$99/year).
 ## References
 
 - [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
+- A draft Developer ID + notarization script existed as `release.sh` at the repo root (removed 2026-07; recoverable from git history) — reusable as a starting point.

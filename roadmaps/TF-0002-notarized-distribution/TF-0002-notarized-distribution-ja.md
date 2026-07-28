@@ -56,3 +56,4 @@
 ## References
 
 - [Notarizing macOS software before distribution](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
+- Developer ID 署名＋公証スクリプトの下書きがリポジトリ直下の `release.sh` にありました（2026-07 に削除。git 履歴から復元可能）— 実装の出発点に再利用できます。
