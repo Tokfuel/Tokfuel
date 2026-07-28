@@ -55,28 +55,21 @@ ctx.drawLinearGradient(sheen, start: CGPoint(x: 0, y: square.maxY),
                        end: CGPoint(x: 0, y: square.midY + 60), options: [])
 ctx.restoreGState()
 
-// --- 白いバーチャート ---
-func bar(_ x: CGFloat, _ height: CGFloat, width: CGFloat, baseTop: CGFloat, alpha: CGFloat = 1) {
-    let r = CGRect(x: x, y: baseTop, width: width, height: height)
-    let p = CGPath(roundedRect: r, cornerWidth: 20, cornerHeight: 20, transform: nil)
-    ctx.addPath(p)
-    ctx.setFillColor(CGColor(gray: 1, alpha: alpha))
-    ctx.fillPath()
-}
+// --- 白い燃料ポンプ（SF Symbol） ---
+let config = NSImage.SymbolConfiguration(pointSize: 480, weight: .medium)
+    .applying(.init(paletteColors: [.white]))
+guard let pump = NSImage(systemSymbolName: "fuelpump.fill",
+                         accessibilityDescription: nil)?
+    .withSymbolConfiguration(config) else { fatalError("symbol") }
 
-let barWidth: CGFloat = 120
-let gap: CGFloat = 62
-let startX: CGFloat = 270
-let baseTop: CGFloat = 360        // バーの下端
-// ベースライン
-let baseRect = CGRect(x: startX, y: 320, width: barWidth * 3 + gap * 2, height: 30)
-ctx.addPath(CGPath(roundedRect: baseRect, cornerWidth: 15, cornerHeight: 15, transform: nil))
-ctx.setFillColor(CGColor(gray: 1, alpha: 0.9))
-ctx.fillPath()
-// 3 本の昇順バー
-bar(startX, 150, width: barWidth, baseTop: baseTop)
-bar(startX + (barWidth + gap), 250, width: barWidth, baseTop: baseTop)
-bar(startX + (barWidth + gap) * 2, 360, width: barWidth, baseTop: baseTop)
+// シンボルのアスペクト比を保ったまま、スクエア中央に収める。
+let maxSide: CGFloat = 540
+let scale = min(maxSide / pump.size.width, maxSide / pump.size.height)
+let drawSize = NSSize(width: pump.size.width * scale, height: pump.size.height * scale)
+let drawRect = NSRect(x: (CGFloat(size) - drawSize.width) / 2,
+                      y: (CGFloat(size) - drawSize.height) / 2,
+                      width: drawSize.width, height: drawSize.height)
+pump.draw(in: drawRect)
 
 NSGraphicsContext.restoreGraphicsState()
 
