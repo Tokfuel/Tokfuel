@@ -63,6 +63,11 @@ final class AppSettings: ObservableObject {
     @Published var menuBarDisplay: MenuBarDisplay {
         didSet { persist(menuBarDisplay.rawValue, forKey: Keys.menuBarDisplay) }
     }
+    /// メニューバーの金額を「消費額」ではなく「予算までの残り（上限 − 消費）」で見せる。
+    /// 対応する予算が未設定の項目は消費額のまま。
+    @Published var menuBarShowsRemaining: Bool {
+        didSet { persist(menuBarShowsRemaining, forKey: Keys.menuBarShowsRemaining) }
+    }
     @Published var defaultPeriodDays: Int {
         didSet { persist(defaultPeriodDays, forKey: Keys.defaultPeriodDays) }
     }
@@ -107,6 +112,7 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let launchAtLogin = "launchAtLogin"
         static let menuBarDisplay = "menuBarDisplay"
+        static let menuBarShowsRemaining = "menuBarShowsRemaining"
         static let defaultPeriodDays = "defaultPeriodDays"
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
@@ -136,6 +142,7 @@ final class AppSettings: ObservableObject {
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         menuBarDisplay = MenuBarDisplay(rawValue: defaults.string(forKey: Keys.menuBarDisplay) ?? "")
             ?? .cost
+        menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
         let days = defaults.integer(forKey: Keys.defaultPeriodDays)
         defaultPeriodDays = days == 7 || days == 30 ? days : 30
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto

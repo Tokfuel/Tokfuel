@@ -36,6 +36,14 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                Toggle(isOn: $settings.menuBarShowsRemaining) {
+                    Text("予算までの残りを表示")
+                    Text("消費額の代わりに「上限 − 消費」を表示します。予算未設定の項目は消費額のままです")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(settings.budgetLimit <= 0 && settings.dailyBudgetLimit <= 0)
             }
 
             Section("集計") {
@@ -61,7 +69,7 @@ struct SettingsView: View {
                 HStack {
                     Text("月の上限 (\(unitSymbol))")
                     Spacer()
-                    TextField("0 = オフ", value: budgetField(\.budgetLimit), format: .number)
+                    TextField("", value: budgetField(\.budgetLimit), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 100)
                         .multilineTextAlignment(.trailing)
@@ -75,7 +83,7 @@ struct SettingsView: View {
                 HStack {
                     Text("1日の上限 (\(unitSymbol))")
                     Spacer()
-                    TextField("0 = オフ", value: budgetField(\.dailyBudgetLimit), format: .number)
+                    TextField("", value: budgetField(\.dailyBudgetLimit), format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 100)
                         .multilineTextAlignment(.trailing)
@@ -92,7 +100,7 @@ struct SettingsView: View {
             } header: {
                 Text("予算")
             } footer: {
-                Text("通貨はアプリ全体の金額表示と共通です。円を選ぶと Frankfurter API からレートを 1 日 1 回取得します（送るのはレートの問い合わせだけ）。上限は選択中の通貨で入力でき、内部では USD で保存します。月と 1 日の上限は独立で、しきい値でアイコンがオレンジ・通知、超過で赤になります。0 はオフです。")
+                Text("通貨はアプリ全体の金額表示と共通です。円を選ぶと Frankfurter API からレートを 1 日 1 回取得します（送るのはレートの問い合わせだけ）。上限は選択中の通貨で入力でき、内部では USD で保存します。月と 1 日の上限は独立で、しきい値でアイコンがオレンジ・通知、超過で赤になります。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -184,9 +192,18 @@ struct SettingsView: View {
     }
 
     /// 各表示オプションでメニューバーに出る文字列。実データが無ければ "$–" を出す。
+    /// 「予算までの残り」モードでは、予算のある項目を「残 上限 − 消費」に置き換える。
     private func previewText(for option: MenuBarDisplay) -> String? {
-        let today = store?.todayCost.map(PopoverView.money)
-        let month = store?.budgetSpend.map(PopoverView.money)
+        let today = store?.todayCost.map { cost in
+            settings.menuBarShowsRemaining && settings.dailyBudgetLimit > 0
+                ? "残 " + PopoverView.money(settings.dailyBudgetLimit - cost)
+                : PopoverView.money(cost)
+        }
+        let month = store?.budgetSpend.map { spend in
+            settings.menuBarShowsRemaining && settings.budgetLimit > 0
+                ? "残 " + PopoverView.money(settings.budgetLimit - spend)
+                : PopoverView.money(spend)
+        }
         switch option {
         case .iconOnly: return nil
         case .prompts: return "\(store?.today.prompts ?? 0)"

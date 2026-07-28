@@ -22,6 +22,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = AppSettings.shared
     private var cancellables = Set<AnyCancellable>()
     private var refreshTimer: Timer?
+    /// ポップオーバー表示中の「外側クリックで閉じる」監視。
+    private var outsideClickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -39,7 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         popover = NSPopover()
         popover.contentSize = NSSize(width: 360, height: 520)
-        popover.behavior = .transient
+        // .transient だと ⋯ メニューを開いた瞬間にフォーカス移動を「外側クリック」と
+        // 誤認してポップオーバーが閉じることがある。閉じる判定は自前で行う。
+        popover.behavior = .applicationDefined
         popover.contentViewController = NSHostingController(
             rootView: PopoverView(store: usageStore,
                                   onOpenSettings: { [weak self] in self?.openSettings() },
@@ -60,9 +64,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
 
         // 設定変更を反映する。月表示に切り替えたら消費額の算出も必要になる。
-        settings.$menuBarDisplay
+        Publishers.Merge(settings.$menuBarDisplay.map { _ in () },
+                         settings.$menuBarShowsRemaining.map { _ in () })
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] in
                 self?.updateStatusTitle()
                 self?.usageStore.reloadBudget()
             }
@@ -152,6 +157,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button.image = image
     }
 
+    /// 今日ぶんの表示値。残額モードかつ日次予算があれば「上限 − 消費」、なければ消費額。
+    private func todayFigure() -> (text: String, tip: String)? {
+        guard let cost = usageStore.todayCost else { return nil }
+        if settings.menuBarShowsRemaining, settings.dailyBudgetLimit > 0 {
+            let remaining = settings.dailyBudgetLimit - cost
+            return ("残 " + PopoverView.money(remaining),
+                    "今日の残り予算: \(PopoverView.money(remaining))")
+        }
+        return (PopoverView.money(cost), "今日の推定コスト: \(PopoverView.money(cost))")
+    }
+
+    /// 今月ぶんの表示値。残額モードかつ月間予算があれば「上限 − 消費」、なければ消費額。
+    private func monthFigure() -> (text: String, tip: String)? {
+        guard let spend = usageStore.budgetSpend else { return nil }
+        if settings.menuBarShowsRemaining, settings.budgetLimit > 0 {
+            let remaining = settings.budgetLimit - spend
+            return ("残 " + PopoverView.money(remaining),
+                    "今月の残り予算: \(PopoverView.money(remaining))")
+        }
+        return (PopoverView.money(spend), "今月の推定コスト: \(PopoverView.money(spend))")
+    }
+
     /// メニューバー表示は設定に従う（コスト / プロンプト数 / アイコンのみ）。
     private func updateStatusTitle() {
         guard let button = statusItem.button else { return }
@@ -165,26 +192,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.title = " \(prompts)"
             button.toolTip = "今日のプロンプト数: \(prompts)"
         case .cost:
-            if let cost = usageStore.todayCost {
-                button.title = " " + PopoverView.money(cost)
-                button.toolTip = "今日の推定コスト: \(PopoverView.money(cost))"
+            if let today = todayFigure() {
+                button.title = " " + today.text
+                button.toolTip = today.tip
             } else {
                 fallbackToPrompts(button)
             }
         case .monthlyCost:
-            if let spend = usageStore.budgetSpend {
-                button.title = " " + PopoverView.money(spend)
-                button.toolTip = "今月の推定コスト: \(PopoverView.money(spend))"
+            if let month = monthFigure() {
+                button.title = " " + month.text
+                button.toolTip = month.tip
             } else {
                 fallbackToPrompts(button)
             }
         case .bothCosts:
-            if let today = usageStore.todayCost, let month = usageStore.budgetSpend {
-                button.title = " \(PopoverView.money(today)) · 月 \(PopoverView.money(month))"
-                button.toolTip = "今日 \(PopoverView.money(today)) / 今月 \(PopoverView.money(month))"
-            } else if let today = usageStore.todayCost {
-                button.title = " " + PopoverView.money(today)
-                button.toolTip = "今日の推定コスト: \(PopoverView.money(today))"
+            if let today = todayFigure(), let month = monthFigure() {
+                button.title = " \(today.text) · 月 \(month.text)"
+                button.toolTip = "\(today.tip) / \(month.tip)"
+            } else if let today = todayFigure() {
+                button.title = " " + today.text
+                button.toolTip = today.tip
             } else {
                 fallbackToPrompts(button)
             }
@@ -201,18 +228,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func togglePopover() {
         guard let button = statusItem.button else { return }
         if popover.isShown {
-            popover.performClose(nil)
+            closePopover()
         } else {
             usageStore.reload()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
             UsageEventLog.shared.log(.popoverOpen)
+            // 他アプリをクリックしたら閉じる（自アプリ内のメニュー操作では発火しない）。
+            outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+                matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                Task { @MainActor [weak self] in self?.closePopover() }
+            }
+        }
+    }
+
+    private func closePopover() {
+        popover.performClose(nil)
+        if let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            outsideClickMonitor = nil
         }
     }
 
     /// 設定ウィンドウを開く。アクセサリアプリのため明示的に前面化する。
     private func openSettings() {
-        popover.performClose(nil)
+        closePopover()
         if settingsWindow == nil {
             let hosting = NSHostingController(rootView: SettingsView(store: usageStore))
             let window = NSWindow(contentViewController: hosting)
@@ -229,7 +269,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 「Tokfuel について」ウィンドウ（バージョン・作者・謝辞）を開く。
     private func openAbout() {
-        popover.performClose(nil)
+        closePopover()
         if aboutWindow == nil {
             let hosting = NSHostingController(rootView: AboutView())
             let window = NSWindow(contentViewController: hosting)
