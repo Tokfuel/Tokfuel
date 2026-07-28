@@ -107,9 +107,13 @@ enum BudgetMonitor {
     }
 
     /// 予算機能を有効にしたタイミングで通知許可を求める。
+    /// 完了ハンドラはバックグラウンドキューで呼ばれるため、@MainActor 型（BudgetMonitor）の
+    /// 文脈で書いても MainActor 隔離と推論されないよう @Sendable を明示する
+    /// （推論されると dispatch_assert_queue で即クラッシュする）。
     static func requestAuthorizationIfNeeded() {
         guard notificationsAvailable else { return }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .sound]) { @Sendable _, _ in }
     }
 
     private static func post(kind: Kind, level: BudgetLevel, spend: Double, limit: Double) {
@@ -131,9 +135,12 @@ enum BudgetMonitor {
         let request = UNNotificationRequest(identifier: "budget-\(kind.rawValue)-\(level.rawValue)",
                                             content: content, trigger: nil)
         // 掲示に失敗した通知（許可なし等）を「表示した」と数えないよう、成功時だけ記録する。
-        UNUserNotificationCenter.current().add(request) { error in
+        // 完了ハンドラはバックグラウンドキューで呼ばれる（上の requestAuthorization と同じ理由で
+        // @Sendable 必須）。UsageEventLog はスレッドセーフなので直接呼べる。
+        let kindKey = "budget-\(kind.rawValue)"
+        UNUserNotificationCenter.current().add(request) { @Sendable error in
             guard error == nil else { return }
-            UsageEventLog.shared.log(.notificationShown, meta: ["kind": "budget-\(kind.rawValue)"])
+            UsageEventLog.shared.log(.notificationShown, meta: ["kind": kindKey])
         }
     }
 }
