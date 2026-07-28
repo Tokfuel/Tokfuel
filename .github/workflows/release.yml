@@ -1,10 +1,17 @@
 name: Release
 
-# v1.2.3 形式のタグを push すると、ユニバーサルビルドの Tokfuel.app を zip にして
-# GitHub Release に添付する。
+# 2 通りで起動できる:
+# - Actions の「Run workflow」からバージョン（例 v0.0.4）を入力 → main にタグを打って
+#   ビルドし、GitHub Release まで自動作成する（推奨フロー）。
+# - v* タグを手で push した場合も従来どおり動く。
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "リリースするバージョン（例: v0.0.4）"
+        required: true
 
 permissions:
   contents: write
@@ -16,19 +23,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+          case "$VERSION" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "version must look like v0.0.4, got: $VERSION" >&2; exit 1 ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # 手動起動のときは、いまチェックアウトしている main の先頭にタグを打つ。
+      # （GITHUB_TOKEN によるタグ push は他のワークフローを起動しないので二重実行にならない）
+      - name: Tag main
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.version }}"
+          git push origin "${{ steps.version.outputs.version }}"
+
       - name: Show toolchain
         run: |
           swift --version
           xcodebuild -version
 
+      - name: Test
+        run: swift test
+
       - name: Build & package
-        run: bash scripts/release.sh "${GITHUB_REF_NAME}"
+        run: bash scripts/release.sh "${{ steps.version.outputs.version }}"
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "Tokfuel ${GITHUB_REF_NAME}" \
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "Tokfuel ${{ steps.version.outputs.version }}" \
             --generate-notes \
             dist/Tokfuel-*.zip
