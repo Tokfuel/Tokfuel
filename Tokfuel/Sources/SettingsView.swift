@@ -38,7 +38,7 @@ struct SettingsView: View {
                 }
             }
 
-            Section("集計") {
+            Section {
                 Picker("既定の集計期間", selection: $settings.defaultPeriodDays) {
                     Text("7 日").tag(7)
                     Text("30 日").tag(30)
@@ -49,6 +49,16 @@ struct SettingsView: View {
                 Picker("レポート言語", selection: $settings.language) {
                     ForEach(ReportLanguage.allCases) { Text($0.label).tag($0) }
                 }
+
+                Picker("表示通貨", selection: $settings.displayCurrency) {
+                    ForEach(DisplayCurrency.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("集計")
+            } footer: {
+                Text("日本円を選ぶと Frankfurter API から為替レートを 1 日 1 回取得します（送るのはレートの問い合わせだけで、使用データは含みません）。予算の上限は USD のまま入力します。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {

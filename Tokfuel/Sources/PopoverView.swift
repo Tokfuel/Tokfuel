@@ -7,6 +7,7 @@ import Charts
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
     var onOpenSettings: () -> Void = {}
+    var onOpenAbout: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,7 +25,6 @@ struct PopoverView: View {
                         loadingSection
                     }
                     errorSection
-                    retokCredit
                 }
                 .padding(16)
             }
@@ -219,18 +219,6 @@ struct PopoverView: View {
         }
     }
 
-    /// retok（© Daiki Matsudate, MIT License）への帰属表示。
-    private var retokCredit: some View {
-        HStack(spacing: 4) {
-            Text("Powered by")
-            Link("retok", destination: URL(string: "https://github.com/d-date/retok")!)
-            Text("© Daiki Matsudate (MIT)")
-        }
-        .font(.caption2)
-        .foregroundStyle(.tertiary)
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
     // MARK: - フッター（操作はここに集約）
 
     private var footerBar: some View {
@@ -245,6 +233,7 @@ struct PopoverView: View {
                 Button("再読み込み") { store.reload() }
                 Divider()
                 Button("設定…") { onOpenSettings() }
+                Button("Tokfuel について…") { onOpenAbout() }
                 Divider()
                 Button("Tokfuel を終了") { NSApplication.shared.terminate(nil) }
             } label: {
@@ -313,9 +302,9 @@ struct PopoverView: View {
             .replacingOccurrences(of: "-20251001", with: "")
     }
 
-    // 純粋なフォーマッタ。App 側やテストから actor 隔離なしで呼べるようにする。
+    // 表示通貨（USD / JPY）を反映するフォーマッタ。actor 隔離なしで呼べる。
     nonisolated static func money(_ value: Double) -> String {
-        value >= 100 ? String(format: "$%.0f", value) : String(format: "$%.2f", value)
+        Money.format(value)
     }
 }
 

@@ -31,7 +31,8 @@
 - 💵 Today's / period cost, daily cost chart, per-model breakdown, most expensive sessions, and retok's saving tips
 - 🚨 Independent **monthly and daily budget limits** — the ⛽️ icon turns orange near a limit, red over it, with a notification
 - 📊 Menu bar shows today's cost, this month's, or both (configurable, with live previews)
-- 🔒 100% local — no network, no telemetry
+- 💱 Display in USD or JPY (daily exchange rate via [Frankfurter](https://frankfurter.dev))
+- 🔒 Local-first — no telemetry; the only network call is the opt-in JPY exchange-rate fetch
 
 ## Install
 

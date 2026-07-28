@@ -16,6 +16,8 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
 ## Ground rules (do not violate)
 
 1. **Local-only.** Collected data never leaves the Mac — no telemetry, no network sends.
+   Sole exception: when the user opts into JPY display, `ExchangeRateService` fetches a daily
+   USD→JPY rate from the Frankfurter API (the request carries no usage data).
 2. **Zero setup stays zero.** The app reads Claude Code transcripts directly. Never require
    hooks, external installs, or Claude Code configuration for a feature to work.
 3. **retok is vendored unmodified.** `Sources/Resources/retok.py` + `locales/` are

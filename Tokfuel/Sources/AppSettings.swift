@@ -70,6 +70,11 @@ final class AppSettings: ObservableObject {
         didSet { persist(language.rawValue, forKey: Keys.language) }
     }
 
+    /// 金額の表示通貨。日本円は Frankfurter API のレート（1 日 1 回取得）で換算する。
+    @Published var displayCurrency: DisplayCurrency {
+        didSet { persist(displayCurrency.rawValue, forKey: Money.currencyKey) }
+    }
+
     /// tool 集計元（transcripts）と skill（global/plugin）の読み取り元となる Claude ディレクトリ。
     @Published var claudeDirectory: String {
         didSet { persist(claudeDirectory, forKey: Keys.claudeDirectory) }
@@ -134,6 +139,8 @@ final class AppSettings: ObservableObject {
         let days = defaults.integer(forKey: Keys.defaultPeriodDays)
         defaultPeriodDays = days == 7 || days == 30 ? days : 30
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
+        displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
+            ?? .usd
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
         budgetLimit = defaults.double(forKey: Keys.budgetLimit)
         dailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)

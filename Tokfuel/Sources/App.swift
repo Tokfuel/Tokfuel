@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var settingsWindow: NSWindow?
+    private var aboutWindow: NSWindow?
     private let usageStore = UsageStore()
     private let settings = AppSettings.shared
     private var cancellables = Set<AnyCancellable>()
@@ -40,9 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentSize = NSSize(width: 360, height: 520)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(
-            rootView: PopoverView(store: usageStore, onOpenSettings: { [weak self] in
-                self?.openSettings()
-            })
+            rootView: PopoverView(store: usageStore,
+                                  onOpenSettings: { [weak self] in self?.openSettings() },
+                                  onOpenAbout: { [weak self] in self?.openAbout() })
             .tint(.orange)   // 燃料ブランドのアクセント 1 色に統一
         )
 
@@ -95,6 +96,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.usageStore.reloadBudget()
             }
             .store(in: &cancellables)
+        // 表示通貨が変わったらレートを（必要なら）取得して表示を作り直す。
+        settings.$displayCurrency
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    await ExchangeRateService.refreshIfNeeded()
+                    self?.usageStore.objectWillChange.send()   // 金額表示の再フォーマット
+                    self?.updateStatusTitle()
+                }
+            }
+            .store(in: &cancellables)
+
         usageStore.reload()
         updateStatusTitle()
 
@@ -154,24 +167,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .cost:
             if let cost = usageStore.todayCost {
                 button.title = " " + PopoverView.money(cost)
-                button.toolTip = "今日の推定コスト: \(String(format: "$%.2f", cost))"
+                button.toolTip = "今日の推定コスト: \(PopoverView.money(cost))"
             } else {
                 fallbackToPrompts(button)
             }
         case .monthlyCost:
             if let spend = usageStore.budgetSpend {
                 button.title = " " + PopoverView.money(spend)
-                button.toolTip = "今月の推定コスト: \(String(format: "$%.2f", spend))"
+                button.toolTip = "今月の推定コスト: \(PopoverView.money(spend))"
             } else {
                 fallbackToPrompts(button)
             }
         case .bothCosts:
             if let today = usageStore.todayCost, let month = usageStore.budgetSpend {
                 button.title = " \(PopoverView.money(today)) · 月 \(PopoverView.money(month))"
-                button.toolTip = "今日 \(String(format: "$%.2f", today)) / 今月 \(String(format: "$%.2f", month))"
+                button.toolTip = "今日 \(PopoverView.money(today)) / 今月 \(PopoverView.money(month))"
             } else if let today = usageStore.todayCost {
                 button.title = " " + PopoverView.money(today)
-                button.toolTip = "今日の推定コスト: \(String(format: "$%.2f", today))"
+                button.toolTip = "今日の推定コスト: \(PopoverView.money(today))"
             } else {
                 fallbackToPrompts(button)
             }
@@ -212,5 +225,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         UsageEventLog.shared.log(.settingsOpen)
+    }
+
+    /// 「Tokfuel について」ウィンドウ（バージョン・作者・謝辞）を開く。
+    private func openAbout() {
+        popover.performClose(nil)
+        if aboutWindow == nil {
+            let hosting = NSHostingController(rootView: AboutView())
+            let window = NSWindow(contentViewController: hosting)
+            window.title = "Tokfuel について"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            aboutWindow = window
+        }
+        aboutWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }

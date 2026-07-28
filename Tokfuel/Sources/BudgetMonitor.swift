@@ -119,8 +119,8 @@ enum BudgetMonitor {
     private static func post(kind: Kind, level: BudgetLevel, spend: Double, limit: Double) {
         guard notificationsAvailable else { return }
         let content = UNMutableNotificationContent()
-        let spendStr = String(format: "$%.2f", spend)
-        let limitStr = String(format: "$%.0f", limit)
+        let spendStr = Money.format(spend)
+        let limitStr = Money.format(limit)
         switch level {
         case .warning:
             content.title = "\(kind.scopeLabel)Claude 利用額が上限に近づいています"
