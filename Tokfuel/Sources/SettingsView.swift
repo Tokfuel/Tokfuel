@@ -1,24 +1,28 @@
 import SwiftUI
 import AppKit
 
-/// 初期設定を行うウィンドウ。ログイン起動・メニューバー表示・期間・言語・スキャン場所を切り替える。
+/// 設定ウィンドウ。よく触る「一般 / メニューバー / 予算」だけを見せ、
+/// めったに変えない項目（レポート言語・スキャン場所・イベントログ）は「詳細」に畳む。
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     /// メニューバー表示のプレビューに実データを出すためのストア（省略時はプレースホルダ表示）。
     var store: UsageStore?
+    @State private var showsAdvanced = false
 
     var body: some View {
         Form {
             Section("一般") {
                 Toggle(isOn: $settings.launchAtLogin) {
                     Text("ログイン時に自動起動")
-                    Text("Mac 起動時にメニューバーへ常駐します")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
+                Picker("通貨", selection: $settings.displayCurrency) {
+                    ForEach(DisplayCurrency.allCases) { Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
             }
 
-            Section("メニューバー表示") {
+            Section("メニューバー") {
                 ForEach(MenuBarDisplay.allCases) { option in
                     Button {
                         settings.menuBarDisplay = option
@@ -37,35 +41,12 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 }
 
-                Toggle(isOn: $settings.menuBarShowsRemaining) {
-                    Text("予算までの残りを表示")
-                    Text("消費額の代わりに「上限 − 消費」を表示します。予算未設定の項目は消費額のままです")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .disabled(settings.budgetLimit <= 0 && settings.dailyBudgetLimit <= 0)
-            }
-
-            Section("集計") {
-                Picker("既定の集計期間", selection: $settings.defaultPeriodDays) {
-                    Text("7 日").tag(7)
-                    Text("30 日").tag(30)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 180)
-
-                Picker("レポート言語", selection: $settings.language) {
-                    ForEach(ReportLanguage.allCases) { Text($0.label).tag($0) }
+                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
+                    Toggle("予算までの残りを表示", isOn: $settings.menuBarShowsRemaining)
                 }
             }
 
             Section {
-                Picker("入力・表示の通貨", selection: $settings.displayCurrency) {
-                    ForEach(DisplayCurrency.allCases) { Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 180)
-
                 HStack {
                     Text("月の上限 (\(unitSymbol))")
                     Spacer()
@@ -100,67 +81,44 @@ struct SettingsView: View {
             } header: {
                 Text("予算")
             } footer: {
-                Text("通貨はアプリ全体の金額表示と共通です。円を選ぶと Frankfurter API からレートを 1 日 1 回取得します（送るのはレートの問い合わせだけ）。上限は選択中の通貨で入力でき、内部では USD で保存します。月と 1 日の上限は独立で、しきい値でアイコンがオレンジ・通知、超過で赤になります。")
+                Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。円は Frankfurter API のレート（1 日 1 回取得・レート以外は送信しません）で換算し、内部では USD で保存します。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                PathRow(title: "Claude ディレクトリ",
-                        note: "コスト集計元のトランスクリプト (projects) の読み取り元",
-                        path: $settings.claudeDirectory,
-                        defaultPath: AppSettings.defaultClaudeDirectory)
-            } header: {
-                Text("スキャン場所")
-            } footer: {
-                Text("トランスクリプトを直接読み取ります。フックや追加設定は不要です。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Toggle(isOn: $settings.eventLogEnabled) {
-                    Text("利用イベントを記録")
-                    Text("タブ切り替えなど Tokfuel 自身の操作イベントだけを記録します")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                HStack {
-                    Button("ログを表示") {
-                        NSWorkspace.shared.activateFileViewerSelecting(
-                            [UsageEventLog.shared.revealDirectoryURL()])
+                DisclosureGroup("詳細", isExpanded: $showsAdvanced) {
+                    Picker("レポート言語", selection: $settings.language) {
+                        ForEach(ReportLanguage.allCases) { Text($0.label).tag($0) }
                     }
-                    .controlSize(.small)
-                    Button("全イベントを削除", role: .destructive) {
-                        UsageEventLog.shared.deleteAll()
-                    }
-                    .controlSize(.small)
-                }
-            } header: {
-                Text("イベントログ")
-            } footer: {
-                Text("記録は常にこの Mac の中だけに保存され、外部には送信されません。トランスクリプトの内容・プロジェクト名・コストは記録しません。機能改善の判断（ロードマップ提案・実験）に使います。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
 
-            Section("謝辞") {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Text("コスト分析エンジン: retok")
-                        Spacer()
-                        Link("GitHub", destination: URL(string: "https://github.com/d-date/retok")!)
+                    PathRow(title: "Claude ディレクトリ",
+                            note: "コスト集計元のトランスクリプト (projects) の読み取り元",
+                            path: $settings.claudeDirectory,
+                            defaultPath: AppSettings.defaultClaudeDirectory)
+
+                    Toggle(isOn: $settings.eventLogEnabled) {
+                        Text("利用イベントを記録")
+                        Text("Tokfuel 自身の操作イベントだけを Mac 内に記録します（外部送信なし）")
                             .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    Text("© Daiki Matsudate (@d-date) — MIT License。本アプリは retok を無改変で同梱し、コスト・キャッシュ効率・改善提案の算出に利用しています。ライセンス全文はアプリ内の LICENSE-retok を参照。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        Button("ログを表示") {
+                            NSWorkspace.shared.activateFileViewerSelecting(
+                                [UsageEventLog.shared.revealDirectoryURL()])
+                        }
+                        .controlSize(.small)
+                        Button("全イベントを削除", role: .destructive) {
+                            UsageEventLog.shared.deleteAll()
+                        }
+                        .controlSize(.small)
+                    }
                 }
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460, height: 720)
+        .frame(width: 460, height: 620)
     }
 
     /// 予算入力欄の単位。円を選んでいてもレート未取得なら USD 入力のまま。

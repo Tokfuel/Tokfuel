@@ -68,9 +68,6 @@ final class AppSettings: ObservableObject {
     @Published var menuBarShowsRemaining: Bool {
         didSet { persist(menuBarShowsRemaining, forKey: Keys.menuBarShowsRemaining) }
     }
-    @Published var defaultPeriodDays: Int {
-        didSet { persist(defaultPeriodDays, forKey: Keys.defaultPeriodDays) }
-    }
     @Published var language: ReportLanguage {
         didSet { persist(language.rawValue, forKey: Keys.language) }
     }
@@ -113,7 +110,6 @@ final class AppSettings: ObservableObject {
         static let launchAtLogin = "launchAtLogin"
         static let menuBarDisplay = "menuBarDisplay"
         static let menuBarShowsRemaining = "menuBarShowsRemaining"
-        static let defaultPeriodDays = "defaultPeriodDays"
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let claudeDirectory = "claudeDirectory"
@@ -143,8 +139,6 @@ final class AppSettings: ObservableObject {
         menuBarDisplay = MenuBarDisplay(rawValue: defaults.string(forKey: Keys.menuBarDisplay) ?? "")
             ?? .cost
         menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
-        let days = defaults.integer(forKey: Keys.defaultPeriodDays)
-        defaultPeriodDays = days == 7 || days == 30 ? days : 30
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
             ?? .usd

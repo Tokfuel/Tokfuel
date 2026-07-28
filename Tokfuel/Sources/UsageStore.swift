@@ -207,7 +207,7 @@ final class UsageStore: ObservableObject {
     init() {
         let defaults = UserDefaults.standard
         let stored = defaults.integer(forKey: Keys.reportDays)
-        reportDays = [1, 7, 30].contains(stored) ? stored : AppSettings.shared.defaultPeriodDays
+        reportDays = [1, 7, 30].contains(stored) ? stored : 30
         toolsPeriod = PeriodFilter(rawValue: defaults.string(forKey: Keys.toolsPeriod) ?? "")
             ?? .days30
     }

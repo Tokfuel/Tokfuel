@@ -72,11 +72,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.usageStore.reloadBudget()
             }
             .store(in: &cancellables)
-        settings.$defaultPeriodDays
-            .dropFirst()
-            .receive(on: RunLoop.main)
-            .sink { [weak self] days in self?.usageStore.reportDays = days }
-            .store(in: &cancellables)
         settings.$language
             .dropFirst()
             .receive(on: RunLoop.main)
