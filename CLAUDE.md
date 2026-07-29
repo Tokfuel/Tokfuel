@@ -2,7 +2,7 @@
 
 > The shared premise every session (human or agent) starts from. Read this first.
 > Human contributors start from [`CONTRIBUTING.md`](CONTRIBUTING.md); the feature
-> plan lives in [`roadmaps/`](roadmaps/README.md).
+> plan lives in [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues) (TF-NNNN items).
 
 ## What this is
 
@@ -34,11 +34,9 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
 ```bash
 swift test               # unit tests (Tokfuel/Tests, Swift Testing)
 swift build -c release   # the config scripts/build.sh packages
-bash scripts/lint_roadmap.sh   # when you touched roadmaps/
 ```
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the tests, the release build,
-and the roadmap lint on every PR. For runtime-visible changes, install and observe the real app:
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the tests and the release build on every PR. For runtime-visible changes, install and observe the real app:
 `bash scripts/build.sh` packages `Tokfuel.app` into `/Applications` and launches it (use the built-in
 `verify` skill rather than claiming untested behavior works). Headless-testable logic
 (e.g. `BudgetMonitor`, `RetokReport` decoding) lives in `Tokfuel/Tests` — add tests there for
