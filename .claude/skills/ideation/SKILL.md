@@ -5,7 +5,7 @@ description: >-
   potential features, explore what the app could do next, or turn a rough idea into a GitHub Issue.
   Grounds the conversation in open issues, proposes new items or seeds, folds overlapping ideas into
   existing issues, and — when the user is happy — opens a GitHub Issue with the proposal body.
-  Scope is proposal authoring only — it never implements the feature (that is the implement-tf skill).
+  Scope is proposal authoring only — it never implements the feature (that is the implementation skill).
 ---
 
 # Ideation
@@ -19,7 +19,7 @@ This skill **only** authors and shapes proposals. The deliverable is always a Gi
 working code. Do not write, modify, or refactor any product code (`Tokfuel/Sources/`, tests, build
 scripts) even if the implementation seems obvious.
 
-If the user asks you to build an idea, point them to [`implement-tf`](../implement-tf/SKILL.md).
+If the user asks you to build an idea, point them to [`implementation`](../implementation/SKILL.md).
 
 ## Project ground rules (these bound every idea)
 
@@ -83,5 +83,5 @@ gh project item-add 1 --owner Tokfuel \
 
 ## References
 
-- [`implement-tf`](../implement-tf/SKILL.md) — the counterpart that ships an issue.
+- [`implementation`](../implementation/SKILL.md) — the counterpart that ships an issue.
 - [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) — for Japanese-language sessions.

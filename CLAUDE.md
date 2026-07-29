@@ -51,7 +51,7 @@ The roadmap is also visible as [GitHub Project #1](https://github.com/orgs/Tokfu
 The skills under [`.claude/skills/`](.claude/skills/) drive the cycle:
 
 - **`ideation`** — shape an idea into a GitHub Issue (authoring only).
-- **`implement-tf`** — ship an issue from its number (issue body = spec).
+- **`implementation`** — ship an issue from its number (issue body = spec).
 - **`task-select`** — survey open issues and pick the next item to implement.
 
 ## Conventions
