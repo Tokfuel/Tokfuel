@@ -168,7 +168,20 @@ final class UsageStore: ObservableObject {
     @Published var isLoading = false
 
     // retok によるコストレポート
-    @Published var report: RetokReport?
+    @Published private var loadedReport: RetokReport?
+
+    /// DEBUG の「レポート未取得を再現」中は、アプリ全体から未取得（nil）に見せる。
+    /// コスト・グラフ・読み込み中表示が起動直後とそろうよう、参照はすべてここを通す。
+    var report: RetokReport? {
+        get {
+            #if DEBUG
+            return DebugSettings.shared.simulatesMissingReport ? nil : loadedReport
+            #else
+            return loadedReport
+            #endif
+        }
+        set { loadedReport = newValue }
+    }
     @Published var retokError: String?
     /// retok 再解析（数秒かかる）の実行中フラグ。期間切り替え時のグラフに反映する。
     @Published var isReportLoading = false
@@ -212,22 +225,36 @@ final class UsageStore: ObservableObject {
             ?? .days30
     }
 
-    // 予算期間内の消費額（月間予算・月表示ともオフ、または未取得なら nil）
-    @Published var budgetSpend: Double?
+    // 予算期間内の消費額（未算出・レポート未取得なら 0）
+    @Published private var reportedBudgetSpend: Double = 0
 
-    /// 月間予算のレベル（予算オフ・未取得なら nil）。
+    /// DEBUG では読み取りだけデバッグ上書きを通す。書き込みは常に実データ側へ入るので、
+    /// 上書きを OFF にすればそのまま元の数字に戻る。
+    var budgetSpend: Double {
+        get {
+            #if DEBUG
+            if DebugSettings.shared.simulatesMissingMonth { return 0 }
+            return DebugSettings.shared.month ?? reportedBudgetSpend
+            #else
+            return reportedBudgetSpend
+            #endif
+        }
+        set { reportedBudgetSpend = newValue }
+    }
+
+    /// 月間予算のレベル（予算オフなら nil）。
     var budgetLevel: BudgetLevel? {
         let settings = AppSettings.shared
-        guard settings.budgetLimit > 0, let spend = budgetSpend else { return nil }
-        return BudgetMonitor.level(spend: spend, limit: settings.budgetLimit,
+        guard settings.budgetLimit > 0 else { return nil }
+        return BudgetMonitor.level(spend: budgetSpend, limit: settings.budgetLimit,
                                    warnPercent: settings.budgetWarnPercent)
     }
 
-    /// 日次予算のレベル（予算オフ・コスト未取得なら nil）。今日のコストと比較する。
+    /// 日次予算のレベル（予算オフなら nil）。今日のコストと比較する。
     var dailyBudgetLevel: BudgetLevel? {
         let settings = AppSettings.shared
-        guard settings.dailyBudgetLimit > 0, let spend = todayCost else { return nil }
-        return BudgetMonitor.level(spend: spend, limit: settings.dailyBudgetLimit,
+        guard settings.dailyBudgetLimit > 0 else { return nil }
+        return BudgetMonitor.level(spend: todayCost, limit: settings.dailyBudgetLimit,
                                    warnPercent: settings.budgetWarnPercent)
     }
 
@@ -304,7 +331,7 @@ final class UsageStore: ObservableObject {
         let settings = AppSettings.shared
         // 月間予算オフでも、メニューバーが今月のコスト表示なら消費額は必要。
         guard settings.budgetLimit > 0 || settings.menuBarDisplay.showsMonthlyCost else {
-            budgetSpend = nil
+            budgetSpend = 0
             return
         }
         // 予算オフで表示だけ必要な場合は「今月（1 日から）」で数える。
@@ -402,9 +429,18 @@ final class UsageStore: ObservableObject {
         return daily.first { $0.date == key } ?? DailyUsage(date: key)
     }
 
-    /// retok レポートに基づく今日のコスト（未取得なら nil）。
-    var todayCost: Double? {
-        report?.cost(on: Self.dateString(Date()))
+    /// 今日のコスト。レポート未取得（起動直後・python3 なし）も、今日の行が無い日も 0 とみなす。
+    /// 「不明」を金額欄に出さない代わりに、retok が失敗した事実は Cost タブのエラー表示が伝える。
+    var todayCost: Double {
+        #if DEBUG
+        return DebugSettings.shared.today ?? reportedTodayCost
+        #else
+        return reportedTodayCost
+        #endif
+    }
+
+    private var reportedTodayCost: Double {
+        report?.cost(on: Self.dateString(Date())) ?? 0
     }
 
     /// 昨日の集計（無ければ nil）。前日比の算出に使う。

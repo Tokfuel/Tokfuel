@@ -45,7 +45,7 @@ struct PopoverView: View {
             Text("今日")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(store.todayCost.map { Self.money($0) } ?? "–")
+            Text(Self.money(store.todayCost))
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -61,14 +61,14 @@ struct PopoverView: View {
     @ViewBuilder
     private var budgetSection: some View {
         let settings = AppSettings.shared
-        if settings.dailyBudgetLimit > 0, let spend = store.todayCost {
-            BudgetRow(title: "予算 (今日)", spend: spend, limit: settings.dailyBudgetLimit,
+        if settings.dailyBudgetLimit > 0 {
+            BudgetRow(title: "予算 (今日)", spend: store.todayCost, limit: settings.dailyBudgetLimit,
                       level: store.dailyBudgetLevel ?? .ok,
                       warnPercent: settings.budgetWarnPercent)
         }
-        if settings.budgetLimit > 0, let spend = store.budgetSpend {
+        if settings.budgetLimit > 0 {
             BudgetRow(title: "予算 (\(settings.budgetPeriod == .calendarMonth ? "今月" : "30日"))",
-                      spend: spend, limit: settings.budgetLimit,
+                      spend: store.budgetSpend, limit: settings.budgetLimit,
                       level: store.budgetLevel ?? .ok,
                       warnPercent: settings.budgetWarnPercent)
         }

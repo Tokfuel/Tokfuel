@@ -29,6 +29,17 @@ bash scripts/build.sh             # package + install Tokfuel.app to /Applicatio
 
 The app reads Claude Code transcripts under `~/.claude/projects/` directly (no hooks or extra setup) — if you use Claude Code at all, you already have data to exercise the UI. The Cost tab additionally needs `python3` (ships with the Xcode Command Line Tools) to run the bundled retok.
 
+**Debug section.** To check the menu-bar readout, icon colors, and budget alerts at an arbitrary
+amount instead of waiting for real usage, install a debug-configuration build:
+
+```bash
+bash scripts/build.sh --debug   # debug build, with the Settings → デバッグ section
+```
+
+It lets you override today's / this month's cost or simulate "report not loaded". The whole
+feature is wrapped in `#if DEBUG`, so it is never compiled into the release build users install.
+Overrides are in-memory only — a relaunch always returns to real data.
+
 ### Coding style
 
 - SwiftUI + Swift Concurrency. UI-touching state lives on `@MainActor`.
@@ -88,6 +99,14 @@ bash scripts/build.sh             # Tokfuel.app をパッケージして /Applic
 ```
 
 アプリは `~/.claude/projects/` 配下の Claude Code トランスクリプトを直接読みます（フックや追加設定は不要）。Claude Code を使っていれば、UI を確認するデータはすでに手元にあります。Cost タブだけは同梱 retok の実行に `python3`（Xcode Command Line Tools に同梱）が必要です。
+
+**デバッグセクション。** メニューバーの表示・アイコン色・予算アラートを、実際の使用量を待たずに任意の金額で確認できます。debug 構成のビルドを入れてください。
+
+```bash
+bash scripts/build.sh --debug   # 設定に「デバッグ」セクションが付く debug ビルド
+```
+
+設定の一番下で、今日／今月のコストを上書きしたり「レポート未取得」を再現できます。この機能全体を `#if DEBUG` で囲んでいるため、ユーザーが入れるリリースビルドにはコンパイルされません。上書き値はメモリ上だけに持つため、再起動すれば必ず実データに戻ります。
 
 ### コーディングスタイル
 
