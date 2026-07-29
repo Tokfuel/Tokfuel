@@ -63,8 +63,9 @@ for, what is the observable outcome). Pull in adjacent issues as reference point
 
 When the user is happy with the shape, open a GitHub Issue using the Proposal template format:
 - **Title:** short imperative phrase, no issue number prefix.
-- **Body:** Introduction paragraph → Detailed design → Progress checklist. Reference relevant
-  files/symbols inline. Cross-link blocking or related issues with `#N`.
+- **Body (enhancement):** Introduction paragraph → `## Detailed design` → `## Progress` checklist.
+- **Body (bug):** Description paragraph → Root cause → Fix → `**Relevant files:**` list → `## Progress` checklist.
+- Reference relevant files/symbols inline. Cross-link blocking or related issues with `#N`.
 - **Label:** `enhancement` for features, `bug` for bugs.
 
 ```bash
