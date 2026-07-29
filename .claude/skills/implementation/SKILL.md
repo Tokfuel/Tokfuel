@@ -1,8 +1,8 @@
 ---
-name: implement-tf
+name: implementation
 description: >-
   Implement a Tokfuel issue end to end, starting from its GitHub Issue number. Use when the
-  user names an issue to build — "/implement-tf #5", "implement #5", "start on #5", or an issue
+  user names an issue to build — "/implementation #5", "implement #5", "start on #5", or an issue
   title fragment — or otherwise asks to turn an existing proposal into shipped code. Treats the
   issue body as the spec, grounds the work in the project ground rules, plans and confirms before
   writing, implements with build/tests, reviews and refines the diff, closes the issue, and proves

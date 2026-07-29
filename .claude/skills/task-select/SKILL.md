@@ -43,8 +43,8 @@ it never implements features or creates branches.
    a one-line rationale, and any blocker or dependency to be aware of.
 
 5. **Wait for the user's choice.** When they pick one, recommend
-   [`/implement-tf`](../implement-tf/SKILL.md) to start, passing the issue number
-   (e.g. `/implement-tf #5`).
+   [`/implementation`](../implementation/SKILL.md) to start, passing the issue number
+   (e.g. `/implementation #5`).
 
 ## What this skill does NOT do
 
