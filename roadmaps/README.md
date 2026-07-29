@@ -53,6 +53,7 @@ _None yet (post-reset)._
 | [TF-0004](TF-0004-cursor-usage/TF-0004-cursor-usage.md) | Collect Cursor usage data | Providers |
 | [TF-0005](TF-0005-csv-export/TF-0005-csv-export.md) | CSV export for team/admin aggregation | Cost & budget |
 | [TF-0006](TF-0006-menubar-both-costs-zero-today/TF-0006-menubar-both-costs-zero-today.md) | Bug: "today + month" display loses the month when today is zero | Bug · Menu bar |
+| [TF-0007](TF-0007-windows-linux-support/TF-0007-windows-linux-support.md) | Windows / Linux support | Platforms |
 
 ## 🚧 In progress
 
