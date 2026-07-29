@@ -91,6 +91,8 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.
   © [Daiki Matsudate (@d-date)](https://github.com/d-date), [MIT License](Tokfuel/Sources/Resources/LICENSE-retok).
+- **App icon** — designed with [Icon Composer](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer);
+  the source document lives in [Tokfuel/icon](https://github.com/Tokfuel/icon).
 - **Exchange rates** — [Frankfurter](https://frankfurter.dev).
 - **Roadmap conventions** — adapted from [bajutsu](https://github.com/bajutsu-e2e/bajutsu)'s issue-driven development workflow.
 

@@ -1,79 +1,81 @@
+// アプリアイコンの .iconset / .icns を生成する。
+//
+//     swift assets/make-icon.swift
+//
+// デザインの正本はこのリポジトリではなく Icon Composer ドキュメント
+// （https://github.com/Tokfuel/icon の Tokfuel.icon）。ここでの仕事は、
+// そこから書き出した icon-master.png を macOS のアイコングリッドに収めて
+// 各サイズに焼くところまでで、絵そのものは一切描かない。
 import AppKit
-import CoreGraphics
 
-let size = 1024
-guard let rep = NSBitmapImageRep(
-    bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: size,
-    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-    colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else {
-    fatalError("rep")
+let assetsDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+let masterURL = assetsDir.appendingPathComponent("icon-master.png")
+let iconsetURL = assetsDir.appendingPathComponent("AppIcon.iconset")
+let icnsURL = assetsDir.appendingPathComponent("AppIcon.icns")
+
+guard let master = NSImage(contentsOf: masterURL) else {
+    fatalError("cannot read \(masterURL.path)")
 }
-rep.size = NSSize(width: size, height: size)
 
-NSGraphicsContext.saveGraphicsState()
-NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
-let ctx = NSGraphicsContext.current!.cgContext
+// Icon Composer の書き出しはスクィルカルがキャンバスいっぱいに広がるフルブリード。
+// macOS 14 / 15 の Dock は Apple のアイコングリッド（1024 のキャンバスに 824 の
+// アート）を前提に並べるので、そのまま焼くと隣のアプリより一段大きく見える。
+// 同じ比率で内側に寄せてから各サイズを作る。
+let artRatio: CGFloat = 824.0 / 1024.0
 
-func clay(_ hex: (CGFloat, CGFloat, CGFloat)) -> CGColor {
-    CGColor(red: hex.0/255, green: hex.1/255, blue: hex.2/255, alpha: 1)
+/// マスターを `canvas` px 四方の透明キャンバス中央に `artRatio` で描いた PNG を返す。
+func renderPNG(canvas: Int) -> Data {
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil, pixelsWide: canvas, pixelsHigh: canvas,
+        bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+        colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+    ) else {
+        fatalError("cannot allocate \(canvas)px bitmap")
+    }
+    rep.size = NSSize(width: canvas, height: canvas)
+
+    NSGraphicsContext.saveGraphicsState()
+    defer { NSGraphicsContext.restoreGraphicsState() }
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    // 16px まで縮めるので、既定の補間だと輪郭がざらつく。
+    NSGraphicsContext.current?.imageInterpolation = .high
+
+    // 余白を先に整数へ丸めてから辺を決める。辺を丸めると 16px などで余白が
+    // 左右 1px ずれ、輪郭がにじむ。
+    let inset = (CGFloat(canvas) * (1 - artRatio) / 2).rounded()
+    let side = CGFloat(canvas) - inset * 2
+    master.draw(in: NSRect(x: inset, y: inset, width: side, height: side))
+
+    guard let data = rep.representation(using: .png, properties: [:]) else {
+        fatalError("cannot encode \(canvas)px PNG")
+    }
+    return data
 }
-let top = clay((232, 146, 124))     // #E8927C
-let bottom = clay((217, 119, 87))   // #D97757
 
-// --- 角丸のクレイ色スクエア（macOS 風のスクィルカル） ---
-let inset: CGFloat = 90
-let square = CGRect(x: inset, y: inset, width: CGFloat(size) - inset * 2,
-                    height: CGFloat(size) - inset * 2)
-let corner: CGFloat = 190
-let squarePath = CGPath(roundedRect: square, cornerWidth: corner, cornerHeight: corner,
-                        transform: nil)
+// iconutil が要求する 10 エントリ（論理サイズ, 倍率）。
+let entries: [(points: Int, scale: Int)] = [
+    (16, 1), (16, 2), (32, 1), (32, 2), (128, 1),
+    (128, 2), (256, 1), (256, 2), (512, 1), (512, 2),
+]
 
-// 影で立体感
-ctx.saveGState()
-ctx.setShadow(offset: CGSize(width: 0, height: -14), blur: 34,
-              color: CGColor(gray: 0, alpha: 0.28))
-ctx.addPath(squarePath)
-ctx.setFillColor(bottom)
-ctx.fillPath()
-ctx.restoreGState()
+let fileManager = FileManager.default
+try? fileManager.removeItem(at: iconsetURL)
+try fileManager.createDirectory(at: iconsetURL, withIntermediateDirectories: true)
 
-// グラデーション塗り（上→下）
-ctx.saveGState()
-ctx.addPath(squarePath)
-ctx.clip()
-let space = CGColorSpaceCreateDeviceRGB()
-let grad = CGGradient(colorsSpace: space, colors: [top, bottom] as CFArray,
-                      locations: [0, 1])!
-ctx.drawLinearGradient(grad, start: CGPoint(x: 0, y: square.maxY),
-                       end: CGPoint(x: 0, y: square.minY), options: [])
-// 上部の淡いハイライト
-let sheen = CGGradient(colorsSpace: space,
-                       colors: [CGColor(gray: 1, alpha: 0.18),
-                                CGColor(gray: 1, alpha: 0)] as CFArray,
-                       locations: [0, 1])!
-ctx.drawLinearGradient(sheen, start: CGPoint(x: 0, y: square.maxY),
-                       end: CGPoint(x: 0, y: square.midY + 60), options: [])
-ctx.restoreGState()
+for entry in entries {
+    let suffix = entry.scale == 1 ? "" : "@\(entry.scale)x"
+    let name = "icon_\(entry.points)x\(entry.points)\(suffix).png"
+    let data = renderPNG(canvas: entry.points * entry.scale)
+    try data.write(to: iconsetURL.appendingPathComponent(name))
+}
 
-// --- 白い燃料ポンプ（SF Symbol） ---
-let config = NSImage.SymbolConfiguration(pointSize: 480, weight: .medium)
-    .applying(.init(paletteColors: [.white]))
-guard let pump = NSImage(systemSymbolName: "fuelpump.fill",
-                         accessibilityDescription: nil)?
-    .withSymbolConfiguration(config) else { fatalError("symbol") }
+let iconutil = Process()
+iconutil.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
+iconutil.arguments = ["-c", "icns", iconsetURL.path, "-o", icnsURL.path]
+try iconutil.run()
+iconutil.waitUntilExit()
+guard iconutil.terminationStatus == 0 else {
+    fatalError("iconutil failed with status \(iconutil.terminationStatus)")
+}
 
-// シンボルのアスペクト比を保ったまま、スクエア中央に収める。
-let maxSide: CGFloat = 540
-let scale = min(maxSide / pump.size.width, maxSide / pump.size.height)
-let drawSize = NSSize(width: pump.size.width * scale, height: pump.size.height * scale)
-let drawRect = NSRect(x: (CGFloat(size) - drawSize.width) / 2,
-                      y: (CGFloat(size) - drawSize.height) / 2,
-                      width: drawSize.width, height: drawSize.height)
-pump.draw(in: drawRect)
-
-NSGraphicsContext.restoreGraphicsState()
-
-let out = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "icon_1024.png"
-guard let data = rep.representation(using: .png, properties: [:]) else { fatalError("png") }
-try! data.write(to: URL(fileURLWithPath: out))
-print("wrote \(out)")
+print("wrote \(iconsetURL.lastPathComponent) and \(icnsURL.lastPathComponent)")

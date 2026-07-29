@@ -40,6 +40,15 @@ It lets you override today's / this month's cost or simulate "report not loaded"
 feature is wrapped in `#if DEBUG`, so it is never compiled into the release build users install.
 Overrides are in-memory only — a relaunch always returns to real data.
 
+**App icon.** The design is not edited here. It lives as an Icon Composer document in
+[Tokfuel/icon](https://github.com/Tokfuel/icon); this repository only carries the exported
+`assets/icon-master.png` and the sizes derived from it. After a design change, export a
+1024×1024 PNG from Icon Composer, replace the master, and rebake:
+
+```bash
+swift assets/make-icon.swift   # rewrites assets/AppIcon.iconset/ and assets/AppIcon.icns
+```
+
 ### Coding style
 
 - SwiftUI + Swift Concurrency. UI-touching state lives on `@MainActor`.
@@ -107,6 +116,12 @@ bash scripts/build.sh --debug   # 設定に「デバッグ」セクションが�
 ```
 
 設定の一番下で、今日／今月のコストを上書きしたり「レポート未取得」を再現できます。この機能全体を `#if DEBUG` で囲んでいるため、ユーザーが入れるリリースビルドにはコンパイルされません。上書き値はメモリ上だけに持つため、再起動すれば必ず実データに戻ります。
+
+**アプリアイコン。** デザインはこのリポジトリでは編集しません。正本は [Tokfuel/icon](https://github.com/Tokfuel/icon) の Icon Composer ドキュメントで、ここが持つのは書き出した `assets/icon-master.png` とそこから焼いた各サイズだけです。デザインを変えたら、Icon Composer から 1024×1024 の PNG を書き出してマスターを差し替え、焼き直してください。
+
+```bash
+swift assets/make-icon.swift   # assets/AppIcon.iconset/ と assets/AppIcon.icns を再生成
+```
 
 ### コーディングスタイル
 
