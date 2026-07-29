@@ -85,13 +85,14 @@ bash scripts/build.sh
 PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 - テスト: `swift test`
-- ロードマップ: [`roadmaps/`](roadmaps/README-ja.md)
+- ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 
 ## 謝辞
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
   © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
 - **為替レート** — [Frankfurter](https://frankfurter.dev)。
+- **ロードマップ規約** — [bajutsu](https://github.com/bajutsu-e2e/bajutsu) の Issue 駆動開発ワークフローを参考に設計。
 
 ## ライセンス
 
