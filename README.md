@@ -86,6 +86,7 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - Tests: `swift test`
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
+- Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
 ## Acknowledgements
 
