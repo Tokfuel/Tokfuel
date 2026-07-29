@@ -91,6 +91,8 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
   © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
+- **アプリアイコン** — [Icon Composer](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer) でデザイン。
+  ソースドキュメントは [Tokfuel/icon](https://github.com/Tokfuel/icon) にあります。
 - **為替レート** — [Frankfurter](https://frankfurter.dev)。
 - **ロードマップ規約** — [bajutsu](https://github.com/bajutsu-e2e/bajutsu) の Issue 駆動開発ワークフローを参考に設計。
 
