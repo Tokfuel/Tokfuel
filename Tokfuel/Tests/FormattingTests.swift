@@ -40,23 +40,26 @@ struct MoneyFormattingTests {
             #expect(PopoverView.money(2) == "$2.00")
         }
     }
-}
 
-struct MenuBarDisplayTests {
-    @Test func 月表示を含む選択肢だけが月間集計を要求する() {
-        #expect(MenuBarDisplay.monthlyCost.showsMonthlyCost)
-        #expect(MenuBarDisplay.bothCosts.showsMonthlyCost)
-        #expect(!MenuBarDisplay.cost.showsMonthlyCost)
-        #expect(!MenuBarDisplay.prompts.showsMonthlyCost)
-        #expect(!MenuBarDisplay.iconOnly.showsMonthlyCost)
+    // メニューバーのタイトルは金額の書式に乗るため、表示通貨を握っているこのスイート内に置く
+    // （別スイートに置くと、上のテストが円に切り替えている間と並走して落ちる）。
+    // 通貨に依らない組み立ての性質は MenuBarContentTests が受け持つ。
+
+    @Test func 今日と今月の金額は中黒と月で並ぶ() {
+        let input = MenuBarInput(metric: .both, representation: .amount,
+                                 gauge: MenuBarGauge(todaySpend: 12.34, monthSpend: 210))
+        #expect(MenuBarReadout.content(for: input).title == "$12.34 · 月 $210")
     }
 
-    @Test func 保存済みrawValueは変えない() {
-        // UserDefaults に永続化されるため、rawValue の変更は既存ユーザーの設定を壊す。
-        #expect(MenuBarDisplay(rawValue: "cost") == .cost)
-        #expect(MenuBarDisplay(rawValue: "monthlyCost") == .monthlyCost)
-        #expect(MenuBarDisplay(rawValue: "bothCosts") == .bothCosts)
-        #expect(MenuBarDisplay(rawValue: "prompts") == .prompts)
-        #expect(MenuBarDisplay(rawValue: "iconOnly") == .iconOnly)
+    @Test func 残額モードは上限との差を残として出す() {
+        let input = MenuBarInput(metric: .today, representation: .amount, showsRemaining: true,
+                                 gauge: MenuBarGauge(todaySpend: 4), dailyLimit: 10)
+        #expect(MenuBarReadout.content(for: input).title == "残 $6.00")
+    }
+
+    @Test func 上限が未設定なら残額モードでも消費額のまま() {
+        let input = MenuBarInput(metric: .today, representation: .amount, showsRemaining: true,
+                                 gauge: MenuBarGauge(todaySpend: 4))
+        #expect(MenuBarReadout.content(for: input).title == "$4.00")
     }
 }

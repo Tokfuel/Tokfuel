@@ -1,0 +1,332 @@
+import Foundation
+
+/// メニューバーに常時出す「何を見るか」。「どう見せるか」は MenuBarRepresentation 側。
+/// 2 軸に分けているのは、金額・割合・リングを 1 つの enum に混ぜると
+/// 選択肢が掛け算で増え、どれを既定にしても残りが不便になるため。
+enum MenuBarMetric: String, CaseIterable, Identifiable {
+    case today, month, both, prompts
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .today: return "今日"
+        case .month: return "今月"
+        case .both: return "今日と今月"
+        case .prompts: return "プロンプト数"
+        }
+    }
+    /// 月間消費額の算出（retok 32 日走査）が必要な指標か。
+    var showsMonthlyCost: Bool { self == .month || self == .both }
+    /// 割合として表せる指標か。プロンプト数は分母を持たない。
+    var supportsRatio: Bool { self != .prompts }
+}
+
+/// メニューバーの「どう見せるか」。
+enum MenuBarRepresentation: String, CaseIterable, Identifiable {
+    case amount, percent, ring, ringAndValue, iconOnly
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .amount: return "金額"
+        case .percent: return "パーセント"
+        case .ring: return "リング"
+        case .ringAndValue: return "リング + パーセント"
+        case .iconOnly: return "アイコンのみ"
+        }
+    }
+    /// 分母（基準）が必要な表現か。
+    var needsBasis: Bool { self == .percent || self == .ring || self == .ringAndValue }
+    /// 給油機アイコンの代わりにリングを描く表現か。
+    var drawsRing: Bool { self == .ring || self == .ringAndValue }
+}
+
+/// パーセントとリングが共有する分母。どちらも同じ値の別表現なので基準は 1 つにまとめる。
+enum MenuBarPercentBasis: String, CaseIterable, Identifiable {
+    case budgetLimit, dailyAverage30
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .budgetLimit: return "予算上限"
+        case .dailyAverage30: return "過去 30 日の日次平均"
+        }
+    }
+    var note: String {
+        switch self {
+        case .budgetLimit: return "上限に対する消費率。予算を設定した指標だけで使えます"
+        case .dailyAverage30: return "いつもの 1 日と比べた消費率。予算なしでも使えます"
+        }
+    }
+}
+
+/// 割合・リング表示の素になる「消費」と「基準（分母）」。
+/// 基準 0 は「この指標は割合として表せない」を意味する。
+struct MenuBarGauge {
+    var todaySpend: Double = 0
+    var todayBasis: Double = 0
+    var monthSpend: Double = 0
+    var monthBasis: Double = 0
+}
+
+/// メニューバー表示の組み立てに必要な、設定と集計値のすべて。
+/// レベルを外から渡すのは、この組み立てを @MainActor に縛らずテストできるようにするため。
+struct MenuBarInput {
+    var metric: MenuBarMetric = .today
+    var representation: MenuBarRepresentation = .amount
+    var basis: MenuBarPercentBasis = .budgetLimit
+    var showsRemaining = false
+    var prompts = 0
+    var gauge = MenuBarGauge()
+    /// 残額表示に使う予算上限（0 なら残額表示なし）。割合の分母とは独立。
+    var dailyLimit: Double = 0
+    var monthlyLimit: Double = 0
+    /// 注意を促すレベル。給油機アイコンと同じ「月・日の悪い方」を渡す。
+    /// リングは給油機と入れ替わるので、ここを見ないと予算超過の色が消えてしまう。
+    var alertLevel: BudgetLevel?
+}
+
+/// メニューバーに実際に出す内容。本番（AppDelegate）と設定のライブプレビューが
+/// 同じ絵になるよう、両者はこれを共用する。
+struct MenuBarContent {
+    /// アイコンの右に並べる文字列（空ならアイコンだけ）。アイコンとの間隔は表示側で足す。
+    var title: String = ""
+    var toolTip: String = ""
+    /// リングの塗り分率（先頭 = 内側 / 日次）。空なら給油機アイコンを出す。
+    var ringFills: [Double] = []
+    /// リング全体の配色。弧ごとに変えないのは、色付きと無色が混ざると無色側が
+    /// 明暗に追従できず暗いメニューバーで沈むため。nil ならテンプレート描画。
+    var alertLevel: BudgetLevel?
+}
+
+/// メニューバー表示の純粋なロジック。設定値と数値だけを受け取り、実際に描く表現・
+/// 塗り分率・文字列を決める。NSImage の描画そのものは MenuBarRing が持つ。
+enum MenuBarReadout {
+
+    // MARK: - 旧設定からの移行
+
+    /// v0.x の単一設定 `menuBarDisplay` の rawValue を 2 軸に読み替える。
+    /// 新キーが未設定のユーザーだけがここを通る（既存の設定を黙って捨てないため）。
+    /// アイコンのみは指標を持たないので、既定の「今日」を添える。
+    static func migrated(legacy raw: String?) -> (metric: MenuBarMetric,
+                                                 representation: MenuBarRepresentation)? {
+        switch raw {
+        case "cost": return (.today, .amount)
+        case "monthlyCost": return (.month, .amount)
+        case "bothCosts": return (.both, .amount)
+        case "prompts": return (.prompts, .amount)
+        case "iconOnly": return (.today, .iconOnly)
+        default: return nil
+        }
+    }
+
+    // MARK: - 分母の決定
+
+    /// 基準設定から (消費, 分母) の組を作る。
+    ///
+    /// 日次平均基準の月側は「平均ペースなら今日までにいくら使っているか」を分母にする。
+    /// こうすると今日側・月側のどちらも «実績 ÷ 直近の平均から予測される額» という
+    /// 同じ読み方になり、予算未設定でも月のリングが使える。
+    ///
+    /// 掛ける相手が暦日数ではなく `activeDays`（期間内で実際にコストが出た日数）なのは、
+    /// `dailyAverage` が実績のある日だけで割った「稼働 1 日あたり」の額だから。暦日数を
+    /// 掛けると、週末に使わない人は平常運転でも 70% 台に見えてしまう。
+    static func gauge(basis: MenuBarPercentBasis,
+                      todaySpend: Double, monthSpend: Double,
+                      dailyLimit: Double, monthlyLimit: Double,
+                      dailyAverage: Double, activeDays: Int) -> MenuBarGauge {
+        switch basis {
+        case .budgetLimit:
+            return MenuBarGauge(todaySpend: todaySpend, todayBasis: dailyLimit,
+                                monthSpend: monthSpend, monthBasis: monthlyLimit)
+        case .dailyAverage30:
+            return MenuBarGauge(todaySpend: todaySpend, todayBasis: dailyAverage,
+                                monthSpend: monthSpend,
+                                monthBasis: dailyAverage * Double(max(activeDays, 1)))
+        }
+    }
+
+    // MARK: - 表現の解決
+
+    /// パーセント・リングを選べない理由。設定 UI の注記と選択可否が同じ判定から出るようにする。
+    enum RatioUnavailability {
+        /// 指標が割合を持たない（プロンプト数）。
+        case noRatio
+        /// 予算上限を基準にしているが、その指標に必要な上限が未設定。
+        case noLimit
+    }
+
+    /// パーセント・リング（分母を要る表現）を選べない理由。nil なら選べる。
+    ///
+    /// 判定に使うのは設定値だけで、非同期に届く集計値は見ない。日次平均は「選ぶと集計が走って
+    /// 初めて値が入る」ので、届いていないことを理由に選択肢を塞ぐと永久に選べなくなる。
+    /// 実際に描けるかどうかは canRender が集計値を見て判断し、描けなければ金額に落ちる。
+    static func ratioUnavailability(metric: MenuBarMetric, basis: MenuBarPercentBasis,
+                                    dailyLimit: Double,
+                                    monthlyLimit: Double) -> RatioUnavailability? {
+        guard metric.supportsRatio else { return .noRatio }
+        guard basis == .budgetLimit else { return nil }
+        // 「今日と今月」は両方の上限を要求する（片側だけ欠けた中途半端なリングを出さない）。
+        switch metric {
+        case .today: return dailyLimit > 0 ? nil : .noLimit
+        case .month: return monthlyLimit > 0 ? nil : .noLimit
+        case .both: return dailyLimit > 0 && monthlyLimit > 0 ? nil : .noLimit
+        case .prompts: return .noRatio
+        }
+    }
+
+    /// 設定 UI でその表現を選べるか。
+    static func isSelectable(metric: MenuBarMetric, representation: MenuBarRepresentation,
+                             basis: MenuBarPercentBasis,
+                             dailyLimit: Double, monthlyLimit: Double) -> Bool {
+        guard representation.needsBasis else { return true }
+        return ratioUnavailability(metric: metric, basis: basis, dailyLimit: dailyLimit,
+                                   monthlyLimit: monthlyLimit) == nil
+    }
+
+    /// その (指標, 表現) を今の分母で実際に描けるか。
+    static func canRender(metric: MenuBarMetric, representation: MenuBarRepresentation,
+                          gauge: MenuBarGauge) -> Bool {
+        guard representation.needsBasis else { return true }
+        switch metric {
+        case .today: return gauge.todayBasis > 0
+        case .month: return gauge.monthBasis > 0
+        case .both: return gauge.todayBasis > 0 && gauge.monthBasis > 0
+        case .prompts: return false   // 分母を持たない（supportsRatio == false）
+        }
+    }
+
+    /// 実際に描く表現。分母が無い・プロンプト数指標といった条件では金額表示に落ちる。
+    static func effectiveRepresentation(metric: MenuBarMetric,
+                                        representation: MenuBarRepresentation,
+                                        gauge: MenuBarGauge) -> MenuBarRepresentation {
+        canRender(metric: metric, representation: representation, gauge: gauge)
+            ? representation : .amount
+    }
+
+    // MARK: - 割合の算出
+
+    /// 消費 ÷ 基準。基準が 0 以下なら nil（割合として意味を持たない）。クランプしない。
+    /// 有限でない消費額も nil にして、下流の Int 変換がトラップするのを防ぐ。
+    static func fraction(spend: Double, basis: Double) -> Double? {
+        guard basis > 0, spend.isFinite else { return nil }
+        return spend / basis
+    }
+
+    /// リングの塗り分率（0...1）。100% を超えても満タンで止め、残りモードでは残り分を塗る。
+    static func ringFill(spend: Double, basis: Double, showsRemaining: Bool) -> Double? {
+        guard let f = fraction(spend: spend, basis: basis) else { return nil }
+        let consumed = min(max(f, 0), 1)
+        return showsRemaining ? 1 - consumed : consumed
+    }
+
+    /// パーセント文字列。残りモードでは残り率（100 − 消費率）。
+    /// リングと違い 100% ではクランプしないので、超過は `142%` / 残りは `-42%` と出る。
+    static func percentText(spend: Double, basis: Double, showsRemaining: Bool) -> String? {
+        guard let f = fraction(spend: spend, basis: basis) else { return nil }
+        let consumed = (f * 100).rounded()
+        let shown = showsRemaining ? 100 - consumed : consumed
+        // 極端に小さい基準（上限に 0.0001 を入れた等）で Int 変換が溢れないよう桁を頭打ちにする。
+        // 100% でのクランプではなく、あくまでクラッシュ回避のガード。
+        return "\(Int(min(max(shown, -999_999), 999_999)))%"
+    }
+
+    // MARK: - 表示内容の組み立て
+
+    /// 指標 1 側（今日 / 今月）ぶんの表示素材。
+    private struct Side {
+        let label: String
+        let spend: Double
+        let basis: Double
+        /// 残額表示に使う予算上限。割合の分母（basis）とは独立。
+        let limit: Double
+        /// 金額を「残 上限 − 消費」で見せるか。
+        let showsRemaining: Bool
+        /// 割合・リングを残り側で見せるか。予算上限を基準にしているときだけ意味を持つ
+        /// （「いつもの 1 日に対する残り」という概念は無い）。
+        let ratioShowsRemaining: Bool
+    }
+
+    /// 指標が扱う側を並べる。プロンプト数は金額の側を持たない。
+    /// ラベルは設定ピッカーと同じ文言を使い、表記が二重管理にならないようにする。
+    private static func sides(of input: MenuBarInput) -> [Side] {
+        let ratioRemaining = input.showsRemaining && input.basis == .budgetLimit
+        let today = Side(label: MenuBarMetric.today.label, spend: input.gauge.todaySpend,
+                         basis: input.gauge.todayBasis, limit: input.dailyLimit,
+                         showsRemaining: input.showsRemaining,
+                         ratioShowsRemaining: ratioRemaining)
+        let month = Side(label: MenuBarMetric.month.label, spend: input.gauge.monthSpend,
+                         basis: input.gauge.monthBasis, limit: input.monthlyLimit,
+                         showsRemaining: input.showsRemaining,
+                         ratioShowsRemaining: ratioRemaining)
+        switch input.metric {
+        case .today: return [today]
+        case .month: return [month]
+        case .both: return [today, month]
+        case .prompts: return []
+        }
+    }
+
+    /// メニューバーに出す内容。分母を持てない組み合わせは金額表示に落ちる。
+    static func content(for input: MenuBarInput) -> MenuBarContent {
+        let representation = effectiveRepresentation(
+            metric: input.metric, representation: input.representation, gauge: input.gauge)
+        guard representation != .iconOnly else {
+            return MenuBarContent(toolTip: "Tokfuel")
+        }
+        let sides = sides(of: input)
+        guard !sides.isEmpty else {
+            return MenuBarContent(title: "\(input.prompts)",
+                                  toolTip: "今日のプロンプト数: \(input.prompts)")
+        }
+
+        let title: String
+        switch representation {
+        case .ring:
+            title = ""   // リングだけで割合を示す
+        case .percent, .ringAndValue:
+            // リングは割合のインジケーターなので、添える数値も割合にそろえる。
+            // リングが形で伝える値に、桁で読める精度（142% など）を足す関係になる。
+            title = joined(sides.compactMap(percentText))
+        default:
+            title = joined(sides.map(amountText))   // 金額
+        }
+        let drawsRing = representation.drawsRing
+        return MenuBarContent(
+            title: title,
+            toolTip: sides.map(toolTip).joined(separator: " / "),
+            ringFills: drawsRing ? sides.map(ringFill) : [],
+            alertLevel: drawsRing ? input.alertLevel : nil)
+    }
+
+    /// 金額表示。残額モードかつ上限があれば「残 上限 − 消費」、なければ消費額。
+    private static func amountText(_ side: Side) -> String {
+        if side.showsRemaining, side.limit > 0 {
+            return "残 " + Money.format(side.limit - side.spend)
+        }
+        return Money.format(side.spend)
+    }
+
+    private static func percentText(_ side: Side) -> String? {
+        percentText(spend: side.spend, basis: side.basis,
+                    showsRemaining: side.ratioShowsRemaining)
+    }
+
+    private static func ringFill(_ side: Side) -> Double {
+        ringFill(spend: side.spend, basis: side.basis,
+                 showsRemaining: side.ratioShowsRemaining) ?? 0
+    }
+
+    /// ツールチップ 1 側ぶん。リング表現では画面に数字が出ないので、
+    /// 金額と（表せるなら）割合の両方をここで伝える。
+    private static func toolTip(_ side: Side) -> String {
+        let scope = side.showsRemaining && side.limit > 0 ? "残り予算" : "推定コスト"
+        let head = "\(side.label)の\(scope): \(amountText(side))"
+        guard let percent = percentText(side) else { return head }
+        return "\(head)（\(percent)）"
+    }
+
+    /// 側を横に並べる。2 つ並ぶのは「今日と今月」だけなので、後ろに「月」を添えて
+    /// 既存の `$12.34 · 月 $210` の形を保つ。
+    private static func joined(_ texts: [String]) -> String {
+        guard texts.count == 2 else { return texts.joined(separator: " · ") }
+        return "\(texts[0]) · 月 \(texts[1])"
+    }
+}

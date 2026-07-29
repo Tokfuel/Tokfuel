@@ -18,6 +18,9 @@ final class DebugSettings: ObservableObject {
     @Published var isActive = false
     @Published var todayCost: Double = 3
     @Published var monthCost: Double = 120
+    /// メニューバーの日次平均基準（リング・パーセントの分母）。予算に依らない
+    /// テンプレート配色のリングを実データ待ちなしで確かめるために上書きできる。
+    @Published var averageCost: Double = 4
 
     /// 今日側（Cost タブと共用の retok レポート）の未取得を再現する。
     /// 今日のコストが 0 になり、推移・内訳・上位セッションは読み込み中表示に落ちる。
@@ -29,6 +32,8 @@ final class DebugSettings: ObservableObject {
     /// 上書き中の金額。`nil` なら実データを使う。未取得の再現が勝つ。
     var today: Double? { isActive && !simulatesMissingReport ? todayCost : nil }
     var month: Double? { isActive && !simulatesMissingMonth ? monthCost : nil }
+    /// 日次平均は月側と同じ 32 日集計から出るので、未取得の再現も月側に合わせる。
+    var average: Double? { isActive && !simulatesMissingMonth ? averageCost : nil }
 
     private init() {}
 }
