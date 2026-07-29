@@ -20,6 +20,8 @@ jobs:
   release:
     name: Build & publish
     runs-on: macos-15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -66,3 +68,44 @@ jobs:
             --title "Tokfuel ${{ steps.version.outputs.version }}" \
             --generate-notes \
             dist/Tokfuel-*.zip
+
+  # README のスクリーンショットを、いま出したバージョンの実 UI から撮り直す（TF-0015）。
+  # main へ直接 push はせず PR にする（人の目を一度通す・ブランチ保護と共存できる）。
+  # GITHUB_TOKEN で作った PR では他のワークフローが起動しないため、CI は回らない。
+  screenshot:
+    name: Refresh README screenshot
+    needs: release
+    runs-on: macos-15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # タグではなく main を撮る（差分を main に戻すため）。
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Render screenshot
+        run: bash scripts/screenshot.sh
+
+      - name: Open a PR if the screenshot changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          if git diff --quiet -- assets/screenshot.png; then
+            echo "screenshot is already up to date"
+            exit 0
+          fi
+          BRANCH="claude/screenshot-${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -m "chore(assets): refresh README screenshot for ${VERSION}" \
+            -- assets/screenshot.png
+          # 同じバージョンを撮り直した場合はブランチを上書きし、PR は再利用する。
+          git push --force origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(assets): refresh README screenshot for ${VERSION}" \
+            --body "Rendered from the real \`PopoverView\` at ${VERSION} by \`scripts/screenshot.sh\` (TF-0015). Merge if the new screenshot looks right." \
+            || echo "a PR for $BRANCH is already open"

@@ -28,7 +28,7 @@
 ---
 
 <p align="center">
-  <img src="assets/screenshot.svg" alt="ポップオーバーのスクリーンショット" width="560"/>
+  <img src="assets/screenshot.png" alt="ポップオーバーのスクリーンショット" width="560"/>
 </p>
 
 ## 特長

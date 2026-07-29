@@ -414,8 +414,8 @@ final class UsageStore: ObservableObject {
 
     // MARK: - 今日 / 昨日
 
-    /// ローカルタイムの YYYY-MM-DD 文字列。
-    private static func dateString(_ date: Date) -> String {
+    /// ローカルタイムの YYYY-MM-DD 文字列。集計キーの書式はここが基準。
+    static func dateString(_ date: Date) -> String {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")

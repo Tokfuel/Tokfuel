@@ -28,7 +28,7 @@
 ---
 
 <p align="center">
-  <img src="assets/screenshot.svg" alt="Popover screenshot" width="560"/>
+  <img src="assets/screenshot.png" alt="Popover screenshot" width="560"/>
 </p>
 
 ## Features
