@@ -6,22 +6,15 @@ labels: bug
 assignees: ""
 ---
 
-<!-- Description: what went wrong, in one paragraph. Reference the relevant file/symbol. -->
+<!-- Description: what went wrong and what the user expects instead, in one paragraph. -->
 
-## Steps to reproduce
+<!-- Root cause: where and why this happens. Reference the relevant file/symbol. -->
 
-1. 
-2. 
-3. 
+<!-- Fix: what change resolves it. -->
 
-## Expected vs actual
+**Relevant files:**
+- `Tokfuel/Sources/` — 
 
-| | |
-|---|---|
-| Expected | |
-| Actual | |
+## Progress
 
-## Environment
-
-- macOS:
-- Tokfuel version:
+- [ ] 
