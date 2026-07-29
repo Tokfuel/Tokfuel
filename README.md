@@ -85,13 +85,14 @@ bash scripts/build.sh
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - Tests: `swift test`
-- Roadmap: [`roadmaps/`](roadmaps/README.md)
+- Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 
 ## Acknowledgements
 
 - **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.
   © [Daiki Matsudate (@d-date)](https://github.com/d-date), [MIT License](Tokfuel/Sources/Resources/LICENSE-retok).
 - **Exchange rates** — [Frankfurter](https://frankfurter.dev).
+- **Roadmap conventions** — adapted from [bajutsu](https://github.com/bajutsu-e2e/bajutsu)'s issue-driven development workflow.
 
 ## License
 
