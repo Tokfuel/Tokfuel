@@ -6,11 +6,11 @@ labels: enhancement
 assignees: ""
 ---
 
-<!-- Introduction: what this adds or changes and why, in one paragraph. -->
+<!-- Introduction: what this adds or changes, in one paragraph. -->
 
-## Detailed design
+<!-- Motivation: why is this needed? what problem does it solve? -->
 
-<!-- How it works. Reference relevant files/symbols inline. -->
+<!-- Detailed design: how it works. Reference relevant files/symbols inline. -->
 
 ## Progress
 
