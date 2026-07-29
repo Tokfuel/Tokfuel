@@ -2,29 +2,24 @@
 name: ideation
 description: >-
   Sounding board for Tokfuel feature ideation. Use when the user wants to brainstorm
-  potential features, explore what the app could do next, or turn a rough idea into a roadmap (TF)
-  item. Grounds the conversation in the existing roadmap, proposes new items or seeds, folds
-  overlapping ideas into existing items, and — when the user is happy — drafts the TF files (EN + JA)
-  under roadmaps/ with the next sequential ID. Scope is roadmap authoring only — it never implements
-  the feature (that is the implement-tf skill).
+  potential features, explore what the app could do next, or turn a rough idea into a GitHub Issue.
+  Grounds the conversation in open issues, proposes new items or seeds, folds overlapping ideas into
+  existing issues, and — when the user is happy — opens a GitHub Issue with the proposal body.
+  Scope is proposal authoring only — it never implements the feature (that is the implement-tf skill).
 ---
 
 # Ideation
 
-A sounding board for shaping Tokfuel features into roadmap (TF) items. You are the
-author and thinking partner, not the judge. Converse in the user's language; the roadmap is
-bilingual, so write both files as required below.
+A sounding board for shaping Tokfuel features into GitHub Issues. You are the author and thinking
+partner, not the judge. Converse in the user's language.
 
-## Scope: roadmap authoring only — never implement
+## Scope: proposal authoring only — never implement
 
-This skill **only** authors and shapes roadmap (TF) items. It stops at the roadmap files under
-`roadmaps/`. **Do not write, modify, or refactor any product code** (`Tokfuel/Sources/`,
-tests, build scripts) even if the implementation seems obvious. The deliverable is always the TF
-proposal, never a working feature.
+This skill **only** authors and shapes proposals. The deliverable is always a GitHub Issue, never
+working code. Do not write, modify, or refactor any product code (`Tokfuel/Sources/`, tests, build
+scripts) even if the implementation seems obvious.
 
-If the user asks you to build an idea, don't switch hats mid-session: point them to
-[`implement-tf`](../implement-tf/SKILL.md), or — when the item is small and its design is settled —
-[`propose-and-build`](../propose-and-build/SKILL.md), which authors and implements in one pass.
+If the user asks you to build an idea, point them to [`implement-tf`](../implement-tf/SKILL.md).
 
 ## Project ground rules (these bound every idea)
 
@@ -35,62 +30,58 @@ silently dropping it.
 2. **Zero setup stays zero.** Don't assume hooks or extra installs; the app reads Claude Code
    transcripts directly. A feature that requires the user to configure Claude Code first fights this.
 3. **retok is vendored unmodified.** Don't propose editing the bundled retok in place (upstream PR
-   instead); keep its MIT license and attribution intact. See [TF-0001](../../../roadmaps/TF-0001-native-swift-cost-analysis/TF-0001-native-swift-cost-analysis.md)
-   for the native-port path.
+   instead); keep its MIT license and attribution intact. See issue #5 for the native-port path.
 4. **python3 is an optional dependency.** The app must keep degrading gracefully without it
    (Cost tab shows an error; other tabs work).
 5. **Swift 6 / SwiftUI / macOS 14+.** `swift build` must stay green.
 
 ## Workflow
 
-### 1. Ground yourself in the existing roadmap
+### 1. Ground yourself in existing issues
 
-Read [`roadmaps/README.md`](../../../roadmaps/README.md) (and `README-ja.md`) — the index of every
-TF item, its topic and status — and the specific `TF-NNNN-*/` files relevant to the topic. Use
-[`roadmap-filter`](../roadmap-filter/SKILL.md) to survey one status quickly. Every suggestion is
-anchored to what is already planned, shipped, or deliberately parked — that is what makes it a
-sounding board and not a blank page.
+```bash
+gh issue list --repo Tokfuel/Tokfuel --state open --limit 50 \
+  --json number,title,labels,body 2>/dev/null
+```
+
+Every suggestion is anchored to what is already planned or deliberately parked — that is what makes
+this a sounding board and not a blank page.
 
 ### 2. Ideate with the user
 
 Go back and forth. Offer concrete, bounded ideas; ask the questions that sharpen scope (who is it
-for, what is the observable outcome). Pull in adjacent items as reference points ("this is close to
-TF-00xx — extend it, or is it distinct?").
+for, what is the observable outcome). Pull in adjacent issues as reference points ("this is close to
+#5 — extend it, or is it distinct?").
 
 ### 3. Classify each surviving idea — tell the user which and why
 
-- **Overlaps an existing TF item** → don't duplicate. Augment that item's files (both languages).
-- **Novel and scoped enough** → draft a new TF item (step 4).
-- **Still unformed** → add a bullet under **Unsorted ideas** in both READMEs; promote later.
+- **Overlaps an existing issue** → don't duplicate. Suggest amending that issue's body.
+- **Novel and scoped enough** → draft a new issue (step 4).
+- **Still unformed** → note it in the conversation and come back later.
 
-### 4. Draft a new TF item
+### 4. Draft and open a new issue
 
-Allocate the next ID = highest existing `TF-NNNN` + 1:
+When the user is happy with the shape, open a GitHub Issue using the Proposal template format:
+- **Title:** short imperative phrase, no issue number prefix.
+- **Body:** Introduction paragraph → Detailed design → Progress checklist. Reference relevant
+  files/symbols inline. Cross-link blocking or related issues with `#N`.
+- **Label:** `enhancement` for features, `bug` for bugs.
 
 ```bash
-ls -d roadmaps/TF-*/ | sort | tail -1
+gh issue create --repo Tokfuel/Tokfuel \
+  --title "<title>" \
+  --label enhancement \
+  --body "<body>" 2>/dev/null
 ```
 
-Create `roadmaps/TF-NNNN-<slug>/` with both `TF-NNNN-<slug>.md` and `TF-NNNN-<slug>-ja.md`.
-Copy the shape from an existing item (e.g. [TF-0001](../../../roadmaps/TF-0001-budget-alerts/TF-0001-budget-alerts.md)):
-the bilingual header link, the `<!-- TF-METADATA -->` block (`Proposal` / `Author` / `Status: Proposal`
-/ `Topic`), and the sections `Introduction` / `Motivation` / `Detailed design` /
-`Alternatives considered` / `Progress` / `References`. Fill unknowns with `TBD`.
+Then add it to the roadmap project:
 
-Write the Japanese side under [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) — 敬体,
-natural Japanese, not a literal rendering of the English. Then **add a row** to the Proposals table
-in both README files by hand.
-
-### 5. Verify and finish
-
-Run `bash scripts/lint_roadmap.sh` — it checks the EN/JA pair, the metadata block, the bilingual
-cross-links, and the index rows (CI runs the same script). Commit with a scoped message
-(`docs(roadmap): add TF-NNNN <slug>`). Open a PR only if the user asks.
+```bash
+gh project item-add 1 --owner Tokfuel \
+  --url "https://github.com/Tokfuel/Tokfuel/issues/<number>" 2>/dev/null
+```
 
 ## References
 
-- [`roadmaps/README.md`](../../../roadmaps/README.md) — the index and the per-item format.
-- [`implement-tf`](../implement-tf/SKILL.md) — the counterpart that ships a numbered item.
-- [`propose-and-build`](../propose-and-build/SKILL.md) — author + implement in one pass.
-- [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) — the norm for the `-ja.md` side.
-</content>
+- [`implement-tf`](../implement-tf/SKILL.md) — the counterpart that ships an issue.
+- [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) — for Japanese-language sessions.

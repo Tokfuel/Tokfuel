@@ -46,16 +46,15 @@ new logic. Avoid tests that touch real user state (`~/Library/Application Suppor
 
 ## Roadmap workflow
 
-Features are tracked as **TF items** under [`roadmaps/`](roadmaps/README.md) — one directory
-`TF-NNNN-<slug>/` with an English file and a Japanese mirror (敬体, per the
-[`japanese-tech-writing`](.claude/skills/japanese-tech-writing/SKILL.md) skill). IDs are
-allocated by hand (highest + 1) and are permanent. The skills under
-[`.claude/skills/`](.claude/skills/) drive the cycle:
+Features are tracked as GitHub Issues in [Tokfuel/Tokfuel](https://github.com/Tokfuel/Tokfuel/issues).
+Use the **Proposal** issue template for new features and the **Bug report** template for bugs.
+The roadmap is also visible as [GitHub Project #1](https://github.com/orgs/Tokfuel/projects/1).
 
-- **`ideation`** — shape an idea into a TF proposal (authoring only).
-- **`implement-tf`** — ship a numbered item from its ID (proposal = spec).
-- **`propose-and-build`** — both in one pass, for a small settled item.
-- **`roadmap-filter`** / **`task-select`** — survey by status / pick the next item.
+The skills under [`.claude/skills/`](.claude/skills/) drive the cycle:
+
+- **`ideation`** — shape an idea into a GitHub Issue (authoring only).
+- **`implement-tf`** — ship an issue from its number (issue body = spec).
+- **`task-select`** — survey open issues and pick the next item to implement.
 
 ## Conventions
 
