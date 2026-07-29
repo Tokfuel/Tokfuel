@@ -52,6 +52,7 @@ _None yet (post-reset)._
 | [TF-0003](TF-0003-menubar-budget-gauge/TF-0003-menubar-budget-gauge.md) | Menu-bar budget gauge (ring chart) | Menu bar & UX |
 | [TF-0004](TF-0004-cursor-usage/TF-0004-cursor-usage.md) | Collect Cursor usage data | Providers |
 | [TF-0005](TF-0005-csv-export/TF-0005-csv-export.md) | CSV export for team/admin aggregation | Cost & budget |
+| [TF-0006](TF-0006-menubar-both-costs-zero-today/TF-0006-menubar-both-costs-zero-today.md) | Bug: "today + month" display loses the month when today is zero | Bug · Menu bar |
 
 ## 🚧 In progress
 

@@ -52,6 +52,7 @@ _まだありません（リセット後）。_
 | [TF-0003](TF-0003-menubar-budget-gauge/TF-0003-menubar-budget-gauge-ja.md) | メニューバーの予算ゲージ（円グラフ） | メニューバーと UX |
 | [TF-0004](TF-0004-cursor-usage/TF-0004-cursor-usage-ja.md) | Cursor の利用データ収集 | プロバイダ |
 | [TF-0005](TF-0005-csv-export/TF-0005-csv-export-ja.md) | チーム・管理者向けの CSV 書き出し | コストと予算 |
+| [TF-0006](TF-0006-menubar-both-costs-zero-today/TF-0006-menubar-both-costs-zero-today-ja.md) | バグ: 「今日と今月」表示で今日が 0 のとき月額まで消える | バグ · メニューバー |
 
 ## 🚧 進行中
 
