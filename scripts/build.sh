@@ -4,12 +4,19 @@ set -euo pipefail
 APP_NAME="Tokfuel"
 BUNDLE_NAME="Tokfuel"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_DIR="$PROJECT_DIR/.build/release"
 APP_DIR="/Applications/${APP_NAME}.app"
 
-echo "Building $APP_NAME..."
+# 既定は配布と同じ release 構成。--debug は開発者向けのデバッグセクション
+# （設定の一番下）を含む debug 構成を入れる。配布物には使わない。
+CONFIG="release"
+if [[ "${1:-}" == "--debug" ]]; then
+  CONFIG="debug"
+fi
+BUILD_DIR="$PROJECT_DIR/.build/$CONFIG"
+
+echo "Building $APP_NAME ($CONFIG)..."
 cd "$PROJECT_DIR"
-swift build -c release 2>&1
+swift build -c "$CONFIG" 2>&1
 
 echo "Packaging .app bundle..."
 rm -rf "$APP_DIR"

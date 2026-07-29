@@ -5,9 +5,15 @@ import AppKit
 /// めったに変えない項目（レポート言語・スキャン場所・イベントログ）は「詳細」に畳む。
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
+    #if DEBUG
+    @ObservedObject private var debug = DebugSettings.shared
+    #endif
     /// メニューバー表示のプレビューに実データを出すためのストア（省略時はプレースホルダ表示）。
     var store: UsageStore?
     @State private var showsAdvanced = false
+    #if DEBUG
+    @State private var showsDebug = false
+    #endif
 
     var body: some View {
         Form {
@@ -116,6 +122,43 @@ struct SettingsView: View {
                     }
                 }
             }
+
+            #if DEBUG
+            // 開発者向け。リリースビルドにはコンパイルされない。「詳細」と同じく畳んでおく。
+            Section {
+                DisclosureGroup("デバッグ", isExpanded: $showsDebug) {
+                    // 今日側と月側は別々の retok 実行なので、片方だけ欠けた状態も再現できる。
+                    Toggle(isOn: $debug.simulatesMissingReport) {
+                        Text("未取得を再現: 今日")
+                        Text("今日のコストが 0 になり、推移・内訳は読み込み中表示に落ちます")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Toggle(isOn: $debug.simulatesMissingMonth) {
+                        Text("未取得を再現: 今月")
+                        Text("月の 32 日集計だけが未着。起動直後に数秒だけ通る状態です")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Toggle(isOn: $debug.isActive) {
+                        Text("金額を上書きする")
+                        Text("上書き中は retok の実データを使いません。値は保存されず、再起動で元に戻ります")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if debug.isActive {
+                        if !debug.simulatesMissingReport {
+                            DebugAmountRow(title: "今日のコスト ($)",
+                                           range: 0...50, value: $debug.todayCost)
+                        }
+                        if !debug.simulatesMissingMonth {
+                            DebugAmountRow(title: "今月のコスト ($)",
+                                           range: 0...500, value: $debug.monthCost)
+                        }
+                    }
+                }
+            }
+            #endif
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 620)
@@ -149,18 +192,18 @@ struct SettingsView: View {
             })
     }
 
-    /// 各表示オプションでメニューバーに出る文字列。実データが無ければ "$–" を出す。
+    /// 各表示オプションでメニューバーに出る文字列。ストア未接続のプレビューでは "$–"。
     /// 「予算までの残り」モードでは、予算のある項目を「残 上限 − 消費」に置き換える。
     private func previewText(for option: MenuBarDisplay) -> String? {
-        let today = store?.todayCost.map { cost in
+        let today = store.map { store in
             settings.menuBarShowsRemaining && settings.dailyBudgetLimit > 0
-                ? "残 " + PopoverView.money(settings.dailyBudgetLimit - cost)
-                : PopoverView.money(cost)
+                ? "残 " + PopoverView.money(settings.dailyBudgetLimit - store.todayCost)
+                : PopoverView.money(store.todayCost)
         }
-        let month = store?.budgetSpend.map { spend in
+        let month = store.map { store in
             settings.menuBarShowsRemaining && settings.budgetLimit > 0
-                ? "残 " + PopoverView.money(settings.budgetLimit - spend)
-                : PopoverView.money(spend)
+                ? "残 " + PopoverView.money(settings.budgetLimit - store.budgetSpend)
+                : PopoverView.money(store.budgetSpend)
         }
         switch option {
         case .iconOnly: return nil
@@ -171,6 +214,30 @@ struct SettingsView: View {
         }
     }
 }
+
+#if DEBUG
+/// デバッグ用の金額入力（スライダーで大まかに、数値欄で正確に）。
+struct DebugAmountRow: View {
+    let title: String
+    let range: ClosedRange<Double>
+    @Binding var value: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(title)
+                Spacer()
+                TextField("", value: $value, format: .number.precision(.fractionLength(2)))
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 80)
+                    .multilineTextAlignment(.trailing)
+            }
+            Slider(value: $value, in: range)
+        }
+        .padding(.vertical, 2)
+    }
+}
+#endif
 
 /// メニューバーの見た目を模したプレビューチップ（⛽️ アイコン + タイトル）。
 struct MenuBarPreviewChip: View {

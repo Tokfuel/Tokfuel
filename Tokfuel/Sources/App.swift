@@ -108,6 +108,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
 
+        #if DEBUG
+        // デバッグ上書きは実データを介さないので、ここで直接表示を作り直す。
+        DebugSettings.shared.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                self?.updateStatusTitle()
+                self?.usageStore.objectWillChange.send()   // ポップオーバー・設定プレビュー
+            }
+            .store(in: &cancellables)
+        #endif
+
         usageStore.reload()
         updateStatusTitle()
 
@@ -120,14 +131,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 予算レベルに応じてアイコン色を変え、必要なら通知を送る（月間・日次それぞれ）。
     private func evaluateBudget() {
         updateStatusIcon()
-        if let level = usageStore.budgetLevel, let spend = usageStore.budgetSpend {
+        if let level = usageStore.budgetLevel {
             BudgetMonitor.notifyIfNeeded(
-                kind: .monthly, level: level, spend: spend, limit: settings.budgetLimit,
+                kind: .monthly, level: level, spend: usageStore.budgetSpend,
+                limit: settings.budgetLimit,
                 periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod))
         }
-        if let level = usageStore.dailyBudgetLevel, let spend = usageStore.todayCost {
+        if let level = usageStore.dailyBudgetLevel {
             BudgetMonitor.notifyIfNeeded(
-                kind: .daily, level: level, spend: spend, limit: settings.dailyBudgetLimit,
+                kind: .daily, level: level, spend: usageStore.todayCost,
+                limit: settings.dailyBudgetLimit,
                 periodKey: BudgetMonitor.dailyPeriodKey())
         }
     }
@@ -153,8 +166,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// 今日ぶんの表示値。残額モードかつ日次予算があれば「上限 − 消費」、なければ消費額。
-    private func todayFigure() -> (text: String, tip: String)? {
-        guard let cost = usageStore.todayCost else { return nil }
+    private func todayFigure() -> (text: String, tip: String) {
+        let cost = usageStore.todayCost
         if settings.menuBarShowsRemaining, settings.dailyBudgetLimit > 0 {
             let remaining = settings.dailyBudgetLimit - cost
             return ("残 " + PopoverView.money(remaining),
@@ -164,8 +177,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// 今月ぶんの表示値。残額モードかつ月間予算があれば「上限 − 消費」、なければ消費額。
-    private func monthFigure() -> (text: String, tip: String)? {
-        guard let spend = usageStore.budgetSpend else { return nil }
+    private func monthFigure() -> (text: String, tip: String) {
+        let spend = usageStore.budgetSpend
         if settings.menuBarShowsRemaining, settings.budgetLimit > 0 {
             let remaining = settings.budgetLimit - spend
             return ("残 " + PopoverView.money(remaining),
@@ -187,37 +200,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.title = " \(prompts)"
             button.toolTip = "今日のプロンプト数: \(prompts)"
         case .cost:
-            if let today = todayFigure() {
-                button.title = " " + today.text
-                button.toolTip = today.tip
-            } else {
-                fallbackToPrompts(button)
-            }
+            let today = todayFigure()
+            button.title = " " + today.text
+            button.toolTip = today.tip
         case .monthlyCost:
-            if let month = monthFigure() {
-                button.title = " " + month.text
-                button.toolTip = month.tip
-            } else {
-                fallbackToPrompts(button)
-            }
+            let month = monthFigure()
+            button.title = " " + month.text
+            button.toolTip = month.tip
         case .bothCosts:
-            if let today = todayFigure(), let month = monthFigure() {
-                button.title = " \(today.text) · 月 \(month.text)"
-                button.toolTip = "\(today.tip) / \(month.tip)"
-            } else if let today = todayFigure() {
-                button.title = " " + today.text
-                button.toolTip = today.tip
-            } else {
-                fallbackToPrompts(button)
-            }
+            let (today, month) = (todayFigure(), monthFigure())
+            button.title = " \(today.text) · 月 \(month.text)"
+            button.toolTip = "\(today.tip) / \(month.tip)"
         }
-    }
-
-    /// コスト未取得時（retok 解析前・python3 なし）のフォールバック表示。
-    private func fallbackToPrompts(_ button: NSStatusBarButton) {
-        let prompts = usageStore.today.prompts
-        button.title = " \(prompts)"
-        button.toolTip = "今日のプロンプト数: \(prompts)"
     }
 
     @objc private func togglePopover() {
