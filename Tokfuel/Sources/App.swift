@@ -26,6 +26,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var outsideClickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        // README 用スクリーンショットの生成（TF-0015）。常駐せずに書き出して終了する。
+        if CommandLine.arguments.contains("--screenshot") {
+            ScreenshotRenderer.runAndExit()
+        }
+        #endif
+
         NSApp.setActivationPolicy(.accessory)
         settings.syncLoginItem()
 
