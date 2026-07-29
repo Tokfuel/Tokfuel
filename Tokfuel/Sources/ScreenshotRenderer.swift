@@ -137,7 +137,7 @@ enum ScreenshotRenderer {
     /// ポップオーバー本体は実物の `PopoverView` そのままで、枠だけがこのファイルの飾り。
     private static func composition(store: UsageStore, now: Date) -> some View {
         VStack(spacing: 0) {
-            menuBar(store: store, now: now)
+            menuBar(now: now)
             popoverCard(store: store)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 8)
@@ -158,9 +158,9 @@ enum ScreenshotRenderer {
                        startPoint: .top, endPoint: .bottom)
     }
 
-    /// ステータス項目の見え方を伝えるためのメニューバー帯。金額は本物と同じ
-    /// フォーマッタを通すので、`menuBarDisplay == .cost` の表示と一致する。
-    private static func menuBar(store: UsageStore, now: Date) -> some View {
+    /// ステータス項目の見え方を伝えるためのメニューバー帯。金額はフィクスチャの「今日」を
+    /// 本物と同じフォーマッタに通すので、`menuBarDisplay == .cost` の表示と一致する。
+    private static func menuBar(now: Date) -> some View {
         HStack(spacing: 14) {
             Image(systemName: "apple.logo")
                 .font(.system(size: 13))
@@ -175,7 +175,7 @@ enum ScreenshotRenderer {
             Image(systemName: "battery.75percent")
             HStack(spacing: 3) {
                 Image(systemName: "fuelpump.fill")
-                Text(store.todayCost.map { PopoverView.money($0) } ?? "–")
+                Text(PopoverView.money(dailyCosts.last ?? 0))
                     .monospacedDigit()
             }
             .foregroundStyle(.orange)
@@ -226,10 +226,10 @@ enum ScreenshotRenderer {
                                        cacheRead: 18_900_000, cacheWrite: 2_150_000,
                                        prompts: 356, requests: 812),
             cacheHitRate: 0.86,
-            perModel: modelCosts.mapValues {
+            perModel: modelCosts.mapValues { cost -> RetokReport.ModelUsage in
                 // 絵に出るのはコストだけなので、トークン数はコストから機械的に置く。
-                .init(cost: $0, input: Int($0 * 10_800), output: Int($0 * 890),
-                      requests: Int($0 * 6))
+                RetokReport.ModelUsage(cost: cost, input: Int(cost * 10_800),
+                                       output: Int(cost * 890), requests: Int(cost * 6))
             },
             daily: daily,
             // ポップオーバーはスクロールするが、README には最初の 1 画面しか写らない。
