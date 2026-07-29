@@ -22,13 +22,8 @@ BUILD_DIR="$PROJECT_DIR/.build/apple/Products/Release"
 
 echo "Packaging .app bundle..."
 rm -rf "$DIST_DIR"
-mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
-
-cp "$BUILD_DIR/$APP_NAME" "$APP_DIR/Contents/MacOS/$APP_NAME"
-cp "$PROJECT_DIR/Info.plist" "$APP_DIR/Contents/Info.plist"
-# SwiftPM のリソースバンドル（retok スクリプト・locales）を同梱する
-cp -R "$BUILD_DIR/${APP_NAME}_${APP_NAME}.bundle" "$APP_DIR/Contents/Resources/"
-cp "$PROJECT_DIR/assets/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
+source "$PROJECT_DIR/scripts/lib/assemble_app.sh"
+assemble_app "$BUILD_DIR" "$APP_DIR"
 
 # 配布物のバージョンをタグに合わせる
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_DIR/Contents/Info.plist"

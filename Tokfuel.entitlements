@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac App Store 提出にはサンドボックスが必須。python3 の spawn と
+	     ~/.claude/projects の読み取りはサンドボックス下では動かないため、
+	     審査が通るのは #5（Swift ネイティブ化）完了後になる。
+	     temporary-exception は審査で却下されるので追加しない。 -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+	<!-- 為替レート取得（Frankfurter API、オプトイン）に必要な唯一の通信 -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+</dict>
+</plist>

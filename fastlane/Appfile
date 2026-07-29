@@ -1,0 +1,5 @@
+# バンドル ID は公開情報としてコミットする。認証は App Store Connect API キー
+# （Fastfile 側）で行うため Apple ID は不要・記載しない。
+app_identifier "com.akidon0000.tokfuel"
+
+team_id ENV["TOKFUEL_TEAM_ID"]  # Developer Portal のチーム ID

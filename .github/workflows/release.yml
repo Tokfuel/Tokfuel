@@ -12,6 +12,9 @@ on:
       version:
         description: "リリースするバージョン（例: v0.0.4）"
         required: true
+      build_number:
+        description: "App Store のビルド番号（省略時はコミット数。同一タグの再アップロード時だけ手動で増やす）"
+        required: false
 
 permissions:
   contents: write
@@ -68,6 +71,66 @@ jobs:
             --title "Tokfuel ${{ steps.version.outputs.version }}" \
             --generate-notes \
             dist/Tokfuel-*.zip
+
+  # App Store Connect へアップロードし審査に提出する（issue #13, オプトイン）。
+  # リポジトリ変数 APPSTORE_RELEASE_ENABLED=true を設定するまでスキップされる。
+  # needs: release により GitHub Release（zip 配布）が常に先へ出るので、
+  # この job が落ちても直接ダウンロード配布はブロックされない。
+  # 現状はサンドボックス非対応（issue #5）のため審査は通らない前提。
+  # release job とビルドを共有せず作り直すのは意図的（アーティファクト受け渡しの
+  # 結合を避ける。このパッケージのビルドは 1〜2 分で再実行のほうが安い）。
+  appstore:
+    name: Upload to App Store
+    needs: release
+    if: vars.APPSTORE_RELEASE_ENABLED == 'true'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # CFBundleVersion（git rev-list --count）用に全履歴が要る
+
+      - name: Verify required secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          MAS_CERT_P12_BASE64: ${{ secrets.MAS_CERT_P12_BASE64 }}
+          MAS_CERT_PASSWORD: ${{ secrets.MAS_CERT_PASSWORD }}
+          MAS_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          missing=0
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 \
+                   MAS_CERT_P12_BASE64 MAS_CERT_PASSWORD MAS_PROVISIONING_PROFILE_BASE64; do
+            [ -n "${!v}" ] || { echo "::error::secret $v is not set"; missing=1; }
+          done
+          exit $missing
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Decode signing assets
+        env:
+          MAS_CERT_P12_BASE64: ${{ secrets.MAS_CERT_P12_BASE64 }}
+          MAS_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          echo "$MAS_CERT_P12_BASE64" | base64 -d > "$RUNNER_TEMP/mas.p12"
+          echo "$MAS_PROVISIONING_PROFILE_BASE64" | base64 -d > "$RUNNER_TEMP/mas.provisionprofile"
+
+      - name: Build & upload
+        env:
+          TOKFUEL_VERSION: ${{ needs.release.outputs.version }}
+          TOKFUEL_BUILD_NUMBER: ${{ inputs.build_number }}
+          TOKFUEL_SUBMIT_FOR_REVIEW: "true"
+          TOKFUEL_TEAM_ID: ${{ secrets.TOKFUEL_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          MAS_CERT_P12_PATH: ${{ runner.temp }}/mas.p12
+          MAS_CERT_PASSWORD: ${{ secrets.MAS_CERT_PASSWORD }}
+          MAS_PROVISIONING_PROFILE_PATH: ${{ runner.temp }}/mas.provisionprofile
+        run: bundle exec fastlane mac release_appstore
 
   # README のスクリーンショットを、いま出したバージョンの実 UI から撮り直す（TF-0015）。
   # main へ直接 push はせず PR にする（人の目を一度通す・ブランチ保護と共存できる）。

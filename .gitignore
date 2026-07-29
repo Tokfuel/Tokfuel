@@ -17,7 +17,16 @@
 # Common build output
 node_modules/
 dist/
+dist-mas/
 build/
+
+# fastlane / signing assets (証明書・鍵は絶対にコミットしない)
+fastlane/report.xml
+vendor/bundle/
+.bundle/
+*.p8
+*.p12
+*.provisionprofile
 
 # Local AI-session state (.claude/skills IS tracked; these are per-machine)
 .claude/worktrees/

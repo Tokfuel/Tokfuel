@@ -87,6 +87,42 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Tests: `swift test`
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 
+## Releasing (maintainers)
+
+Push a `vX.Y.Z` tag, or run the **Release** workflow from the Actions tab with a version.
+CI then runs the tests, builds a universal binary, and publishes a GitHub Release with
+auto-generated notes:
+
+```bash
+git tag v0.0.4 && git push origin v0.0.4
+```
+
+**App Store submission (opt-in).** The same workflow can also build a sandboxed `.pkg`,
+upload it to App Store Connect, and submit it for review via fastlane. The job stays
+skipped until the repository variable `APPSTORE_RELEASE_ENABLED` is set to `true` and
+these secrets exist:
+
+| Secret | What it holds |
+| --- | --- |
+| `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64` | App Store Connect API key (App Manager role); the `.p8` is base64-encoded |
+| `MAS_CERT_P12_BASE64`, `MAS_CERT_PASSWORD` | One `.p12` containing both the **Apple Distribution** and **Mac Installer Distribution** certificates |
+| `MAS_PROVISIONING_PROFILE_BASE64` | Mac App Store provisioning profile for `com.akidon0000.tokfuel` |
+| `TOKFUEL_TEAM_ID` | Developer Portal team ID (stamped into the signing entitlements) |
+
+One-time prerequisite: the app record for `com.akidon0000.tokfuel` must already exist in
+App Store Connect.
+
+> [!NOTE]
+> Until [#5](https://github.com/Tokfuel/Tokfuel/issues/5) replaces the bundled python3
+> pipeline with native Swift, the sandboxed build cannot pass App Review. The pipeline is
+> in place ahead of that.
+
+To verify the packaging locally without any certificates:
+
+```bash
+TOKFUEL_SKIP_SIGNING=1 bash scripts/package_mas.sh
+```
+
 ## Acknowledgements
 
 - **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.

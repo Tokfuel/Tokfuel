@@ -1,0 +1,59 @@
+# fastlane は App Store 提出のレーンだけを担う（issue #13）。
+# GitHub Release の作成は .github/workflows/release.yml の `gh release create`
+# が既に担っているため、set_github_release は使わない。
+# .xcodeproj を持たない SwiftPM 構成のため gym も使わず、.app の組み立てと
+# 署名は scripts/package_mas.sh に委ねる。
+default_platform(:mac)
+
+platform :mac do
+  desc "Mac App Store 用の署名済み .pkg を dist-mas/ に作る"
+  lane :build_mas do
+    if ENV["CI"]
+      setup_ci # 一時キーチェーンを作り署名をヘッドレスで通す
+      # p12 には Apple Distribution / Mac Installer Distribution の両証明書を入れておく
+      import_certificate(
+        certificate_path: ENV.fetch("MAS_CERT_P12_PATH"),
+        certificate_password: ENV.fetch("MAS_CERT_PASSWORD"),
+        keychain_name: "fastlane_tmp_keychain",
+        keychain_password: ""
+      )
+    end
+    sh("bash", "../scripts/package_mas.sh", ENV.fetch("TOKFUEL_VERSION"))
+  end
+
+  desc "App Store Connect へ .pkg をアップロードし審査に提出する"
+  lane :upload_appstore do
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_P8_BASE64"),
+      is_key_content_base64: true
+    )
+    version = ENV.fetch("TOKFUEL_VERSION").delete_prefix("v")
+    deliver(
+      api_key: api_key,
+      # fastlane の実行ディレクトリに依存しないよう絶対パスで渡す
+      pkg: File.expand_path("../dist-mas/Tokfuel-#{version}.pkg", __dir__),
+      app_version: version,
+      platform: "osx",
+      skip_metadata: true,
+      skip_screenshots: true,
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false,
+      submit_for_review: ENV["TOKFUEL_SUBMIT_FOR_REVIEW"] == "true",
+      automatic_release: false,
+      # 暗号化・IDFA の質問に先回りで回答し、審査提出が止まらないようにする
+      submission_information: {
+        export_compliance_uses_encryption: false,
+        add_id_info_uses_idfa: false
+      },
+      force: true # HTML プレビュー確認をスキップ（CI 用）
+    )
+  end
+
+  desc "build_mas → upload_appstore を一括実行する"
+  lane :release_appstore do
+    build_mas
+    upload_appstore
+  end
+end

@@ -87,6 +87,42 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 - テスト: `swift test`
 - ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 
+## リリース手順（メンテナ向け）
+
+`vX.Y.Z` のタグを push するか、Actions タブから **Release** ワークフローにバージョンを
+入力して実行します。CI がテスト、ユニバーサルビルド、リリースノート自動生成付きの
+GitHub Release 作成まで行います。
+
+```bash
+git tag v0.0.4 && git push origin v0.0.4
+```
+
+**App Store 提出（オプトイン）**：同じワークフローが、サンドボックス化した `.pkg` のビルドと
+App Store Connect へのアップロード、審査提出までを fastlane で行えます。リポジトリ変数
+`APPSTORE_RELEASE_ENABLED` を `true` に設定し、次の secrets を登録するまで、この job は
+スキップされます。
+
+| Secret | 内容 |
+| --- | --- |
+| `ASC_KEY_ID`、`ASC_ISSUER_ID`、`ASC_KEY_P8_BASE64` | App Store Connect API キー（App Manager 権限）。`.p8` は base64 で登録する |
+| `MAS_CERT_P12_BASE64`、`MAS_CERT_PASSWORD` | **Apple Distribution** と **Mac Installer Distribution** の両証明書を入れた 1 つの `.p12` |
+| `MAS_PROVISIONING_PROFILE_BASE64` | `com.akidon0000.tokfuel` の Mac App Store 用プロビジョニングプロファイル |
+| `TOKFUEL_TEAM_ID` | Developer Portal のチーム ID（署名用 entitlements に刻印する） |
+
+初回のみ、App Store Connect に `com.akidon0000.tokfuel` の app record を手動で作成しておく
+必要があります。
+
+> [!NOTE]
+> 同梱の python3 パイプラインを Swift ネイティブに置き換える
+> [#5](https://github.com/Tokfuel/Tokfuel/issues/5) が完了するまで、サンドボックス化した
+> ビルドは審査を通りません。パイプラインだけを先に整備しています。
+
+証明書なしでパッケージングだけをローカル検証するには次を実行します。
+
+```bash
+TOKFUEL_SKIP_SIGNING=1 bash scripts/package_mas.sh
+```
+
 ## 謝辞
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
