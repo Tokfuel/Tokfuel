@@ -66,12 +66,12 @@ When the user is happy with the shape, open a GitHub Issue using the Proposal te
 - **Body (enhancement):** Introduction paragraph → `## Detailed design` → `## Progress` checklist.
 - **Body (bug):** Description paragraph → Root cause → Fix → `**Relevant files:**` list → `## Progress` checklist.
 - Reference relevant files/symbols inline. Cross-link blocking or related issues with `#N`.
-- **Label:** `enhancement` for features, `bug` for bugs.
+- **Label:** `enhancement 🚀` for features, `bugs 🐞` for bugs.
 
 ```bash
 gh issue create --repo Tokfuel/Tokfuel \
   --title "<title>" \
-  --label enhancement \
+  --label "enhancement 🚀" \
   --body "<body>" 2>/dev/null
 ```
 
