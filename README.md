@@ -55,6 +55,7 @@
 - 🔒 **Local-first**
 
   No telemetry. The only network call is the opt-in exchange-rate fetch.
+  Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
 
 ## Install
 
