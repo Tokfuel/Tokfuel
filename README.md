@@ -68,14 +68,10 @@
 
 - 🔒 **Local-first**
 
-<<<<<<< HEAD
-  No telemetry. The only network call is the opt-in exchange-rate fetch.
-  Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
-=======
   No telemetry. Network calls are: the opt-in exchange-rate fetch; if Cursor is
   installed, the daily price-table refresh; and, when signed into Cursor, a usage
   query to Cursor's dashboard API (auth + date range only — no prompts).
->>>>>>> origin/main
+  Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
 
 ## Install
 
