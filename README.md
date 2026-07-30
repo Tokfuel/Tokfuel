@@ -71,6 +71,7 @@
   No telemetry. Network calls are: the opt-in exchange-rate fetch; if Cursor is
   installed, the daily price-table refresh; and, when signed into Cursor, a usage
   query to Cursor's dashboard API (auth + date range only — no prompts).
+  Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
 
 ## Install
 
@@ -102,6 +103,26 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Tests: `swift test`
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
+
+### Contributors
+
+<div id="contributors">
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/akidon0000">
+                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
+                    <br />
+                    <sub><b>akidon0000</b></sub>
+                </a>
+            </td>
+		</tr>
+	</tbody>
+</table>
+<!-- readme: contributors -end -->
+</div>
 
 ## Acknowledgements
 
