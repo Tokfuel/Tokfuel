@@ -41,6 +41,7 @@ struct PopoverView: View {
 
     private var heroSection: some View {
         let t = store.today
+        let breakdown = store.driverBreakdown
         return VStack(alignment: .leading, spacing: 2) {
             Text("今日")
                 .font(.caption)
@@ -52,7 +53,22 @@ struct PopoverView: View {
             Text("\(t.prompts) プロンプト · \(t.sessions) セッション")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            if !breakdown.isEmpty {
+                Text(driverBreakdownText(breakdown))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
+    }
+
+    /// ヒーロー副次行: "Cursor $3.10（推定）" のように二次ソースの内訳を並べる。
+    /// Cursor はトークンスナップショットが取れたメッセージだけの集計なので下限の推定値でしかない
+    /// ——ここで常に「推定」と明示する。
+    private func driverBreakdownText(_ breakdown: [(name: String, cost: Double)]) -> String {
+        let items = breakdown
+            .map { "\($0.name) \(Self.money($0.cost))" }
+            .joined(separator: " · ")
+        return "\(items)（推定）"
     }
 
     // MARK: - 2. 上限への近さ（設定している人にだけ見える）
@@ -91,14 +107,19 @@ struct PopoverView: View {
                 .frame(width: 150)
                 .labelsHidden()
             }
-            Chart(report.dailySorted, id: \.date) { day in
+            Chart(store.chartRows(for: report), id: \.id) { row in
                 BarMark(
-                    x: .value("Date", shortDate(day.date)),
-                    y: .value("USD", day.cost)
+                    x: .value("Date", shortDate(row.date)),
+                    y: .value("USD", row.cost)
                 )
-                .foregroundStyle(Color.accentColor.gradient)
+                .foregroundStyle(by: .value("Source", row.source))
                 .cornerRadius(2)
             }
+            .chartForegroundStyleScale([
+                UsageStore.claudeSourceLabel: Color.accentColor.gradient,
+                UsageStore.secondarySourceLabel: Color.secondary.gradient
+            ])
+            .chartLegend(store.driverDaily.isEmpty ? .hidden : .visible)
             .chartXAxis {
                 AxisMarks(values: xAxisValues(report)) { _ in
                     AxisGridLine()

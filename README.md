@@ -37,6 +37,13 @@
 
   Today's / period cost, daily chart, per-model breakdown, top sessions, and retok's saving tips.
 
+- 🖱️ **Cursor, too**
+
+  If Cursor is installed, its local usage is folded into the same total and chart —
+  a best-effort estimate (not every message has a token snapshot, so it's always a
+  lower bound). Nothing to configure. Pricing is refreshed once a day from Cursor's own
+  published price table, with a bundled table as the offline fallback.
+
 - 🚨 **Budgets**
 
   Independent monthly and daily limits.
@@ -58,7 +65,8 @@
 
 - 🔒 **Local-first**
 
-  No telemetry. The only network call is the opt-in exchange-rate fetch.
+  No telemetry. The only network calls are the opt-in exchange-rate fetch and, if
+  Cursor is installed, the daily Cursor price-table refresh — neither sends usage data.
 
 ## Install
 

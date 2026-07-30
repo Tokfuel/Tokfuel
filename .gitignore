@@ -22,3 +22,6 @@ build/
 # Local AI-session state (.agents/skills IS tracked; .claude/skills is a symlink to it)
 .claude/worktrees/
 .serena/
+
+# Unpublished issue/proposal drafts (private until opened on GitHub)
+docs/drafts/

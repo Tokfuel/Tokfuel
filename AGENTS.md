@@ -16,8 +16,12 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
 ## Ground rules (do not violate)
 
 1. **Local-only.** Collected data never leaves the Mac — no telemetry, no network sends.
-   Sole exception: when the user opts into JPY display, `ExchangeRateService` fetches a daily
-   USD→JPY rate from the Frankfurter API (the request carries no usage data).
+   Two exceptions, both owner-approved: (1) when the user opts into JPY display,
+   `ExchangeRateService` fetches a daily USD→JPY rate from the Frankfurter API (the request
+   carries no usage data); (2) when Cursor is detected on the Mac, `CursorPricingService`
+   fetches Cursor's own published price table (`cursor.com/docs/models-and-pricing`) once a
+   day to refine the Cursor cost estimate — no usage data is sent, only a page fetch, and
+   `CursorPricing`'s hardcoded table remains the fallback if the fetch or parse fails.
 2. **Zero setup stays zero.** The app reads Claude Code transcripts directly. Never require
    hooks, external installs, or Claude Code configuration for a feature to work.
 3. **retok is vendored unmodified.** `Sources/Resources/retok.py` + `locales/` are

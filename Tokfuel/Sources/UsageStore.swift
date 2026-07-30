@@ -214,6 +214,18 @@ final class UsageStore: ObservableObject {
     /// Codex CLI の日別使用量（CU-0009）。ログが無いマシンでは空のまま。
     @Published var codexDaily: [ProviderDayUsage] = []
 
+    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい
+    /// （`ProviderUsage.swift` の Codex 読み取りは UI 連結が無い死んだコードのままだが、
+    /// 同じ形で CostDriver に載せ替えるのが次の候補）。
+    private let costDrivers: [CostDriver] = [CursorCostDriver()]
+
+    /// driver.id → (日付 → コスト)。ヒーロー・予算・グラフはここから合算する。
+    /// reloadReport() と同じ期間で更新される（今日は常にこの範囲に含まれる）。
+    /// private にしていないのは codexDaily と同じ理由 — テストから直接注入できるようにするため。
+    /// 読み書きするメソッド・計算プロパティは下の `extension UsageStore` にまとめている
+    /// （extension は保持型プロパティを持てないので、この 2 つだけ本体に残る）。
+    @Published var driverDailyByID: [String: [String: Double]] = [:]
+
     private enum Keys {
         static let reportDays = "reportDays"
         static let toolsPeriod = "toolsPeriod"
@@ -346,6 +358,9 @@ final class UsageStore: ObservableObject {
         isLoading = true
         reloadReport()
         reloadBudget()
+        // Cursor の価格表を（インストールされていて、当日未取得なら）取り直す。今回の集計には
+        // 間に合わなくてもよい — 取れれば次回以降の CursorPricing.cost() から新しい表を使う。
+        Task { await CursorPricingService.refreshIfNeeded() }
         // 走査元はバックグラウンドスレッドから @MainActor の設定を触らないよう、ここで解決して渡す。
         let projectsDir = AppSettings.shared.claudeDirectoryURL.appendingPathComponent("projects")
         Task.detached(priority: .userInitiated) {
@@ -383,9 +398,16 @@ final class UsageStore: ObservableObject {
         reportGeneration += 1
         let generation = reportGeneration
         isReportLoading = true
+        let today = Date()
+        let from = Self.dateString(Calendar.current.date(byAdding: .day, value: -(days - 1), to: today) ?? today)
+        let to = Self.dateString(today)
         Task {
+            // retok（外部プロセス）と二次ソース（SQLite）は互いに独立な I/O なので並行して走らせる。
+            async let retokTask = RetokService.run(days: days, lang: lang, projectsDir: projectsOverride)
+            async let driverTask = self.fetchDriverDaily(from: from, to: to)
+
             do {
-                let r = try await RetokService.run(days: days, lang: lang, projectsDir: projectsOverride)
+                let r = try await retokTask
                 guard generation == self.reportGeneration else { return }
                 self.report = r
                 self.retokError = nil
@@ -394,6 +416,11 @@ final class UsageStore: ObservableObject {
                 self.retokError = error.localizedDescription
             }
             self.isReportLoading = false
+
+            // retok の成否に関わらず、二次ソースは独立に反映する（失敗しても 0 になるだけ）。
+            let byID = await driverTask
+            guard generation == self.reportGeneration else { return }
+            self.driverDailyByID = byID
         }
     }
 
@@ -419,23 +446,36 @@ final class UsageStore: ObservableObject {
         let isDefault = claudeDir.standardizedFileURL.path
             == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
         let projectsOverride = isDefault ? nil : claudeDir.appendingPathComponent("projects")
+        let start = BudgetMonitor.periodStart(for: period)
+        let today = Self.dateString(Date())
         Task {
-            guard let r = try? await RetokService.run(days: 32, lang: "en",
-                                                      projectsDir: projectsOverride) else { return }
+            async let retokTask = RetokService.run(days: 32, lang: "en", projectsDir: projectsOverride)
+            async let driverTask = self.fetchDriverDaily(from: start, to: today)
+
+            // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない — reloadReport() と
+            // 同じく、retok の成否と二次ソースの反映は独立にする（CLAUDE.md ルール 4）。
+            let r = try? await retokTask
             // 設定を連続で変えると 32 日集計が並走しうる。古い結果で新しい結果を上書きしない。
             guard generation == self.budgetGeneration else { return }
-            let start = BudgetMonitor.periodStart(for: period)
-            self.budgetSpend = r.daily
+
+            let claudeSpend = r?.daily
                 .filter { $0.key >= start }
-                .values.reduce(0) { $0 + $1.cost }
+                .values.reduce(0) { $0 + $1.cost } ?? 0
+            let driverSpend = await driverTask.values
+                .reduce(0) { $0 + $1.values.reduce(0, +) }
+            self.budgetSpend = claudeSpend + driverSpend
+
+            // 稼働日数・日次平均は retok 専用の指標。budgetSpend と違い二次ソースの分が無いので、
+            // retok が失敗した回は更新せず直前の値を残す（中途半端な値を作らない）。
+            guard let r else { return }
             self.activeDaysInPeriod = Self.activeDays(in: r.daily, since: start)
-            let today = Date()
+            let now = Date()
             // 平均は今日を含めないので、periodStart（今日を含む 30 日 = −29 日）とは 1 日ずれる。
             // 昨日から遡って 30 日ぶんを窓にする。
-            let averageStart = Calendar.current.date(byAdding: .day, value: -30, to: today) ?? today
+            let averageStart = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
             self.dailyAverage30 = Self.dailyAverage(in: r.daily,
                                                     since: Self.dateString(averageStart),
-                                                    before: Self.dateString(today))
+                                                    before: Self.dateString(now))
         }
     }
 
@@ -505,7 +545,8 @@ final class UsageStore: ObservableObject {
 
     /// 日付キー用のフォーマッタ。状態を持たないので使い回す
     /// （メニューバーの再描画ごとに数回通るため、毎回作ると無駄が積む）。
-    private static let dateFormatter: DateFormatter = {
+    /// DateFormatter は Sendable なので、dateString() を nonisolated にしても問題なく触れる。
+    private nonisolated static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -514,7 +555,9 @@ final class UsageStore: ObservableObject {
     }()
 
     /// ローカルタイムの YYYY-MM-DD 文字列。集計キーの書式はここが基準。
-    static func dateString(_ date: Date) -> String {
+    /// actor 状態に触れない純粋関数なので nonisolated — CursorUsageReader のようにバック
+    /// グラウンドから同期的に呼びたい場所からも await なしで使える（PopoverView.money と同じ扱い）。
+    nonisolated static func dateString(_ date: Date) -> String {
         dateFormatter.string(from: date)
     }
 
@@ -528,10 +571,9 @@ final class UsageStore: ObservableObject {
     /// 「不明」を金額欄に出さない代わりに、retok が失敗した事実は Cost タブのエラー表示が伝える。
     var todayCost: Double {
         #if DEBUG
-        return DebugSettings.shared.today ?? reportedTodayCost
-        #else
-        return reportedTodayCost
+        if let override = DebugSettings.shared.today { return override }
         #endif
+        return reportedTodayCost + (driverDaily[Self.dateString(Date())] ?? 0)
     }
 
     private var reportedTodayCost: Double {
@@ -564,4 +606,85 @@ final class UsageStore: ObservableObject {
             .sorted { $0.count > $1.count }
     }
 
+}
+
+// MARK: - CostDriver 統合（Cursor 等、Claude/retok に合算する二次ソース）
+//
+// costDrivers・driverDailyByID（保持型プロパティなので extension には置けない）だけを本体に
+// 残し、そこから導出できるものはすべてここにまとめている。新しい CostDriver を足すときは
+// costDrivers 配列に 1 行足すだけで、この extension 側は変更不要。
+
+extension UsageStore {
+    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい
+    /// （`ProviderUsage.swift` の Codex 読み取りは UI 連結が無い死んだコードのままだが、
+    /// 同じ形で CostDriver に載せ替えるのが次の候補）。全インスタンス共通なので static —
+    /// extension はインスタンス保持型プロパティを持てないが、static は持てる。
+    private static let costDrivers: [CostDriver] = [CursorCostDriver()]
+
+    private func driverCost(id: String, on date: String) -> Double {
+        driverDailyByID[id]?[date] ?? 0
+    }
+
+    /// 二次ソース合算の日別コスト（Claude を含まない）。グラフの合算描画に使う。
+    var driverDaily: [String: Double] {
+        var merged: [String: Double] = [:]
+        for byDate in driverDailyByID.values {
+            for (date, cost) in byDate { merged[date, default: 0] += cost }
+        }
+        return merged
+    }
+
+    /// 今日ぶんの二次ソース内訳（Claude は含まない）。ヒーローの補助行用。データが無い/0 の
+    /// ソースは出さない。
+    var driverBreakdown: [(name: String, cost: Double)] {
+        let today = Self.dateString(Date())
+        return Self.costDrivers.compactMap { driver in
+            let cost = driverCost(id: driver.id, on: today)
+            return cost > 0 ? (driver.displayName, cost) : nil
+        }
+    }
+
+    /// costDrivers のうち利用可能なものだけを問い合わせ、id → (日付 → コスト) にまとめる。
+    /// reloadReport()/reloadBudget() が別々の期間で呼ぶ共通処理。private でも同一ファイル内の
+    /// 本体（reloadReport 等）から呼べる（同一ファイル内の extension は private を共有する）。
+    private func fetchDriverDaily(from: String, to: String) async -> [String: [String: Double]] {
+        var byID: [String: [String: Double]] = [:]
+        for driver in Self.costDrivers where driver.isAvailable {
+            byID[driver.id] = await driver.dailyCosts(from: from, to: to)
+        }
+        return byID
+    }
+
+    // MARK: - グラフ用の積み上げ行（PopoverView は描画に専念させ、集計はここに置く）
+
+    /// グラフ 1 本ぶんの行。同じ日付でも Claude と二次ソースは別行にして BarMark を積み上げる。
+    struct ChartRow: Identifiable {
+        let date: String
+        let source: String
+        let cost: Double
+        var id: String { date + source }
+    }
+
+    static let claudeSourceLabel = "Claude"
+    static let secondarySourceLabel = "Cursor 等"
+
+    /// retok の日別コストと二次ソース（driverDaily）を積み上げグラフ用の行に変換する。
+    /// 日付は両方の合併集合を使う（Claude が $0 の日でも Cursor だけ使った日は落とさない）。
+    /// コストが 0 の行は積まない（積み上げバーに幅 0 の区切りが入るのを避ける）。
+    func chartRows(for report: RetokReport) -> [ChartRow] {
+        var claudeByDate: [String: Double] = [:]
+        for day in report.dailySorted { claudeByDate[day.date] = day.cost }
+        let secondary = driverDaily   // 1 回だけ合算して使い回す
+        let dates = Set(claudeByDate.keys).union(secondary.keys).sorted()
+        return dates.flatMap { date -> [ChartRow] in
+            var rows: [ChartRow] = []
+            if let claude = claudeByDate[date], claude > 0 {
+                rows.append(ChartRow(date: date, source: Self.claudeSourceLabel, cost: claude))
+            }
+            if let other = secondary[date], other > 0 {
+                rows.append(ChartRow(date: date, source: Self.secondarySourceLabel, cost: other))
+            }
+            return rows
+        }
+    }
 }
