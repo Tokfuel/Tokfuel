@@ -77,12 +77,8 @@
 
 1. [Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロード。
 2. 展開して `Tokfuel.app` を `/Applications` へドラッグ。
-3. 初回起動はアプリを右クリック →**開く**
-   （または**システム設定 → プライバシーとセキュリティ**で許可）。
-
-> [!NOTE]
-> 警告が出るのはアドホック署名のためです。
-> ブラウザではなく `curl` でダウンロードすると警告自体が出ません。
+3. そのまま起動できます — リリースは Developer ID 署名済み・Apple による公証済みのため、
+   Gatekeeper の警告は出ません。
 
 **動作環境**
 

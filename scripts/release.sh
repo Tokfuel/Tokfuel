@@ -3,6 +3,8 @@
 # 使い方: bash scripts/release.sh [バージョン]
 #   バージョン省略時は Info.plist の CFBundleShortVersionString を使う。
 #   Apple Silicon / Intel 両対応のユニバーサルバイナリでビルドする。
+#   CODESIGN_IDENTITY を設定すると Developer ID 署名（hardened runtime 有効）になる。
+#   未設定ならこれまでどおり ad-hoc 署名（secrets 不要でローカルから実行できる）。
 set -euo pipefail
 
 APP_NAME="Tokfuel"
@@ -33,7 +35,14 @@ cp "$PROJECT_DIR/assets/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
 # 配布物のバージョンをタグに合わせる
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_DIR/Contents/Info.plist"
 
-codesign --force --sign - "$APP_DIR"
+SIGN_FLAGS=(--force --sign "${CODESIGN_IDENTITY:--}")
+if [ -n "${CODESIGN_IDENTITY:-}" ]; then
+  echo "Signing with Developer ID identity: $CODESIGN_IDENTITY"
+  SIGN_FLAGS+=(--deep --options runtime --timestamp)
+else
+  echo "CODESIGN_IDENTITY not set — using ad-hoc signing"
+fi
+codesign "${SIGN_FLAGS[@]}" "$APP_DIR"
 
 ZIP_PATH="$DIST_DIR/${APP_NAME}-${VERSION}.zip"
 # ditto は Finder 互換の zip を作る（リソースフォークと実行権限を保持する）
