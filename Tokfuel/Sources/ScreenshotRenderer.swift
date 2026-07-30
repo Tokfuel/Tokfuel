@@ -35,6 +35,8 @@ enum ScreenshotRenderer {
     static let budgetSpend: Double = 250
     /// 日次予算。今日のコストに対して余裕のある上限にする。
     static let dailyBudgetLimit: Double = 20
+    /// Cursor（二次ソース）の今日のコスト。並べて表示モードで Claude と並ぶ絵になる。
+    static let cursorTodayCost: Double = 4.20
 
     enum RenderError: LocalizedError {
         case usage
@@ -241,6 +243,8 @@ enum ScreenshotRenderer {
         settings.dailyBudgetLimit = dailyBudgetLimit
         settings.budgetWarnPercent = 80
         settings.budgetPeriod = .calendarMonth
+        // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
+        settings.costSourceMode = .sideBySide
     }
 
     // MARK: - 合成（デスクトップ風の枠）
@@ -320,6 +324,8 @@ enum ScreenshotRenderer {
         store.budgetSpend = budgetSpend
         // コスト用ポップオーバーが読むのはプロンプト数とセッション数だけ。
         store.daily = [DailyUsage(date: dateString(daysAgo: 0), prompts: 42, sessions: 6)]
+        // Cursor（二次ソース、TF-0032）。並べて表示モードのヒーローに出る今日ぶんだけ積む。
+        store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
         store.lastUpdated = Date()
         return store
     }
