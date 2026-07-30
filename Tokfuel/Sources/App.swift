@@ -60,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .applicationDefined
         popover.contentViewController = NSHostingController(
             rootView: PopoverView(store: usageStore,
+                                  settings: settings,
                                   onOpenSettings: { [weak self] in self?.openSettings() },
                                   onOpenAbout: { [weak self] in self?.openAbout() })
             .tint(.orange)   // 燃料ブランドのアクセント 1 色に統一
@@ -68,7 +69,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 集計期間は UsageStore が「最後に選んだ値」を自分で復元する（CU-0011）。
         // 設定の既定値は初回（未選択）時のフォールバックと、明示的な変更時のみ反映する。
 
-        // データ更新のたびにメニューバーの表示と予算通知を更新する（通知は内部で重複抑止）。
+        bindStateChanges()
+
+        usageStore.reload()
+        updateStatusItem()
+
+        // ポップオーバーを開かなくてもメニューバーの数字が古くならないよう定期更新する。
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
+            Task { @MainActor [weak self] in self?.usageStore.reload() }
+        }
+
+        #if DEBUG
+        // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
+        if CommandLine.arguments.contains("--open-popover") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                self?.togglePopover()
+            }
+        }
+        #endif
+    }
+
+    /// ストアと設定の変更を、メニューバー、通知、再集計へ接続する。
+    private func bindStateChanges() {
         usageStore.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] in
@@ -118,15 +140,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           settings.$budgetWarnPercent.dropFirst().map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] in
-                let s = AppSettings.shared
-                if s.budgetLimit > 0 || s.dailyBudgetLimit > 0 {
+                guard let self else { return }
+                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
                     BudgetMonitor.requestAuthorizationIfNeeded()
                 }
-                self?.usageStore.reloadBudget()
+                usageStore.reloadBudget()
                 // 上限やしきい値を変えると、消費額が同じままでもアイコン色・残額・割合は変わる。
                 // 集計値が動かないとストアは何も publish しないので、ここで自分で作り直す。
-                self?.updateStatusItem()
-                self?.notifyBudgetIfNeeded()
+                updateStatusItem()
+                notifyBudgetIfNeeded()
             }
             .store(in: &cancellables)
         // 表示通貨が変わったらレートを（必要なら）取得して表示を作り直す。
@@ -151,6 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         #endif
+<<<<<<< HEAD
 
         usageStore.reload()
         updateStatusItem()
@@ -172,6 +195,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         #endif
+=======
+>>>>>>> origin/main
     }
 
     /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。
@@ -232,7 +257,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func openSettings() {
         closePopover()
         if settingsWindow == nil {
-            let hosting = NSHostingController(rootView: SettingsView(store: usageStore))
+            let hosting = NSHostingController(
+                rootView: SettingsView(store: usageStore, settings: settings)
+            )
             let window = NSWindow(contentViewController: hosting)
             window.title = MenuBarReadout.windowTitle("Tokfuel 設定")
             window.styleMask = [.titled, .closable]

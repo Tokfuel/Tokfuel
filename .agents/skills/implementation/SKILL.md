@@ -18,11 +18,19 @@ Tokfuel の GitHub Issue を 1 件、提案の状態から出荷済みの緑の�
 
 ## プロジェクトのグラウンドルール（すべての行の枠）
 
+<<<<<<< HEAD
 1. **ローカルオンリー**：テレメトリやネットワーク送信を追加しない。
 2. **ゼロセットアップの維持**：ユーザーに Claude Code の設定やフックの導入を求めない。
 3. **retok は無改変で同梱**：同梱の retok をこの場で編集しない。ライセンスとクレジットを維持する。
 4. **python3 は任意**：python3 が無くても Cost タブが緩やかに縮退する状態を保つ。
 5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に緑を保つ。
+=======
+1. **Local-only** — never add telemetry or a network send.
+2. **Zero setup stays zero** — don't require the user to configure Claude Code or install hooks.
+3. **retok is vendored unmodified** — don't edit the bundled retok in place; keep its license/credit.
+4. **python3 is optional** — keep Claude cost analysis degrading gracefully when it is absent.
+5. **Swift 6 / SwiftUI / macOS 14+** — `swift build` must stay green.
+>>>>>>> origin/main
 
 ## 進め方
 

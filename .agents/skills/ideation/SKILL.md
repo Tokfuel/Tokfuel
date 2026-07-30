@@ -27,6 +27,7 @@ Tokfuel の機能アイデアを GitHub Issue の形に仕上げる壁打ち相�
 どのアイデアもこの枠に収める。枠の境界に触れるアイデアは、黙って捨てるのではなく、その旨を
 伝えたうえで形を変える。
 
+<<<<<<< HEAD
 1. **ローカルオンリー**：収集したデータは Mac から出さない。テレメトリやネットワーク送信を
    提案しない。
 2. **ゼロセットアップの維持**：フックや追加インストールを前提にしない。アプリは Claude Code の
@@ -36,6 +37,16 @@ Tokfuel の機能アイデアを GitHub Issue の形に仕上げる壁打ち相�
 4. **python3 は任意の依存**：python3 が無い環境でも緩やかに縮退し続けること（Cost タブは
    エラー表示、他のタブは動く）。
 5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に通ること。
+=======
+1. **Local-only.** Collected data never leaves the Mac. Don't propose telemetry or any network send.
+2. **Zero setup stays zero.** Don't assume hooks or extra installs; the app reads Claude Code
+   transcripts directly. A feature that requires the user to configure Claude Code first fights this.
+3. **retok is vendored unmodified.** Don't propose editing the bundled retok in place (upstream PR
+   instead); keep its MIT license and attribution intact. See issue #5 for the native-port path.
+4. **python3 is an optional dependency.** Claude cost analysis may show an error without it,
+   while settings, prompt counts, and Cursor data keep working.
+5. **Swift 6 / SwiftUI / macOS 14+.** `swift build` must stay green.
+>>>>>>> origin/main
 
 ## 進め方
 

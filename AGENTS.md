@@ -6,6 +6,7 @@
 
 ## これは何か
 
+<<<<<<< HEAD
 **Tokfuel** は、ローカルの Claude Code 使用状況を可視化する SwiftUI ネイティブの macOS
 メニューバーアプリ。コスト（同梱した [retok](https://github.com/d-date/retok) で算出）、
 Skill / MCP / サブエージェントの活動、スキル一覧、予算アラートを、セットアップなしで表示する。
@@ -14,9 +15,19 @@ Claude Code が `~/.claude/projects/` にすでに書き出しているトラン
 各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。ソースコードはすべて
 [`Tokfuel/Sources/`](Tokfuel/Sources/) にある。ファイル構成は README の
 [Architecture](README.md#-architecture) 節を参照。
+=======
+**Tokfuel** is a native SwiftUI macOS menu-bar app that visualizes Claude Code, Codex CLI, and
+Cursor cost, prompt counts, budget alerts, and configurable menu-bar gauges. It needs no hooks or
+manual tokens: it reads the local data those apps already keep. If Codex CLI
+(`~/.codex/sessions/`) or Cursor is also present on the Mac, their cost is estimated too — each
+as its own source, never merged unlabeled into the Claude total. All sources live in
+[`Tokfuel/Sources/`](Tokfuel/Sources/); see the README
+[Architecture](README.md#-architecture) section for the file map.
+>>>>>>> origin/main
 
 ## グラウンドルール（違反禁止）
 
+<<<<<<< HEAD
 1. **ローカルオンリー**：収集したデータを Mac の外に出さない。テレメトリも送信もしない。
    例外はオーナー承認済みの次の 4 つだけ。
    1. ユーザーが JPY 表示を有効にしたときは、`ExchangeRateService` が Frankfurter API から
@@ -47,6 +58,31 @@ Claude Code が `~/.claude/projects/` にすでに書き出しているトラン
    （Cost タブはエラーを表示して緩やかに縮退する）。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。依存ゼロが
    「誰でもすぐビルドできる」を支えている。
+=======
+1. **Local-only.** Collected data never leaves the Mac — no telemetry, no network sends.
+   Three exceptions, all owner-approved: (1) when the user opts into JPY display,
+   `ExchangeRateService` fetches a daily USD→JPY rate from the Frankfurter API (the request
+   carries no usage data); (2) when Cursor is detected on the Mac, `CursorPricingService`
+   fetches Cursor's own published price table (`cursor.com/docs/models-and-pricing`) once a
+   day to refine the Cursor cost estimate — no usage data is sent, only a page fetch, and
+   `CursorPricing` holds no hardcoded prices of its own — an unpriced model (fetch not yet
+   done, or not found in the table) contributes $0 rather than a guessed rate;
+   (3) when Cursor is installed and the user is signed in, `CursorDashboardService` calls
+   Cursor's dashboard usage API (`api2.cursor.sh`) with the session token already stored in
+   Cursor's local `state.vscdb` — the request carries only that auth header and a date range
+   (no prompts or local transcripts), and on any failure the driver falls back to the local
+   SQLite token snapshots (often empty on Cursor 3.x).
+2. **Zero setup stays zero.** The app reads Claude Code transcripts directly. Never require
+   hooks, external installs, or Claude Code configuration for a feature to work.
+3. **retok is vendored unmodified.** `Sources/Resources/retok.py` + `locales/` are
+   © Daiki Matsudate, MIT — never edit them in place (send an upstream PR instead), and keep
+   `LICENSE-retok` + the in-app attribution intact. Provenance and the update procedure are in
+   [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md).
+4. **python3 is an optional dependency.** Claude cost analysis shows an error when it is absent;
+   settings, prompt counts, Cursor fallback data, and the menu-bar app must keep working.
+5. **No new package dependencies.** Swift 6 / SwiftUI / macOS 14+, standard SDK only —
+   staying dependency-free keeps the app trivial to build.
+>>>>>>> origin/main
 
 ## 検証ゲート
 
