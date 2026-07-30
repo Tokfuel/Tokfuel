@@ -118,10 +118,11 @@ struct PopoverView: View {
                 Picker("", selection: reportDaysSelection) {
                     Text("7日").tag(7)
                     Text("30日").tag(30)
+                    Text("年").tag(365)
                 }
                 .pickerStyle(.segmented)
                 .controlSize(.small)
-                .frame(width: 100)
+                .frame(width: 140)
                 .labelsHidden()
             }
             Group {

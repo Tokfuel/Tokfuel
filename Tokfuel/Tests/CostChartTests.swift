@@ -93,6 +93,7 @@ struct SanitizedReportDaysTests {
     @Test func 現行の選択肢はそのまま() {
         #expect(UsageStore.sanitizedReportDays(7) == 7)
         #expect(UsageStore.sanitizedReportDays(30) == 30)
+        #expect(UsageStore.sanitizedReportDays(365) == 365)
     }
 
     @Test func かつての今日は近い7日へ倒す() {

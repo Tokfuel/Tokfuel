@@ -253,7 +253,7 @@ final class UsageStore: ObservableObject {
     /// 保存済みの集計期間を現在の選択肢に丸める。かつて存在した「今日 (1)」は近い 7 日へ、
     /// 未知の値は既定の 30 日に倒す。
     nonisolated static func sanitizedReportDays(_ stored: Int) -> Int {
-        if [7, 30].contains(stored) { return stored }
+        if [7, 30, 365].contains(stored) { return stored }
         return stored == 1 ? 7 : 30
     }
 
