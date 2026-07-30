@@ -92,6 +92,11 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 - ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - 脆弱性を見つけたときは非公開で報告してください。[SECURITY.ja.md](SECURITY.ja.md) を参照。
 
+### コントリビューター
+
+<!-- contributors:start -->
+<!-- contributors:end -->
+
 ## 謝辞
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。

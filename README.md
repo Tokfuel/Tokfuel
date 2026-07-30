@@ -92,6 +92,11 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
+### Contributors
+
+<!-- contributors:start -->
+<!-- contributors:end -->
+
 ## Acknowledgements
 
 - **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.

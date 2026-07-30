@@ -1,0 +1,35 @@
+name: Contributors
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: contributors-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # Guards against re-triggering on this workflow's own commit — belt and
+    # suspenders alongside the `[skip ci]` commit-message marker below.
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Update contributor list
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PINNED_LOGIN: akidon0000
+        run: ./scripts/update-contributors.sh
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md README.ja.md
+          git diff --cached --quiet || git commit -m "chore(readme): update contributors [skip ci]"
+          git push
