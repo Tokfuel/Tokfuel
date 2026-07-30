@@ -1,0 +1,125 @@
+name: UI Preview
+
+# ui-preview 📸 ラベルを付けると、実物の PopoverView を scripts/screenshot.sh でレンダリングし
+# PR コメントに絵として貼る（TF-0034）。render/publish は scripts/screenshot.sh と
+# ScreenshotRenderer.swift（TF-0015、README 用スクリーンショットの生成にも使う）をそのまま流用する。
+#
+# コメントに画像を直接添付する API は無いため、専用の orphan branch (ui-preview-images) に
+# PNG を push し、公開リポジトリの raw.githubusercontent.com URL を Markdown 画像として埋め込む。
+# ファイル名にコミット SHA を含めるので、再ラベル付けのたびに新しい URL になり CDN キャッシュを
+# 気にしなくていい。
+#
+# fork からの pull_request イベントでは GITHUB_TOKEN が強制的に read-only になる
+# （GitHub Actions のセキュリティ既定でリポジトリ側からは変えられない）。そのため fork PR では
+# レンダリングまでは動くが push/コメントは失敗する。continue-on-error でジョブを赤くしないだけに
+# とどめ、fork 対応は将来の課題とする。
+
+on:
+  pull_request:
+    types: [labeled, closed]
+
+concurrency:
+  group: ui-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Render & publish preview
+    if: github.event.action == 'labeled' && github.event.label.name == 'ui-preview 📸'
+    runs-on: macos-15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Render screenshot
+        run: bash scripts/screenshot.sh /tmp/ui-preview.png
+
+      - name: Publish preview image and comment
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          BRANCH="ui-preview-images"
+          SHORT_SHA="${PR_SHA:0:7}"
+          IMAGE_NAME="pr-${PR_NUMBER}-${SHORT_SHA}.png"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin "$BRANCH" 2>/dev/null || true
+          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+            git switch -C "$BRANCH" "origin/$BRANCH"
+          else
+            git switch --orphan "$BRANCH"
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
+
+          # 同じ PR の古いプレビュー画像を消してから、今回分を追加する。
+          rm -f "pr-${PR_NUMBER}"-*.png
+          cp /tmp/ui-preview.png "$IMAGE_NAME"
+          git add -A
+          git commit -m "chore: ui preview for PR #${PR_NUMBER} (${SHORT_SHA})"
+          git push origin "$BRANCH"
+
+          IMAGE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/${IMAGE_NAME}"
+          BODY=$(printf '<!-- ui-preview-bot -->\n### 🖼 UI Preview\n\nRendered from `PopoverView` at `%s` by `scripts/screenshot.sh`.\n\n![UI preview](%s)' \
+            "$SHORT_SHA" "$IMAGE_URL")
+
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '[.[] | select(.body | startswith("<!-- ui-preview-bot -->"))][0].id // empty')
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${COMMENT_ID}" -f body="$BODY" > /dev/null
+          else
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
+          fi
+
+  cleanup:
+    name: Remove preview image on close
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Remove this PR's preview image
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          BRANCH="ui-preview-images"
+
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+            echo "no $BRANCH branch, nothing to clean up"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$BRANCH"
+          git switch -C "$BRANCH" "origin/$BRANCH"
+
+          shopt -s nullglob
+          matches=("pr-${PR_NUMBER}"-*.png)
+          if [ ${#matches[@]} -eq 0 ]; then
+            echo "no preview image for PR #${PR_NUMBER}"
+            exit 0
+          fi
+          git rm -f "${matches[@]}"
+          git commit -m "chore: remove ui preview for PR #${PR_NUMBER}"
+
+          # 他に画像が残っていなければ、ブランチごと消す。
+          if [ -z "$(git ls-tree -r HEAD --name-only)" ]; then
+            git push origin --delete "$BRANCH"
+          else
+            git push origin "$BRANCH"
+          fi
