@@ -38,4 +38,4 @@ Tokfuel が行う通信は 1 種類だけで、しかもオプトインした場
 
 ## 連絡先
 
-質問や懸念は <https://github.com/Tokfuel/Tokfuel/issues> に Issue を立ててください。
+質問や懸念は <akidon0000@gmail.com> まで、または <https://github.com/Tokfuel/Tokfuel/issues> に Issue を立ててください。

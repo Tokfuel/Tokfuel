@@ -26,4 +26,4 @@ These terms live in the [Tokfuel repository](https://github.com/Tokfuel/Tokfuel)
 
 ## Contact
 
-Questions: open an issue at <https://github.com/Tokfuel/Tokfuel/issues>.
+Questions: <akidon0000@gmail.com>, or open an issue at <https://github.com/Tokfuel/Tokfuel/issues>.

@@ -38,4 +38,4 @@ This policy lives in the [Tokfuel repository](https://github.com/Tokfuel/Tokfuel
 
 ## Contact
 
-Questions or concerns: open an issue at <https://github.com/Tokfuel/Tokfuel/issues>.
+Questions or concerns: <akidon0000@gmail.com>, or open an issue at <https://github.com/Tokfuel/Tokfuel/issues>.

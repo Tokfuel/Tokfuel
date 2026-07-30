@@ -26,4 +26,4 @@ Tokfuel は独立したプロジェクトであり、Anthropic との提携、�
 
 ## 連絡先
 
-質問は <https://github.com/Tokfuel/Tokfuel/issues> に Issue を立ててください。
+質問は <akidon0000@gmail.com> まで、または <https://github.com/Tokfuel/Tokfuel/issues> に Issue を立ててください。
