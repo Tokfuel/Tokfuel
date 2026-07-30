@@ -17,6 +17,8 @@ To visualize your Claude Code usage, Tokfuel reads files that Claude Code alread
 
 All processing happens on your device. Derived data (aggregates, settings, notification state) is stored only in `~/Library/Application Support/Tokfuel/` and in the app's user defaults. None of it is transmitted.
 
+Tokfuel currently reads only Claude Code's local files. If a future version adds support for other AI coding tools (for example Codex or Cursor), it will read those tools' local transcript files the same way — on-device only, nothing transmitted — and this policy will be updated to name them.
+
 ## The one network request
 
 Tokfuel makes exactly one kind of network request, and only if you opt in: when you switch the display currency to JPY, the app fetches the daily USD→JPY exchange rate from the [Frankfurter API](https://frankfurter.dev) (`api.frankfurter.dev`), at most once per day.

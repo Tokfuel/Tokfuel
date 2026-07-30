@@ -17,6 +17,8 @@ Claude Code の利用状況を可視化するため、Tokfuel は Claude Code �
 
 処理はすべて端末上で行います。集計結果や設定、通知の状態といった派生データは `~/Library/Application Support/Tokfuel/` とアプリのユーザーデフォルトにのみ保存し、送信しません。
 
+現時点で Tokfuel が読み取るのは Claude Code のローカルファイルのみです。将来のバージョンで他の AI コーディングツール（例: Codex や Cursor）への対応を追加する場合も、同様にそれらのローカルの transcript ファイルを端末上でのみ処理し、外部へは送信しません。対応時にはこのポリシーを更新し、対象ツールを明記します。
+
 ## 唯一の通信
 
 Tokfuel が行う通信は 1 種類だけで、しかもオプトインした場合に限られます。表示通貨を日本円に切り替えると、[Frankfurter API](https://frankfurter.dev)（`api.frankfurter.dev`）から USD→JPY の為替レートを 1 日 1 回まで取得します。
