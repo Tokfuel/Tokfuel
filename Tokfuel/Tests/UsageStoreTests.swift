@@ -89,6 +89,19 @@ struct UsageStoreTodayCostTests {
         #expect(store.driverBreakdown.first?.name == "Cursor")
         #expect(store.driverBreakdown.first?.cost == 3.1)
     }
+
+    @Test func 新しいスナップショットが空なら古いモデル内訳を消す() {
+        let store = UsageStore()
+        store.driverDailyByID = ["cursor": ["2026-07-30": 2]]
+        store.driverModelByID = ["cursor": ["stale-model": 2]]
+
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: ["2026-07-30": 1], byModel: [:])
+        ])
+
+        #expect(store.driverDailyByID["cursor"] == ["2026-07-30": 1])
+        #expect(store.driverModelByID["cursor"]?.isEmpty == true)
+    }
 }
 
 /// メニューバーの割合表示の分母になる日次平均。

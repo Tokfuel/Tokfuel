@@ -18,18 +18,14 @@ enum BudgetMonitor {
     static func periodStart(for period: BudgetPeriod, now: Date = Date()) -> String {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = .current
-        let f = DateFormatter()
-        f.calendar = cal
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
         switch period {
         case .rolling30:
             let start = cal.date(byAdding: .day, value: -29, to: now) ?? now
-            return f.string(from: start)
+            return LocalDay.string(from: start, calendar: cal)
         case .calendarMonth:
             let comps = cal.dateComponents([.year, .month], from: now)
             let start = cal.date(from: comps) ?? now
-            return f.string(from: start)
+            return LocalDay.string(from: start, calendar: cal)
         }
     }
 
@@ -60,11 +56,7 @@ enum BudgetMonitor {
 
     /// 日次予算の期間キー（その日 1 回だけ通知し、日が替わると再アームする）。
     static func dailyPeriodKey(now: Date = Date()) -> String {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: now)
+        LocalDay.string(from: now)
     }
 
     /// レベルが前回通知より上がったときだけ通知を送る。
@@ -123,10 +115,10 @@ enum BudgetMonitor {
         let limitStr = Money.format(limit)
         switch level {
         case .warning:
-            content.title = "\(kind.scopeLabel)Claude 利用額が上限に近づいています"
+            content.title = "\(kind.scopeLabel)利用額が上限に近づいています"
             content.body = "現在 \(spendStr) / 上限 \(limitStr)（\(Int(spend / limit * 100))%）"
         case .over:
-            content.title = "\(kind.scopeLabel)Claude 利用額が上限を超えました"
+            content.title = "\(kind.scopeLabel)利用額が上限を超えました"
             content.body = "現在 \(spendStr) / 上限 \(limitStr)"
         case .ok:
             return

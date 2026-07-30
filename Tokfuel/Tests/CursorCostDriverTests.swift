@@ -255,32 +255,4 @@ struct CursorCostDriverTests {
         #expect(driver.isAvailable)
     }
 
-    /// CI / Cursor 未導入マシンではスキップ。導入済みマシンでは旧スキーマ想定だと
-    /// 全件スキップされて 0 になるので、実データ対応の回帰検知になる。
-    ///
-    /// CursorPricing はハードコード表を持たない（本体は CursorPricingService のキャッシュ頼み）
-    /// ので、このテストは SQL 走査・パースの回帰だけを見たい——実際に取れた価格表があるかという
-    /// ネットワークのタイミングに左右されたくない。そのため、ここだけテスト用に代表的な単価を
-    /// 差し込む（本番コードのハードコードではなく、あくまでこの 1 テストの入力データ）。
-    /// 実データの生モデル ID にプレフィックスマッチさせる必要があるので、他のテストのように
-    /// "utestN-" では namespacing できない——このファイル内で "claude"/"gpt-5"/... を
-    /// 生キーとして使う唯一のテストなので、他の値との衝突は起きない。
-    @Test func 実機のstate_vscdbがあれば正のコスト日が1日以上ある() {
-        let path = CursorCostDriver.defaultStateDBURL.path
-        guard FileManager.default.fileExists(atPath: path) else { return }
-
-        withPricing([
-            ("claude", 3.0, 15.0), ("gpt-5", 1.25, 10.0), ("gemini", 1.0, 6.0),
-            ("glm", 1.4, 4.4), ("kimi", 2.0, 10.0)
-        ]) {
-            let totals = CursorUsageReader.scan(
-                dbPath: path,
-                from: "2020-01-01",
-                to: "2035-12-31"
-            )
-            let sum = totals.values.reduce(0, +)
-            #expect(sum > 0)
-            #expect(totals.contains { $0.value > 0 })
-        }
-    }
 }

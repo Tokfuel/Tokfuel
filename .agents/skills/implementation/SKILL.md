@@ -21,7 +21,7 @@ PR text per the conventions below.
 1. **Local-only** — never add telemetry or a network send.
 2. **Zero setup stays zero** — don't require the user to configure Claude Code or install hooks.
 3. **retok is vendored unmodified** — don't edit the bundled retok in place; keep its license/credit.
-4. **python3 is optional** — keep the Cost tab degrading gracefully when it is absent.
+4. **python3 is optional** — keep Claude cost analysis degrading gracefully when it is absent.
 5. **Swift 6 / SwiftUI / macOS 14+** — `swift build` must stay green.
 
 ## Workflow

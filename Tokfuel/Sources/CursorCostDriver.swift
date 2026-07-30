@@ -39,16 +39,19 @@ extension CursorCostDriver: CostDriver {
         FileManager.default.fileExists(atPath: stateDBURL.path)
     }
 
-    func dailyCosts(from: String, to: String) async -> [String: Double] {
-        guard isAvailable else { return [:] }
+    func snapshot(from: String, to: String) async -> CostSnapshot {
+        guard isAvailable else { return .empty }
         let path = stateDBURL.path
         // ダッシュボードが取れたらそれを信じる（空でもローカルへ落とさない）。
-        if let remote = await CursorDashboardService.dailyCosts(from: from, to: to, dbPath: path) {
-            return remote
+        if let remote = await CursorDashboardService.fetchSnapshot(
+            from: from, to: to, dbPath: path
+        ) {
+            return CostSnapshot(daily: remote.daily, byModel: remote.byModel)
         }
-        return await Task.detached(priority: .utility) {
+        let daily = await Task.detached(priority: .utility) {
             CursorUsageReader.scan(dbPath: path, from: from, to: to)
         }.value
+        return CostSnapshot(daily: daily, byModel: [:])
     }
 }
 
@@ -183,7 +186,7 @@ enum CursorUsageReader {
     /// ISO-8601 文字列、または epoch ミリ秒（数値 / 数字だけの文字列）→ ローカル "YYYY-MM-DD"。
     private static func dayString(fromCreatedAt value: Any?) -> String? {
         if let date = date(fromCreatedAt: value) {
-            return UsageStore.dateString(date)
+            return LocalDay.string(from: date)
         }
         return nil
     }
