@@ -1,5 +1,6 @@
 #!/bin/bash
-# 配布用の Tokfuel.app を dist/ に作り、GitHub Release に添付できる zip を出力する。
+# 配布用の Tokfuel.app を dist/ に作り、GitHub Release に添付できる
+# drag-to-Applications DMG を出力する。
 # 使い方: bash scripts/release.sh [バージョン]
 #   バージョン省略時は Info.plist の CFBundleShortVersionString を使う。
 #   Apple Silicon / Intel 両対応のユニバーサルバイナリでビルドする。
@@ -44,11 +45,56 @@ else
 fi
 codesign "${SIGN_FLAGS[@]}" "$APP_DIR"
 
-ZIP_PATH="$DIST_DIR/${APP_NAME}-${VERSION}.zip"
-# ditto は Finder 互換の zip を作る（リソースフォークと実行権限を保持する）
-ditto -c -k --keepParent "$APP_DIR" "$ZIP_PATH"
+echo "Building DMG..."
+DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}.dmg"
+STAGING_DIR="$DIST_DIR/dmg-staging"
+TMP_DMG="$DIST_DIR/${APP_NAME}-tmp.dmg"
+
+rm -rf "$STAGING_DIR" "$DMG_PATH" "$TMP_DMG"
+mkdir -p "$STAGING_DIR"
+cp -R "$APP_DIR" "$STAGING_DIR/"
+ln -s /Applications "$STAGING_DIR/Applications"
+
+hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING_DIR" -ov -format UDRW "$TMP_DMG"
+
+MOUNT_DIR="/Volumes/$APP_NAME"
+# -nobrowse は付けない — Finder から見えない volume は下のレイアウト用
+# AppleScript が "disk" を見つけられず失敗する
+hdiutil attach "$TMP_DMG" -noautoopen
+# アタッチ直後は Finder がまだ volume を認識していないことがあるので一呼吸置く
+sleep 2
+
+# アイコンを並べて Applications へドラッグできるウィンドウにする
+# （create-dmg 系ツールが行っている定番の Finder AppleScript レイアウト）
+osascript <<EOF
+tell application "Finder"
+  tell disk "$APP_NAME"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {400, 100, 940, 460}
+    set viewOptions to the icon view options of container window
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to 128
+    set position of item "$APP_NAME.app" of container window to {140, 180}
+    set position of item "Applications" of container window to {400, 180}
+    close
+    open
+    update without registering applications
+    delay 1
+  end tell
+end tell
+EOF
+
+sync
+hdiutil detach "$MOUNT_DIR"
+
+hdiutil convert "$TMP_DMG" -format UDZO -o "$DMG_PATH"
+rm -f "$TMP_DMG"
+rm -rf "$STAGING_DIR"
 
 echo ""
 echo "Done:"
 lipo -info "$APP_DIR/Contents/MacOS/$APP_NAME"
-shasum -a 256 "$ZIP_PATH"
+shasum -a 256 "$DMG_PATH"

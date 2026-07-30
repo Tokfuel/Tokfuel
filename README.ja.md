@@ -77,8 +77,8 @@
 ## インストール
 
 1. [ダウンロードページ](https://tokfuel.github.io/Tokfuel/)または
-   [Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロード。
-2. 展開して `Tokfuel.app` を `/Applications` へドラッグ。
+   [Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.dmg` をダウンロード。
+2. 開いて `Tokfuel.app` を `Applications` へドラッグ。
 3. そのまま起動できます — リリースは Developer ID 署名済み・Apple による公証済みのため、
    Gatekeeper の警告は出ません。
 
