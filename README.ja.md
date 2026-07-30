@@ -105,7 +105,26 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 - ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - 脆弱性を見つけたときは非公開で報告してください。[SECURITY.ja.md](SECURITY.ja.md) を参照。
 
-<<<<<<< HEAD
+### コントリビューター
+
+<div id="contributors">
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/akidon0000">
+                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
+                    <br />
+                    <sub><b>akidon0000</b></sub>
+                </a>
+            </td>
+		</tr>
+	</tbody>
+</table>
+<!-- readme: contributors -end -->
+</div>
+
 ## リリース手順（メンテナ向け）
 
 `vX.Y.Z` のタグを push するか、Actions タブから **Release** ワークフローにバージョンを
@@ -141,27 +160,6 @@ App Store Connect へのアップロード、審査提出までを fastlane で�
 ```bash
 TOKFUEL_SKIP_SIGNING=1 bash scripts/package_mas.sh
 ```
-=======
-### コントリビューター
-
-<div id="contributors">
-<!-- readme: contributors -start -->
-<table>
-	<tbody>
-		<tr>
-            <td align="center">
-                <a href="https://github.com/akidon0000">
-                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
-                    <br />
-                    <sub><b>akidon0000</b></sub>
-                </a>
-            </td>
-		</tr>
-	</tbody>
-</table>
-<!-- readme: contributors -end -->
-</div>
->>>>>>> origin/main
 
 ## 謝辞
 

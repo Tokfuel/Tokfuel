@@ -105,7 +105,26 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
-<<<<<<< HEAD
+### Contributors
+
+<div id="contributors">
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/akidon0000">
+                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
+                    <br />
+                    <sub><b>akidon0000</b></sub>
+                </a>
+            </td>
+		</tr>
+	</tbody>
+</table>
+<!-- readme: contributors -end -->
+</div>
+
 ## Releasing (maintainers)
 
 Push a `vX.Y.Z` tag, or run the **Release** workflow from the Actions tab with a version.
@@ -141,27 +160,6 @@ To verify the packaging locally without any certificates:
 ```bash
 TOKFUEL_SKIP_SIGNING=1 bash scripts/package_mas.sh
 ```
-=======
-### Contributors
-
-<div id="contributors">
-<!-- readme: contributors -start -->
-<table>
-	<tbody>
-		<tr>
-            <td align="center">
-                <a href="https://github.com/akidon0000">
-                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
-                    <br />
-                    <sub><b>akidon0000</b></sub>
-                </a>
-            </td>
-		</tr>
-	</tbody>
-</table>
-<!-- readme: contributors -end -->
-</div>
->>>>>>> origin/main
 
 ## Acknowledgements
 
