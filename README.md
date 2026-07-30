@@ -75,14 +75,11 @@
 
 ## Install
 
-1. Download `Tokfuel-x.y.z.zip` from [Releases](https://github.com/akidon0000/Tokfuel/releases).
+1. Download `Tokfuel-x.y.z.zip` from the [download page](https://tokfuel.github.io/Tokfuel/) or
+   [Releases](https://github.com/akidon0000/Tokfuel/releases).
 2. Unzip it and drag `Tokfuel.app` into `/Applications`.
-3. First launch: right-click the app → **Open**
-   (or allow it in **System Settings → Privacy & Security**).
-
-> [!NOTE]
-> The Gatekeeper warning appears because the app is ad-hoc signed.
-> Downloading with `curl` instead of a browser skips the warning entirely.
+3. Launch it — releases are signed with a Developer ID and notarized by Apple, so it opens
+   with no Gatekeeper warning.
 
 **Requirements**
 
