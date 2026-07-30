@@ -366,18 +366,27 @@ struct PopoverView: View {
                     } label: {
                         Label("再試行", systemImage: "exclamationmark.triangle.fill")
                     }
+                    .buttonStyle(.borderless)
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.orange)
                     .help(message + skipHint)
                 case .idle:
-                    Button(updater.installsInPlace ? "アップデート" : "リリースページを開く") {
+                    // フッターの DEBUG バッジと同じカプセル型のレシピ（塗り + 白文字）で、
+                    // 他の要素より一段目立たせる。
+                    Button {
                         updater.installOffered()
+                    } label: {
+                        Text(updater.installsInPlace ? "アップデート" : "リリースページを開く")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(.blue, in: Capsule())
                     }
-                    .foregroundStyle(Color.accentColor)
+                    .buttonStyle(.plain)
                     .help("v\(update.version) が利用可能です" + skipHint)
                 }
             }
-            .buttonStyle(.borderless)
-            .font(.caption.weight(.semibold))
             .contextMenu {
                 Button("このバージョンをスキップ") { updater.skipOffered() }
             }
