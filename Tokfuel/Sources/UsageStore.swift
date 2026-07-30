@@ -762,12 +762,6 @@ extension UsageStore {
 
     static let claudeSourceLabel = "Claude"
 
-    /// 二次ソース側の系列ラベル。ドライバーが 1 つの間はその実名を出し、複数になったら
-    /// 「その他」に切り替える（実体のない対象を「等」で濁さない — TF #53）。
-    static var secondarySourceLabel: String {
-        costDrivers.count == 1 ? costDrivers[0].displayName : "その他"
-    }
-
     /// retok の日別コストと二次ソース（driverDailyByID）を積み上げグラフ用の行に変換する。
     /// 日付は全ソースの合併集合を使う（Claude が $0 の日でも Cursor/Codex だけ使った日は落とさない）。
     /// コストが 0 の行は積まない（積み上げバーに幅 0 の区切りが入るのを避ける）。
@@ -910,7 +904,9 @@ extension UsageStore {
         case .separated:
             var rows: [ModelCostRow] = []
             rows += claude.map { ModelCostRow(source: Self.claudeSourceLabel, model: $0.0, cost: $0.1) }
-            rows += cursor.map { ModelCostRow(source: Self.secondarySourceLabel, model: $0.0, cost: $0.1) }
+            // cursorModelCosts は driverModelByID["cursor"] 専用（Codex はまだモデル別内訳を持たない）
+            // ので "Cursor" と実名を出す。複数 driver が持つようになったら見直す。
+            rows += cursor.map { ModelCostRow(source: "Cursor", model: $0.0, cost: $0.1) }
             return rows
         }
     }

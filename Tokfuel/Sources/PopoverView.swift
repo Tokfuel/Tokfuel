@@ -54,10 +54,12 @@ struct PopoverView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-            // 並べて表示はヒーローを分割せず、内訳キャプション 1 行が担う。
+            // 並べて表示はヒーローを分割せず、内訳キャプション 1 行が担う。二次ソースは
+            // driver ごとの実名で出し、0 円のソースは載せない（"その他" のような曖昧な
+            // まとめラベルにしない）。
             if mode == .sideBySide {
-                Text("\(UsageStore.claudeSourceLabel) \(Self.money(store.claudeTodayCost))"
-                     + " · \(UsageStore.secondarySourceLabel) \(Self.money(store.cursorTodayCost))")
+                Text(Self.sideBySideCaption(claudeCost: store.claudeTodayCost,
+                                            driverBreakdown: store.driverBreakdown))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -68,6 +70,15 @@ struct PopoverView: View {
                     .foregroundStyle(.tertiary)
             }
         }
+    }
+
+    /// 並べて表示のヒーロー内訳キャプション。driver ごとの実名で並べ、0 円のソースは省く
+    /// （"その他" のような曖昧なまとめラベルにしない）。
+    static func sideBySideCaption(claudeCost: Double,
+                                  driverBreakdown: [(name: String, cost: Double)]) -> String {
+        var parts = ["\(UsageStore.claudeSourceLabel) \(money(claudeCost))"]
+        parts += driverBreakdown.filter { $0.cost > 0 }.map { "\($0.name) \(money($0.cost))" }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - 2. 上限への近さ（設定している人にだけ見える）

@@ -105,6 +105,14 @@ struct CostSourceModeUsageStoreTests {
         }
     }
 
+    @Test func sideBySideCaptionは0円のドライバーを省く() {
+        let caption = PopoverView.sideBySideCaption(
+            claudeCost: 4, driverBreakdown: [("Cursor", 2), ("Codex", 0)])
+        #expect(caption.contains("Cursor"))
+        #expect(!caption.contains("Codex"))
+        #expect(!caption.contains("その他"))
+    }
+
     @Test func modelCostRowsは結合と分離を切り替える() {
         let store = UsageStore()
         store.report = report(daily: [:], models: ["claude-sonnet": 3])
@@ -120,7 +128,7 @@ struct CostSourceModeUsageStoreTests {
                 let rows = store.modelCostRows(for: store.report!)
                 #expect(rows.count == 2)
                 #expect(rows.contains { $0.source == UsageStore.claudeSourceLabel })
-                #expect(rows.contains { $0.source == UsageStore.secondarySourceLabel })
+                #expect(rows.contains { $0.source == "Cursor" })
             }
         }
         withSourceMode(.cursorOnly) {
