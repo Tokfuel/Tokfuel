@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Regenerates the contributor avatar row in README.md / README.ja.md from the
-# commit history on main. Idempotent: leaves the files untouched if the
+# Regenerates the contributor avatar table in README.md / README.ja.md from
+# the commit history on main. Idempotent: leaves the files untouched if the
 # rendered block hasn't changed. See issue #35 for the design.
 set -euo pipefail
 
@@ -25,18 +25,40 @@ pinned_row="$(printf '%s\n' "$sorted" | awk -F'|' -v l="$pinned_login" '$2 == l 
 rest_rows="$(printf '%s\n' "$sorted" | awk -F'|' -v l="$pinned_login" '$2 != l')"
 ordered="$pinned_row"$'\n'"$rest_rows"
 
-block="<table><tr>"
+block="<table>
+	<tbody>
+		<tr>"
 while IFS='|' read -r _date login avatar; do
   [[ -z "$login" ]] && continue
-  block+="<td align=\"center\"><a href=\"https://github.com/${login}\"><img src=\"${avatar}&s=60\" width=\"60px;\" alt=\"${login}\"/><br /><sub><b>${login}</b></sub></a></td>"
+  block+="
+            <td align=\"center\">
+                <a href=\"https://github.com/${login}\">
+                    <img src=\"${avatar}&s=100\" width=\"100;\" alt=\"${login}\"/>
+                    <br />
+                    <sub><b>${login}</b></sub>
+                </a>
+            </td>"
 done <<< "$ordered"
-block+="</tr></table>"
+block+="
+		</tr>
+	</tbody>
+</table>"
+
+block_file="$(mktemp)"
+trap 'rm -f "$block_file"' EXIT
+printf '%s\n' "$block" > "$block_file"
 
 replace_block() {
   local file="$1"
-  awk -v block="$block" '
-    /<!-- contributors:start -->/ { print; print block; skip=1; next }
-    /<!-- contributors:end -->/ { skip=0; print; next }
+  awk -v blockfile="$block_file" '
+    /<!-- readme: contributors -start -->/ {
+      print
+      while ((getline line < blockfile) > 0) print line
+      close(blockfile)
+      skip = 1
+      next
+    }
+    /<!-- readme: contributors -end -->/ { skip = 0; print; next }
     skip == 1 { next }
     { print }
   ' "$file" > "${file}.tmp"

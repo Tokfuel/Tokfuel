@@ -94,8 +94,23 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 
 ### コントリビューター
 
-<!-- contributors:start -->
-<!-- contributors:end -->
+<div id="contributors">
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/akidon0000">
+                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
+                    <br />
+                    <sub><b>akidon0000</b></sub>
+                </a>
+            </td>
+		</tr>
+	</tbody>
+</table>
+<!-- readme: contributors -end -->
+</div>
 
 ## 謝辞
 
