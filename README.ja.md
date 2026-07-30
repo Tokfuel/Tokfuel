@@ -37,6 +37,16 @@
 
   今日・期間のコスト、日次グラフ、モデル別内訳、高コストセッション、retok の節約ヒント。
 
+- 🖱️ **Cursor も**
+
+  Cursor がインストールされていてログイン済みなら、Cursor 自身のダッシュボード API から
+  今日の使用量を取り、同じ合計とグラフに含めます（Cursor がディスクに持つセッションを
+  使うだけで、トークンの手貼りは不要です）。オフラインや未ログインのときはローカルの
+  トークンスナップショットに落ちます（Cursor 3.x では下限推定になりがちです）。
+  フォールバック用の価格表は公式公開表から 1 日 1 回更新します。
+  設定で合算 / Claude のみ / Cursor のみ / 並べて表示を選べます（Cost タブとメニューバーの
+  両方に効き、予算ゲージは含めた側の合算のままです）。
+
 - 🚨 **予算**
 
   月と 1 日の上限を独立に設定。
@@ -58,18 +68,17 @@
 
 - 🔒 **ローカルファースト**
 
-  テレメトリなし。唯一の通信は為替レート取得（オプトイン）だけです。
+  テレメトリなし。通信するのは為替レート取得（オプトイン）、Cursor 導入時の価格表の
+  1 日 1 回の更新、そして Cursor ログイン時のダッシュボード使用量照会（認証と日付範囲
+  のみ。プロンプト本文は送りません）です。
+  詳細は[プライバシーポリシー](docs/PRIVACY.ja.md)と[利用規約](docs/TERMS.ja.md)へ。
 
 ## インストール
 
 1. [Releases](https://github.com/akidon0000/Tokfuel/releases) から `Tokfuel-x.y.z.zip` をダウンロード。
 2. 展開して `Tokfuel.app` を `/Applications` へドラッグ。
-3. 初回起動はアプリを右クリック →**開く**
-   （または**システム設定 → プライバシーとセキュリティ**で許可）。
-
-> [!NOTE]
-> 警告が出るのはアドホック署名のためです。
-> ブラウザではなく `curl` でダウンロードすると警告自体が出ません。
+3. そのまま起動できます — リリースは Developer ID 署名済み・Apple による公証済みのため、
+   Gatekeeper の警告は出ません。
 
 **動作環境**
 
@@ -91,6 +100,26 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 - テスト: `swift test`
 - ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - 脆弱性を見つけたときは非公開で報告してください。[SECURITY.ja.md](SECURITY.ja.md) を参照。
+
+### コントリビューター
+
+<div id="contributors">
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/akidon0000">
+                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
+                    <br />
+                    <sub><b>akidon0000</b></sub>
+                </a>
+            </td>
+		</tr>
+	</tbody>
+</table>
+<!-- readme: contributors -end -->
+</div>
 
 ## 謝辞
 

@@ -22,6 +22,9 @@ jobs:
     runs-on: macos-15
     outputs:
       version: ${{ steps.version.outputs.version }}
+    # if: の条件式は secrets コンテキストを直接参照できないため、env 経由で一度だけ判定する。
+    env:
+      HAS_DEVELOPER_ID_CERT: ${{ secrets.DEVELOPER_ID_P12 != '' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -57,8 +60,49 @@ jobs:
       - name: Test
         run: swift test
 
+      # DEVELOPER_ID_P12 が未設定なら何もせず、release.sh は従来どおり ad-hoc 署名で動く。
+      - name: Import Developer ID certificate
+        if: ${{ env.HAS_DEVELOPER_ID_CERT == 'true' }}
+        env:
+          DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          CERT_PATH="$RUNNER_TEMP/developer_id.p12"
+
+          echo "$DEVELOPER_ID_P12" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$DEVELOPER_ID_P12_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | grep 'Developer ID Application' | head -1 | sed -E 's/.*"(.+)"/\1/')"
+          echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+          rm -f "$CERT_PATH"
+
       - name: Build & package
         run: bash scripts/release.sh "${{ steps.version.outputs.version }}"
+
+      # 公証は Developer ID 署名済みのときのみ行う（ad-hoc 署名は notarytool が reject する）。
+      - name: Notarize & staple
+        if: ${{ env.HAS_DEVELOPER_ID_CERT == 'true' }}
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+        run: |
+          APP_STORE_CONNECT_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          echo "$APP_STORE_CONNECT_KEY" | base64 --decode > "$APP_STORE_CONNECT_KEY_PATH"
+          export APP_STORE_CONNECT_KEY_PATH
+          bash scripts/notarize.sh "${{ steps.version.outputs.version }}"
+          rm -f "$APP_STORE_CONNECT_KEY_PATH"
 
       - name: Create GitHub Release
         env:

@@ -33,7 +33,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("一般") {
+            Section {
                 Toggle(isOn: $settings.launchAtLogin) {
                     Text("ログイン時に自動起動")
                 }
@@ -42,6 +42,18 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 180)
+                Picker("コストのソース", selection: $settings.costSourceMode) {
+                    ForEach(CostSourceMode.allCases) { Text($0.label).tag($0) }
+                }
+                Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
+                    ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("一般")
+            } footer: {
+                Text("コストのソースは Cost タブとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {
