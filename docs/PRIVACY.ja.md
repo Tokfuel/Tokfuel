@@ -14,10 +14,11 @@ Claude Code の利用状況を可視化するため、Tokfuel は Claude Code �
 
 - **transcript**（`~/.claude/projects/` 以下）：Claude Code のコスト、プロンプト数、セッション数の算出に端末上で使います。
 - **Cursor のローカルトークンデータベース**（`~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`、Cursor 導入時のみ）：Cursor のコスト見積りに使います。このファイルは端末上でのみ読み取ります。認証トークンと日付範囲が外部に送信されるケースは下記のみです。
+- **Codex CLI のセッションログ**（`~/.codex/sessions/` 以下、存在する場合）：同梱の retok スクリプト経由で端末上でのみ読み取り、セッション数・トークン数に加えて Codex のコストを見積ります。Claude の合計には合算せず、別建ての見積りとして扱います。
 
 処理はすべて端末上で行います。集計結果や設定、通知の状態といった派生データは `~/Library/Application Support/Tokfuel/` とアプリのユーザーデフォルトにのみ保存し、送信しません。
 
-現時点で Tokfuel が読み取るのは Claude Code と Cursor のローカルファイルのみです。将来のバージョンで他の AI コーディングツール（例: Codex）への対応を追加する場合も、同様にそれらのローカルファイルを端末上でのみ処理します。対応時にはこのポリシーを更新し、対象ツールを明記します。
+現時点で Tokfuel が読み取るのは Claude Code、Cursor、Codex のローカルファイルです。将来のバージョンで他の AI コーディングツールへの対応を追加する場合も、同様にそれらのローカルファイルを端末上でのみ処理し、対応時にはこのポリシーを更新して対象ツールを明記します。
 
 ## 通信
 

@@ -14,10 +14,11 @@ To visualize your Claude Code usage, Tokfuel reads files that Claude Code alread
 
 - **Transcripts** under `~/.claude/projects/` — used locally to compute Claude Code cost, prompt count, and session count.
 - **Cursor's local token database** (`~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`), if Cursor is installed — used to estimate Cursor cost. This file is read locally; see below for the one case where a derived value (auth token, date range) leaves the Mac.
+- **Codex CLI session logs** under `~/.codex/sessions/`, if present — read on-device (via the bundled retok script) to estimate Codex cost, alongside session and token counts. This is a separate cost estimate, not merged into your Claude total.
 
 All processing happens on your device. Derived data (aggregates, settings, notification state) is stored only in `~/Library/Application Support/Tokfuel/` and in the app's user defaults. None of it is transmitted.
 
-Tokfuel currently reads only Claude Code's and Cursor's local files. If a future version adds support for other AI coding tools (for example Codex), it will read those tools' local files the same way — on-device only — and this policy will be updated to name them.
+Tokfuel currently reads only Claude Code's, Cursor's, and Codex's local files. If a future version adds support for other AI coding tools, it will read those tools' local files the same way — on-device only — and this policy will be updated to name them.
 
 ## Network requests
 

@@ -10,7 +10,8 @@
 
 <p align="center">
   A tiny SwiftUI menu-bar app (⛽️) for macOS.<br/>
-  It reads the transcripts Claude Code already writes under <code>~/.claude/projects/</code><br/>
+  It reads the transcripts Claude Code (and, if present, Codex CLI and Cursor) already write<br/>
+  under <code>~/.claude/projects/</code>, <code>~/.codex/sessions/</code>, and Cursor's local database,<br/>
   and shows today's and period cost. Zero setup — everything stays on your Mac.
 </p>
 
@@ -47,6 +48,13 @@
   refreshed once a day from Cursor's published price table.
   In Settings, choose combined / Claude only / Cursor only / side-by-side — the popover
   and menu bar both follow that choice (budget gauges still use the included sum).
+
+- 🤖 **Codex, too**
+
+  If Codex CLI has local session logs (`~/.codex/sessions/`), its cost is estimated
+  separately (via the bundled retok script's own Codex pricing) and shown as its own
+  color in the daily chart, alongside session and token counts — never merged into
+  your Claude total.
 
 - 🚨 **Budgets**
 

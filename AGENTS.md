@@ -6,9 +6,11 @@
 
 ## What this is
 
-**Tokfuel** is a native SwiftUI macOS menu-bar app that visualizes Claude Code and Cursor
-cost, prompt counts, budget alerts, and configurable menu-bar gauges. It needs no hooks or
-manual tokens: it reads the local data those apps already keep. All sources live in
+**Tokfuel** is a native SwiftUI macOS menu-bar app that visualizes Claude Code, Codex CLI, and
+Cursor cost, prompt counts, budget alerts, and configurable menu-bar gauges. It needs no hooks or
+manual tokens: it reads the local data those apps already keep. If Codex CLI
+(`~/.codex/sessions/`) or Cursor is also present on the Mac, their cost is estimated too — each
+as its own source, never merged unlabeled into the Claude total. All sources live in
 [`Tokfuel/Sources/`](Tokfuel/Sources/); see the README
 [Architecture](README.md#-architecture) section for the file map.
 
