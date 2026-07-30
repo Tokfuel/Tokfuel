@@ -44,8 +44,12 @@
 
 - 📊 **Menu-bar readout**
 
-  Today's cost, this month's, both, or the *remaining* budget.
-  Live previews in Settings.
+  Pick a metric (today, this month, both, prompts) and how to show it
+  (amount, percent, ring gauge, ring + percent, icon only) — or the *remaining* budget.
+  Percent and gauges measure against your budget limit or your 30-day daily average.
+  The gauge is either a ring (beside the ⛽️ icon or replacing it) or the ⛽️ icon itself
+  filling bottom-up like a fuel tank — blue inside budget, orange at the threshold, red over.
+  Today and this month are coloured independently. Live previews in Settings.
 
 - 💱 **USD or JPY**
 
@@ -85,6 +89,7 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - Tests: `swift test`
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
+- Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
 ## Acknowledgements
 

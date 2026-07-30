@@ -228,6 +228,17 @@ struct PopoverView: View {
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
+            #if DEBUG
+            // どちらの構成を入れたかを、ホバーせずひと目で分かるようにする。
+            // リリースビルドにはコンパイルされない。
+            Text(MenuBarReadout.debugMarker)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(.orange, in: Capsule())
+                .help("開発用の debug 構成です（設定の一番下にデバッグ項目があります）")
+            #endif
             Spacer()
             Menu {
                 Button("再読み込み") { store.reload() }
