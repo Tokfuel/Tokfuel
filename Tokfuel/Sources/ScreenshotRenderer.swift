@@ -35,6 +35,8 @@ enum ScreenshotRenderer {
     static let budgetSpend: Double = 250
     /// 日次予算。今日のコストに対して余裕のある上限にする。
     static let dailyBudgetLimit: Double = 20
+    /// Cursor（二次ソース）の今日のコスト。並べて表示モードで Claude と並ぶ絵になる。
+    static let cursorTodayCost: Double = 4.20
 
     enum RenderError: LocalizedError {
         case usage
@@ -42,8 +44,8 @@ enum ScreenshotRenderer {
 
         var errorDescription: String? {
             switch self {
-            case .usage: return "usage: Tokfuel --screenshot <output.png>"
-            case .renderFailed: return "PopoverView のレンダリングに失敗しました"
+            case .usage: return "usage: Tokfuel --screenshot <output.png> | --ui-preview <output-dir>"
+            case .renderFailed: return "画面のレンダリングに失敗しました"
             }
         }
     }
@@ -56,7 +58,7 @@ enum ScreenshotRenderer {
             guard let path = outputPath(arguments: arguments) else { throw RenderError.usage }
             prepareDefaults()
             let url = URL(fileURLWithPath: path)
-            try renderPNG().write(to: url)
+            try renderPNG(store: fixtureStore()).write(to: url)
             print("wrote \(url.path)")
             exit(0)
         } catch {
@@ -74,18 +76,130 @@ enum ScreenshotRenderer {
         return arguments[next]
     }
 
+    /// `--ui-preview <dir>` 付きで起動されたときの入口（TF-0034）。PR の ui-preview 📸 ラベル用に、
+    /// メニューバー・設定・About の全画面（折りたたみセクションを開いた状態も含む）を
+    /// 1 ディレクトリへ書き出してプロセスを終える。
+    static func runAllAndExit(arguments: [String] = CommandLine.arguments) -> Never {
+        do {
+            guard let dirPath = outputDirectory(arguments: arguments) else { throw RenderError.usage }
+            prepareDefaults()
+            let dir = URL(fileURLWithPath: dirPath)
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            for (name, data) in try allScreens() {
+                let url = dir.appendingPathComponent("\(name).png")
+                try data.write(to: url)
+                print("wrote \(url.path)")
+            }
+            exit(0)
+        } catch {
+            let message = error.localizedDescription + "\n"
+            FileHandle.standardError.write(Data(message.utf8))
+            exit(1)
+        }
+    }
+
+    /// `--ui-preview <dir>` の出力先。フラグが無い／パスが続かない場合は nil。
+    nonisolated static func outputDirectory(arguments: [String]) -> String? {
+        guard let flag = arguments.firstIndex(of: "--ui-preview") else { return nil }
+        let next = arguments.index(after: flag)
+        guard next < arguments.endIndex, !arguments[next].hasPrefix("-") else { return nil }
+        return arguments[next]
+    }
+
+    /// 撮影する全画面。ファイル名（拡張子なし）→ PNG データ。
+    /// - `popover`: メニューバー帯付きの合成（README と同じ絵）
+    /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
+    ///   デバッグを開いた状態）
+    /// - `about`: 「Tokfuel について」ウィンドウ
+    static func allScreens() throws -> [(name: String, data: Data)] {
+        let store = fixtureStore()
+        // 設定は自身が .frame(width: 460, height: 620) を持つ（SettingsView.swift）ので
+        // probeSize がそのまま最終サイズになる。About は幅 320 だけを持つので、
+        // 高さは余裕を持った probeSize から実際の fittingSize へ縮める。
+        let settingsSize = CGSize(width: 460, height: 620)
+        let aboutProbeSize = CGSize(width: 320, height: 800)
+        return [
+            ("popover", try renderPNG(store: store)),
+            ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
+            ("settings-advanced", try renderStandalone(
+                SettingsView(store: store, initiallyShowsAdvanced: true),
+                probeSize: settingsSize, scrollsToBottom: true)),
+            ("settings-debug", try renderStandalone(
+                SettingsView(store: store, initiallyShowsAdvanced: true, initiallyShowsDebug: true),
+                probeSize: settingsSize, scrollsToBottom: true)),
+            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize))
+        ]
+    }
+
     /// フィクスチャを積んだポップオーバーを @2x で PNG にする。
     ///
     /// `ImageRenderer` ではなく `NSHostingView` を実際に描画させる。`ImageRenderer` は
     /// `ScrollView` の中身と AppKit 実装のコントロール（フッターの `Menu`・期間ピッカー）を
     /// 描けず、本文が空の絵になるため。
-    private static func renderPNG() throws -> Data {
-        let view = NSHostingView(rootView: composition(store: fixtureStore(), now: Date()))
+    private static func renderPNG(store: UsageStore) throws -> Data {
+        let view = NSHostingView(rootView: composition(store: store, now: Date()))
         view.frame = CGRect(origin: .zero, size: canvas)
+        return try capture(view, size: canvas)
+    }
 
-        // 画面外のウィンドウに載せて表示させる（SwiftUI に実レイアウトと実描画をさせるため）。
-        let window = NSWindow(contentRect: view.frame, styleMask: [.borderless],
-                              backing: .buffered, defer: false)
+    /// 設定・About など、デスクトップ風の飾りを持たない単独ウィンドウを @2x で PNG にする。
+    /// 本物のウィンドウ（`NSWindow(contentViewController:)`）と同じく、通常のウィンドウ背景色を
+    /// 敷く（ポップオーバーの合成と違い透明にしない）。`probeSize` は最初のレイアウト用の仮サイズ
+    /// で、`.frame` で高さを明示していないビュー（`AboutView`）向けに、実描画後の `fittingSize`
+    /// で実寸へ縮める。幅・高さとも `.frame` で固定しているビュー（`SettingsView`）では
+    /// `probeSize` がそのまま最終サイズになる。
+    private static func renderStandalone<V: View>(
+        _ rootView: V, probeSize: CGSize, scrollsToBottom: Bool = false
+    ) throws -> Data {
+        let hosting = NSHostingView(rootView:
+            rootView
+                .environment(\.colorScheme, .dark)
+                .environment(\.locale, Locale(identifier: "ja_JP"))
+                .tint(.orange)
+                .background(Color(nsColor: .windowBackgroundColor)))
+        // 先に画面外へ置いて 1 度レイアウトしないと fittingSize が (0, 0) のままになる。
+        hosting.frame = CGRect(origin: .zero, size: probeSize)
+        let probeWindow = NSWindow(contentRect: hosting.frame, styleMask: [.borderless],
+                                   backing: .buffered, defer: false)
+        probeWindow.contentView = hosting
+        probeWindow.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
+        probeWindow.orderFrontRegardless()
+        hosting.layoutSubtreeIfNeeded()
+        var size = hosting.fittingSize
+        if size.width <= 0 { size.width = probeSize.width }
+        if size.height <= 0 { size.height = probeSize.height }
+        hosting.frame = CGRect(origin: .zero, size: size)
+        hosting.layoutSubtreeIfNeeded()
+
+        // Form/List は `.frame(height:)` で高さを固定していても中身は NSScrollView に収まる
+        // だけで、開いた DisclosureGroup の中身は下にスクロールしないと写らない。
+        // 折りたたみを開いた状態の絵は、実際の操作と同じく末尾までスクロールしてから撮る。
+        if scrollsToBottom, let scrollView = firstScrollView(in: hosting) {
+            RunLoop.current.run(until: Date().addingTimeInterval(settleSeconds))
+            scrollView.layoutSubtreeIfNeeded()
+            if let documentView = scrollView.documentView {
+                let maxY = max(0, documentView.bounds.height - scrollView.contentView.bounds.height)
+                scrollView.contentView.scroll(to: NSPoint(x: 0, y: maxY))
+                scrollView.reflectScrolledClipView(scrollView.contentView)
+            }
+        }
+
+        return try capture(hosting, size: size)
+    }
+
+    /// ビュー階層を降りて最初に見つかった `NSScrollView`（Form/List の実体）を返す。
+    private static func firstScrollView(in view: NSView) -> NSScrollView? {
+        if let scrollView = view as? NSScrollView { return scrollView }
+        for subview in view.subviews {
+            if let found = firstScrollView(in: subview) { return found }
+        }
+        return nil
+    }
+
+    /// `NSHostingView` を画面外のウィンドウで実描画させ、@2x の PNG データに焼く。
+    private static func capture(_ view: NSHostingView<some View>, size: CGSize) throws -> Data {
+        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: .darkAqua)
         window.backgroundColor = .clear
         window.contentView = view
@@ -99,12 +213,12 @@ enum ScreenshotRenderer {
         // rep のピクセル数を論理サイズの 2 倍にし、size を論理サイズに戻すことで @2x になる。
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,
-            pixelsWide: Int(canvas.width * 2), pixelsHigh: Int(canvas.height * 2),
+            pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2),
             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
             colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else {
             throw RenderError.renderFailed
         }
-        rep.size = canvas
+        rep.size = size
         view.cacheDisplay(in: view.bounds, to: rep)
 
         guard let png = rep.representation(using: .png, properties: [:]) else {
@@ -129,6 +243,8 @@ enum ScreenshotRenderer {
         settings.dailyBudgetLimit = dailyBudgetLimit
         settings.budgetWarnPercent = 80
         settings.budgetPeriod = .calendarMonth
+        // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
+        settings.costSourceMode = .sideBySide
     }
 
     // MARK: - 合成（デスクトップ風の枠）
@@ -208,6 +324,8 @@ enum ScreenshotRenderer {
         store.budgetSpend = budgetSpend
         // コスト用ポップオーバーが読むのはプロンプト数とセッション数だけ。
         store.daily = [DailyUsage(date: dateString(daysAgo: 0), prompts: 42, sessions: 6)]
+        // Cursor（二次ソース、TF-0032）。並べて表示モードのヒーローに出る今日ぶんだけ積む。
+        store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
         store.lastUpdated = Date()
         return store
     }

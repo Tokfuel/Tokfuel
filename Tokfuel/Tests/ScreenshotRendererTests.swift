@@ -23,6 +23,25 @@ struct ScreenshotArgumentTests {
     }
 }
 
+/// ui-preview（TF-0034）の引数解釈。`--screenshot` の出力先パースと同じ形。
+struct UIPreviewArgumentTests {
+    @Test func フラグの次の引数を出力先ディレクトリにする() {
+        #expect(ScreenshotRenderer.outputDirectory(
+            arguments: ["Tokfuel", "--ui-preview", "/tmp/ui-preview"])
+                == "/tmp/ui-preview")
+    }
+
+    @Test func フラグが無ければ通常起動() {
+        #expect(ScreenshotRenderer.outputDirectory(arguments: ["Tokfuel"]) == nil)
+    }
+
+    @Test func 出力先が続かない指定は受け付けない() {
+        #expect(ScreenshotRenderer.outputDirectory(arguments: ["Tokfuel", "--ui-preview"]) == nil)
+        #expect(ScreenshotRenderer.outputDirectory(
+            arguments: ["Tokfuel", "--ui-preview", "-AppleAccentColor", "1"]) == nil)
+    }
+}
+
 /// 描画そのもの（ウィンドウサーバが必要）はここでは触らず、絵に写る値の整合だけを見る。
 /// フィクスチャが崩れると README の絵が「–」や空セクションだらけになるため。
 @MainActor
@@ -43,7 +62,11 @@ struct ScreenshotFixtureTests {
     @Test func 今日のコストが引ける() {
         // 日付キーの書式が UsageStore とずれると、ヒーローの金額が「–」になる。
         let store = ScreenshotRenderer.fixtureStore()
-        #expect(store.todayCost == ScreenshotRenderer.dailyCosts.last)
+        #expect(store.claudeTodayCost == ScreenshotRenderer.dailyCosts.last)
+        #expect(store.cursorTodayCost == ScreenshotRenderer.cursorTodayCost)
+        // 並べて表示（TF-0032）でも、合算値は両ソースの合計になる。
+        #expect(store.todayCost == (ScreenshotRenderer.dailyCosts.last ?? 0)
+                + ScreenshotRenderer.cursorTodayCost)
         #expect(store.today.prompts == 42)
     }
 

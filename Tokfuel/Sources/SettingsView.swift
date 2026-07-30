@@ -11,9 +11,24 @@ struct SettingsView: View {
     /// メニューバー表示のライブプレビューに実データを出すためのストア。
     /// 集計が非同期に届いたらプレビューも追従させたいので監視する。
     @ObservedObject var store: UsageStore
-    @State private var showsAdvanced = false
+    @State private var showsAdvanced: Bool
     #if DEBUG
-    @State private var showsDebug = false
+    @State private var showsDebug: Bool
+    #endif
+
+    #if DEBUG
+    /// UI プレビュー撮影用（TF-0034）。折りたたみセクションを開いた状態も別絵で撮るための入口。
+    /// 通常の起動では両方とも既定の false のまま。
+    init(store: UsageStore, initiallyShowsAdvanced: Bool = false, initiallyShowsDebug: Bool = false) {
+        self.store = store
+        self._showsAdvanced = State(initialValue: initiallyShowsAdvanced)
+        self._showsDebug = State(initialValue: initiallyShowsDebug)
+    }
+    #else
+    init(store: UsageStore, initiallyShowsAdvanced: Bool = false) {
+        self.store = store
+        self._showsAdvanced = State(initialValue: initiallyShowsAdvanced)
+    }
     #endif
 
     var body: some View {

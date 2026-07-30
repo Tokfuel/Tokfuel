@@ -31,6 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--screenshot") {
             ScreenshotRenderer.runAndExit()
         }
+        // PR の ui-preview 📸 ラベル用（TF-0034）。全画面をまとめて 1 ディレクトリに書き出す。
+        if CommandLine.arguments.contains("--ui-preview") {
+            ScreenshotRenderer.runAllAndExit()
+        }
         // Cursor 二次ソースの実スキャン → ポップオーバー描画検証。常駐せずに終了する。
         if CommandLine.arguments.contains("--verify-cursor-ui") {
             VerifyCursorUI.runAndExit()
