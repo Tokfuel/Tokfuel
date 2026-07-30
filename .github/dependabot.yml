@@ -1,0 +1,16 @@
+version: 2
+
+# 監視対象は GitHub Actions だけにしている。Package.swift は外部依存を持たない方針なので、
+# swift エコシステムを足しても更新対象が現れず空振りし続ける。
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["dependabot 🤖"]
+    commit-message:
+      prefix: "chore(actions)"
+    # 更新はまとめて 1 本の PR にする。対象が数個しかないため、個別に開くと通知だけが増える。
+    groups:
+      actions:
+        patterns: ["*"]

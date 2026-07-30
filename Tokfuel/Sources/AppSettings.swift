@@ -2,23 +2,6 @@ import Foundation
 import Combine
 import ServiceManagement
 
-/// メニューバーに常時表示する内容。
-enum MenuBarDisplay: String, CaseIterable, Identifiable {
-    case cost, monthlyCost, bothCosts, prompts, iconOnly
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .cost: return "今日のコスト"
-        case .monthlyCost: return "今月のコスト"
-        case .bothCosts: return "今日と今月のコスト"
-        case .prompts: return "今日のプロンプト数"
-        case .iconOnly: return "アイコンのみ"
-        }
-    }
-    /// 月間消費額の算出（retok 32 日走査）が必要な表示か。
-    var showsMonthlyCost: Bool { self == .monthlyCost || self == .bothCosts }
-}
-
 /// retok の集計言語。auto は OS のロケールに従う。
 enum ReportLanguage: String, CaseIterable, Identifiable {
     case auto, en, ja
@@ -60,11 +43,28 @@ final class AppSettings: ObservableObject {
     private let defaults = UserDefaults.standard
 
     @Published var launchAtLogin: Bool { didSet { applyLaunchAtLogin(); logChange(Keys.launchAtLogin) } }
-    @Published var menuBarDisplay: MenuBarDisplay {
-        didSet { persist(menuBarDisplay.rawValue, forKey: Keys.menuBarDisplay) }
+    /// メニューバーで何を見るか。どう見せるかは menuBarRepresentation 側。
+    @Published var menuBarMetric: MenuBarMetric {
+        didSet { persist(menuBarMetric.rawValue, forKey: Keys.menuBarMetric) }
     }
-    /// メニューバーの金額を「消費額」ではなく「予算までの残り（上限 − 消費）」で見せる。
-    /// 対応する予算が未設定の項目は消費額のまま。
+    /// メニューバーの見せ方（金額 / パーセント / リング / リング + 数値 / アイコンのみ）。
+    @Published var menuBarRepresentation: MenuBarRepresentation {
+        didSet { persist(menuBarRepresentation.rawValue, forKey: Keys.menuBarRepresentation) }
+    }
+    /// パーセントとリングが共有する分母。
+    @Published var menuBarPercentBasis: MenuBarPercentBasis {
+        didSet { persist(menuBarPercentBasis.rawValue, forKey: Keys.menuBarPercentBasis) }
+    }
+    /// ゲージの形（リング / タンク）。
+    @Published var menuBarGaugeShape: MenuBarGaugeShape {
+        didSet { persist(menuBarGaugeShape.rawValue, forKey: Keys.menuBarGaugeShape) }
+    }
+    /// リング表示のときに給油機アイコンも並べるか。文字だけの表現では常に出す。
+    @Published var menuBarShowsIcon: Bool {
+        didSet { persist(menuBarShowsIcon, forKey: Keys.menuBarShowsIcon) }
+    }
+    /// メニューバーの値を「消費」ではなく「予算までの残り（上限 − 消費）」で見せる。
+    /// 対応する予算が未設定の項目は消費のまま。
     @Published var menuBarShowsRemaining: Bool {
         didSet { persist(menuBarShowsRemaining, forKey: Keys.menuBarShowsRemaining) }
     }
@@ -108,7 +108,13 @@ final class AppSettings: ObservableObject {
 
     private enum Keys {
         static let launchAtLogin = "launchAtLogin"
-        static let menuBarDisplay = "menuBarDisplay"
+        /// 指標 × 表現に分解する前の単一設定。移行のために読むだけで、もう書かない。
+        static let legacyMenuBarDisplay = "menuBarDisplay"
+        static let menuBarMetric = "menuBarMetric"
+        static let menuBarRepresentation = "menuBarRepresentation"
+        static let menuBarPercentBasis = "menuBarPercentBasis"
+        static let menuBarGaugeShape = "menuBarGaugeShape"
+        static let menuBarShowsIcon = "menuBarShowsIcon"
         static let menuBarShowsRemaining = "menuBarShowsRemaining"
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
@@ -128,6 +134,19 @@ final class AppSettings: ObservableObject {
         URL(fileURLWithPath: (claudeDirectory as NSString).expandingTildeInPath)
     }
 
+    /// 月側の集計に実際に使う期間。予算オフでメニューバー表示のためだけに数える場合は暦月。
+    var effectiveBudgetPeriod: BudgetPeriod {
+        budgetLimit > 0 ? budgetPeriod : .calendarMonth
+    }
+
+    /// メニューバーが日次平均（過去 30 日）を分母として要求しているか。
+    /// 予算が未設定でも 32 日集計を走らせる必要があるかの判断に使う。
+    var menuBarNeedsDailyAverage: Bool {
+        menuBarRepresentation.needsBasis
+            && menuBarPercentBasis == .dailyAverage30
+            && menuBarMetric.supportsRatio
+    }
+
     private init() {
         // 初回起動時は「入れるだけで常駐」を実現するため、ログイン起動を既定 ON にする。
         let firstLaunch = !defaults.bool(forKey: Keys.hasLaunchedBefore)
@@ -136,8 +155,22 @@ final class AppSettings: ObservableObject {
             defaults.set(true, forKey: Keys.launchAtLogin)
         }
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
-        menuBarDisplay = MenuBarDisplay(rawValue: defaults.string(forKey: Keys.menuBarDisplay) ?? "")
-            ?? .cost
+        // 新キーが未設定なら旧 menuBarDisplay を読み替える。旧キーは消さないので、
+        // 古いバージョンに戻しても設定はそのまま残る。
+        let legacy = MenuBarReadout.migrated(legacy: defaults.string(forKey: Keys.legacyMenuBarDisplay))
+        menuBarMetric = MenuBarMetric(rawValue: defaults.string(forKey: Keys.menuBarMetric) ?? "")
+            ?? legacy?.metric ?? .today
+        menuBarRepresentation = MenuBarRepresentation(
+            rawValue: defaults.string(forKey: Keys.menuBarRepresentation) ?? "")
+            ?? legacy?.representation ?? .amount
+        menuBarPercentBasis = MenuBarPercentBasis(
+            rawValue: defaults.string(forKey: Keys.menuBarPercentBasis) ?? "") ?? .budgetLimit
+        menuBarGaugeShape = MenuBarGaugeShape(
+            rawValue: defaults.string(forKey: Keys.menuBarGaugeShape) ?? "") ?? .ring
+        // 既定はアイコンあり。bool(forKey:) は未設定を false と読むので、存在確認だけ object で
+        // 行い、値の解釈は bool に任せる（as? Bool だと文字列で入った値を取りこぼす）。
+        menuBarShowsIcon = defaults.object(forKey: Keys.menuBarShowsIcon) == nil
+            ? true : defaults.bool(forKey: Keys.menuBarShowsIcon)
         menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
