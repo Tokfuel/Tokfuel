@@ -115,6 +115,13 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
                     <sub><b>akidon0000</b></sub>
                 </a>
             </td>
+            <td align="center">
+                <a href="https://github.com/ParkJong-Hun">
+                    <img src="https://avatars.githubusercontent.com/u/81838716?v=4&s=100" width="100;" alt="ParkJong-Hun"/>
+                    <br />
+                    <sub><b>ParkJong-Hun</b></sub>
+                </a>
+            </td>
 		</tr>
 	</tbody>
 </table>
