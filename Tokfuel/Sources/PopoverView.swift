@@ -6,9 +6,21 @@ import Charts
 /// 設定時のみ） 3) 傾向と内訳（グラフ・モデル別・高額セッション）。
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
-    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var settings: AppSettings
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
+
+    init(
+        store: UsageStore,
+        settings: AppSettings = .shared,
+        onOpenSettings: @escaping () -> Void = {},
+        onOpenAbout: @escaping () -> Void = {}
+    ) {
+        self.store = store
+        self.settings = settings
+        self.onOpenSettings = onOpenSettings
+        self.onOpenAbout = onOpenAbout
+    }
 
     var body: some View {
         VStack(spacing: 0) {

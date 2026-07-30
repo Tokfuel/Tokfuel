@@ -22,7 +22,7 @@ final class DebugSettings: ObservableObject {
     /// テンプレート配色のリングを実データ待ちなしで確かめるために上書きできる。
     @Published var averageCost: Double = 4
 
-    /// 今日側（Cost タブと共用の retok レポート）の未取得を再現する。
+    /// 今日側（ポップオーバーと共用の retok レポート）の未取得を再現する。
     /// 今日のコストが 0 になり、推移・内訳・上位セッションは読み込み中表示に落ちる。
     @Published var simulatesMissingReport = false
     /// 月側（予算用の 32 日集計。今日側とは別実行）の未取得を再現する。

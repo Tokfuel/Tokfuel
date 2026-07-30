@@ -45,7 +45,7 @@
   keeps on disk — nothing to paste). Offline or signed-out, it falls back to local
   token snapshots (often a lower bound on Cursor 3.x). Pricing for the fallback path is
   refreshed once a day from Cursor's published price table.
-  In Settings, choose combined / Claude only / Cursor only / side-by-side — the Cost tab
+  In Settings, choose combined / Claude only / Cursor only / side-by-side — the popover
   and menu bar both follow that choice (budget gauges still use the included sum).
 
 - 🚨 **Budgets**

@@ -73,13 +73,13 @@ enum CursorPricingService {
         else { return false }
 
         let defaults = UserDefaults.standard
-        let today = UsageStore.dateString(now)
+        let today = LocalDay.string(from: now)
         if defaults.string(forKey: cacheDateKey) == today, !cachedRates().isEmpty {
             return false
         }
 
         guard let url = URL(string: "https://cursor.com/docs/models-and-pricing.md"),
-              let (data, _) = try? await URLSession.shared.data(from: url),
+              let data = try? await HTTPClient.data(from: url),
               let markdown = String(data: data, encoding: .utf8)
         else { return false }
 

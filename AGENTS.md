@@ -6,10 +6,9 @@
 
 ## What this is
 
-**Tokfuel** is a native SwiftUI macOS menu-bar app that visualizes local Claude
-Code usage — cost (via a bundled copy of [retok](https://github.com/d-date/retok)), Skill / MCP /
-sub-agent activity, a skill inventory, and budget alerts — with zero setup: it reads the
-transcripts Claude Code already writes under `~/.claude/projects/`. All sources live in
+**Tokfuel** is a native SwiftUI macOS menu-bar app that visualizes Claude Code and Cursor
+cost, prompt counts, budget alerts, and configurable menu-bar gauges. It needs no hooks or
+manual tokens: it reads the local data those apps already keep. All sources live in
 [`Tokfuel/Sources/`](Tokfuel/Sources/); see the README
 [Architecture](README.md#-architecture) section for the file map.
 
@@ -34,8 +33,8 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
    © Daiki Matsudate, MIT — never edit them in place (send an upstream PR instead), and keep
    `LICENSE-retok` + the in-app attribution intact. Provenance and the update procedure are in
    [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md).
-4. **python3 is an optional dependency.** Only the Cost tab needs it; everything else must keep
-   working when it is absent (the Cost tab shows an error and degrades gracefully).
+4. **python3 is an optional dependency.** Claude cost analysis shows an error when it is absent;
+   settings, prompt counts, Cursor fallback data, and the menu-bar app must keep working.
 5. **No new package dependencies.** Swift 6 / SwiftUI / macOS 14+, standard SDK only —
    staying dependency-free keeps the app trivial to build.
 

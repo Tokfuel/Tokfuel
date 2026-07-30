@@ -4,7 +4,7 @@ import AppKit
 /// 設定ウィンドウ。よく触る「一般 / メニューバー / 予算」だけを見せ、
 /// めったに変えない項目（レポート言語・スキャン場所・イベントログ）は「詳細」に畳む。
 struct SettingsView: View {
-    @ObservedObject var settings = AppSettings.shared
+    @ObservedObject var settings: AppSettings
     #if DEBUG
     @ObservedObject private var debug = DebugSettings.shared
     #endif
@@ -19,209 +19,240 @@ struct SettingsView: View {
     #if DEBUG
     /// UI プレビュー撮影用（TF-0034）。折りたたみセクションを開いた状態も別絵で撮るための入口。
     /// 通常の起動では両方とも既定の false のまま。
-    init(store: UsageStore, initiallyShowsAdvanced: Bool = false, initiallyShowsDebug: Bool = false) {
+    init(
+        store: UsageStore,
+        settings: AppSettings = .shared,
+        initiallyShowsAdvanced: Bool = false,
+        initiallyShowsDebug: Bool = false
+    ) {
         self.store = store
+        self.settings = settings
         self._showsAdvanced = State(initialValue: initiallyShowsAdvanced)
         self._showsDebug = State(initialValue: initiallyShowsDebug)
     }
     #else
-    init(store: UsageStore, initiallyShowsAdvanced: Bool = false) {
+    init(
+        store: UsageStore,
+        settings: AppSettings = .shared,
+        initiallyShowsAdvanced: Bool = false
+    ) {
         self.store = store
+        self.settings = settings
         self._showsAdvanced = State(initialValue: initiallyShowsAdvanced)
     }
     #endif
 
     var body: some View {
         Form {
-            Section {
-                Toggle(isOn: $settings.launchAtLogin) {
-                    Text("ログイン時に自動起動")
-                }
-                Picker("通貨", selection: $settings.displayCurrency) {
-                    ForEach(DisplayCurrency.allCases) { Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 180)
-                Picker("コストのソース", selection: $settings.costSourceMode) {
-                    ForEach(CostSourceMode.allCases) { Text($0.label).tag($0) }
-                }
-                Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
-                    ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
-                }
-            } header: {
-                Text("一般")
-            } footer: {
-                Text("コストのソースは Cost タブとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Picker("見る指標", selection: $settings.menuBarMetric) {
-                    ForEach(MenuBarMetric.allCases) { Text($0.label).tag($0) }
-                }
-
-                // 表現はプレビュー付きのラジオで並べる。分母を持てない組み合わせは
-                // 選べないようにして、選んだのに金額のままという食い違いを防ぐ。
-                ForEach(representationRows) { representationRow($0) }
-
-                if settings.menuBarRepresentation.drawsRing {
-                    Picker("ゲージの形", selection: $settings.menuBarGaugeShape) {
-                        ForEach(MenuBarGaugeShape.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.radioGroup)
-                    // タンクはアイコン自身がゲージなので、併記の選択肢が意味を持たない。
-                    if settings.menuBarGaugeShape.isSeparateFromIcon {
-                        Toggle("アイコンも並べる", isOn: $settings.menuBarShowsIcon)
-                    }
-                }
-
-                // 基準は、割合表現を選んでいなくても出す。選んだあとにしか出さないと、
-                // 予算未設定のユーザーはパーセントとリングが永久にグレーのままになる
-                // （選べない → 基準を変えられない → 選べない）。
-                if settings.menuBarMetric.supportsRatio {
-                    Picker("割合の基準", selection: $settings.menuBarPercentBasis) {
-                        ForEach(MenuBarPercentBasis.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.radioGroup)
-                    Text(settings.menuBarPercentBasis.note)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                // ON のままだと上限を消したあとに解除できなくなるので、すでに ON なら出し続ける。
-                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0
-                    || settings.menuBarShowsRemaining {
-                    Toggle("予算までの残りを表示", isOn: $settings.menuBarShowsRemaining)
-                }
-            } header: {
-                Text("メニューバー")
-            } footer: {
-                if let note = menuBarNote(for: store.menuBarInput()) {
-                    Text(note)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section {
-                HStack {
-                    Text("月の上限 (\(unitSymbol))")
-                    Spacer()
-                    TextField("", value: budgetField(\.budgetLimit), format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 100)
-                        .multilineTextAlignment(.trailing)
-                }
-                if settings.budgetLimit > 0 {
-                    Picker("集計期間", selection: $settings.budgetPeriod) {
-                        ForEach(BudgetPeriod.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.radioGroup)
-                }
-                HStack {
-                    Text("1日の上限 (\(unitSymbol))")
-                    Spacer()
-                    TextField("", value: budgetField(\.dailyBudgetLimit), format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 100)
-                        .multilineTextAlignment(.trailing)
-                }
-                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
-                    Picker("警告しきい値", selection: $settings.budgetWarnPercent) {
-                        Text("70%").tag(70)
-                        Text("80%").tag(80)
-                        Text("90%").tag(90)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 220)
-                }
-            } header: {
-                Text("予算")
-            } footer: {
-                Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。円は Frankfurter API のレート（1 日 1 回取得・レート以外は送信しません）で換算し、内部では USD で保存します。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                DisclosureGroup("詳細", isExpanded: $showsAdvanced) {
-                    Picker("レポート言語", selection: $settings.language) {
-                        ForEach(ReportLanguage.allCases) { Text($0.label).tag($0) }
-                    }
-
-                    PathRow(title: "Claude ディレクトリ",
-                            note: "コスト集計元のトランスクリプト (projects) の読み取り元",
-                            path: $settings.claudeDirectory,
-                            defaultPath: AppSettings.defaultClaudeDirectory)
-
-                    Toggle(isOn: $settings.eventLogEnabled) {
-                        Text("利用イベントを記録")
-                        Text("Tokfuel 自身の操作イベントだけを Mac 内に記録します（外部送信なし）")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Button("ログを表示") {
-                            NSWorkspace.shared.activateFileViewerSelecting(
-                                [UsageEventLog.shared.revealDirectoryURL()])
-                        }
-                        .controlSize(.small)
-                        Button("全イベントを削除", role: .destructive) {
-                            UsageEventLog.shared.deleteAll()
-                        }
-                        .controlSize(.small)
-                    }
-                }
-            }
-
+            generalSection
+            menuBarSection
+            budgetSection
+            advancedSection
             #if DEBUG
-            // 開発者向け。リリースビルドにはコンパイルされない。「詳細」と同じく畳んでおく。
-            Section {
-                DisclosureGroup("デバッグ", isExpanded: $showsDebug) {
-                    // 今日側と月側は別々の retok 実行なので、片方だけ欠けた状態も再現できる。
-                    Toggle(isOn: $debug.simulatesMissingReport) {
-                        Text("未取得を再現: 今日")
-                        Text("今日のコストが 0 になり、推移・内訳は読み込み中表示に落ちます")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Toggle(isOn: $debug.simulatesMissingMonth) {
-                        Text("未取得を再現: 今月")
-                        Text("月の 32 日集計だけが未着。起動直後に数秒だけ通る状態です")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Toggle(isOn: $debug.isActive) {
-                        Text("金額を上書きする")
-                        Text("上書き中は retok の実データを使いません。値は保存されず、再起動で元に戻ります")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    if debug.isActive {
-                        if !debug.simulatesMissingReport {
-                            DebugAmountRow(title: "今日のコスト ($)",
-                                           range: 0...50, value: $debug.todayCost)
-                        }
-                        if !debug.simulatesMissingMonth {
-                            DebugAmountRow(title: "今月のコスト ($)",
-                                           range: 0...500, value: $debug.monthCost)
-                            DebugAmountRow(title: "日次平均 ($)",
-                                           range: 0...50, value: $debug.averageCost)
-                        }
-                    }
-                }
-            }
+            debugSection
             #endif
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 620)
     }
 
+    private var generalSection: some View {
+        Section {
+            Toggle("ログイン時に自動起動", isOn: $settings.launchAtLogin)
+            Picker("通貨", selection: $settings.displayCurrency) {
+                ForEach(DisplayCurrency.allCases) {
+                    Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 180)
+            Picker("コストのソース", selection: $settings.costSourceMode) {
+                ForEach(CostSourceMode.allCases) { Text($0.label).tag($0) }
+            }
+            Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
+                ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
+            }
+        } header: {
+            Text("一般")
+        } footer: {
+            Text("コストのソースはポップオーバーとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var menuBarSection: some View {
+        Section {
+            Picker("見る指標", selection: $settings.menuBarMetric) {
+                ForEach(MenuBarMetric.allCases) { Text($0.label).tag($0) }
+            }
+            ForEach(representationRows) { representationRow($0) }
+            if settings.menuBarRepresentation.drawsRing {
+                Picker("ゲージの形", selection: $settings.menuBarGaugeShape) {
+                    ForEach(MenuBarGaugeShape.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
+                if settings.menuBarGaugeShape.isSeparateFromIcon {
+                    Toggle("アイコンも並べる", isOn: $settings.menuBarShowsIcon)
+                }
+            }
+            if settings.menuBarMetric.supportsRatio {
+                Picker("割合の基準", selection: $settings.menuBarPercentBasis) {
+                    ForEach(MenuBarPercentBasis.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
+                Text(settings.menuBarPercentBasis.note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0
+                || settings.menuBarShowsRemaining {
+                Toggle("予算までの残りを表示", isOn: $settings.menuBarShowsRemaining)
+            }
+        } header: {
+            Text("メニューバー")
+        } footer: {
+            if let note = menuBarNote(for: store.menuBarInput()) {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var budgetSection: some View {
+        Section {
+            budgetLimitRow("月の上限", keyPath: \.budgetLimit)
+            if settings.budgetLimit > 0 {
+                Picker("集計期間", selection: $settings.budgetPeriod) {
+                    ForEach(BudgetPeriod.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.radioGroup)
+            }
+            budgetLimitRow("1日の上限", keyPath: \.dailyBudgetLimit)
+            if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
+                Picker("警告しきい値", selection: $settings.budgetWarnPercent) {
+                    Text("70%").tag(70)
+                    Text("80%").tag(80)
+                    Text("90%").tag(90)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 220)
+            }
+        } header: {
+            Text("予算")
+        } footer: {
+            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算し、内部では USD で保存します。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func budgetLimitRow(
+        _ title: String,
+        keyPath: ReferenceWritableKeyPath<AppSettings, Double>
+    ) -> some View {
+        HStack {
+            Text("\(title) (\(unitSymbol))")
+            Spacer()
+            TextField("", value: budgetField(keyPath), format: .number)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 100)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var advancedSection: some View {
+        Section {
+            DisclosureGroup("詳細", isExpanded: $showsAdvanced) {
+                Picker("レポート言語", selection: $settings.language) {
+                    ForEach(ReportLanguage.allCases) { Text($0.label).tag($0) }
+                }
+                PathRow(
+                    title: "Claude ディレクトリ",
+                    note: "コストとプロンプト数を読む projects ディレクトリの親",
+                    path: $settings.claudeDirectory,
+                    defaultPath: AppSettings.defaultClaudeDirectory
+                )
+                Toggle(isOn: $settings.eventLogEnabled) {
+                    Text("利用イベントを記録")
+                    Text("Tokfuel 自身の操作イベントだけを Mac 内に記録します（外部送信なし）")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button("ログを表示") {
+                        NSWorkspace.shared.activateFileViewerSelecting(
+                            [UsageEventLog.shared.revealDirectoryURL()]
+                        )
+                    }
+                    .controlSize(.small)
+                    Button("全イベントを削除", role: .destructive) {
+                        UsageEventLog.shared.deleteAll()
+                    }
+                    .controlSize(.small)
+                }
+            }
+        }
+    }
+
+    #if DEBUG
+    @ViewBuilder
+    private var debugSection: some View {
+        Section {
+            DisclosureGroup("デバッグ", isExpanded: $showsDebug) {
+                Toggle(isOn: $debug.simulatesMissingReport) {
+                    Text("未取得を再現: 今日")
+                    Text("今日のコストが 0 になり、推移と内訳は読み込み中表示になります")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Toggle(isOn: $debug.simulatesMissingMonth) {
+                    Text("未取得を再現: 今月")
+                    Text("月の 32 日集計だけが未着の状態を再現します")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Toggle(isOn: $debug.isActive) {
+                    Text("金額を上書きする")
+                    Text("値は保存されず、再起動で実データへ戻ります")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if debug.isActive {
+                    if !debug.simulatesMissingReport {
+                        DebugAmountRow(
+                            title: "今日のコスト ($)",
+                            range: 0...50,
+                            value: $debug.todayCost
+                        )
+                    }
+                    if !debug.simulatesMissingMonth {
+                        DebugAmountRow(
+                            title: "今月のコスト ($)",
+                            range: 0...500,
+                            value: $debug.monthCost
+                        )
+                        DebugAmountRow(
+                            title: "日次平均 ($)",
+                            range: 0...50,
+                            value: $debug.averageCost
+                        )
+                    }
+                }
+            }
+        }
+    }
+    #endif
+
     /// 予算入力欄の単位。円を選んでいてもレート未取得なら USD 入力のまま。
     private var unitSymbol: String {
-        settings.displayCurrency == .jpy
-            && UserDefaults.standard.double(forKey: Money.rateKey) > 0 ? "¥" : "$"
+        Money.unitSymbol(
+            currency: settings.displayCurrency,
+            rate: Money.currentRate()
+        )
     }
 
     /// 予算上限（内部保存は USD）を、選択中の通貨で入出力するバインディング。
@@ -230,19 +261,18 @@ struct SettingsView: View {
         Binding(
             get: {
                 let usd = settings[keyPath: keyPath]
-                let rate = UserDefaults.standard.double(forKey: Money.rateKey)
-                if settings.displayCurrency == .jpy, rate > 0 {
-                    return (usd * rate).rounded()
-                }
-                return usd
+                return Money.displayAmount(
+                    forUSD: usd,
+                    currency: settings.displayCurrency,
+                    rate: Money.currentRate()
+                )
             },
             set: { value in
-                let rate = UserDefaults.standard.double(forKey: Money.rateKey)
-                if settings.displayCurrency == .jpy, rate > 0 {
-                    settings[keyPath: keyPath] = value / rate
-                } else {
-                    settings[keyPath: keyPath] = value
-                }
+                settings[keyPath: keyPath] = Money.usdAmount(
+                    fromDisplayAmount: value,
+                    currency: settings.displayCurrency,
+                    rate: Money.currentRate()
+                )
             })
     }
 

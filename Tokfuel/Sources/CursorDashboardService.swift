@@ -219,10 +219,9 @@ enum CursorDashboardService {
 
     /// ローカル日付の [from, to] → API 用 epoch ミリ秒（その日の始端〜終端）。
     static func epochMillisRange(from: String, to: String) -> (start: Int64, end: Int64)? {
-        guard let startDay = parseDay(from), let endDay = parseDay(to) else { return nil }
         let calendar = Calendar.current
-        guard let start = calendar.date(from: startDay),
-              let endDayStart = calendar.date(from: endDay),
+        guard let start = LocalDay.date(from: from, calendar: calendar),
+              let endDayStart = LocalDay.date(from: to, calendar: calendar),
               let end = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: endDayStart)
         else { return nil }
         return (
@@ -233,7 +232,7 @@ enum CursorDashboardService {
 
     static func dayString(fromTimestampMillis millis: Double) -> String? {
         guard millis > 0 else { return nil }
-        return UsageStore.dateString(Date(timeIntervalSince1970: millis / 1000))
+        return LocalDay.string(from: Date(timeIntervalSince1970: millis / 1000))
     }
 
     // MARK: - Cache
@@ -262,14 +261,6 @@ enum CursorDashboardService {
     }
 
     // MARK: - Helpers
-
-    private static func parseDay(_ ymd: String) -> DateComponents? {
-        let parts = ymd.split(separator: "-")
-        guard parts.count == 3,
-              let y = Int(parts[0]), let m = Int(parts[1]), let d = Int(parts[2])
-        else { return nil }
-        return DateComponents(calendar: Calendar.current, year: y, month: m, day: d)
-    }
 
     private static func intValue(_ value: Any?) -> Int? {
         switch value {

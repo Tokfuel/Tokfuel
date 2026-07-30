@@ -40,9 +40,14 @@ enum BudgetPeriod: String, CaseIterable, Identifiable {
 @MainActor
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
-    @Published var launchAtLogin: Bool { didSet { applyLaunchAtLogin(); logChange(Keys.launchAtLogin) } }
+    @Published var launchAtLogin: Bool {
+        didSet {
+            persist(launchAtLogin, forKey: Keys.launchAtLogin)
+            applyLaunchAtLogin()
+        }
+    }
     /// メニューバーで何を見るか。どう見せるかは menuBarRepresentation 側。
     @Published var menuBarMetric: MenuBarMetric {
         didSet { persist(menuBarMetric.rawValue, forKey: Keys.menuBarMetric) }
@@ -77,7 +82,7 @@ final class AppSettings: ObservableObject {
         didSet { persist(displayCurrency.rawValue, forKey: Money.currencyKey) }
     }
 
-    /// Cost タブとメニューバーで Claude / Cursor のどちらを金額に含めるか。
+    /// ポップオーバーとメニューバーで Claude / Cursor のどちらを金額に含めるか。
     @Published var costSourceMode: CostSourceMode {
         didSet { persist(costSourceMode.rawValue, forKey: Keys.costSourceMode) }
     }
@@ -86,7 +91,7 @@ final class AppSettings: ObservableObject {
         didSet { persist(costModelBreakdownMode.rawValue, forKey: Keys.costModelBreakdownMode) }
     }
 
-    /// tool 集計元（transcripts）と skill（global/plugin）の読み取り元となる Claude ディレクトリ。
+    /// retokのコスト集計とプロンプト数の読み取り元となるClaudeディレクトリ。
     @Published var claudeDirectory: String {
         didSet { persist(claudeDirectory, forKey: Keys.claudeDirectory) }
     }
@@ -158,7 +163,8 @@ final class AppSettings: ObservableObject {
             && menuBarMetric.supportsRatio
     }
 
-    private init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         // 初回起動時は「入れるだけで常駐」を実現するため、ログイン起動を既定 ON にする。
         let firstLaunch = !defaults.bool(forKey: Keys.hasLaunchedBefore)
         if firstLaunch {

@@ -1,168 +1,16 @@
 import Foundation
 import Combine
 
-struct RepoUsage: Identifiable, Codable {
-    var id: String { repo }
-    let repo: String
-    let org: String
-    let genre: String
-    /// 集計日 (YYYY-MM-DD)。複数日をまとめた集計では "" になる。
-    let date: String
-    let tools: [String: Int]
-    let session: SessionMetrics
-    let edits: [String: EditMetrics]
-
-    var totalToolCalls: Int { tools.values.reduce(0, +) }
-    var skillCalls: Int { tools.filter { $0.key.hasPrefix("Skill:") }.values.reduce(0, +) }
-    var mcpCalls: Int { tools.filter { $0.key.hasPrefix("MCP:") }.values.reduce(0, +) }
-    var subagentCalls: Int { tools.filter { $0.key.hasPrefix("Subagent:") }.values.reduce(0, +) }
-    var promptCount: Int { session.prompt }
-    var sessionCount: Int { session.instructionLoad }
-
-    var topSkills: [(name: String, count: Int)] {
-        tools.filter { $0.key.hasPrefix("Skill:") }
-            .map { (String($0.key.dropFirst(6)), $0.value) }
-            .sorted { $0.count > $1.count }
-    }
-
-    var topMCP: [(name: String, count: Int)] {
-        tools.filter { $0.key.hasPrefix("MCP:") }
-            .map { (shortMCPName(String($0.key.dropFirst(4))), $0.value) }
-            .sorted { $0.count > $1.count }
-    }
-
-    private func shortMCPName(_ raw: String) -> String {
-        let parts = raw.split(separator: "_", maxSplits: 4, omittingEmptySubsequences: false)
-            .filter { !$0.isEmpty }
-        guard parts.count >= 3 else { return raw }
-        return "\(parts[1])/\(parts[2])"
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case repo = "_repo"
-        case org = "_org"
-        case genre = "_genre"
-        case date = "_date"
-        case tools, session, edits
-    }
-
-    init(repo: String, org: String, genre: String, date: String,
-         tools: [String: Int], session: SessionMetrics, edits: [String: EditMetrics]) {
-        self.repo = repo
-        self.org = org
-        self.genre = genre
-        self.date = date
-        self.tools = tools
-        self.session = session
-        self.edits = edits
-    }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        repo = try c.decodeIfPresent(String.self, forKey: .repo) ?? "unknown"
-        org = try c.decodeIfPresent(String.self, forKey: .org) ?? "unknown"
-        genre = try c.decodeIfPresent(String.self, forKey: .genre) ?? "other"
-        date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
-        tools = try c.decodeIfPresent([String: Int].self, forKey: .tools) ?? [:]
-        session = try c.decodeIfPresent(SessionMetrics.self, forKey: .session) ?? SessionMetrics()
-        edits = try c.decodeIfPresent([String: EditMetrics].self, forKey: .edits) ?? [:]
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(repo, forKey: .repo)
-        try c.encode(org, forKey: .org)
-        try c.encode(genre, forKey: .genre)
-        try c.encode(date, forKey: .date)
-        try c.encode(tools, forKey: .tools)
-        try c.encode(session, forKey: .session)
-        try c.encode(edits, forKey: .edits)
-    }
-
-    /// 同一リポジトリの別日レコードを足し合わせて 1 つにまとめる。
-    func merged(with other: RepoUsage) -> RepoUsage {
-        var t = tools
-        for (k, v) in other.tools { t[k, default: 0] += v }
-        var e = edits
-        for (k, v) in other.edits {
-            var m = e[k] ?? EditMetrics()
-            m.added += v.added
-            m.deleted += v.deleted
-            e[k] = m
-        }
-        var s = session
-        s.prompt += other.session.prompt
-        s.instructionLoad += other.session.instructionLoad
-        return RepoUsage(repo: repo, org: org, genre: genre, date: "",
-                         tools: t, session: s, edits: e)
-    }
-}
-
-struct SessionMetrics: Codable {
-    var prompt: Int = 0
-    var instructionLoad: Int = 0
-
-    enum CodingKeys: String, CodingKey {
-        case prompt = "Prompt"
-        case instructionLoad = "InstructionLoad"
-    }
-
-    init() {}
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        prompt = try c.decodeIfPresent(Int.self, forKey: .prompt) ?? 0
-        instructionLoad = try c.decodeIfPresent(Int.self, forKey: .instructionLoad) ?? 0
-    }
-}
-
-struct EditMetrics: Codable {
-    var added: Int = 0
-    var deleted: Int = 0
-}
-
-struct GenreSummary: Identifiable {
-    let genre: String
-    var id: String { genre }
-    var totalTools: Int = 0
-    var skills: Int = 0
-    var mcp: Int = 0
-    var subagents: Int = 0
-    var prompts: Int = 0
-    var sessions: Int = 0
-    var repos: [RepoUsage] = []
-}
-
-/// 1 日分の全リポジトリ合計。日次グラフ・利用割合の元データ。
-struct DailyUsage: Identifiable {
+/// 1 日分のClaude Code利用回数。コストはretokのレポートを正とする。
+struct DailyUsage: Identifiable, Codable, Sendable, Equatable {
     let date: String          // YYYY-MM-DD
     var id: String { date }
-    var skills: Int = 0
-    var mcp: Int = 0
-    var subagents: Int = 0
     var prompts: Int = 0
     var sessions: Int = 0
-    var editsAdded: Int = 0
-    var editsDeleted: Int = 0
-
-    var totalTools: Int { skills + mcp + subagents }
-
-    /// 棒グラフ用の内訳（種別ごとの件数）。
-    var breakdown: [(kind: String, count: Int)] {
-        [("Skills", skills), ("MCP", mcp), ("Agents", subagents)]
-    }
-
-    /// 軸ラベル用の短い日付 (MM/DD)。
-    var shortDate: String {
-        let parts = date.split(separator: "-")
-        return parts.count == 3 ? "\(parts[1])/\(parts[2])" : date
-    }
 }
 
 @MainActor
 final class UsageStore: ObservableObject {
-    @Published var repos: [RepoUsage] = []
-    @Published var genres: [GenreSummary] = []
     @Published var daily: [DailyUsage] = []
     @Published var lastUpdated: Date?
     @Published var isLoading = false
@@ -189,39 +37,26 @@ final class UsageStore: ObservableObject {
     private var reportGeneration = 0
     /// 32 日集計（予算・日次平均）側の同じ用途のカウンタ。
     private var budgetGeneration = 0
-    /// Cost タブの集計期間（日数。1 = 今日のみ）。最後に選んだ値を記憶する。
+    private var reportTask: Task<Void, Never>?
+    private var budgetTask: Task<Void, Never>?
+    private var transcriptTask: Task<Void, Never>?
+    /// ポップオーバーの集計期間（日数。1 = 今日のみ）。最後に選んだ値を記憶する。
     @Published var reportDays: Int {
         didSet {
             if oldValue != reportDays {
-                UserDefaults.standard.set(reportDays, forKey: Keys.reportDays)
+                defaults.set(reportDays, forKey: Keys.reportDays)
                 reloadReport()
             }
         }
     }
-    /// Tools タブの集計期間。最後に選んだ値を記憶する。
-    @Published var toolsPeriod: PeriodFilter {
-        didSet {
-            if oldValue != toolsPeriod {
-                UserDefaults.standard.set(toolsPeriod.rawValue, forKey: Keys.toolsPeriod)
-                reaggregate()
-            }
-        }
-    }
-
-    /// 走査済みの生レコード（リポジトリ×日）。期間切り替え時の再集計元。
-    private var allRecords: [RepoUsage] = []
-
-    /// Codex CLI の日別使用量（CU-0009）。ログが無いマシンでは空のまま。
-    @Published var codexDaily: [ProviderDayUsage] = []
-
-    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい
-    /// （`ProviderUsage.swift` の Codex 読み取りは UI 連結が無い死んだコードのままだが、
-    /// 同じ形で CostDriver に載せ替えるのが次の候補）。
-    private let costDrivers: [CostDriver] = [CursorCostDriver()]
+    private let settings: AppSettings
+    private let defaults: UserDefaults
+    /// Claude（retok）に合算する二次コスト源。テストではスタブを注入できる。
+    private let costDrivers: [any CostDriver]
 
     /// driver.id → (日付 → コスト)。ヒーロー・予算・グラフはここから合算する。
     /// reloadReport() と同じ期間で更新される（今日は常にこの範囲に含まれる）。
-    /// private にしていないのは codexDaily と同じ理由 — テストから直接注入できるようにするため。
+    /// private にしていないのは、表示モデルのテストから直接注入できるようにするため。
     /// 読み書きするメソッド・計算プロパティは下の `extension UsageStore` にまとめている
     /// （extension は保持型プロパティを持てないので、この 2 つだけ本体に残る）。
     @Published var driverDailyByID: [String: [String: Double]] = [:]
@@ -231,15 +66,18 @@ final class UsageStore: ObservableObject {
 
     private enum Keys {
         static let reportDays = "reportDays"
-        static let toolsPeriod = "toolsPeriod"
     }
 
-    init() {
-        let defaults = UserDefaults.standard
+    init(
+        settings: AppSettings = .shared,
+        defaults: UserDefaults = .standard,
+        costDrivers: [any CostDriver] = [CursorCostDriver()]
+    ) {
+        self.settings = settings
+        self.defaults = defaults
+        self.costDrivers = costDrivers
         let stored = defaults.integer(forKey: Keys.reportDays)
         reportDays = [1, 7, 30].contains(stored) ? stored : 30
-        toolsPeriod = PeriodFilter(rawValue: defaults.string(forKey: Keys.toolsPeriod) ?? "")
-            ?? .days30
     }
 
     // 予算期間内の消費額（ソース別。表示は costSourceMode で合成する）
@@ -257,7 +95,7 @@ final class UsageStore: ObservableObject {
             return Self.displayedSpend(
                 claude: reportedClaudeBudgetSpend,
                 cursor: reportedCursorBudgetSpend,
-                mode: AppSettings.shared.costSourceMode)
+                mode: settings.costSourceMode)
         }
         set {
             // スクリーンショット用フィクスチャと予算オフ時のクリア。合算を Claude 側に載せ、
@@ -324,7 +162,6 @@ final class UsageStore: ObservableObject {
     /// メニューバー表示の組み立てに渡す入力。ステータス項目と設定のライブプレビューで共用する。
     /// 別の表現で試算したいときは、返り値の `representation` を差し替える。
     func menuBarInput() -> MenuBarInput {
-        let settings = AppSettings.shared
         return MenuBarInput(
             metric: settings.menuBarMetric,
             representation: settings.menuBarRepresentation,
@@ -352,7 +189,6 @@ final class UsageStore: ObservableObject {
 
     /// 月間予算のレベル（予算オフなら nil）。
     var budgetLevel: BudgetLevel? {
-        let settings = AppSettings.shared
         guard settings.budgetLimit > 0 else { return nil }
         return BudgetMonitor.level(spend: budgetSpend, limit: settings.budgetLimit,
                                    warnPercent: settings.budgetWarnPercent)
@@ -360,7 +196,6 @@ final class UsageStore: ObservableObject {
 
     /// 日次予算のレベル（予算オフなら nil）。今日のコストと比較する。
     var dailyBudgetLevel: BudgetLevel? {
-        let settings = AppSettings.shared
         guard settings.dailyBudgetLimit > 0 else { return nil }
         return BudgetMonitor.level(spend: todayCost, limit: settings.dailyBudgetLimit,
                                    warnPercent: settings.budgetWarnPercent)
@@ -376,7 +211,7 @@ final class UsageStore: ObservableObject {
         }
     }
 
-    /// トランスクリプト走査（バックグラウンド）→ 集計反映。retok も並行して実行する。
+    /// トランスクリプト走査（バックグラウンド）→ 今日の回数へ反映。retok も並行して実行する。
     func reload() {
         guard !isLoading else { return }
         isLoading = true
@@ -386,85 +221,70 @@ final class UsageStore: ObservableObject {
         // 間に合わなくてもよい — 取れれば次回以降の CursorPricing.cost() から新しい表を使う。
         Task { await CursorPricingService.refreshIfNeeded() }
         // 走査元はバックグラウンドスレッドから @MainActor の設定を触らないよう、ここで解決して渡す。
-        let projectsDir = AppSettings.shared.claudeDirectoryURL.appendingPathComponent("projects")
-        Task.detached(priority: .userInitiated) {
-            let records = TranscriptScanner.scan(projectsDir: projectsDir)
-            let codex = CodexUsageReader.scan()
+        let projectsDir = settings.claudeDirectoryURL.appendingPathComponent("projects")
+        transcriptTask?.cancel()
+        transcriptTask = Task.detached(priority: .userInitiated) {
+            let daily = TranscriptScanner.scan(projectsDir: projectsDir)
+            guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
-                self?.apply(records: records)
-                self?.codexDaily = codex
+                self?.daily = daily
+                self?.lastUpdated = Date()
                 self?.isLoading = false
             }
         }
     }
 
-    // MARK: - プロバイダ比較（CU-0009）
-
-    /// Tools タブの期間で絞った Codex の合計。ログが無ければ nil（セクション非表示）。
-    var codexSummary: (sessions: Int, input: Int, output: Int, lastDate: String)? {
-        guard let last = codexDaily.last else { return nil }
-        let window = codexDaily.filter { toolsPeriod.includes(date: $0.date) }
-        return (sessions: window.reduce(0) { $0 + $1.sessions },
-                input: window.reduce(0) { $0 + $1.inputTokens },
-                output: window.reduce(0) { $0 + $1.outputTokens },
-                lastDate: last.date)
-    }
-
     /// retok レポートを再取得する（設定変更や言語変更からも呼べるよう公開）。
     func reloadReport() {
         let days = reportDays
-        let lang = AppSettings.shared.language.resolved
+        let lang = settings.language.resolved
         // Claude ディレクトリが既定と異なる場合のみ retok に projects を明示指定する。
-        let claudeDir = AppSettings.shared.claudeDirectoryURL
+        let claudeDir = settings.claudeDirectoryURL
         let isDefault = claudeDir.standardizedFileURL.path
             == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
         let projectsOverride = isDefault ? nil : claudeDir.appendingPathComponent("projects")
         reportGeneration += 1
         let generation = reportGeneration
+        reportTask?.cancel()
         isReportLoading = true
         let today = Date()
         let from = Self.dateString(Calendar.current.date(byAdding: .day, value: -(days - 1), to: today) ?? today)
         let to = Self.dateString(today)
-        Task {
+        reportTask = Task {
             // retok（外部プロセス）と二次ソース（SQLite）は互いに独立な I/O なので並行して走らせる。
             async let retokTask = RetokService.run(days: days, lang: lang, projectsDir: projectsOverride)
-            async let driverTask = self.fetchDriverDaily(from: from, to: to)
+            async let driverTask = self.fetchDriverSnapshots(from: from, to: to)
 
             do {
                 let r = try await retokTask
-                guard generation == self.reportGeneration else { return }
+                guard !Task.isCancelled, generation == self.reportGeneration else { return }
                 self.report = r
                 self.retokError = nil
+            } catch is CancellationError {
+                return
             } catch {
-                guard generation == self.reportGeneration else { return }
+                guard !Task.isCancelled, generation == self.reportGeneration else { return }
                 self.retokError = error.localizedDescription
             }
             self.isReportLoading = false
 
             // retok の成否に関わらず、二次ソースは独立に反映する（失敗しても 0 になるだけ）。
-            let byID = await driverTask
-            guard generation == self.reportGeneration else { return }
-            self.driverDailyByID = byID
-            // ダッシュボード取得済みならキャッシュヒット。モデル別内訳を同じ期間で載せる。
-            let cursorPath = CursorCostDriver.defaultStateDBURL.path
-            if let snap = await CursorDashboardService.fetchSnapshot(
-                from: from, to: to, dbPath: cursorPath
-            ) {
-                self.driverModelByID = ["cursor": snap.byModel]
-            } else if byID["cursor"] == nil {
-                self.driverModelByID = [:]
-            }
+            let snapshots = await driverTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            // 日別とモデル別を同じ取得結果から一括更新する。フォールバック後に古いモデル別だけ
+            // 残る状態を作らないため、空の内訳も含めて毎回置き換える。
+            self.applyDriverSnapshots(snapshots)
         }
     }
 
     /// 予算期間内の消費額を再計算する。表示用レポート（7d/30d 切替）とは独立に、
     /// 暦月の最大長（31 日）を必ずカバーする 32 日分で retok を実行する。
     func reloadBudget() {
-        let settings = AppSettings.shared
         // 集計が不要になった場合も含めて先に世代を進める。そうしないと、実行中の集計が
         // 「0 にした」あとから古い値を書き戻してしまう。
         budgetGeneration += 1
         let generation = budgetGeneration
+        budgetTask?.cancel()
         // 月間予算オフでも、メニューバーが今月のコストや日次平均を求めるなら集計は必要。
         guard settings.budgetLimit > 0
                 || settings.menuBarMetric.showsMonthlyCost
@@ -481,22 +301,22 @@ final class UsageStore: ObservableObject {
         let projectsOverride = isDefault ? nil : claudeDir.appendingPathComponent("projects")
         let start = BudgetMonitor.periodStart(for: period)
         let today = Self.dateString(Date())
-        Task {
+        budgetTask = Task {
             async let retokTask = RetokService.run(days: 32, lang: "en", projectsDir: projectsOverride)
-            async let driverTask = self.fetchDriverDaily(from: start, to: today)
+            async let driverTask = self.fetchDriverSnapshots(from: start, to: today)
 
             // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない — reloadReport() と
             // 同じく、retok の成否と二次ソースの反映は独立にする（CLAUDE.md ルール 4）。
             let r = try? await retokTask
             // 設定を連続で変えると 32 日集計が並走しうる。古い結果で新しい結果を上書きしない。
-            guard generation == self.budgetGeneration else { return }
+            guard !Task.isCancelled, generation == self.budgetGeneration else { return }
 
             let claudeSpend = r?.daily
                 .filter { $0.key >= start }
                 .values.reduce(0) { $0 + $1.cost } ?? 0
-            let driverByID = await driverTask
-            let driverSpend = driverByID.values
-                .reduce(0) { $0 + $1.values.reduce(0, +) }
+            let driverSnapshots = await driverTask
+            let driverSpend = driverSnapshots.values
+                .reduce(0) { $0 + $1.daily.values.reduce(0, +) }
             if self.reportedClaudeBudgetSpend != claudeSpend {
                 self.reportedClaudeBudgetSpend = claudeSpend
             }
@@ -504,9 +324,9 @@ final class UsageStore: ObservableObject {
                 self.reportedCursorBudgetSpend = driverSpend
             }
             // reloadReport より予算窓の方が広いことがあるので、日別も予算側の結果で補完する。
-            for (id, daily) in driverByID {
+            for (id, snapshot) in driverSnapshots {
                 var merged = self.driverDailyByID[id] ?? [:]
-                for (date, cost) in daily { merged[date] = cost }
+                for (date, cost) in snapshot.daily { merged[date] = cost }
                 self.driverDailyByID[id] = merged
             }
 
@@ -524,86 +344,11 @@ final class UsageStore: ObservableObject {
         }
     }
 
-    private func apply(records: [RepoUsage]) {
-        allRecords = records
-        reaggregate()
-
-        // --- 日付単位に集約（日次グラフ用・全期間。グラフの窓は trendDays が持つ） ---
-        var dayMap: [String: DailyUsage] = [:]
-        for r in records where !r.date.isEmpty {
-            var d = dayMap[r.date] ?? DailyUsage(date: r.date)
-            d.skills += r.skillCalls
-            d.mcp += r.mcpCalls
-            d.subagents += r.subagentCalls
-            d.prompts += r.promptCount
-            d.sessions += r.sessionCount
-            for v in r.edits.values {
-                d.editsAdded += v.added
-                d.editsDeleted += v.deleted
-            }
-            dayMap[r.date] = d
-        }
-        daily = dayMap.values.sorted { $0.date < $1.date }
-
-        lastUpdated = Date()
-    }
-
-    /// Tools タブの期間（toolsPeriod）でレコードを絞り、リポジトリ・ジャンル集計を作り直す。
-    /// 日次グラフ（daily）と Skill 棚卸しは意図的に全期間のまま。
-    private func reaggregate() {
-        let filtered = allRecords.filter { toolsPeriod.includes(date: $0.date) }
-
-        // --- リポジトリ単位に集約（日付をまたいでマージ） ---
-        var repoMap: [String: RepoUsage] = [:]
-        for r in filtered {
-            let key = "\(r.org)/\(r.repo)"
-            repoMap[key] = repoMap[key].map { $0.merged(with: r) } ?? r
-        }
-        repos = repoMap.values
-            .map { RepoUsage(repo: $0.repo, org: $0.org, genre: $0.genre, date: "",
-                             tools: $0.tools, session: $0.session, edits: $0.edits) }
-            .sorted { $0.totalToolCalls > $1.totalToolCalls }
-
-        // --- ジャンル単位に集約 ---
-        var genreMap: [String: GenreSummary] = [:]
-        for repo in repos {
-            var g = genreMap[repo.genre] ?? GenreSummary(genre: repo.genre)
-            g.totalTools += repo.totalToolCalls
-            g.skills += repo.skillCalls
-            g.mcp += repo.mcpCalls
-            g.subagents += repo.subagentCalls
-            g.prompts += repo.promptCount
-            g.sessions += repo.sessionCount
-            g.repos.append(repo)
-            genreMap[repo.genre] = g
-        }
-        genres = genreMap.values.sorted { $0.totalTools > $1.totalTools }
-    }
-
-    var totalSkills: Int { repos.reduce(0) { $0 + $1.skillCalls } }
-    var totalMCP: Int { repos.reduce(0) { $0 + $1.mcpCalls } }
-    var totalSubagents: Int { repos.reduce(0) { $0 + $1.subagentCalls } }
-    var totalPrompts: Int { repos.reduce(0) { $0 + $1.promptCount } }
-    var totalSessions: Int { repos.reduce(0) { $0 + $1.sessionCount } }
-
-    // MARK: - 今日 / 昨日
-
-    /// 日付キー用のフォーマッタ。状態を持たないので使い回す
-    /// （メニューバーの再描画ごとに数回通るため、毎回作ると無駄が積む）。
-    /// DateFormatter は Sendable なので、dateString() を nonisolated にしても問題なく触れる。
-    private nonisolated static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
+    // MARK: - 今日
 
     /// ローカルタイムの YYYY-MM-DD 文字列。集計キーの書式はここが基準。
-    /// actor 状態に触れない純粋関数なので nonisolated — CursorUsageReader のようにバック
-    /// グラウンドから同期的に呼びたい場所からも await なしで使える（PopoverView.money と同じ扱い）。
     nonisolated static func dateString(_ date: Date) -> String {
-        dateFormatter.string(from: date)
+        LocalDay.string(from: date)
     }
 
     /// 今日の集計（無ければ空の DailyUsage）。
@@ -631,7 +376,7 @@ final class UsageStore: ObservableObject {
         return Self.displayedSpend(
             claude: claudeTodayCost,
             cursor: cursorTodayCost,
-            mode: AppSettings.shared.costSourceMode)
+            mode: settings.costSourceMode)
     }
 
     /// ソース表示モードに従って 2 源を合成する。
@@ -644,32 +389,6 @@ final class UsageStore: ObservableObject {
         return total
     }
 
-    /// 昨日の集計（無ければ nil）。前日比の算出に使う。
-    var yesterday: DailyUsage? {
-        guard let y = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else { return nil }
-        let key = Self.dateString(y)
-        return daily.first { $0.date == key }
-    }
-
-    /// 直近 `days` 日分の日次データ（古い順）。グラフ用。
-    func recentDaily(_ days: Int) -> [DailyUsage] {
-        Array(daily.suffix(days))
-    }
-
-    /// 全リポジトリ横断で集計した、よく使う Skill / MCP の降順ランキング。
-    var topSkills: [(name: String, count: Int)] { aggregatedTools(prefix: "Skill:", short: false) }
-    var topMCP: [(name: String, count: Int)] { aggregatedTools(prefix: "MCP:", short: true) }
-
-    private func aggregatedTools(prefix: String, short: Bool) -> [(name: String, count: Int)] {
-        var counts: [String: Int] = [:]
-        for repo in repos {
-            let list = short ? repo.topMCP : repo.topSkills
-            for item in list { counts[item.name, default: 0] += item.count }
-        }
-        return counts.map { (name: $0.key, count: $0.value) }
-            .sorted { $0.count > $1.count }
-    }
-
 }
 
 // MARK: - CostDriver 統合（Cursor 等、Claude/retok に合算する二次ソース）
@@ -679,11 +398,12 @@ final class UsageStore: ObservableObject {
 // costDrivers 配列に 1 行足すだけで、この extension 側は変更不要。
 
 extension UsageStore {
-    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい
-    /// （`ProviderUsage.swift` の Codex 読み取りは UI 連結が無い死んだコードのままだが、
-    /// 同じ形で CostDriver に載せ替えるのが次の候補）。全インスタンス共通なので static —
-    /// extension はインスタンス保持型プロパティを持てないが、static は持てる。
-    private static let costDrivers: [CostDriver] = [CursorCostDriver()]
+    /// 日別とモデル別を同じ世代の取得結果で置き換える。
+    /// internalなのは、フォールバック時に古いモデル別を残さないことをテストするため。
+    func applyDriverSnapshots(_ snapshots: [String: CostSnapshot]) {
+        driverDailyByID = snapshots.mapValues(\.daily)
+        driverModelByID = snapshots.mapValues(\.byModel)
+    }
 
     private func driverCost(id: String, on date: String) -> Double {
         driverDailyByID[id]?[date] ?? 0
@@ -702,7 +422,7 @@ extension UsageStore {
     /// ソースは出さない。
     var driverBreakdown: [(name: String, cost: Double)] {
         let today = Self.dateString(Date())
-        return Self.costDrivers.compactMap { driver in
+        return costDrivers.compactMap { driver in
             let cost = driverCost(id: driver.id, on: today)
             return cost > 0 ? (driver.displayName, cost) : nil
         }
@@ -711,10 +431,10 @@ extension UsageStore {
     /// costDrivers のうち利用可能なものだけを問い合わせ、id → (日付 → コスト) にまとめる。
     /// reloadReport()/reloadBudget() が別々の期間で呼ぶ共通処理。private でも同一ファイル内の
     /// 本体（reloadReport 等）から呼べる（同一ファイル内の extension は private を共有する）。
-    private func fetchDriverDaily(from: String, to: String) async -> [String: [String: Double]] {
-        var byID: [String: [String: Double]] = [:]
-        for driver in Self.costDrivers where driver.isAvailable {
-            byID[driver.id] = await driver.dailyCosts(from: from, to: to)
+    private func fetchDriverSnapshots(from: String, to: String) async -> [String: CostSnapshot] {
+        var byID: [String: CostSnapshot] = [:]
+        for driver in costDrivers where driver.isAvailable {
+            byID[driver.id] = await driver.snapshot(from: from, to: to)
         }
         return byID
     }
@@ -737,7 +457,7 @@ extension UsageStore {
     /// コストが 0 の行は積まない（積み上げバーに幅 0 の区切りが入るのを避ける）。
     /// `costSourceMode` で片方だけ選んでいるときはその側の系列だけ出す。
     func chartRows(for report: RetokReport) -> [ChartRow] {
-        let mode = AppSettings.shared.costSourceMode
+        let mode = settings.costSourceMode
         var claudeByDate: [String: Double] = [:]
         for day in report.dailySorted { claudeByDate[day.date] = day.cost }
         let secondary = driverDaily   // 1 回だけ合算して使い回す
@@ -779,13 +499,13 @@ extension UsageStore {
         let cursor = driverDaily.values.reduce(0, +)
         return Self.displayedSpend(
             claude: report.totals.cost, cursor: cursor,
-            mode: AppSettings.shared.costSourceMode)
+            mode: settings.costSourceMode)
     }
 
     /// 「モデル別」セクション用の行。ソースフィルタと内訳モードに従う。
     func modelCostRows(for report: RetokReport) -> [ModelCostRow] {
-        let mode = AppSettings.shared.costSourceMode
-        let breakdown = AppSettings.shared.costModelBreakdownMode
+        let mode = settings.costSourceMode
+        let breakdown = settings.costModelBreakdownMode
         let claude: [(String, Double)] = mode.includesClaude
             ? report.modelsSorted.map { ($0.model, $0.usage.cost) }.filter { $0.1 > 0 }
             : []
