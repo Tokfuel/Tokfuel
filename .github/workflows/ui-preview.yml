@@ -1,7 +1,8 @@
 name: UI Preview
 
-# ui-preview 📸 ラベルを付けると、メニューバー・設定（既定 / 詳細を開いた状態 / デバッグを
-# 開いた状態）・About の全画面を実物の UI からレンダリングし、PR コメントに絵として貼る
+# ui-preview 📸 ラベルを付けると、メニューバー（既定 / フッターにアップデートボタンが
+# 出た状態）・設定（既定 / 詳細を開いた状態 / デバッグを開いた状態）・About の全画面を
+# 実物の UI からレンダリングし、PR コメントに絵として貼る
 # （TF-0034）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
 # `allScreens()`（README 用スクリーンショットを撮る TF-0015 の `renderPNG` を土台にした拡張）に
 # 任せ、ここでは撮った PNG 群を publish するだけ。
@@ -56,6 +57,7 @@ jobs:
           screen_title() {
             case "$1" in
               popover) echo "メニューバー（ポップオーバー）" ;;
+              popover-update) echo "メニューバー - フッターにアップデートボタンが出た状態" ;;
               settings) echo "設定" ;;
               settings-advanced) echo "設定 - 「詳細」を開いた状態" ;;
               settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
@@ -63,7 +65,7 @@ jobs:
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover settings settings-advanced settings-debug about)
+          ORDER=(popover popover-update settings settings-advanced settings-debug about)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

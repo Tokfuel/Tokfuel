@@ -17,6 +17,7 @@ Claude Code が `~/.claude/projects/` にすでに書き出しているトラン
 
 ## グラウンドルール（違反禁止）
 
+<<<<<<< HEAD
 1. **ローカルオンリー**：収集したデータを Mac の外に出さない。テレメトリも送信もしない。
    例外はオーナー承認済みの次の 3 つだけ。
    1. ユーザーが JPY 表示を有効にしたときは、`ExchangeRateService` が Frankfurter API から
@@ -42,6 +43,36 @@ Claude Code が `~/.claude/projects/` にすでに書き出しているトラン
    （Cost タブはエラーを表示して緩やかに縮退する）。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。依存ゼロが
    「誰でもすぐビルドできる」を支えている。
+=======
+1. **Local-only.** Collected data never leaves the Mac — no telemetry, no network sends.
+   Four exceptions, all owner-approved: (1) when the user opts into JPY display,
+   `ExchangeRateService` fetches a daily USD→JPY rate from the Frankfurter API (the request
+   carries no usage data); (2) when Cursor is detected on the Mac, `CursorPricingService`
+   fetches Cursor's own published price table (`cursor.com/docs/models-and-pricing`) once a
+   day to refine the Cursor cost estimate — no usage data is sent, only a page fetch, and
+   `CursorPricing` holds no hardcoded prices of its own — an unpriced model (fetch not yet
+   done, or not found in the table) contributes $0 rather than a guessed rate;
+   (3) when Cursor is installed and the user is signed in, `CursorDashboardService` calls
+   Cursor's dashboard usage API (`api2.cursor.sh`) with the session token already stored in
+   Cursor's local `state.vscdb` — the request carries only that auth header and a date range
+   (no prompts or local transcripts), and on any failure the driver falls back to the local
+   SQLite token snapshots (often empty on Cursor 3.x);
+   (4) `UpdateChecker` polls the public GitHub Releases API
+   (`api.github.com/repos/Tokfuel/Tokfuel/releases/latest`) once at launch and every 24 hours to
+   detect a newer version, and downloads the release asset from GitHub only when the user clicks
+   the **Update** button in the popover's footer — the requests carry no usage data, transcripts,
+   or identifiers.
+2. **Zero setup stays zero.** The app reads Claude Code transcripts directly. Never require
+   hooks, external installs, or Claude Code configuration for a feature to work.
+3. **retok is vendored unmodified.** `Sources/Resources/retok.py` + `locales/` are
+   © Daiki Matsudate, MIT — never edit them in place (send an upstream PR instead), and keep
+   `LICENSE-retok` + the in-app attribution intact. Provenance and the update procedure are in
+   [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md).
+4. **python3 is an optional dependency.** Only the Cost tab needs it; everything else must keep
+   working when it is absent (the Cost tab shows an error and degrades gracefully).
+5. **No new package dependencies.** Swift 6 / SwiftUI / macOS 14+, standard SDK only —
+   staying dependency-free keeps the app trivial to build.
+>>>>>>> origin/app-update-promotion-b78422
 
 ## 検証ゲート
 
@@ -58,7 +89,20 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、すべての
 そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
 書かない。
 
+<<<<<<< HEAD
 ## ロードマップの回し方
+=======
+If the change adds or alters UI in `PopoverView`, `SettingsView`, or `AboutView`, also add or
+update a fixture screen in `ScreenshotRenderer.allScreens()` (and the `ORDER` / `screen_title`
+lists in [`ui-preview.yml`](.github/workflows/ui-preview.yml)) so the `ui-preview 📸` label
+actually renders the new state — a view only reachable through a live singleton (network
+response, real install path, etc.) needs an injectable fixture (see `UpdateChecker.preview`)
+the same way `AppSettings.shared` already gets fixture values from `prepareDefaults()`.
+Otherwise the new UI stays invisible to reviewers, as the popover's update button did until
+TF-0029's follow-up.
+
+## Roadmap workflow
+>>>>>>> origin/app-update-promotion-b78422
 
 機能は [Tokfuel/Tokfuel](https://github.com/Tokfuel/Tokfuel/issues) の GitHub Issue として
 管理する。新機能は **Proposal**、バグは **Bug report** のテンプレートを使う。ロードマップは
