@@ -187,6 +187,8 @@ final class UsageStore: ObservableObject {
     @Published var isReportLoading = false
     /// 連打時に古い結果が新しい結果を上書きしないようにする世代カウンタ。
     private var reportGeneration = 0
+    /// 32 日集計（予算・日次平均）側の同じ用途のカウンタ。
+    private var budgetGeneration = 0
     /// Cost タブの集計期間（日数。1 = 今日のみ）。最後に選んだ値を記憶する。
     @Published var reportDays: Int {
         didSet {
@@ -239,7 +241,77 @@ final class UsageStore: ObservableObject {
             return reportedBudgetSpend
             #endif
         }
-        set { reportedBudgetSpend = newValue }
+        // 同じ値の再代入で objectWillChange を撒かない（メニューバーの再描画と予算判定が走る）。
+        set { if reportedBudgetSpend != newValue { reportedBudgetSpend = newValue } }
+    }
+
+    // 過去 30 日の日次平均コスト（未算出・レポート未取得なら 0）
+    @Published private var reportedDailyAverage: Double = 0
+
+    /// メニューバーの割合表示で「いつもの 1 日」を表す分母。budgetSpend と同じ 32 日集計から出す。
+    var dailyAverage30: Double {
+        get {
+            #if DEBUG
+            if DebugSettings.shared.simulatesMissingMonth { return 0 }
+            return DebugSettings.shared.average ?? reportedDailyAverage
+            #else
+            return reportedDailyAverage
+            #endif
+        }
+        set { if reportedDailyAverage != newValue { reportedDailyAverage = newValue } }
+    }
+
+    // 予算期間内で実際にコストが出た日数（未算出なら 0）
+    @Published private var reportedActiveDays = 0
+
+    /// 予算期間内でコストが出た日数。`dailyAverage30`（稼働 1 日あたり）と掛けて
+    /// 「平均ペースなら今日までにいくら使っているか」を出すのに使う。
+    var activeDaysInPeriod: Int {
+        get {
+            #if DEBUG
+            if DebugSettings.shared.simulatesMissingMonth { return 0 }
+            #endif
+            return reportedActiveDays
+        }
+        set { if reportedActiveDays != newValue { reportedActiveDays = newValue } }
+    }
+
+    /// 日次コストの 1 日あたり平均。今日は途中なので除き、実績のある日だけで割る
+    /// （記録の無い日も数えると、使い始めた直後の平均が不当に小さくなる）。
+    static func dailyAverage(in daily: [String: RetokReport.DailyCost],
+                             since start: String, before today: String) -> Double {
+        let window = daily.filter { $0.key >= start && $0.key < today && $0.value.cost > 0 }
+        guard !window.isEmpty else { return 0 }
+        return window.values.reduce(0) { $0 + $1.cost } / Double(window.count)
+    }
+
+    /// 期間内でコストが出た日数。dailyAverage と同じ「実績のある日」の数え方にそろえる。
+    static func activeDays(in daily: [String: RetokReport.DailyCost], since start: String) -> Int {
+        daily.filter { $0.key >= start && $0.value.cost > 0 }.count
+    }
+
+    /// メニューバー表示の組み立てに渡す入力。ステータス項目と設定のライブプレビューで共用する。
+    /// 別の表現で試算したいときは、返り値の `representation` を差し替える。
+    func menuBarInput() -> MenuBarInput {
+        let settings = AppSettings.shared
+        return MenuBarInput(
+            metric: settings.menuBarMetric,
+            representation: settings.menuBarRepresentation,
+            basis: settings.menuBarPercentBasis,
+            shape: settings.menuBarGaugeShape,
+            showsRemaining: settings.menuBarShowsRemaining,
+            showsIcon: settings.menuBarShowsIcon,
+            prompts: today.prompts,
+            gauge: MenuBarReadout.gauge(
+                basis: settings.menuBarPercentBasis,
+                todaySpend: todayCost, monthSpend: budgetSpend,
+                dailyLimit: settings.dailyBudgetLimit, monthlyLimit: settings.budgetLimit,
+                dailyAverage: dailyAverage30, activeDays: activeDaysInPeriod),
+            dailyLimit: settings.dailyBudgetLimit,
+            monthlyLimit: settings.budgetLimit,
+            // ゲージは側ごとに塗り分ける。今日だけしきい値を越えたら今日のゲージだけが変わる。
+            todayLevel: dailyBudgetLevel,
+            monthLevel: budgetLevel)
     }
 
     /// 月間予算のレベル（予算オフなら nil）。
@@ -329,13 +401,20 @@ final class UsageStore: ObservableObject {
     /// 暦月の最大長（31 日）を必ずカバーする 32 日分で retok を実行する。
     func reloadBudget() {
         let settings = AppSettings.shared
-        // 月間予算オフでも、メニューバーが今月のコスト表示なら消費額は必要。
-        guard settings.budgetLimit > 0 || settings.menuBarDisplay.showsMonthlyCost else {
+        // 集計が不要になった場合も含めて先に世代を進める。そうしないと、実行中の集計が
+        // 「0 にした」あとから古い値を書き戻してしまう。
+        budgetGeneration += 1
+        let generation = budgetGeneration
+        // 月間予算オフでも、メニューバーが今月のコストや日次平均を求めるなら集計は必要。
+        guard settings.budgetLimit > 0
+                || settings.menuBarMetric.showsMonthlyCost
+                || settings.menuBarNeedsDailyAverage else {
             budgetSpend = 0
+            dailyAverage30 = 0
+            activeDaysInPeriod = 0
             return
         }
-        // 予算オフで表示だけ必要な場合は「今月（1 日から）」で数える。
-        let period = settings.budgetLimit > 0 ? settings.budgetPeriod : .calendarMonth
+        let period = settings.effectiveBudgetPeriod
         let claudeDir = settings.claudeDirectoryURL
         let isDefault = claudeDir.standardizedFileURL.path
             == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
@@ -343,10 +422,20 @@ final class UsageStore: ObservableObject {
         Task {
             guard let r = try? await RetokService.run(days: 32, lang: "en",
                                                       projectsDir: projectsOverride) else { return }
+            // 設定を連続で変えると 32 日集計が並走しうる。古い結果で新しい結果を上書きしない。
+            guard generation == self.budgetGeneration else { return }
             let start = BudgetMonitor.periodStart(for: period)
             self.budgetSpend = r.daily
                 .filter { $0.key >= start }
                 .values.reduce(0) { $0 + $1.cost }
+            self.activeDaysInPeriod = Self.activeDays(in: r.daily, since: start)
+            let today = Date()
+            // 平均は今日を含めないので、periodStart（今日を含む 30 日 = −29 日）とは 1 日ずれる。
+            // 昨日から遡って 30 日ぶんを窓にする。
+            let averageStart = Calendar.current.date(byAdding: .day, value: -30, to: today) ?? today
+            self.dailyAverage30 = Self.dailyAverage(in: r.daily,
+                                                    since: Self.dateString(averageStart),
+                                                    before: Self.dateString(today))
         }
     }
 
@@ -414,13 +503,19 @@ final class UsageStore: ObservableObject {
 
     // MARK: - 今日 / 昨日
 
-    /// ローカルタイムの YYYY-MM-DD 文字列。集計キーの書式はここが基準。
-    static func dateString(_ date: Date) -> String {
+    /// 日付キー用のフォーマッタ。状態を持たないので使い回す
+    /// （メニューバーの再描画ごとに数回通るため、毎回作ると無駄が積む）。
+    private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: date)
+        return f
+    }()
+
+    /// ローカルタイムの YYYY-MM-DD 文字列。集計キーの書式はここが基準。
+    static func dateString(_ date: Date) -> String {
+        dateFormatter.string(from: date)
     }
 
     /// 今日の集計（無ければ空の DailyUsage）。

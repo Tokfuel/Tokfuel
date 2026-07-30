@@ -39,8 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "fuelpump.fill", accessibilityDescription: "Tokfuel")
-            button.image?.size = NSSize(width: 16, height: 16)
+            // 画像とタイトルは updateStatusItem が設定する（表現によって給油機とリングが入れ替わる）。
             button.imagePosition = .imageLeading
             button.action = #selector(togglePopover)
             button.target = self
@@ -65,17 +64,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         usageStore.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] in
-                self?.updateStatusTitle()
-                self?.evaluateBudget()
+                self?.updateStatusItem()
+                self?.notifyBudgetIfNeeded()
             }
             .store(in: &cancellables)
 
-        // 設定変更を反映する。月表示に切り替えたら消費額の算出も必要になる。
-        Publishers.Merge(settings.$menuBarDisplay.map { _ in () },
-                         settings.$menuBarShowsRemaining.map { _ in () })
+        // 設定変更を反映する。月表示や日次平均基準に切り替えたら 32 日集計も必要になる。
+        // dropFirst が無いと購読時に 4 本ぶん発火し、起動直後に 32 日集計（python3 の
+        // サブプロセス）が余分に走る。初回は下の reload() + updateStatusItem() が担う。
+        Publishers.MergeMany(
+            settings.$menuBarMetric.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarRepresentation.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarPercentBasis.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarGaugeShape.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarShowsIcon.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarShowsRemaining.dropFirst().map { _ in () }.eraseToAnyPublisher())
             .receive(on: RunLoop.main)
             .sink { [weak self] in
-                self?.updateStatusTitle()
+                self?.updateStatusItem()
                 self?.usageStore.reloadBudget()
             }
             .store(in: &cancellables)
@@ -101,6 +107,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     BudgetMonitor.requestAuthorizationIfNeeded()
                 }
                 self?.usageStore.reloadBudget()
+                // 上限やしきい値を変えると、消費額が同じままでもアイコン色・残額・割合は変わる。
+                // 集計値が動かないとストアは何も publish しないので、ここで自分で作り直す。
+                self?.updateStatusItem()
+                self?.notifyBudgetIfNeeded()
             }
             .store(in: &cancellables)
         // 表示通貨が変わったらレートを（必要なら）取得して表示を作り直す。
@@ -110,7 +120,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Task { @MainActor [weak self] in
                     await ExchangeRateService.refreshIfNeeded()
                     self?.usageStore.objectWillChange.send()   // 金額表示の再フォーマット
-                    self?.updateStatusTitle()
+                    self?.updateStatusItem()
                 }
             }
             .store(in: &cancellables)
@@ -120,14 +130,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DebugSettings.shared.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] in
-                self?.updateStatusTitle()
+                self?.updateStatusItem()
                 self?.usageStore.objectWillChange.send()   // ポップオーバー・設定プレビュー
             }
             .store(in: &cancellables)
         #endif
 
         usageStore.reload()
-        updateStatusTitle()
+        updateStatusItem()
 
         // ポップオーバーを開かなくてもメニューバーの数字が古くならないよう定期更新する。
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
@@ -135,9 +145,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 予算レベルに応じてアイコン色を変え、必要なら通知を送る（月間・日次それぞれ）。
-    private func evaluateBudget() {
-        updateStatusIcon()
+    /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。
+    private func notifyBudgetIfNeeded() {
         if let level = usageStore.budgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .monthly, level: level, spend: usageStore.budgetSpend,
@@ -152,73 +161,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// メニューバーアイコン。通常はテンプレート（自動色）、警告でオレンジ、超過で赤。
-    private func updateStatusIcon() {
+    // MARK: - メニューバーの表示
+
+    /// メニューバーの画像・タイトル・ツールチップを設定に従って作り直す。
+    /// 何を出すかの判断は MenuBarReadout（設定プレビューと共用の純粋な計算）が持つ。
+    private func updateStatusItem() {
         guard let button = statusItem.button else { return }
-        let base = NSImage(systemSymbolName: "fuelpump.fill",
-                           accessibilityDescription: "Tokfuel")
-        let image: NSImage?
-        switch usageStore.combinedBudgetLevel {
-        case .warning:
-            image = base?.withSymbolConfiguration(.init(paletteColors: [.systemOrange]))
-            image?.isTemplate = false
-        case .over:
-            image = base?.withSymbolConfiguration(.init(paletteColors: [.systemRed]))
-            image?.isTemplate = false
-        default:
-            image = base   // テンプレート描画（メニューバーの明暗に追従）
-        }
-        image?.size = NSSize(width: 16, height: 16)
-        button.image = image
-    }
-
-    /// 今日ぶんの表示値。残額モードかつ日次予算があれば「上限 − 消費」、なければ消費額。
-    private func todayFigure() -> (text: String, tip: String) {
-        let cost = usageStore.todayCost
-        if settings.menuBarShowsRemaining, settings.dailyBudgetLimit > 0 {
-            let remaining = settings.dailyBudgetLimit - cost
-            return ("残 " + PopoverView.money(remaining),
-                    "今日の残り予算: \(PopoverView.money(remaining))")
-        }
-        return (PopoverView.money(cost), "今日の推定コスト: \(PopoverView.money(cost))")
-    }
-
-    /// 今月ぶんの表示値。残額モードかつ月間予算があれば「上限 − 消費」、なければ消費額。
-    private func monthFigure() -> (text: String, tip: String) {
-        let spend = usageStore.budgetSpend
-        if settings.menuBarShowsRemaining, settings.budgetLimit > 0 {
-            let remaining = settings.budgetLimit - spend
-            return ("残 " + PopoverView.money(remaining),
-                    "今月の残り予算: \(PopoverView.money(remaining))")
-        }
-        return (PopoverView.money(spend), "今月の推定コスト: \(PopoverView.money(spend))")
-    }
-
-    /// メニューバー表示は設定に従う（コスト / プロンプト数 / アイコンのみ）。
-    private func updateStatusTitle() {
-        guard let button = statusItem.button else { return }
-        updateStatusIcon()
-        switch settings.menuBarDisplay {
-        case .iconOnly:
-            button.title = ""
-            button.toolTip = "Tokfuel"
-        case .prompts:
-            let prompts = usageStore.today.prompts
-            button.title = " \(prompts)"
-            button.toolTip = "今日のプロンプト数: \(prompts)"
-        case .cost:
-            let today = todayFigure()
-            button.title = " " + today.text
-            button.toolTip = today.tip
-        case .monthlyCost:
-            let month = monthFigure()
-            button.title = " " + month.text
-            button.toolTip = month.tip
-        case .bothCosts:
-            let (today, month) = (todayFigure(), monthFigure())
-            button.title = " \(today.text) · 月 \(month.text)"
-            button.toolTip = "\(today.tip) / \(month.tip)"
-        }
+        let content = MenuBarReadout.content(for: usageStore.menuBarInput())
+        button.image = MenuBarImage.statusItem(for: content)
+        // アイコンと数字がくっつくので 1 文字ぶん空ける。
+        button.title = content.title.isEmpty ? "" : " " + content.title
+        button.toolTip = content.toolTip
     }
 
     @objc private func togglePopover() {
@@ -252,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settingsWindow == nil {
             let hosting = NSHostingController(rootView: SettingsView(store: usageStore))
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Tokfuel 設定"
+            window.title = MenuBarReadout.windowTitle("Tokfuel 設定")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
@@ -269,7 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if aboutWindow == nil {
             let hosting = NSHostingController(rootView: AboutView())
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Tokfuel について"
+            window.title = MenuBarReadout.windowTitle("Tokfuel について")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
