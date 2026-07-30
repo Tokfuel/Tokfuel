@@ -26,6 +26,7 @@ struct PopoverView: View {
                     } else if store.retokError == nil {
                         loadingSection
                     }
+                    codexSection
                     errorSection
                 }
                 .padding(16)
@@ -161,7 +162,8 @@ struct PopoverView: View {
         }
         .chartForegroundStyleScale([
             UsageStore.claudeSourceLabel: Color.accentColor,
-            UsageStore.secondarySourceLabel: Color.secondary
+            "Cursor": Color.secondary,
+            "Codex": Color.purple
         ])
         .chartLegend(
             settings.costSourceMode.includesClaude
@@ -216,6 +218,20 @@ struct PopoverView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
             .monospacedDigit()
+    }
+
+    /// Codex CLI のセッション/トークン数（CU-0009）。コストはグラフ・ヒーローに含まれるので、
+    /// ここでは補足の使用量だけを出す。
+    @ViewBuilder
+    private var codexSection: some View {
+        if let codex = store.codexSummary {
+            VStack(alignment: .leading, spacing: 4) {
+                sectionHeader("Codex")
+                Text("\(codex.sessions) セッション · \(codex.input + codex.output) トークン")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     @ViewBuilder

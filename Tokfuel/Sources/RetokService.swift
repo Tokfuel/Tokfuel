@@ -126,7 +126,8 @@ enum RetokService {
 
     /// retok をバックグラウンドで実行してレポートを返す。
     /// projectsDir を渡すと retok の走査元 (`--dirs`) を上書きする（既定は retok 内蔵の ~/.claude/projects）。
-    static func run(days: Int, lang: String, projectsDir: URL? = nil) async throws -> RetokReport {
+    /// provider を渡すと retok の `--provider claude|codex` で片方だけに絞る（既定は両方合算）。
+    static func run(days: Int, lang: String, projectsDir: URL? = nil, provider: String? = nil) async throws -> RetokReport {
         guard let script = Bundle.module.url(forResource: "retok", withExtension: "py") else {
             throw RetokError.scriptMissing
         }
@@ -140,6 +141,9 @@ enum RetokService {
             var arguments = [script.path, "--json", "--days", "\(days)", "--lang", lang]
             if let projectsDir {
                 arguments += ["--dirs", projectsDir.path]
+            }
+            if let provider {
+                arguments += ["--provider", provider]
             }
             process.arguments = arguments
             let stdout = Pipe()

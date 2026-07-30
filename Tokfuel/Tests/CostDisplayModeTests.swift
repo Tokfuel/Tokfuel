@@ -83,10 +83,25 @@ struct CostSourceModeUsageStoreTests {
         withSourceMode(.cursorOnly) {
             let rows = store.chartRows(for: store.report!)
             #expect(rows.count == 1)
-            #expect(rows.first?.source == UsageStore.secondarySourceLabel)
+            #expect(rows.first?.source == "Cursor")
         }
         withSourceMode(.combined) {
             #expect(store.chartRows(for: store.report!).count == 2)
+        }
+    }
+
+    @Test func chartRowsは二次ソースをdriverごとに別系列にする() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4])
+        store.driverDailyByID = ["cursor": [today: 2], "codex": [today: 1]]
+
+        withSourceMode(.combined) {
+            let rows = store.chartRows(for: store.report!)
+            let sources = Set(rows.map(\.source))
+            #expect(sources == [UsageStore.claudeSourceLabel, "Cursor", "Codex"])
+            #expect(rows.first { $0.source == "Cursor" }?.cost == 2)
+            #expect(rows.first { $0.source == "Codex" }?.cost == 1)
         }
     }
 
