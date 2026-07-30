@@ -1,0 +1,4 @@
+module TokfuelPackageTests {
+    header "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelPackageTests.build/TokfuelPackageTests-Swift.h"
+    requires objc
+}

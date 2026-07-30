@@ -1,0 +1,47 @@
+{
+  "": {
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/master.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/BudgetMonitorTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/BudgetMonitorTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/BudgetMonitorTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/BudgetMonitorTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/BudgetMonitorTests.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/FormattingTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/FormattingTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/FormattingTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/FormattingTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/FormattingTests.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/MenuBarImageTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarImageTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarImageTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarImageTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarImageTests.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/MenuBarReadoutTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarReadoutTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarReadoutTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarReadoutTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/MenuBarReadoutTests.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/RetokReportTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/RetokReportTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/RetokReportTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/RetokReportTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/RetokReportTests.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/ScreenshotRendererTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/ScreenshotRendererTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/ScreenshotRendererTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/ScreenshotRendererTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/ScreenshotRendererTests.swiftdeps"
+  },
+  "/Users/runner/work/Tokfuel/Tokfuel/Tokfuel/Tests/UsageStoreTests.swift": {
+    "dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/UsageStoreTests.d",
+    "object": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/UsageStoreTests.swift.o",
+    "swiftmodule": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/UsageStoreTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/runner/work/Tokfuel/Tokfuel/.build/arm64-apple-macosx/debug/TokfuelTests.build/UsageStoreTests.swiftdeps"
+  }
+}
