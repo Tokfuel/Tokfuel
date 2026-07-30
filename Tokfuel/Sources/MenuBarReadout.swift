@@ -94,11 +94,18 @@ struct MenuBarInput {
     /// 給油機アイコンを出すか。リングを描くときだけ意味を持つ（リングと入れ替えるのではなく
     /// 横に並べたい人がいる）。リング以外では常にアイコンを出す。
     var showsIcon = true
+    /// Cost タブと同じソース表示。並べて表示のとき金額タイトルを Claude / Cursor に分ける。
+    var costSourceMode: CostSourceMode = .combined
     var prompts = 0
     var gauge = MenuBarGauge()
     /// 残額表示に使う予算上限（0 なら残額表示なし）。割合の分母とは独立。
     var dailyLimit: Double = 0
     var monthlyLimit: Double = 0
+    /// 並べて表示用のソース別金額（ゲージの合算とは別に持つ）。
+    var todayClaude: Double = 0
+    var todayCursor: Double = 0
+    var monthClaude: Double = 0
+    var monthCursor: Double = 0
     /// 側ごとの予算レベル。ゲージは側ごとに塗り分けるので、今日だけしきい値を越えたときに
     /// 今日のゲージだけ色が変わる。予算が無い側は nil。
     var todayLevel: BudgetLevel?
@@ -339,12 +346,12 @@ enum MenuBarReadout {
             // リングが形で伝える値に、桁で読める精度（142% など）を足す関係になる。
             title = joined(sides.compactMap(percentText))
         default:
-            title = joined(sides.map(amountText))   // 金額
+            title = joined(sides.map { amountText($0, input: input) })
         }
         let drawsGauge = representation.drawsRing
         return MenuBarContent(
             title: title,
-            toolTip: buildLabel(sides.map(toolTip).joined(separator: " / ")),
+            toolTip: buildLabel(sides.map { toolTip($0, input: input) }.joined(separator: " / ")),
             shape: input.shape,
             gauges: drawsGauge
                 ? sides.map { MenuBarGaugeSegment(fill: ringFill($0), level: $0.level) } : [],
@@ -356,11 +363,24 @@ enum MenuBarReadout {
     }
 
     /// 金額表示。残額モードかつ上限があれば「残 上限 − 消費」、なければ消費額。
-    private static func amountText(_ side: Side) -> String {
+    /// 並べて表示かつ残額 OFF のときは Claude / Cursor を短いラベルで並列する。
+    private static func amountText(_ side: Side, input: MenuBarInput) -> String {
         if side.showsRemaining, side.limit > 0 {
             return "残 " + Money.format(side.limit - side.spend)
         }
+        if input.costSourceMode == .sideBySide {
+            let (claude, cursor) = sideAmounts(side, input: input)
+            return "Claude \(Money.format(claude)) · Cursor \(Money.format(cursor))"
+        }
         return Money.format(side.spend)
+    }
+
+    private static func sideAmounts(_ side: Side, input: MenuBarInput) -> (Double, Double) {
+        // Side に今日/月の区別が無いのでラベルで分ける（sides が付けるラベルと一致）。
+        if side.label == MenuBarMetric.month.label {
+            return (input.monthClaude, input.monthCursor)
+        }
+        return (input.todayClaude, input.todayCursor)
     }
 
     private static func percentText(_ side: Side) -> String? {
@@ -375,9 +395,9 @@ enum MenuBarReadout {
 
     /// ツールチップ 1 側ぶん。リング表現では画面に数字が出ないので、
     /// 金額と（表せるなら）割合の両方をここで伝える。
-    private static func toolTip(_ side: Side) -> String {
+    private static func toolTip(_ side: Side, input: MenuBarInput) -> String {
         let scope = side.showsRemaining && side.limit > 0 ? "残り予算" : "推定コスト"
-        let head = "\(side.label)の\(scope): \(amountText(side))"
+        let head = "\(side.label)の\(scope): \(amountText(side, input: input))"
         guard let percent = percentText(side) else { return head }
         return "\(head)（\(percent)）"
     }

@@ -77,6 +77,15 @@ final class AppSettings: ObservableObject {
         didSet { persist(displayCurrency.rawValue, forKey: Money.currencyKey) }
     }
 
+    /// Cost タブとメニューバーで Claude / Cursor のどちらを金額に含めるか。
+    @Published var costSourceMode: CostSourceMode {
+        didSet { persist(costSourceMode.rawValue, forKey: Keys.costSourceMode) }
+    }
+    /// 「モデル別」を 1 一覧にするか、ソースごとに分けるか。
+    @Published var costModelBreakdownMode: CostModelBreakdownMode {
+        didSet { persist(costModelBreakdownMode.rawValue, forKey: Keys.costModelBreakdownMode) }
+    }
+
     /// tool 集計元（transcripts）と skill（global/plugin）の読み取り元となる Claude ディレクトリ。
     @Published var claudeDirectory: String {
         didSet { persist(claudeDirectory, forKey: Keys.claudeDirectory) }
@@ -123,6 +132,8 @@ final class AppSettings: ObservableObject {
         static let dailyBudgetLimit = "dailyBudgetLimit"
         static let budgetPeriod = "budgetPeriod"
         static let budgetWarnPercent = "budgetWarnPercent"
+        static let costSourceMode = "costSourceMode"
+        static let costModelBreakdownMode = "costModelBreakdownMode"
     }
 
     /// 既定の Claude ディレクトリ（~/.claude）。
@@ -175,6 +186,10 @@ final class AppSettings: ObservableObject {
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
             ?? .usd
+        costSourceMode = CostSourceMode(rawValue: defaults.string(forKey: Keys.costSourceMode) ?? "")
+            ?? .combined
+        costModelBreakdownMode = CostModelBreakdownMode(
+            rawValue: defaults.string(forKey: Keys.costModelBreakdownMode) ?? "") ?? .combined
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
         budgetLimit = defaults.double(forKey: Keys.budgetLimit)
         dailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)

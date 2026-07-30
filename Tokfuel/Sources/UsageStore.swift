@@ -226,6 +226,9 @@ final class UsageStore: ObservableObject {
     /// （extension は保持型プロパティを持てないので、この 2 つだけ本体に残る）。
     @Published var driverDailyByID: [String: [String: Double]] = [:]
 
+    /// driver.id → (モデル → 期間コスト)。レポート期間のモデル別内訳用。
+    @Published var driverModelByID: [String: [String: Double]] = [:]
+
     private enum Keys {
         static let reportDays = "reportDays"
         static let toolsPeriod = "toolsPeriod"
@@ -239,8 +242,9 @@ final class UsageStore: ObservableObject {
             ?? .days30
     }
 
-    // 予算期間内の消費額（未算出・レポート未取得なら 0）
-    @Published private var reportedBudgetSpend: Double = 0
+    // 予算期間内の消費額（ソース別。表示は costSourceMode で合成する）
+    @Published private var reportedClaudeBudgetSpend: Double = 0
+    @Published private var reportedCursorBudgetSpend: Double = 0
 
     /// DEBUG では読み取りだけデバッグ上書きを通す。書き込みは常に実データ側へ入るので、
     /// 上書きを OFF にすればそのまま元の数字に戻る。
@@ -248,13 +252,28 @@ final class UsageStore: ObservableObject {
         get {
             #if DEBUG
             if DebugSettings.shared.simulatesMissingMonth { return 0 }
-            return DebugSettings.shared.month ?? reportedBudgetSpend
-            #else
-            return reportedBudgetSpend
+            if let override = DebugSettings.shared.month { return override }
             #endif
+            return Self.displayedSpend(
+                claude: reportedClaudeBudgetSpend,
+                cursor: reportedCursorBudgetSpend,
+                mode: AppSettings.shared.costSourceMode)
         }
-        // 同じ値の再代入で objectWillChange を撒かない（メニューバーの再描画と予算判定が走る）。
-        set { if reportedBudgetSpend != newValue { reportedBudgetSpend = newValue } }
+        set {
+            // スクリーンショット用フィクスチャと予算オフ時のクリア。合算を Claude 側に載せ、
+            // Cursor 側は 0 にする（表示モードが合算なら見た目は同じ）。
+            if reportedClaudeBudgetSpend != newValue { reportedClaudeBudgetSpend = newValue }
+            if reportedCursorBudgetSpend != 0 { reportedCursorBudgetSpend = 0 }
+        }
+    }
+
+    var claudeBudgetSpend: Double { reportedClaudeBudgetSpend }
+    var cursorBudgetSpend: Double { reportedCursorBudgetSpend }
+
+    /// テスト・スクリーンショットからソース別予算を直接入れる。
+    func setBudgetSpend(claude: Double, cursor: Double) {
+        if reportedClaudeBudgetSpend != claude { reportedClaudeBudgetSpend = claude }
+        if reportedCursorBudgetSpend != cursor { reportedCursorBudgetSpend = cursor }
     }
 
     // 過去 30 日の日次平均コスト（未算出・レポート未取得なら 0）
@@ -313,6 +332,7 @@ final class UsageStore: ObservableObject {
             shape: settings.menuBarGaugeShape,
             showsRemaining: settings.menuBarShowsRemaining,
             showsIcon: settings.menuBarShowsIcon,
+            costSourceMode: settings.costSourceMode,
             prompts: today.prompts,
             gauge: MenuBarReadout.gauge(
                 basis: settings.menuBarPercentBasis,
@@ -321,6 +341,10 @@ final class UsageStore: ObservableObject {
                 dailyAverage: dailyAverage30, activeDays: activeDaysInPeriod),
             dailyLimit: settings.dailyBudgetLimit,
             monthlyLimit: settings.budgetLimit,
+            todayClaude: claudeTodayCost,
+            todayCursor: cursorTodayCost,
+            monthClaude: claudeBudgetSpend,
+            monthCursor: cursorBudgetSpend,
             // ゲージは側ごとに塗り分ける。今日だけしきい値を越えたら今日のゲージだけが変わる。
             todayLevel: dailyBudgetLevel,
             monthLevel: budgetLevel)
@@ -421,6 +445,15 @@ final class UsageStore: ObservableObject {
             let byID = await driverTask
             guard generation == self.reportGeneration else { return }
             self.driverDailyByID = byID
+            // ダッシュボード取得済みならキャッシュヒット。モデル別内訳を同じ期間で載せる。
+            let cursorPath = CursorCostDriver.defaultStateDBURL.path
+            if let snap = await CursorDashboardService.fetchSnapshot(
+                from: from, to: to, dbPath: cursorPath
+            ) {
+                self.driverModelByID = ["cursor": snap.byModel]
+            } else if byID["cursor"] == nil {
+                self.driverModelByID = [:]
+            }
         }
     }
 
@@ -461,9 +494,21 @@ final class UsageStore: ObservableObject {
             let claudeSpend = r?.daily
                 .filter { $0.key >= start }
                 .values.reduce(0) { $0 + $1.cost } ?? 0
-            let driverSpend = await driverTask.values
+            let driverByID = await driverTask
+            let driverSpend = driverByID.values
                 .reduce(0) { $0 + $1.values.reduce(0, +) }
-            self.budgetSpend = claudeSpend + driverSpend
+            if self.reportedClaudeBudgetSpend != claudeSpend {
+                self.reportedClaudeBudgetSpend = claudeSpend
+            }
+            if self.reportedCursorBudgetSpend != driverSpend {
+                self.reportedCursorBudgetSpend = driverSpend
+            }
+            // reloadReport より予算窓の方が広いことがあるので、日別も予算側の結果で補完する。
+            for (id, daily) in driverByID {
+                var merged = self.driverDailyByID[id] ?? [:]
+                for (date, cost) in daily { merged[date] = cost }
+                self.driverDailyByID[id] = merged
+            }
 
             // 稼働日数・日次平均は retok 専用の指標。budgetSpend と違い二次ソースの分が無いので、
             // retok が失敗した回は更新せず直前の値を残す（中途半端な値を作らない）。
@@ -567,17 +612,36 @@ final class UsageStore: ObservableObject {
         return daily.first { $0.date == key } ?? DailyUsage(date: key)
     }
 
-    /// 今日のコスト。レポート未取得（起動直後・python3 なし）も、今日の行が無い日も 0 とみなす。
-    /// 「不明」を金額欄に出さない代わりに、retok が失敗した事実は Cost タブのエラー表示が伝える。
+    /// 今日の Claude（retok）コスト。
+    var claudeTodayCost: Double {
+        report?.cost(on: Self.dateString(Date())) ?? 0
+    }
+
+    /// 今日の Cursor 等二次ソースコスト。
+    var cursorTodayCost: Double {
+        driverDaily[Self.dateString(Date())] ?? 0
+    }
+
+    /// 今日の表示コスト。`costSourceMode` に従って Claude / Cursor を含める。
+    /// レポート未取得も 0 とみなす（「不明」は出さず、retok 失敗はエラー表示が伝える）。
     var todayCost: Double {
         #if DEBUG
         if let override = DebugSettings.shared.today { return override }
         #endif
-        return reportedTodayCost + (driverDaily[Self.dateString(Date())] ?? 0)
+        return Self.displayedSpend(
+            claude: claudeTodayCost,
+            cursor: cursorTodayCost,
+            mode: AppSettings.shared.costSourceMode)
     }
 
-    private var reportedTodayCost: Double {
-        report?.cost(on: Self.dateString(Date())) ?? 0
+    /// ソース表示モードに従って 2 源を合成する。
+    nonisolated static func displayedSpend(
+        claude: Double, cursor: Double, mode: CostSourceMode
+    ) -> Double {
+        var total = 0.0
+        if mode.includesClaude { total += claude }
+        if mode.includesCursor { total += cursor }
+        return total
     }
 
     /// 昨日の集計（無ければ nil）。前日比の算出に使う。
@@ -671,19 +735,73 @@ extension UsageStore {
     /// retok の日別コストと二次ソース（driverDaily）を積み上げグラフ用の行に変換する。
     /// 日付は両方の合併集合を使う（Claude が $0 の日でも Cursor だけ使った日は落とさない）。
     /// コストが 0 の行は積まない（積み上げバーに幅 0 の区切りが入るのを避ける）。
+    /// `costSourceMode` で片方だけ選んでいるときはその側の系列だけ出す。
     func chartRows(for report: RetokReport) -> [ChartRow] {
+        let mode = AppSettings.shared.costSourceMode
         var claudeByDate: [String: Double] = [:]
         for day in report.dailySorted { claudeByDate[day.date] = day.cost }
         let secondary = driverDaily   // 1 回だけ合算して使い回す
-        let dates = Set(claudeByDate.keys).union(secondary.keys).sorted()
-        return dates.flatMap { date -> [ChartRow] in
+        var dates = Set<String>()
+        if mode.includesClaude { dates.formUnion(claudeByDate.keys) }
+        if mode.includesCursor { dates.formUnion(secondary.keys) }
+        return dates.sorted().flatMap { date -> [ChartRow] in
             var rows: [ChartRow] = []
-            if let claude = claudeByDate[date], claude > 0 {
+            if mode.includesClaude, let claude = claudeByDate[date], claude > 0 {
                 rows.append(ChartRow(date: date, source: Self.claudeSourceLabel, cost: claude))
             }
-            if let other = secondary[date], other > 0 {
+            if mode.includesCursor, let other = secondary[date], other > 0 {
                 rows.append(ChartRow(date: date, source: Self.secondarySourceLabel, cost: other))
             }
+            return rows
+        }
+    }
+
+    // MARK: - モデル別内訳
+
+    /// モデル 1 行。結合一覧でもソース別一覧でも同じ形。
+    struct ModelCostRow: Identifiable {
+        let source: String?
+        let model: String
+        let cost: Double
+        var id: String { "\(source ?? "all")|\(model)" }
+    }
+
+    /// レポート期間の Cursor モデル別コスト（ダッシュボード由来。無いときは空）。
+    var cursorModelCosts: [(model: String, cost: Double)] {
+        (driverModelByID["cursor"] ?? [:])
+            .filter { $0.value > 0 }
+            .sorted { $0.value > $1.value }
+            .map { ($0.key, $0.value) }
+    }
+
+    /// 期間合計（stats 行）。ソース表示モードに従う。
+    func periodTotalCost(for report: RetokReport) -> Double {
+        let cursor = driverDaily.values.reduce(0, +)
+        return Self.displayedSpend(
+            claude: report.totals.cost, cursor: cursor,
+            mode: AppSettings.shared.costSourceMode)
+    }
+
+    /// 「モデル別」セクション用の行。ソースフィルタと内訳モードに従う。
+    func modelCostRows(for report: RetokReport) -> [ModelCostRow] {
+        let mode = AppSettings.shared.costSourceMode
+        let breakdown = AppSettings.shared.costModelBreakdownMode
+        let claude: [(String, Double)] = mode.includesClaude
+            ? report.modelsSorted.map { ($0.model, $0.usage.cost) }.filter { $0.1 > 0 }
+            : []
+        let cursor: [(String, Double)] = mode.includesCursor ? cursorModelCosts : []
+
+        switch breakdown {
+        case .combined:
+            var merged: [String: Double] = [:]
+            for (m, c) in claude { merged[m, default: 0] += c }
+            for (m, c) in cursor { merged[m, default: 0] += c }
+            return merged.sorted { $0.value > $1.value }
+                .map { ModelCostRow(source: nil, model: $0.key, cost: $0.value) }
+        case .separated:
+            var rows: [ModelCostRow] = []
+            rows += claude.map { ModelCostRow(source: Self.claudeSourceLabel, model: $0.0, cost: $0.1) }
+            rows += cursor.map { ModelCostRow(source: Self.secondarySourceLabel, model: $0.0, cost: $0.1) }
             return rows
         }
     }

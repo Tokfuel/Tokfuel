@@ -39,10 +39,13 @@
 
 - 🖱️ **Cursor, too**
 
-  If Cursor is installed, its local usage is folded into the same total and chart —
-  a best-effort estimate (not every message has a token snapshot, so it's always a
-  lower bound). Nothing to configure. Pricing is refreshed once a day from Cursor's own
-  published price table, with a bundled table as the offline fallback.
+  If Cursor is installed and you're signed in, today's Cursor usage is folded into the
+  same total and chart via Cursor's own dashboard API (using the session Cursor already
+  keeps on disk — nothing to paste). Offline or signed-out, it falls back to local
+  token snapshots (often a lower bound on Cursor 3.x). Pricing for the fallback path is
+  refreshed once a day from Cursor's published price table.
+  In Settings, choose combined / Claude only / Cursor only / side-by-side — the Cost tab
+  and menu bar both follow that choice (budget gauges still use the included sum).
 
 - 🚨 **Budgets**
 
@@ -65,8 +68,9 @@
 
 - 🔒 **Local-first**
 
-  No telemetry. The only network calls are the opt-in exchange-rate fetch and, if
-  Cursor is installed, the daily Cursor price-table refresh — neither sends usage data.
+  No telemetry. Network calls are: the opt-in exchange-rate fetch; if Cursor is
+  installed, the daily price-table refresh; and, when signed into Cursor, a usage
+  query to Cursor's dashboard API (auth + date range only — no prompts).
 
 ## Install
 

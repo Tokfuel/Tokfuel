@@ -25,3 +25,8 @@ build/
 
 # Unpublished issue/proposal drafts (private until opened on GitHub)
 docs/drafts/
+
+# Local verification artifacts (do not commit)
+.verify-*
+
+tokfuel-*.png
