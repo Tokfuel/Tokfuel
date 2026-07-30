@@ -21,6 +21,7 @@
 </p>
 
 <p align="center">
+  <a href="https://tokfuel.github.io/Tokfuel/"><strong>ダウンロード（macOS）</strong></a> ·
   <a href="README.md">English</a> ·
   <a href="README.ja.md">日本語</a>
 </p>

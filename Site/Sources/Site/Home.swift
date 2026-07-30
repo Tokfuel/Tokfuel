@@ -5,8 +5,9 @@ struct Home: StaticPage {
     var title = "Tokfuel — See what AI coding costs you"
     var description = "See what AI coding costs you, from the menu bar. A tiny, local-only SwiftUI app for macOS."
 
-    var releasesURL = "https://github.com/Tokfuel/Tokfuel/releases/latest"
+    var downloadURL = "https://github.com/Tokfuel/Tokfuel/releases/latest/download/Tokfuel-latest.zip"
     var sourceURL = "https://github.com/Tokfuel/Tokfuel"
+    var authorURL = "https://github.com/akidon0000"
 
     var body: some HTML {
         Section {
@@ -25,7 +26,7 @@ struct Home: StaticPage {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 560)
 
-                Link("Download for macOS", target: releasesURL)
+                Link("Download for macOS", target: downloadURL)
                     .linkStyle(.button)
                     .role(.primary)
                     .padding(.horizontal, 8)
@@ -35,17 +36,21 @@ struct Home: StaticPage {
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 96)
+            .horizontalAlignment(.center)
         }
         .background(.black)
         .foregroundStyle(.white)
+        .horizontalAlignment(.center)
 
         Section {
             Image("images/screenshot.png", description: "Tokfuel's menu-bar popover showing cost, budgets, and per-model breakdown")
                 .resizable()
                 .cornerRadius(16)
                 .frame(maxWidth: 720)
+                .class("d-block", "mx-auto")
         }
         .padding(.vertical, 64)
+        .horizontalAlignment(.center)
 
         Section {
             VStack(spacing: 16) {
@@ -61,11 +66,26 @@ struct Home: StaticPage {
                 """)
                 .frame(maxWidth: 640)
                 .foregroundStyle(.secondary)
+                .horizontalAlignment(.center)
 
                 Link("View source and full details on GitHub", target: sourceURL)
                     .linkStyle(.underline(.heavy))
             }
             .padding(.vertical, 64)
+            .horizontalAlignment(.center)
         }
+        .horizontalAlignment(.center)
+
+        Section {
+            Text {
+                "MIT License · © "
+                Link("Dan Akiyama (@akidon0000)", target: authorURL)
+                    .linkStyle(.underline(.heavy))
+            }
+            .font(.small)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 32)
+        .horizontalAlignment(.center)
     }
 }
