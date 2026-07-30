@@ -42,6 +42,53 @@ struct UsageStoreTodayCostTests {
         store.report = report(daily: [Self.dateString(Date()): 4.56])
         #expect(store.todayCost == 4.56)
     }
+
+    @Test func 二次ソースの今日ぶんはtodayCostに加算される() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4.56])
+        store.driverDailyByID = ["cursor": [today: 1.44]]
+        #expect(store.todayCost == 6.0)
+    }
+
+    @Test func 二次ソースは日付が一致しなければ加算されない() {
+        let store = UsageStore()
+        store.report = report(daily: [Self.dateString(Date()): 4.56])
+        store.driverDailyByID = ["cursor": ["2020-01-01": 100]]
+        #expect(store.todayCost == 4.56)
+    }
+
+    @Test func 複数の二次ソースは合算される() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.driverDailyByID = ["cursor": [today: 1.0], "other": [today: 2.0]]
+        #expect(store.todayCost == 3.0)
+    }
+
+    @Test func driverDailyは全ソース横断で日別合算する() {
+        let store = UsageStore()
+        store.driverDailyByID = [
+            "cursor": ["2026-01-01": 1.0, "2026-01-02": 2.0],
+            "other": ["2026-01-01": 3.0]
+        ]
+        #expect(store.driverDaily["2026-01-01"] == 4.0)
+        #expect(store.driverDaily["2026-01-02"] == 2.0)
+    }
+
+    @Test func driverBreakdownは今日ゼロのソースを出さない() {
+        let store = UsageStore()
+        store.driverDailyByID = ["cursor": ["2020-01-01": 5.0]]   // 今日ではない
+        #expect(store.driverBreakdown.isEmpty)
+    }
+
+    @Test func driverBreakdownは今日ぶんの内訳を返す() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.driverDailyByID = ["cursor": [today: 3.1]]
+        #expect(store.driverBreakdown.count == 1)
+        #expect(store.driverBreakdown.first?.name == "Cursor")
+        #expect(store.driverBreakdown.first?.cost == 3.1)
+    }
 }
 
 /// メニューバーの割合表示の分母になる日次平均。
