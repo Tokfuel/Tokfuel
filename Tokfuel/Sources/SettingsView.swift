@@ -38,6 +38,17 @@ struct SettingsView: View {
                 // 選べないようにして、選んだのに金額のままという食い違いを防ぐ。
                 ForEach(representationRows) { representationRow($0) }
 
+                if settings.menuBarRepresentation.drawsRing {
+                    Picker("ゲージの形", selection: $settings.menuBarGaugeShape) {
+                        ForEach(MenuBarGaugeShape.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.radioGroup)
+                    // タンクはアイコン自身がゲージなので、併記の選択肢が意味を持たない。
+                    if settings.menuBarGaugeShape.isSeparateFromIcon {
+                        Toggle("アイコンも並べる", isOn: $settings.menuBarShowsIcon)
+                    }
+                }
+
                 // 基準は、割合表現を選んでいなくても出す。選んだあとにしか出さないと、
                 // 予算未設定のユーザーはパーセントとリングが永久にグレーのままになる
                 // （選べない → 基準を変えられない → 選べない）。
@@ -250,9 +261,7 @@ struct SettingsView: View {
                 Text(row.option.label)
                 Spacer()
                 if row.selectable {
-                    MenuBarPreviewChip(ring: MenuBarRing.image(row.content.ringFills,
-                                                              level: row.content.alertLevel,
-                                                              label: ""),
+                    MenuBarPreviewChip(image: MenuBarImage.statusItem(for: row.content),
                                        text: row.content.title.isEmpty ? nil : row.content.title)
                 }
             }
@@ -307,19 +316,16 @@ struct DebugAmountRow: View {
 }
 #endif
 
-/// メニューバーの見た目を模したプレビューチップ（アイコン + タイトル）。
-/// リング表現では本物と同じ NSImage をそのまま出すので、見た目が実物と乖離しない。
+/// メニューバーの見た目を模したプレビューチップ（画像 + タイトル）。
+/// 画像は本物のステータス項目と同じ組み立てを通すので、見た目が実物と乖離しない。
 struct MenuBarPreviewChip: View {
-    var ring: NSImage?
+    var image: NSImage?
     let text: String?
 
     var body: some View {
         HStack(spacing: 3) {
-            if let ring {
-                Image(nsImage: ring)
-            } else {
-                Image(systemName: "fuelpump.fill")
-                    .font(.system(size: 10))
+            if let image {
+                Image(nsImage: image)
             }
             if let text {
                 Text(text)

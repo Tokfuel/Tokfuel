@@ -46,8 +46,10 @@
 
   Pick a metric (today, this month, both, prompts) and how to show it
   (amount, percent, ring gauge, ring + percent, icon only) — or the *remaining* budget.
-  Percent and ring measure against your budget limit or your 30-day daily average.
-  Live previews in Settings.
+  Percent and gauges measure against your budget limit or your 30-day daily average.
+  The gauge is either a ring (beside the ⛽️ icon or replacing it) or the ⛽️ icon itself
+  filling bottom-up like a fuel tank — blue inside budget, orange at the threshold, red over.
+  Today and this month are coloured independently. Live previews in Settings.
 
 - 💱 **USD or JPY**
 

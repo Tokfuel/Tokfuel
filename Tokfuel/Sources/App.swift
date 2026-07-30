@@ -72,10 +72,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 設定変更を反映する。月表示や日次平均基準に切り替えたら 32 日集計も必要になる。
         // dropFirst が無いと購読時に 4 本ぶん発火し、起動直後に 32 日集計（python3 の
         // サブプロセス）が余分に走る。初回は下の reload() + updateStatusItem() が担う。
-        Publishers.Merge4(settings.$menuBarMetric.dropFirst().map { _ in () },
-                          settings.$menuBarRepresentation.dropFirst().map { _ in () },
-                          settings.$menuBarPercentBasis.dropFirst().map { _ in () },
-                          settings.$menuBarShowsRemaining.dropFirst().map { _ in () })
+        Publishers.MergeMany(
+            settings.$menuBarMetric.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarRepresentation.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarPercentBasis.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarGaugeShape.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarShowsIcon.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$menuBarShowsRemaining.dropFirst().map { _ in () }.eraseToAnyPublisher())
             .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.updateStatusItem()
@@ -160,29 +163,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - メニューバーの表示
 
-    /// 給油機アイコン。通常はテンプレート（自動色）、警告でオレンジ、超過で赤。
-    private func fuelpumpImage() -> NSImage? {
-        let base = NSImage(systemSymbolName: "fuelpump.fill",
-                           accessibilityDescription: "Tokfuel")
-        let image: NSImage?
-        if let color = usageStore.combinedBudgetLevel?.menuBarAlertColor {
-            image = base?.withSymbolConfiguration(.init(paletteColors: [color]))
-            image?.isTemplate = false
-        } else {
-            image = base   // テンプレート描画（メニューバーの明暗に追従）
-        }
-        image?.size = NSSize(width: MenuBarRing.side, height: MenuBarRing.side)
-        return image
-    }
-
     /// メニューバーの画像・タイトル・ツールチップを設定に従って作り直す。
     /// 何を出すかの判断は MenuBarReadout（設定プレビューと共用の純粋な計算）が持つ。
     private func updateStatusItem() {
         guard let button = statusItem.button else { return }
         let content = MenuBarReadout.content(for: usageStore.menuBarInput())
-        // リングを描けない（塗りが無い・本数が想定外）ときは給油機アイコンに戻す。
-        button.image = MenuBarRing.image(content.ringFills, level: content.alertLevel,
-                                        label: content.toolTip) ?? fuelpumpImage()
+        button.image = MenuBarImage.statusItem(for: content)
         // アイコンと数字がくっつくので 1 文字ぶん空ける。
         button.title = content.title.isEmpty ? "" : " " + content.title
         button.toolTip = content.toolTip
@@ -219,7 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settingsWindow == nil {
             let hosting = NSHostingController(rootView: SettingsView(store: usageStore))
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Tokfuel 設定"
+            window.title = MenuBarReadout.windowTitle("Tokfuel 設定")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
@@ -236,7 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if aboutWindow == nil {
             let hosting = NSHostingController(rootView: AboutView())
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Tokfuel について"
+            window.title = MenuBarReadout.windowTitle("Tokfuel について")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()

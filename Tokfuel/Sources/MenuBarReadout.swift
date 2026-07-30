@@ -39,6 +39,23 @@ enum MenuBarRepresentation: String, CaseIterable, Identifiable {
     var drawsRing: Bool { self == .ring || self == .ringAndValue }
 }
 
+/// ゲージの形。どちらも「消費 / 基準」を面積で示すもので、値の出し方は変わらない。
+enum MenuBarGaugeShape: String, CaseIterable, Identifiable {
+    /// 円形のインジケーター。12 時から時計回りに塗る。
+    case ring
+    /// 給油機アイコンそのものを下から塗り上げる燃料計。
+    case tank
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .ring: return "リング"
+        case .tank: return "タンク（給油機を下から塗る）"
+        }
+    }
+    /// アイコンと別に描くゲージか。タンクはアイコン自身がゲージなので併記の概念が無い。
+    var isSeparateFromIcon: Bool { self == .ring }
+}
+
 /// パーセントとリングが共有する分母。どちらも同じ値の別表現なので基準は 1 つにまとめる。
 enum MenuBarPercentBasis: String, CaseIterable, Identifiable {
     case budgetLimit, dailyAverage30
@@ -72,15 +89,27 @@ struct MenuBarInput {
     var metric: MenuBarMetric = .today
     var representation: MenuBarRepresentation = .amount
     var basis: MenuBarPercentBasis = .budgetLimit
+    var shape: MenuBarGaugeShape = .ring
     var showsRemaining = false
+    /// 給油機アイコンを出すか。リングを描くときだけ意味を持つ（リングと入れ替えるのではなく
+    /// 横に並べたい人がいる）。リング以外では常にアイコンを出す。
+    var showsIcon = true
     var prompts = 0
     var gauge = MenuBarGauge()
     /// 残額表示に使う予算上限（0 なら残額表示なし）。割合の分母とは独立。
     var dailyLimit: Double = 0
     var monthlyLimit: Double = 0
-    /// 注意を促すレベル。給油機アイコンと同じ「月・日の悪い方」を渡す。
-    /// リングは給油機と入れ替わるので、ここを見ないと予算超過の色が消えてしまう。
-    var alertLevel: BudgetLevel?
+    /// 側ごとの予算レベル。ゲージは側ごとに塗り分けるので、今日だけしきい値を越えたときに
+    /// 今日のゲージだけ色が変わる。予算が無い側は nil。
+    var todayLevel: BudgetLevel?
+    var monthLevel: BudgetLevel?
+}
+
+/// ゲージ 1 本ぶんの塗り。
+struct MenuBarGaugeSegment {
+    let fill: Double
+    /// その側の予算レベル（予算が無い側は nil）。色はここから決まる。
+    let level: BudgetLevel?
 }
 
 /// メニューバーに実際に出す内容。本番（AppDelegate）と設定のライブプレビューが
@@ -89,16 +118,38 @@ struct MenuBarContent {
     /// アイコンの右に並べる文字列（空ならアイコンだけ）。アイコンとの間隔は表示側で足す。
     var title: String = ""
     var toolTip: String = ""
-    /// リングの塗り分率（先頭 = 内側 / 日次）。空なら給油機アイコンを出す。
-    var ringFills: [Double] = []
-    /// リング全体の配色。弧ごとに変えないのは、色付きと無色が混ざると無色側が
-    /// 明暗に追従できず暗いメニューバーで沈むため。nil ならテンプレート描画。
-    var alertLevel: BudgetLevel?
+    var shape: MenuBarGaugeShape = .ring
+    /// ゲージの塗り（先頭 = 今日）。リングでは先頭が内側。空ならゲージを描かない。
+    var gauges: [MenuBarGaugeSegment] = []
+    /// 給油機アイコンを出すか。リングと同時に出すと横並びの 1 枚になる。
+    var showsIcon = true
+    /// 給油機アイコン単体の警告色に使うレベル（月・日の悪い方）。
+    var iconLevel: BudgetLevel?
 }
 
 /// メニューバー表示の純粋なロジック。設定値と数値だけを受け取り、実際に描く表現・
-/// 塗り分率・文字列を決める。NSImage の描画そのものは MenuBarRing が持つ。
+/// 塗り分率・文字列を決める。NSImage の描画そのものは MenuBarImage が持つ。
 enum MenuBarReadout {
+
+    /// debug 構成の目印。release と debug のどちらを入れたか分からなくなるのを防ぐ。
+    /// リリースビルドでは空文字なので、この分岐は配布物に影響しない。
+    static let debugMarker: String = {
+        #if DEBUG
+        return "DEBUG"
+        #else
+        return ""
+        #endif
+    }()
+
+    /// ツールチップ。debug 構成では目印を前置する（ホバーすればどちらか分かる）。
+    static func buildLabel(_ text: String) -> String {
+        debugMarker.isEmpty ? text : "[\(debugMarker)] \(text)"
+    }
+
+    /// ウィンドウタイトル。debug 構成では末尾に目印を付ける。
+    static func windowTitle(_ text: String) -> String {
+        debugMarker.isEmpty ? text : "\(text)（\(debugMarker)）"
+    }
 
     // MARK: - 旧設定からの移行
 
@@ -237,9 +288,11 @@ enum MenuBarReadout {
         let basis: Double
         /// 残額表示に使う予算上限。割合の分母（basis）とは独立。
         let limit: Double
+        /// その側の予算レベル。ゲージの色になる。
+        let level: BudgetLevel?
         /// 金額を「残 上限 − 消費」で見せるか。
         let showsRemaining: Bool
-        /// 割合・リングを残り側で見せるか。予算上限を基準にしているときだけ意味を持つ
+        /// 割合・ゲージを残り側で見せるか。予算上限を基準にしているときだけ意味を持つ
         /// （「いつもの 1 日に対する残り」という概念は無い）。
         let ratioShowsRemaining: Bool
     }
@@ -250,11 +303,11 @@ enum MenuBarReadout {
         let ratioRemaining = input.showsRemaining && input.basis == .budgetLimit
         let today = Side(label: MenuBarMetric.today.label, spend: input.gauge.todaySpend,
                          basis: input.gauge.todayBasis, limit: input.dailyLimit,
-                         showsRemaining: input.showsRemaining,
+                         level: input.todayLevel, showsRemaining: input.showsRemaining,
                          ratioShowsRemaining: ratioRemaining)
         let month = Side(label: MenuBarMetric.month.label, spend: input.gauge.monthSpend,
                          basis: input.gauge.monthBasis, limit: input.monthlyLimit,
-                         showsRemaining: input.showsRemaining,
+                         level: input.monthLevel, showsRemaining: input.showsRemaining,
                          ratioShowsRemaining: ratioRemaining)
         switch input.metric {
         case .today: return [today]
@@ -269,12 +322,12 @@ enum MenuBarReadout {
         let representation = effectiveRepresentation(
             metric: input.metric, representation: input.representation, gauge: input.gauge)
         guard representation != .iconOnly else {
-            return MenuBarContent(toolTip: "Tokfuel")
+            return MenuBarContent(toolTip: buildLabel("Tokfuel"))
         }
         let sides = sides(of: input)
         guard !sides.isEmpty else {
             return MenuBarContent(title: "\(input.prompts)",
-                                  toolTip: "今日のプロンプト数: \(input.prompts)")
+                                  toolTip: buildLabel("今日のプロンプト数: \(input.prompts)"))
         }
 
         let title: String
@@ -288,12 +341,18 @@ enum MenuBarReadout {
         default:
             title = joined(sides.map(amountText))   // 金額
         }
-        let drawsRing = representation.drawsRing
+        let drawsGauge = representation.drawsRing
         return MenuBarContent(
             title: title,
-            toolTip: sides.map(toolTip).joined(separator: " / "),
-            ringFills: drawsRing ? sides.map(ringFill) : [],
-            alertLevel: drawsRing ? input.alertLevel : nil)
+            toolTip: buildLabel(sides.map(toolTip).joined(separator: " / ")),
+            shape: input.shape,
+            gauges: drawsGauge
+                ? sides.map { MenuBarGaugeSegment(fill: ringFill($0), level: $0.level) } : [],
+            // アイコンを外せるのは、アイコンと別にゲージを描くとき（リング）だけ。
+            // タンクはアイコン自身がゲージなので外せない。文字だけの表現でも常に出す
+            // （数字だけ浮くと何のアプリの値か分からなくなる）。
+            showsIcon: drawsGauge && input.shape.isSeparateFromIcon ? input.showsIcon : true,
+            iconLevel: [input.todayLevel, input.monthLevel].compactMap { $0 }.max())
     }
 
     /// 金額表示。残額モードかつ上限があれば「残 上限 − 消費」、なければ消費額。

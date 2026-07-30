@@ -298,7 +298,9 @@ final class UsageStore: ObservableObject {
             metric: settings.menuBarMetric,
             representation: settings.menuBarRepresentation,
             basis: settings.menuBarPercentBasis,
+            shape: settings.menuBarGaugeShape,
             showsRemaining: settings.menuBarShowsRemaining,
+            showsIcon: settings.menuBarShowsIcon,
             prompts: today.prompts,
             gauge: MenuBarReadout.gauge(
                 basis: settings.menuBarPercentBasis,
@@ -307,9 +309,9 @@ final class UsageStore: ObservableObject {
                 dailyAverage: dailyAverage30, activeDays: activeDaysInPeriod),
             dailyLimit: settings.dailyBudgetLimit,
             monthlyLimit: settings.budgetLimit,
-            // リングは給油機アイコンと入れ替わるので、アイコンと同じ「月・日の悪い方」で
-            // 着色する。そうしないと、リング表示中だけ予算超過の赤が出なくなる。
-            alertLevel: combinedBudgetLevel)
+            // ゲージは側ごとに塗り分ける。今日だけしきい値を越えたら今日のゲージだけが変わる。
+            todayLevel: dailyBudgetLevel,
+            monthLevel: budgetLevel)
     }
 
     /// 月間予算のレベル（予算オフなら nil）。

@@ -55,6 +55,14 @@ final class AppSettings: ObservableObject {
     @Published var menuBarPercentBasis: MenuBarPercentBasis {
         didSet { persist(menuBarPercentBasis.rawValue, forKey: Keys.menuBarPercentBasis) }
     }
+    /// ゲージの形（リング / タンク）。
+    @Published var menuBarGaugeShape: MenuBarGaugeShape {
+        didSet { persist(menuBarGaugeShape.rawValue, forKey: Keys.menuBarGaugeShape) }
+    }
+    /// リング表示のときに給油機アイコンも並べるか。文字だけの表現では常に出す。
+    @Published var menuBarShowsIcon: Bool {
+        didSet { persist(menuBarShowsIcon, forKey: Keys.menuBarShowsIcon) }
+    }
     /// メニューバーの値を「消費」ではなく「予算までの残り（上限 − 消費）」で見せる。
     /// 対応する予算が未設定の項目は消費のまま。
     @Published var menuBarShowsRemaining: Bool {
@@ -105,6 +113,8 @@ final class AppSettings: ObservableObject {
         static let menuBarMetric = "menuBarMetric"
         static let menuBarRepresentation = "menuBarRepresentation"
         static let menuBarPercentBasis = "menuBarPercentBasis"
+        static let menuBarGaugeShape = "menuBarGaugeShape"
+        static let menuBarShowsIcon = "menuBarShowsIcon"
         static let menuBarShowsRemaining = "menuBarShowsRemaining"
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
@@ -155,6 +165,12 @@ final class AppSettings: ObservableObject {
             ?? legacy?.representation ?? .amount
         menuBarPercentBasis = MenuBarPercentBasis(
             rawValue: defaults.string(forKey: Keys.menuBarPercentBasis) ?? "") ?? .budgetLimit
+        menuBarGaugeShape = MenuBarGaugeShape(
+            rawValue: defaults.string(forKey: Keys.menuBarGaugeShape) ?? "") ?? .ring
+        // 既定はアイコンあり。bool(forKey:) は未設定を false と読むので、存在確認だけ object で
+        // 行い、値の解釈は bool に任せる（as? Bool だと文字列で入った値を取りこぼす）。
+        menuBarShowsIcon = defaults.object(forKey: Keys.menuBarShowsIcon) == nil
+            ? true : defaults.bool(forKey: Keys.menuBarShowsIcon)
         menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")

@@ -2,6 +2,22 @@ import Foundation
 import Testing
 @testable import Tokfuel
 
+/// どちらの構成を入れたか分からなくなるのを防ぐ目印。
+/// リリースビルドでは何も付かないことも合わせて押さえる。
+struct MenuBarDebugMarkerTests {
+    @Test func 構成に応じて目印を付ける() {
+        #if DEBUG
+        #expect(MenuBarReadout.debugMarker == "DEBUG")
+        #expect(MenuBarReadout.buildLabel("今日: $1") == "[DEBUG] 今日: $1")
+        #expect(MenuBarReadout.windowTitle("Tokfuel 設定") == "Tokfuel 設定（DEBUG）")
+        #else
+        #expect(MenuBarReadout.debugMarker.isEmpty)
+        #expect(MenuBarReadout.buildLabel("今日: $1") == "今日: $1")
+        #expect(MenuBarReadout.windowTitle("Tokfuel 設定") == "Tokfuel 設定")
+        #endif
+    }
+}
+
 /// UserDefaults に永続化される値なので、rawValue の変更は既存ユーザーの設定を壊す。
 struct MenuBarSettingRawValueTests {
     @Test func 指標のrawValueは変えない() {
@@ -234,7 +250,7 @@ struct MenuBarContentTests {
                                  gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
         let content = MenuBarReadout.content(for: input)
         #expect(content.title.isEmpty)
-        #expect(content.ringFills == [0.5])
+        #expect(content.gauges.map(\.fill) == [0.5])
     }
 
     @Test func 今日と今月のリングは内側が日次で外側が月次() {
@@ -242,7 +258,7 @@ struct MenuBarContentTests {
                                  gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10,
                                                      monthSpend: 25, monthBasis: 100))
         // 先頭 = 内側 = 今日、次 = 外側 = 今月。
-        #expect(MenuBarReadout.content(for: input).ringFills == [0.5, 0.25])
+        #expect(MenuBarReadout.content(for: input).gauges.map(\.fill) == [0.5, 0.25])
     }
 
     @Test func パーセント表現は両側を並べる() {
@@ -251,7 +267,7 @@ struct MenuBarContentTests {
                                                      monthSpend: 25, monthBasis: 100))
         let content = MenuBarReadout.content(for: input)
         #expect(content.title == "50% · 月 25%")
-        #expect(content.ringFills.isEmpty)
+        #expect(content.gauges.isEmpty)
     }
 
     @Test func リングと数値はリングと同じ割合を数字でも出す() {
@@ -260,7 +276,7 @@ struct MenuBarContentTests {
         let input = MenuBarInput(metric: .today, representation: .ringAndValue,
                                  gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
         let content = MenuBarReadout.content(for: input)
-        #expect(content.ringFills == [0.5])
+        #expect(content.gauges.map(\.fill) == [0.5])
         #expect(content.title == "50%")
     }
 
@@ -269,30 +285,30 @@ struct MenuBarContentTests {
         let input = MenuBarInput(metric: .today, representation: .ringAndValue,
                                  gauge: MenuBarGauge(todaySpend: 14.2, todayBasis: 10))
         let content = MenuBarReadout.content(for: input)
-        #expect(content.ringFills == [1])
+        #expect(content.gauges.map(\.fill) == [1])
         #expect(content.title == "142%")
     }
 
     @Test func 分母がなければリングは消えて金額だけ残る() {
         let input = MenuBarInput(metric: .today, representation: .ring)
         let content = MenuBarReadout.content(for: input)
-        #expect(content.ringFills.isEmpty)
+        #expect(content.gauges.isEmpty)
         #expect(!content.title.isEmpty)
     }
 
     @Test func アイコンのみは数字もリングも持たない() {
         let content = MenuBarReadout.content(for: MenuBarInput(representation: .iconOnly))
         #expect(content.title.isEmpty)
-        #expect(content.ringFills.isEmpty)
-        #expect(content.toolTip == "Tokfuel")
+        #expect(content.gauges.isEmpty)
+        #expect(content.toolTip == MenuBarReadout.buildLabel("Tokfuel"))
     }
 
     @Test func プロンプト数は件数をそのまま出す() {
         let content = MenuBarReadout.content(
             for: MenuBarInput(metric: .prompts, representation: .ring, prompts: 42))
         #expect(content.title == "42")
-        #expect(content.toolTip == "今日のプロンプト数: 42")
-        #expect(content.ringFills.isEmpty)
+        #expect(content.toolTip == MenuBarReadout.buildLabel("今日のプロンプト数: 42"))
+        #expect(content.gauges.isEmpty)
     }
 
     @Test func ツールチップは割合も併記する() {
@@ -301,23 +317,68 @@ struct MenuBarContentTests {
         #expect(MenuBarReadout.content(for: input).toolTip.contains("（50%）"))
     }
 
-    @Test func リングは基準にかかわらず予算超過の色を受け取る() {
-        // リングは給油機アイコンと入れ替わるので、ここで色を落とすと予算超過の赤が
+    @Test func ゲージは基準にかかわらず予算レベルの色を受け取る() {
+        // ゲージは給油機アイコンと入れ替わるので、ここで色を落とすと予算超過の赤が
         // どこにも出なくなる。分母の取り方（基準）とは無関係に渡す。
         for basis in MenuBarPercentBasis.allCases {
             let input = MenuBarInput(metric: .today, representation: .ring, basis: basis,
                                      gauge: MenuBarGauge(todaySpend: 9, todayBasis: 10),
-                                     alertLevel: .over)
-            #expect(MenuBarReadout.content(for: input).alertLevel == .over)
+                                     todayLevel: .over)
+            #expect(MenuBarReadout.content(for: input).gauges.first?.level == .over)
         }
     }
 
-    @Test func リングを描かない表現は色を持たない() {
-        // 給油機アイコン側が自分で着色するので、リング用の色は載せない。
+    /// 今日だけしきい値を越えたら、今日のゲージだけ色が変わる。
+    @Test func ゲージは側ごとに色を持つ() {
+        let input = MenuBarInput(metric: .both, representation: .ring,
+                                 gauge: MenuBarGauge(todaySpend: 9, todayBasis: 10,
+                                                     monthSpend: 10, monthBasis: 100),
+                                 todayLevel: .warning, monthLevel: .ok)
+        #expect(MenuBarReadout.content(for: input).gauges.map(\.level) == [.warning, .ok])
+    }
+
+    @Test func アイコンの色は悪い方のレベルを使う() {
+        // 給油機アイコン単体はメニューバーに 1 つしか出ないので、危ない側を代表させる。
+        let input = MenuBarInput(metric: .both, representation: .amount,
+                                 todayLevel: .ok, monthLevel: .over)
+        #expect(MenuBarReadout.content(for: input).iconLevel == .over)
+    }
+
+    @Test func リングと一緒にアイコンも出せる() {
+        // リングは給油機アイコンと入れ替わるので、並べたい人のために選べるようにする。
+        var input = MenuBarInput(metric: .today, representation: .ring, showsIcon: true,
+                                 gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
+        #expect(MenuBarReadout.content(for: input).showsIcon)
+        input.showsIcon = false
+        #expect(!MenuBarReadout.content(for: input).showsIcon)
+    }
+
+    @Test func タンクはアイコン自身がゲージなので併記できない() {
+        // アイコンを別に並べると給油機が 2 つ出てしまう。
+        let input = MenuBarInput(metric: .today, representation: .ring, shape: .tank,
+                                 showsIcon: false,
+                                 gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
+        let content = MenuBarReadout.content(for: input)
+        #expect(content.showsIcon)
+        #expect(content.shape == .tank)
+        #expect(content.gauges.count == 1)
+    }
+
+    @Test func 文字だけの表現ではアイコンを消せない() {
+        // 数字だけが浮いていると、何のアプリの値なのか分からなくなる。
+        for representation in [MenuBarRepresentation.amount, .percent, .iconOnly] {
+            let input = MenuBarInput(metric: .today, representation: representation,
+                                     showsIcon: false,
+                                     gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
+            #expect(MenuBarReadout.content(for: input).showsIcon)
+        }
+    }
+
+    @Test func ゲージを描かない表現はゲージを持たない() {
         let input = MenuBarInput(metric: .today, representation: .amount,
                                  gauge: MenuBarGauge(todaySpend: 9, todayBasis: 10),
-                                 alertLevel: .over)
-        #expect(MenuBarReadout.content(for: input).alertLevel == nil)
+                                 todayLevel: .over)
+        #expect(MenuBarReadout.content(for: input).gauges.isEmpty)
     }
 
     @Test func 残り表示は予算上限基準のときだけ割合を反転する() {
@@ -346,13 +407,13 @@ struct MenuBarContentTests {
     @Test func 分母がなければツールチップは金額だけ() {
         let input = MenuBarInput(metric: .today, representation: .amount)
         let toolTip = MenuBarReadout.content(for: input).toolTip
-        #expect(toolTip.hasPrefix("今日の推定コスト: "))
+        #expect(toolTip.contains("今日の推定コスト: "))
         #expect(!toolTip.contains("%"))
     }
 
     @Test func 残額モードのツールチップは残り予算と名乗る() {
         let input = MenuBarInput(metric: .today, representation: .amount, showsRemaining: true,
                                  dailyLimit: 10)
-        #expect(MenuBarReadout.content(for: input).toolTip.hasPrefix("今日の残り予算: "))
+        #expect(MenuBarReadout.content(for: input).toolTip.contains("今日の残り予算: "))
     }
 }
