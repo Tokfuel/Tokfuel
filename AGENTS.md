@@ -21,7 +21,8 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
    carries no usage data); (2) when Cursor is detected on the Mac, `CursorPricingService`
    fetches Cursor's own published price table (`cursor.com/docs/models-and-pricing`) once a
    day to refine the Cursor cost estimate — no usage data is sent, only a page fetch, and
-   `CursorPricing`'s hardcoded table remains the fallback if the fetch or parse fails;
+   `CursorPricing` holds no hardcoded prices of its own — an unpriced model (fetch not yet
+   done, or not found in the table) contributes $0 rather than a guessed rate;
    (3) when Cursor is installed and the user is signed in, `CursorDashboardService` calls
    Cursor's dashboard usage API (`api2.cursor.sh`) with the session token already stored in
    Cursor's local `state.vscdb` — the request carries only that auth header and a date range

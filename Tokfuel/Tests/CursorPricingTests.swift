@@ -1,54 +1,81 @@
+import Foundation
 import Testing
 @testable import Tokfuel
 
-/// CursorPricing の単価表はプレフィックスの並び順に依存する（"gpt-5.1-codex-max" が
-/// "gpt-5.1" より先にマッチしないと壊れる)。ここでは主に、その順序が壊れやすい境界だけを狙う。
+/// CursorPricing はハードコードした単価表を持たない — CursorPricingService のキャッシュだけを
+/// 見る。テストは全て同じ UserDefaults キーを共有するキャッシュを触るので、他のテスト（この
+/// ファイル・CursorCostDriverTests.swift の両方）と並行に走っても衝突しないよう、各テストは
+/// 自分専用のキー名（"unittest-cursorpricing-" 接頭辞）だけを足し引きする
+/// （setCachedRatesForTesting は丸ごと置き換えず差分マージなので、他のテストが積んだキーは
+/// 壊さない）。
 struct CursorPricingTests {
-    @Test func Claudeファミリーは表記ゆれを問わず同じ単価() {
-        #expect(CursorPricing.cost(modelID: "claude-4-5-sonnet", inputTokens: 1_000_000, outputTokens: 0) == 3.0)
-        #expect(CursorPricing.cost(modelID: "claude-4-6-sonnet-thinking", inputTokens: 1_000_000, outputTokens: 0) == 3.0)
-        #expect(CursorPricing.cost(modelID: "claude-opus-4-8", inputTokens: 1_000_000, outputTokens: 0) == 5.0)
-        #expect(CursorPricing.cost(modelID: "claude-4-5-haiku", inputTokens: 1_000_000, outputTokens: 0) == 1.0)
+    private func rate(_ key: String, input: Double, output: Double) -> CursorPricingService.CachedRate {
+        CursorPricingService.CachedRate(key: key, input: input, output: output)
     }
 
-    @Test func gpt5系はより具体的なプレフィックスが優先される() {
-        // "gpt-5.1-codex-max" は "gpt-5.1" のプレフィックスでもあるため、順序を間違えると
-        // 汎用の gpt-5.1 単価（1.25）に落ちてしまう。
-        #expect(CursorPricing.cost(modelID: "gpt-5.1-codex-max", inputTokens: 1_000_000, outputTokens: 0) == 1.25)
-        #expect(CursorPricing.cost(modelID: "gpt-5.1-codex-mini", inputTokens: 1_000_000, outputTokens: 0) == 0.25)
-        #expect(CursorPricing.cost(modelID: "gpt-5.1", inputTokens: 1_000_000, outputTokens: 0) == 1.25)
-        // "gpt-5.4-mini" / "gpt-5.4-nano" は "gpt-5.4" のプレフィックスでもある。
-        #expect(CursorPricing.cost(modelID: "gpt-5.4-mini", inputTokens: 1_000_000, outputTokens: 0) == 0.75)
-        #expect(CursorPricing.cost(modelID: "gpt-5.4-nano", inputTokens: 1_000_000, outputTokens: 0) == 0.2)
-        #expect(CursorPricing.cost(modelID: "gpt-5.4", inputTokens: 1_000_000, outputTokens: 0) == 2.5)
-        // "gpt-5-mini" / "gpt-5-codex" / "gpt-5-nano" / "gpt-5-fast" は "gpt-5" のプレフィックスでもある。
-        #expect(CursorPricing.cost(modelID: "gpt-5-mini", inputTokens: 1_000_000, outputTokens: 0) == 0.25)
-        #expect(CursorPricing.cost(modelID: "gpt-5-codex", inputTokens: 1_000_000, outputTokens: 0) == 1.25)
-        #expect(CursorPricing.cost(modelID: "gpt-5", inputTokens: 1_000_000, outputTokens: 0) == 1.25)
+    private func withCache(_ rates: [CursorPricingService.CachedRate], _ body: () -> Void) {
+        CursorPricingService.setCachedRatesForTesting(rates)
+        defer { CursorPricingService.removeCachedRatesForTesting(keys: rates.map(\.key)) }
+        body()
     }
 
-    @Test func geminiの画像プレビューは通常のproより先にマッチする() {
-        // "gemini-3-pro-image-preview" は "gemini-3-pro" のプレフィックスでもある。
-        #expect(CursorPricing.cost(modelID: "gemini-3-pro-image-preview", inputTokens: 1_000_000, outputTokens: 0) == 2.0)
-        #expect(CursorPricing.cost(modelID: "gemini-3-pro", inputTokens: 1_000_000, outputTokens: 0) == 2.0)
-        #expect(CursorPricing.cost(modelID: "gemini-3.1-pro", inputTokens: 1_000_000, outputTokens: 0) == 2.0)
-        #expect(CursorPricing.cost(modelID: "gemini-3-flash", inputTokens: 1_000_000, outputTokens: 0) == 0.5)
-        #expect(CursorPricing.cost(modelID: "gemini-3.5-flash", inputTokens: 1_000_000, outputTokens: 0) == 1.5)
+    private static let prefix = "unittest-cursorpricing-"
+
+    @Test func キャッシュにあるモデルは単価を引ける() {
+        let key = Self.prefix + "claude-4-5-sonnet"
+        withCache([rate(key, input: 3.0, output: 15.0)]) {
+            #expect(CursorPricing.cost(modelID: key, inputTokens: 1_000_000, outputTokens: 0) == 3.0)
+        }
     }
 
-    @Test func GLMとKimiも認識する() {
-        #expect(CursorPricing.cost(modelID: "glm-5.2", inputTokens: 1_000_000, outputTokens: 0) == 1.4)
-        #expect(CursorPricing.cost(modelID: "kimi-k3", inputTokens: 1_000_000, outputTokens: 0) == 3.0)
-        #expect(CursorPricing.cost(modelID: "kimi-k2.7-code", inputTokens: 1_000_000, outputTokens: 0) == 0.95)
+    @Test func 前方一致で引ける() {
+        let key = Self.prefix + "gpt-5.1-codex-max"
+        withCache([rate(key, input: 1.25, output: 10.0)]) {
+            // 実際のモデル ID にはサフィックス（日付・variant 等）が付くことがある想定。
+            #expect(CursorPricing.cost(modelID: key + "-preview",
+                                       inputTokens: 1_000_000, outputTokens: 0) == 1.25)
+        }
     }
 
-    @Test func 未知のモデルは0() {
-        #expect(CursorPricing.cost(modelID: "some-brand-new-model", inputTokens: 1_000_000, outputTokens: 1_000_000) == 0)
+    @Test func より長いキーが先にマッチする() {
+        // 長い方 (codex-max) が短い方 (無印) のプレフィックスでもある。
+        let longKey = Self.prefix + "gpt-5.1-codex-max"
+        let shortKey = Self.prefix + "gpt-5.1"
+        withCache([
+            rate(longKey, input: 1.25, output: 10.0),
+            rate(shortKey, input: 999.0, output: 999.0)   // マッチしたら一目で分かる値
+        ]) {
+            #expect(CursorPricing.cost(modelID: longKey,
+                                       inputTokens: 1_000_000, outputTokens: 0) == 1.25)
+        }
+    }
+
+    @Test func 未登録のモデルは0() {
+        // UUID を混ぜて、他のどのテストも束の間でも登録し得ないキーにする
+        // ——「キャッシュが空」を仮定せず「このキーは無い」だけを仮定する。
+        let neverSeeded = "unittest-cursorpricing-never-\(UUID().uuidString)"
+        #expect(CursorPricing.cost(modelID: neverSeeded,
+                                   inputTokens: 1_000_000, outputTokens: 1_000_000) == 0)
+    }
+
+    @Test func キャッシュにあってもモデルが見つからなければ0() {
+        let key = Self.prefix + "claude-4-5-sonnet-2"
+        let other = "unittest-cursorpricing-unrelated-\(UUID().uuidString)"
+        withCache([rate(key, input: 3.0, output: 15.0)]) {
+            #expect(CursorPricing.cost(modelID: other,
+                                       inputTokens: 1_000_000, outputTokens: 1_000_000) == 0)
+        }
+    }
+
+    @Test func modelIDがnilなら0() {
         #expect(CursorPricing.cost(modelID: nil, inputTokens: 1_000_000, outputTokens: 1_000_000) == 0)
     }
 
     @Test func 入力と出力の両方が単価に反映される() {
-        let cost = CursorPricing.cost(modelID: "claude-4-5-sonnet", inputTokens: 1_000_000, outputTokens: 500_000)
-        #expect(cost == 3.0 + 7.5)
+        let key = Self.prefix + "claude-4-5-sonnet-3"
+        withCache([rate(key, input: 3.0, output: 15.0)]) {
+            let cost = CursorPricing.cost(modelID: key, inputTokens: 1_000_000, outputTokens: 500_000)
+            #expect(cost == 3.0 + 7.5)
+        }
     }
 }

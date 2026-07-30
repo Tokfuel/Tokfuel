@@ -1,13 +1,14 @@
 import Foundation
 
 /// Cursor 公式の価格表（<https://cursor.com/docs/models-and-pricing>）を取得し、
-/// `CursorPricing` の非 Claude ファミリーを最新化する。`Currency.swift` の
+/// `CursorPricing` が参照する唯一の単価ソースを最新化する。`Currency.swift` の
 /// `ExchangeRateService` と同じ形の、アプリで 2 つ目の通信機能: Cursor がインストールされて
 /// いるとき（＝この情報が実際に使われるとき）だけ、1 日 1 回だけ発火する。
 ///
 /// 失敗（オフライン・ページ構成の変更・パース失敗など）はすべて静かに諦め、既存のキャッシュ
-/// （無ければ `CursorPricing` の静的表）にフォールバックする。retok と違い、これはオマケの
-/// 精度向上でしかないので、失敗をユーザーに見せる仕組みは持たない。
+/// （無ければ空——`CursorPricing` はハードコードした表を持たないので、未知のモデルと同じ
+/// 扱いで 0 になる）にフォールバックする。retok と違い、これはオマケの精度向上でしかないので、
+/// 失敗をユーザーに見せる仕組みは持たない。
 enum CursorPricingService {
     struct CachedRate: Codable {
         let key: String
@@ -18,13 +19,50 @@ enum CursorPricingService {
     private static let cacheKey = "cursorPricingTableCache"
     private static let cacheDateKey = "cursorPricingTableCacheDate"
 
-    /// キャッシュ済みの表（無ければ空）。`CursorPricing.rate(for:)` がこれを先に参照する。
+    /// キャッシュ済みの表（無ければ空）。`CursorPricing.rate(for:)` が参照する唯一のソース。
     /// キー長の降順にソート済み — より具体的なプレフィックスほど先にマッチする。
     static func cachedRates() -> [CachedRate] {
         guard let data = UserDefaults.standard.data(forKey: cacheKey),
               let rates = try? JSONDecoder().decode([CachedRate].self, from: data)
         else { return [] }
         return rates
+    }
+
+    /// テスト間でキャッシュを衝突させないための排他ロック。UserDefaults 自体はスレッドセーフでも
+    /// 「読んで・キーだけ差し替えて・書き戻す」の一連は並行テストだとロスト・アップデートになる。
+    private static let testCacheLock = NSLock()
+
+    /// テスト用にキャッシュへ差分マージする（丸ごと置き換えない）。並行実行される他のテストが
+    /// 積んだキーは残したまま、自分のキーだけ upsert してキー長降順を保つ。
+    /// 使い終わったキーは `removeCachedRatesForTesting(keys:)` で自分の分だけ剥がす。
+    static func setCachedRatesForTesting(_ rates: [CachedRate]) {
+        testCacheLock.lock()
+        defer { testCacheLock.unlock() }
+        var current = cachedRates()
+        let newKeys = Set(rates.map(\.key))
+        current.removeAll { newKeys.contains($0.key) }
+        current.append(contentsOf: rates)
+        persistForTesting(current)
+    }
+
+    /// `setCachedRatesForTesting` で足したキーのうち、指定したものだけ剥がす。
+    static func removeCachedRatesForTesting(keys: [String]) {
+        testCacheLock.lock()
+        defer { testCacheLock.unlock() }
+        var current = cachedRates()
+        current.removeAll { keys.contains($0.key) }
+        persistForTesting(current)
+    }
+
+    private static func persistForTesting(_ rates: [CachedRate]) {
+        let defaults = UserDefaults.standard
+        guard !rates.isEmpty else {
+            defaults.removeObject(forKey: cacheKey)
+            return
+        }
+        // parseTable() と同じ不変条件（キー長降順）を保つ。
+        let sorted = rates.sorted { $0.key.count > $1.key.count }
+        defaults.set(try? JSONEncoder().encode(sorted), forKey: cacheKey)
     }
 
     /// Cursor がローカルにインストールされていて、かつ今日まだ取得していなければ取得する。
