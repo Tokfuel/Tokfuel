@@ -69,17 +69,18 @@
 
 - 🔄 **In-app updates**
 
-  Once a day the app checks [GitHub Releases](https://github.com/akidon0000/Tokfuel/releases)
-  for a newer version and shows a banner in the popover. One click downloads the release,
-  verifies its code signature, swaps the app in place, and relaunches.
+  At launch and then every 24 hours, the app checks
+  [GitHub Releases](https://github.com/akidon0000/Tokfuel/releases) for a newer version
+  and shows a banner in the popover. One click downloads the release, verifies its code
+  signature, swaps the app in place, and relaunches.
 
 - 🔒 **Local-first**
 
-  No telemetry. Network calls are: the opt-in exchange-rate fetch; the once-a-day
-  update check against GitHub Releases (the release file downloads only when you click
-  update); if Cursor is installed, the daily price-table refresh; and, when signed into
-  Cursor, a usage query to Cursor's dashboard API (auth + date range only — no prompts).
-  None of them carry usage data.
+  No telemetry. Network calls are: the opt-in exchange-rate fetch; the update check
+  against GitHub Releases at launch and every 24 hours (the release file downloads only
+  when you click update); if Cursor is installed, the daily price-table refresh; and,
+  when signed into Cursor, a usage query to Cursor's dashboard API (auth + date range
+  only — no prompts). None of them carry usage data.
   Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
 
 ## Install

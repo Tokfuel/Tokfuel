@@ -27,9 +27,11 @@ final class UpdateChecker: ObservableObject {
     @Published private(set) var available: AvailableUpdate?
     @Published private(set) var phase: InstallPhase = .idle
 
-    /// その場差し替えできる実行形態か。false（`swift run`・App Translocation・設置先が
-    /// 書き込み不可）なら、バナーのボタンはリリースページを開く動作としてラベルする。
-    let installsInPlace: Bool
+    /// その場差し替えの対象（いまの .app の場所）。`swift run`・App Translocation・
+    /// 設置先が書き込み不可なら nil。起動時に一度だけ判定してラベルと動作の両方に使い、
+    /// ボタンの文言と実際の挙動が食い違わないようにする。
+    private let installTarget: URL?
+    var installsInPlace: Bool { installTarget != nil }
 
     /// 「後で」を押した版。その版だけ次回起動まで抑制する（仕様どおり永続化しない）。
     private var skippedVersion: String?
@@ -39,7 +41,7 @@ final class UpdateChecker: ObservableObject {
         URL(string: "https://api.github.com/repos/Tokfuel/Tokfuel/releases/latest")!
 
     private init() {
-        installsInPlace = Self.installedAppURL() != nil
+        installTarget = Self.installedAppURL()
     }
 
     /// 起動時に 1 回、以後 24 時間ごとに確認する。デーモンや launch agent は使わない。
@@ -59,11 +61,16 @@ final class UpdateChecker: ObservableObject {
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         guard let (data, response) = try? await URLSession.shared.data(for: request),
               (response as? HTTPURLResponse)?.statusCode == 200,
-              let release = try? JSONDecoder().decode(Release.self, from: data)
+              let release = try? JSONDecoder().decode(Release.self, from: data),
+              phase != .working   // 待っている間にアップデートが始まっていたら結果を捨てる
         else { return }
 
         let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
-        available = Self.evaluate(release, current: current, skipped: skippedVersion)
+        let offer = Self.evaluate(release, current: current, skipped: skippedVersion)
+        if offer?.version != available?.version {
+            phase = .idle   // 前の版へのインストール失敗表示を、別の版の提示に持ち越さない
+        }
+        available = offer
     }
 
     /// 「後で」— 提示中の版を次回起動まで出さない。
@@ -77,7 +84,7 @@ final class UpdateChecker: ObservableObject {
     /// その場差し替えできない環境では、代わりにリリースページを開く。
     func installOffered() {
         guard let update = available, phase != .working else { return }
-        guard let destination = Self.installedAppURL() else {
+        guard let destination = installTarget else {
             NSWorkspace.shared.open(update.pageURL)
             return
         }
@@ -211,12 +218,18 @@ final class UpdateChecker: ObservableObject {
         let workDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("TokfuelUpdate-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
-        let archive = workDir.appendingPathComponent(update.assetURL.lastPathComponent)
-        try FileManager.default.moveItem(at: downloaded, to: archive)
-
-        let newApp = try extractApp(from: archive, into: workDir)
-        try validate(appAt: newApp)
-        try launchReplaceHelper(newApp: newApp, destination: destination)
+        do {
+            let archive = workDir.appendingPathComponent(update.assetURL.lastPathComponent)
+            try FileManager.default.moveItem(at: downloaded, to: archive)
+            let newApp = try extractApp(from: archive, into: workDir)
+            try validate(appAt: newApp, expecting: update.version)
+            try launchReplaceHelper(newApp: newApp, destination: destination)
+        } catch {
+            // 失敗した試行の作業場所は残さない（成功時はヘルパーが読むので残す —
+            // システムの一時ファイル掃除に任せる）。
+            try? FileManager.default.removeItem(at: workDir)
+            throw error
+        }
     }
 
     /// アーカイブ（dmg / zip）から .app を取り出し、作業ディレクトリ内の URL を返す。
@@ -247,10 +260,14 @@ final class UpdateChecker: ObservableObject {
         return entries.first { $0.pathExtension == "app" }
     }
 
-    /// すり替え・破損を弾く: 自分と同じ bundle ID で、コード署名が完全であること。
-    nonisolated private static func validate(appAt url: URL) throws {
-        guard let bundleID = Bundle(url: url)?.bundleIdentifier,
-              bundleID == Bundle.main.bundleIdentifier else { throw UpdateError.wrongBundle }
+    /// すり替え・破損・中身違いを弾く: 自分と同じ bundle ID で、提示した版そのもので、
+    /// コード署名が完全であること。版の照合が無いと、タグと中身がずれたアセットを
+    /// 「成功」させてしまい、再起動後も同じ更新を無限に提示し続ける。
+    nonisolated private static func validate(appAt url: URL, expecting version: String) throws {
+        guard let bundle = Bundle(url: url),
+              bundle.bundleIdentifier == Bundle.main.bundleIdentifier,
+              bundle.infoDictionary?["CFBundleShortVersionString"] as? String == version
+        else { throw UpdateError.wrongBundle }
 
         var staticCode: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &staticCode) == errSecSuccess,
@@ -266,9 +283,12 @@ final class UpdateChecker: ObservableObject {
         let script = """
         #!/bin/bash
         # Tokfuel 自己アップデート: $1=待つ PID, $2=新しい .app, $3=差し替え先
+        # 旧アプリを消すのは、新アプリのコピーが差し替え先ボリュームに置けてから。
+        # 途中で失敗しても「アプリが消えただけ」の状態を作らない。
         while /bin/kill -0 "$1" 2>/dev/null; do /bin/sleep 0.2; done
-        /bin/rm -rf "$3"
-        /usr/bin/ditto "$2" "$3"
+        /bin/rm -rf "$3.new"
+        /usr/bin/ditto "$2" "$3.new" || exit 1
+        /bin/rm -rf "$3" && /bin/mv "$3.new" "$3" || exit 1
         /usr/bin/xattr -dr com.apple.quarantine "$3" 2>/dev/null
         /usr/bin/open "$3"
         """
@@ -290,6 +310,7 @@ final class UpdateChecker: ObservableObject {
         process.arguments = arguments
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
+        process.standardInput = FileHandle.nullDevice   // SLA 付き dmg の入力待ちを即失敗に
         try process.run()
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { throw UpdateError.commandFailed }

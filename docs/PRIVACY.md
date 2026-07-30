@@ -29,7 +29,7 @@ Tokfuel makes network requests only in these cases, and never sends your Claude 
 - **Cursor price table (automatic, if Cursor is detected).** To refine Cursor cost estimates, `CursorPricingService` fetches Cursor's own published price table from `cursor.com/docs/models-and-pricing` once a day. This is a page fetch only — no usage data is sent.
 - **Cursor dashboard usage (if Cursor is installed and you're signed in).** `CursorDashboardService` calls Cursor's dashboard usage API (`api2.cursor.sh`) using the session token already stored locally in Cursor's own `state.vscdb`. The request carries only that auth header and a date range — no prompts, no local transcripts. On any failure it falls back to local SQLite token snapshots instead.
 
-As with any web request, the operators of these APIs technically see standard connection metadata such as your IP address. If Cursor is not installed, only the update check and the exchange-rate request (the latter only if you opt into JPY) can occur.
+As with any web request, the operators of these APIs technically see standard connection metadata such as your IP address. If Cursor is not installed, the only requests that can occur are the update check, the release download you explicitly trigger from the update banner, and the exchange-rate request (if you opt into JPY).
 
 ## What Tokfuel does not do
 
