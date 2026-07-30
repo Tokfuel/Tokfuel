@@ -12,6 +12,7 @@ APP_NAME="Tokfuel"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="$PROJECT_DIR/dist"
 APP_DIR="$DIST_DIR/${APP_NAME}.app"
+source "$PROJECT_DIR/scripts/package-app.sh"
 
 VERSION="${1:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROJECT_DIR/Info.plist")}"
 VERSION="${VERSION#v}"   # タグ名 v1.2.3 でも 1.2.3 でも受け付ける
@@ -25,13 +26,7 @@ BUILD_DIR="$PROJECT_DIR/.build/apple/Products/Release"
 
 echo "Packaging .app bundle..."
 rm -rf "$DIST_DIR"
-mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
-
-cp "$BUILD_DIR/$APP_NAME" "$APP_DIR/Contents/MacOS/$APP_NAME"
-cp "$PROJECT_DIR/Info.plist" "$APP_DIR/Contents/Info.plist"
-# SwiftPM のリソースバンドル（retok スクリプト・locales）を同梱する
-cp -R "$BUILD_DIR/${APP_NAME}_${APP_NAME}.bundle" "$APP_DIR/Contents/Resources/"
-cp "$PROJECT_DIR/assets/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
+package_tokfuel_app "$BUILD_DIR" "$APP_DIR" "$PROJECT_DIR"
 
 # 配布物のバージョンをタグに合わせる
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_DIR/Contents/Info.plist"

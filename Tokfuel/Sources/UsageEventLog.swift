@@ -141,41 +141,6 @@ final class UsageEventLog: @unchecked Sendable {
         }
     }
 
-    // MARK: - 読み出し
-
-    /// 直近 `days` 日のイベント件数（gardener と設定画面の表示用）。
-    /// 期間より前の月ファイルは開かずに飛ばす。
-    func frequency(of event: UsageEvent, days: Int, now: Date = Date()) -> Int {
-        queue.sync {
-            let since = Self.gregorian.date(byAdding: .day, value: -days, to: now) ?? now
-            let firstRelevantFile = Self.fileName(for: since)
-            let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
-            var count = 0
-            for name in names.sorted()
-            where name.hasSuffix(".jsonl") && name >= firstRelevantFile {
-                guard let text = try? String(contentsOf: directory.appendingPathComponent(name),
-                                             encoding: .utf8) else { continue }
-                count += Self.countMatches(in: text, event: event, since: since)
-            }
-            return count
-        }
-    }
-
-    /// JSONL テキストから、`since` 以降の該当イベント行を数える。壊れた行は無視する。
-    static func countMatches(in text: String, event: UsageEvent, since: Date) -> Int {
-        var count = 0
-        for line in text.split(separator: "\n") {
-            guard let data = line.data(using: .utf8),
-                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  obj["event"] as? String == event.rawValue,
-                  let ts = obj["ts"] as? String,
-                  let date = iso8601.date(from: ts),
-                  date >= since else { continue }
-            count += 1
-        }
-        return count
-    }
-
     // MARK: - 管理操作（設定画面から）
 
     /// Finder で開くための保存先。未作成でもボタンが無反応にならないよう、先に作る。

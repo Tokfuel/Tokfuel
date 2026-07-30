@@ -94,7 +94,7 @@ struct MenuBarInput {
     /// 給油機アイコンを出すか。リングを描くときだけ意味を持つ（リングと入れ替えるのではなく
     /// 横に並べたい人がいる）。リング以外では常にアイコンを出す。
     var showsIcon = true
-    /// Cost タブと同じソース表示。並べて表示のとき金額タイトルを Claude / Cursor に分ける。
+    /// ポップオーバーと同じソース表示。並べて表示のとき金額タイトルを Claude / Cursor に分ける。
     var costSourceMode: CostSourceMode = .combined
     var prompts = 0
     var gauge = MenuBarGauge()
