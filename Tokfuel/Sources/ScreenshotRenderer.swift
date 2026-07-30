@@ -234,9 +234,10 @@ enum ScreenshotRenderer {
         // 以降の設定変更を記録させない（`~/Library/Application Support/Tokfuel` に何も書かない）。
         defaults.set(false, forKey: UsageEventLog.enabledKey)
         defaults.set(DisplayCurrency.usd.rawValue, forKey: Money.currencyKey)
-        // UsageStore は集計期間を UserDefaults から復元する。プロパティ経由で変えると
-        // retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。
+        // UsageStore は集計期間とチャート形式を UserDefaults から復元する。プロパティ経由で
+        // 変えると retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。
         defaults.set(reportDays, forKey: "reportDays")
+        defaults.set(CostChartStyle.daily.rawValue, forKey: UsageStore.costChartStyleKey)
 
         let settings = AppSettings.shared
         settings.budgetLimit = budgetLimit
@@ -322,9 +323,7 @@ enum ScreenshotRenderer {
         let store = UsageStore()
         store.report = fixtureReport()
         store.budgetSpend = budgetSpend
-        // コスト用ポップオーバーが読むのはプロンプト数とセッション数だけ。
-        store.daily = [DailyUsage(date: dateString(daysAgo: 0), prompts: 42, sessions: 6)]
-        // Cursor（二次ソース、TF-0032）。並べて表示モードのヒーローに出る今日ぶんだけ積む。
+        // Cursor（二次ソース、TF-0032）。ヒーロー合計と内訳キャプションに出る今日ぶんだけ積む。
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
         store.lastUpdated = Date()
         return store

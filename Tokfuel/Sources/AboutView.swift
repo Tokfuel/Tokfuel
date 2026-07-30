@@ -35,6 +35,12 @@ struct AboutView: View {
                          destination: URL(string: "https://github.com/akidon0000")!)
                 }
                 GridRow {
+                    Text("ソースコード")
+                        .foregroundStyle(.secondary)
+                    Link("github.com/Tokfuel/Tokfuel",
+                         destination: URL(string: "https://github.com/Tokfuel/Tokfuel")!)
+                }
+                GridRow {
                     Text("コスト分析")
                         .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 2) {

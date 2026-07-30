@@ -37,6 +37,13 @@ enum CostSourceMode: String, CaseIterable, Identifiable {
     }
 }
 
+/// 推移チャートの描画形式。日別の棒（凸凹と内訳）か、期間の累積折れ線（ペース）か。
+enum CostChartStyle: String, CaseIterable, Identifiable {
+    case daily
+    case cumulative
+    var id: String { rawValue }
+}
+
 /// 「モデル別」セクションの並び方。
 enum CostModelBreakdownMode: String, CaseIterable, Identifiable {
     /// Claude と Cursor のモデルを 1 つの一覧にマージする。

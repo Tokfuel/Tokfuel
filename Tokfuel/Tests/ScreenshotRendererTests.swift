@@ -64,10 +64,9 @@ struct ScreenshotFixtureTests {
         let store = ScreenshotRenderer.fixtureStore()
         #expect(store.claudeTodayCost == ScreenshotRenderer.dailyCosts.last)
         #expect(store.cursorTodayCost == ScreenshotRenderer.cursorTodayCost)
-        // 並べて表示（TF-0032）でも、合算値は両ソースの合計になる。
+        // ヒーローは常に合算値（並べて表示は内訳キャプション行が担う。TF #53）。
         #expect(store.todayCost == (ScreenshotRenderer.dailyCosts.last ?? 0)
                 + ScreenshotRenderer.cursorTodayCost)
-        #expect(store.today.prompts == 42)
     }
 
     @Test func 月間予算は警告状態になる() {
