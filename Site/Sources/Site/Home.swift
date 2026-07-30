@@ -5,7 +5,7 @@ struct Home: StaticPage {
     var title = "Tokfuel — See what AI coding costs you"
     var description = "See what AI coding costs you, from the menu bar. A tiny, local-only SwiftUI app for macOS."
 
-    var downloadURL = "https://github.com/Tokfuel/Tokfuel/releases/latest/download/Tokfuel-latest.zip"
+    var downloadURL = "https://github.com/Tokfuel/Tokfuel/releases/latest/download/Tokfuel-latest.dmg"
     var sourceURL = "https://github.com/Tokfuel/Tokfuel"
     var authorURL = "https://github.com/akidon0000"
 
