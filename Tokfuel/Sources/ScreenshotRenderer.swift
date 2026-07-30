@@ -37,6 +37,8 @@ enum ScreenshotRenderer {
     static let dailyBudgetLimit: Double = 20
     /// Cursor（二次ソース）の今日のコスト。並べて表示モードで Claude と並ぶ絵になる。
     static let cursorTodayCost: Double = 4.20
+    /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
+    static let previewUpdateVersion = "0.1.0"
 
     enum RenderError: LocalizedError {
         case usage
@@ -108,6 +110,7 @@ enum ScreenshotRenderer {
 
     /// 撮影する全画面。ファイル名（拡張子なし）→ PNG データ。
     /// - `popover`: メニューバー帯付きの合成（README と同じ絵）
+    /// - `popover-update`: 同じ合成に、フッターがアップデートボタンを提示中の状態を重ねたもの
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
@@ -120,6 +123,8 @@ enum ScreenshotRenderer {
         let aboutProbeSize = CGSize(width: 320, height: 800)
         return [
             ("popover", try renderPNG(store: store)),
+            ("popover-update", try renderPNG(store: store,
+                                             updater: .preview(version: previewUpdateVersion))),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
@@ -131,13 +136,14 @@ enum ScreenshotRenderer {
         ]
     }
 
-    /// フィクスチャを積んだポップオーバーを @2x で PNG にする。
+    /// フィクスチャを積んだポップオーバーを @2x で PNG にする。`updater` の既定は `.shared`
+    /// （`available` は nil のまま）なので、ボタンを出したい画面だけ `.preview(version:)` を渡す。
     ///
     /// `ImageRenderer` ではなく `NSHostingView` を実際に描画させる。`ImageRenderer` は
     /// `ScrollView` の中身と AppKit 実装のコントロール（フッターの `Menu`・期間ピッカー）を
     /// 描けず、本文が空の絵になるため。
-    private static func renderPNG(store: UsageStore) throws -> Data {
-        let view = NSHostingView(rootView: composition(store: store, now: Date()))
+    private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared) throws -> Data {
+        let view = NSHostingView(rootView: composition(store: store, updater: updater, now: Date()))
         view.frame = CGRect(origin: .zero, size: canvas)
         return try capture(view, size: canvas)
     }
@@ -252,10 +258,10 @@ enum ScreenshotRenderer {
 
     /// メニューバー帯とポップオーバーをデスクトップ風の背景に合成した 1 枚。
     /// ポップオーバー本体は実物の `PopoverView` そのままで、枠だけがこのファイルの飾り。
-    private static func composition(store: UsageStore, now: Date) -> some View {
+    private static func composition(store: UsageStore, updater: UpdateChecker, now: Date) -> some View {
         VStack(spacing: 0) {
             menuBar(now: now)
-            popoverCard(store: store)
+            popoverCard(store: store, updater: updater)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 8)
                 .padding(.trailing, 24)
@@ -306,9 +312,9 @@ enum ScreenshotRenderer {
     }
 
     /// ポップオーバーの器（角丸・縁・影）。NSPopover の見た目を絵の上で再現する。
-    private static func popoverCard(store: UsageStore) -> some View {
+    private static func popoverCard(store: UsageStore, updater: UpdateChecker) -> some View {
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        return PopoverView(store: store)
+        return PopoverView(store: store, updater: updater)
             .background(Color(nsColor: .windowBackgroundColor))
             .clipShape(shape)
             .overlay(shape.strokeBorder(.white.opacity(0.12)))

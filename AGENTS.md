@@ -31,7 +31,8 @@ transcripts Claude Code already writes under `~/.claude/projects/`. All sources 
    (4) `UpdateChecker` polls the public GitHub Releases API
    (`api.github.com/repos/Tokfuel/Tokfuel/releases/latest`) once at launch and every 24 hours to
    detect a newer version, and downloads the release asset from GitHub only when the user clicks
-   **Update** in the popover banner — the requests carry no usage data, transcripts, or identifiers.
+   the **Update** button in the popover's footer — the requests carry no usage data, transcripts,
+   or identifiers.
 2. **Zero setup stays zero.** The app reads Claude Code transcripts directly. Never require
    hooks, external installs, or Claude Code configuration for a feature to work.
 3. **retok is vendored unmodified.** `Sources/Resources/retok.py` + `locales/` are
@@ -55,6 +56,15 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the tests and t
 `verify` skill rather than claiming untested behavior works). Headless-testable logic
 (e.g. `BudgetMonitor`, `RetokReport` decoding) lives in `Tokfuel/Tests` — add tests there for
 new logic. Avoid tests that touch real user state (`~/Library/Application Support/Tokfuel`).
+
+If the change adds or alters UI in `PopoverView`, `SettingsView`, or `AboutView`, also add or
+update a fixture screen in `ScreenshotRenderer.allScreens()` (and the `ORDER` / `screen_title`
+lists in [`ui-preview.yml`](.github/workflows/ui-preview.yml)) so the `ui-preview 📸` label
+actually renders the new state — a view only reachable through a live singleton (network
+response, real install path, etc.) needs an injectable fixture (see `UpdateChecker.preview`)
+the same way `AppSettings.shared` already gets fixture values from `prepareDefaults()`.
+Otherwise the new UI stays invisible to reviewers, as the popover's update button did until
+TF-0029's follow-up.
 
 ## Roadmap workflow
 

@@ -25,11 +25,11 @@ Tokfuel currently reads only Claude Code's and Cursor's local files. If a future
 Tokfuel makes network requests only in these cases, and never sends your Claude Code transcripts or Skill usage:
 
 - **Exchange rate (opt-in).** When you switch the display currency to JPY, the app fetches the daily USD→JPY rate from the [Frankfurter API](https://frankfurter.dev) (`api.frankfurter.dev`), at most once per day. The request carries no usage data, no identifiers, and no content from your Mac. With the currency left at USD (the default), this request never happens.
-- **App update check (automatic).** Once at launch and every 24 hours, `UpdateChecker` asks the public GitHub Releases API (`api.github.com`) for the latest Tokfuel release, so the app can offer an in-app update. The request carries no usage data and no identifiers. The release file itself is downloaded from GitHub only when you click **Update** in the popover banner.
+- **App update check (automatic).** Once at launch and every 24 hours, `UpdateChecker` asks the public GitHub Releases API (`api.github.com`) for the latest Tokfuel release, so the app can offer an in-app update. The request carries no usage data and no identifiers. The release file itself is downloaded from GitHub only when you click the **Update** button next to the popover's ⋯ menu.
 - **Cursor price table (automatic, if Cursor is detected).** To refine Cursor cost estimates, `CursorPricingService` fetches Cursor's own published price table from `cursor.com/docs/models-and-pricing` once a day. This is a page fetch only — no usage data is sent.
 - **Cursor dashboard usage (if Cursor is installed and you're signed in).** `CursorDashboardService` calls Cursor's dashboard usage API (`api2.cursor.sh`) using the session token already stored locally in Cursor's own `state.vscdb`. The request carries only that auth header and a date range — no prompts, no local transcripts. On any failure it falls back to local SQLite token snapshots instead.
 
-As with any web request, the operators of these APIs technically see standard connection metadata such as your IP address. If Cursor is not installed, the only requests that can occur are the update check, the release download you explicitly trigger from the update banner, and the exchange-rate request (if you opt into JPY).
+As with any web request, the operators of these APIs technically see standard connection metadata such as your IP address. If Cursor is not installed, the only requests that can occur are the update check, the release download you explicitly trigger from the Update button, and the exchange-rate request (if you opt into JPY).
 
 ## What Tokfuel does not do
 

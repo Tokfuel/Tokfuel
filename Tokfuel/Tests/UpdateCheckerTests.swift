@@ -60,7 +60,7 @@ struct UpdateReleaseDecodeTests {
     }
 }
 
-/// バナー提示の判定（新しいか・抑制中か・使えるアセットがあるか）をまとめて確かめる。
+/// アップデートボタン提示の判定（新しいか・抑制中か・使えるアセットがあるか）をまとめて確かめる。
 struct UpdateEvaluateTests {
     private func release(tag: String,
                          assets: [String] = ["Tokfuel-9.9.9.dmg"]) -> UpdateChecker.Release {

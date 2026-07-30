@@ -7,13 +7,14 @@ import Charts
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var settings = AppSettings.shared
-    @ObservedObject private var updater = UpdateChecker.shared
+    // private ではない — ScreenshotRenderer がフッターのアップデートボタンをプレビュー
+    // させるために、フィクスチャの UpdateChecker を渡せるようにする（既定は実物の .shared）。
+    @ObservedObject var updater = UpdateChecker.shared
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
-            updateBanner
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     heroSection
@@ -38,56 +39,6 @@ struct PopoverView: View {
         .frame(width: 360, height: 520)
         .onAppear {
             UsageEventLog.shared.log(.tabOpen, meta: ["tab": "cost"])
-        }
-    }
-
-    // MARK: - アップデートバナー（新バージョン検知時のみ）
-
-    /// 最上部の固定バナー（TF #29）。「後で」はその版を次回起動まで抑制する。
-    /// 失敗はここに 1 行で出し、リリースページへの手動導線を残す。
-    @ViewBuilder
-    private var updateBanner: some View {
-        if let update = updater.available {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                    Text("v\(update.version) が利用可能です")
-                        .font(.caption.weight(.semibold))
-                    Spacer()
-                    if updater.phase == .working {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("更新中…")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        // その場差し替えできない実行形態ではボタンに嘘をつかせない。
-                        Button(updater.installsInPlace ? "アップデート" : "リリースページを開く") {
-                            updater.installOffered()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        Button("後で") { updater.skipOffered() }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                    }
-                }
-                if case let .failed(message) = updater.phase {
-                    HStack(spacing: 6) {
-                        Text(message)
-                            .font(.caption2)
-                            .foregroundStyle(.orange)
-                        Button("リリースページを開く") { NSWorkspace.shared.open(update.pageURL) }
-                            .buttonStyle(.link)
-                            .font(.caption2)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(.quaternary.opacity(0.5))
-            Divider()
         }
     }
 
@@ -376,6 +327,7 @@ struct PopoverView: View {
                 .help("開発用の debug 構成です（設定の一番下にデバッグ項目があります）")
             #endif
             Spacer()
+            updateFooterButton
             Menu {
                 Button("再読み込み") { store.reload() }
                 Divider()
@@ -392,6 +344,45 @@ struct PopoverView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    /// アップデートがあるときだけ「⋯」の左に出す常設ボタン（TF #29）。縦のスペースを
+    /// 取らない控えめな訴求にする。右クリックでその版を次回起動まで抑制する（「後で」相当）。
+    /// 進行中はスピナーに、失敗時は警告アイコン（ホバーで理由）に、その場差し替え不可の
+    /// 実行形態ではラベルをリリースページ導線に、それぞれ差し替わる。
+    @ViewBuilder
+    private var updateFooterButton: some View {
+        if let update = updater.available {
+            let skipHint = "（右クリックでこのバージョンをスキップ）"
+            Group {
+                switch updater.phase {
+                case .working:
+                    ProgressView()
+                        .controlSize(.mini)
+                        .help("更新中…" + skipHint)
+                case .failed(let message):
+                    Button {
+                        updater.installOffered()
+                    } label: {
+                        Label("再試行", systemImage: "exclamationmark.triangle.fill")
+                    }
+                    .foregroundStyle(.orange)
+                    .help(message + skipHint)
+                case .idle:
+                    Button(updater.installsInPlace ? "アップデート" : "リリースページを開く") {
+                        updater.installOffered()
+                    }
+                    .foregroundStyle(Color.accentColor)
+                    .help("v\(update.version) が利用可能です" + skipHint)
+                }
+            }
+            .buttonStyle(.borderless)
+            .font(.caption.weight(.semibold))
+            .contextMenu {
+                Button("このバージョンをスキップ") { updater.skipOffered() }
+            }
+            .padding(.trailing, 4)
+        }
     }
 
     // MARK: - 部品・ユーティリティ

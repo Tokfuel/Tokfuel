@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
-        // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影にバナーは混ざらない。
+        // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
         UpdateChecker.shared.startPeriodicChecks()
 
         #if DEBUG

@@ -71,8 +71,8 @@
 
   At launch and then every 24 hours, the app checks
   [GitHub Releases](https://github.com/akidon0000/Tokfuel/releases) for a newer version
-  and shows a banner in the popover. One click downloads the release, verifies its code
-  signature, swaps the app in place, and relaunches.
+  and shows an **Update** button next to the popover's ⋯ menu. One click downloads the
+  release, verifies its code signature, swaps the app in place, and relaunches.
 
 - 🔒 **Local-first**
 

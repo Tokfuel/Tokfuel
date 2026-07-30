@@ -7,7 +7,8 @@ import Security
 /// どちらも使用状況データ・トランスクリプト・識別情報は一切乗せない。
 ///
 /// バックグラウンドの確認失敗（オフライン・レート制限・パース失敗）はすべて静かに諦め、
-/// 次回のチェックに委ねる。ユーザーが明示的に押したアップデートの失敗だけはバナーに出す。
+/// 次回のチェックに委ねる。ユーザーが明示的に押したアップデートの失敗だけは
+/// フッターのボタンに出す（`PopoverView.updateFooterButton`）。
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
@@ -29,8 +30,8 @@ final class UpdateChecker: ObservableObject {
 
     /// その場差し替えの対象（いまの .app の場所）。`swift run`・App Translocation・
     /// 設置先が書き込み不可なら nil。起動時に一度だけ判定してラベルと動作の両方に使い、
-    /// ボタンの文言と実際の挙動が食い違わないようにする。
-    private let installTarget: URL?
+    /// ボタンの文言と実際の挙動が食い違わないようにする（`preview(version:)` だけが例外）。
+    private(set) var installTarget: URL?
     var installsInPlace: Bool { installTarget != nil }
 
     /// 「後で」を押した版。その版だけ次回起動まで抑制する（仕様どおり永続化しない）。
@@ -42,6 +43,22 @@ final class UpdateChecker: ObservableObject {
 
     private init() {
         installTarget = Self.installedAppURL()
+    }
+
+    /// ui-preview / README スクリーンショット用: 実チェックを経由せず、指定した版を
+    /// 提示中に見せる単体のインスタンスを返す（`.shared` は汚さない）。その場差し替え
+    /// 可否は常に true として見せる — プレビューを撮る debug バイナリは `.app` ではないので
+    /// 実判定に任せると常に「リリースページを開く」側になってしまい、大多数のユーザーが
+    /// 実際に見る「アップデート」ボタンを確かめられない。
+    static func preview(version: String) -> UpdateChecker {
+        let checker = UpdateChecker()
+        checker.installTarget = URL(fileURLWithPath: "/Applications/Tokfuel.app")
+        checker.available = AvailableUpdate(
+            version: version,
+            pageURL: URL(string: "https://github.com/Tokfuel/Tokfuel/releases/tag/v\(version)")!,
+            assetURL: URL(string:
+                "https://github.com/Tokfuel/Tokfuel/releases/download/v\(version)/Tokfuel-\(version).dmg")!)
+        return checker
     }
 
     /// 起動時に 1 回、以後 24 時間ごとに確認する。デーモンや launch agent は使わない。
@@ -127,7 +144,7 @@ final class UpdateChecker: ObservableObject {
 
     /// リリース情報と現在のバージョンから、提示すべきアップデートを決める。
     /// 追いついている（外で更新した・リリースが取り下げられた）・「後で」で抑制中・
-    /// 使えるアセットが無い、のいずれかなら nil（バナーを畳む）。
+    /// 使えるアセットが無い、のいずれかなら nil（フッターのボタンを消す）。
     nonisolated static func evaluate(_ release: Release, current: String,
                                      skipped: String?) -> AvailableUpdate? {
         guard isNewer(release.tagName, than: current) else { return nil }
