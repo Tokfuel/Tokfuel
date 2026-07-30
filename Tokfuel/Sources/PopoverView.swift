@@ -210,7 +210,7 @@ struct PopoverView: View {
         }
         if store.costChartStyle == .cumulative,
            case let .monthEndProjection(amount) = store.cumulativeBudgetAnnotation {
-            parts.append("このペースで月末 約\(Self.money(amount))")
+            parts.append("月末 約\(Self.money(amount))")
         }
         return Text(parts.joined(separator: " · "))
             .font(.caption)
