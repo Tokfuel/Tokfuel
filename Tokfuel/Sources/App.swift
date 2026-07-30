@@ -31,6 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--screenshot") {
             ScreenshotRenderer.runAndExit()
         }
+        // Cursor 二次ソースの実スキャン → ポップオーバー描画検証。常駐せずに終了する。
+        if CommandLine.arguments.contains("--verify-cursor-ui") {
+            VerifyCursorUI.runAndExit()
+        }
         #endif
 
         NSApp.setActivationPolicy(.accessory)
@@ -78,12 +82,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settings.$menuBarPercentBasis.dropFirst().map { _ in () }.eraseToAnyPublisher(),
             settings.$menuBarGaugeShape.dropFirst().map { _ in () }.eraseToAnyPublisher(),
             settings.$menuBarShowsIcon.dropFirst().map { _ in () }.eraseToAnyPublisher(),
-            settings.$menuBarShowsRemaining.dropFirst().map { _ in () }.eraseToAnyPublisher())
+            settings.$menuBarShowsRemaining.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            settings.$costSourceMode.dropFirst().map { _ in () }.eraseToAnyPublisher())
             .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.updateStatusItem()
+                // ソース表示は todayCost / budgetSpend の合成に効くので、ストアも再描画させる。
+                self?.usageStore.objectWillChange.send()
                 self?.usageStore.reloadBudget()
             }
+            .store(in: &cancellables)
+        settings.$costModelBreakdownMode
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.usageStore.objectWillChange.send() }
             .store(in: &cancellables)
         settings.$language
             .dropFirst()
@@ -143,6 +155,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
             Task { @MainActor [weak self] in self?.usageStore.reload() }
         }
+
+        #if DEBUG
+        // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
+        if CommandLine.arguments.contains("--open-popover") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                self?.togglePopover()
+            }
+        }
+        #endif
     }
 
     /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。

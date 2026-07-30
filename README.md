@@ -37,6 +37,16 @@
 
   Today's / period cost, daily chart, per-model breakdown, top sessions, and retok's saving tips.
 
+- 🖱️ **Cursor, too**
+
+  If Cursor is installed and you're signed in, today's Cursor usage is folded into the
+  same total and chart via Cursor's own dashboard API (using the session Cursor already
+  keeps on disk — nothing to paste). Offline or signed-out, it falls back to local
+  token snapshots (often a lower bound on Cursor 3.x). Pricing for the fallback path is
+  refreshed once a day from Cursor's published price table.
+  In Settings, choose combined / Claude only / Cursor only / side-by-side — the Cost tab
+  and menu bar both follow that choice (budget gauges still use the included sum).
+
 - 🚨 **Budgets**
 
   Independent monthly and daily limits.
@@ -58,7 +68,10 @@
 
 - 🔒 **Local-first**
 
-  No telemetry. The only network call is the opt-in exchange-rate fetch.
+  No telemetry. Network calls are: the opt-in exchange-rate fetch; if Cursor is
+  installed, the daily price-table refresh; and, when signed into Cursor, a usage
+  query to Cursor's dashboard API (auth + date range only — no prompts).
+  Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
 
 ## Install
 
@@ -92,6 +105,7 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
 - Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
+<<<<<<< HEAD
 ## Releasing (maintainers)
 
 Push a `vX.Y.Z` tag, or run the **Release** workflow from the Actions tab with a version.
@@ -127,6 +141,27 @@ To verify the packaging locally without any certificates:
 ```bash
 TOKFUEL_SKIP_SIGNING=1 bash scripts/package_mas.sh
 ```
+=======
+### Contributors
+
+<div id="contributors">
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/akidon0000">
+                    <img src="https://avatars.githubusercontent.com/u/53287375?v=4&s=100" width="100;" alt="akidon0000"/>
+                    <br />
+                    <sub><b>akidon0000</b></sub>
+                </a>
+            </td>
+		</tr>
+	</tbody>
+</table>
+<!-- readme: contributors -end -->
+</div>
+>>>>>>> origin/main
 
 ## Acknowledgements
 
