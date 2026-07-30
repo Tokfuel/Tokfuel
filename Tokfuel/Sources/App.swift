@@ -160,6 +160,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in self?.usageStore.reload() }
         }
 
+        // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
+        // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
+        UpdateChecker.shared.startPeriodicChecks()
+
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
         if CommandLine.arguments.contains("--open-popover") {

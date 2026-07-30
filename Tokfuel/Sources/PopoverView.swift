@@ -7,6 +7,9 @@ import Charts
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var settings = AppSettings.shared
+    // private ではない — ScreenshotRenderer がフッターのアップデートボタンをプレビュー
+    // させるために、フィクスチャの UpdateChecker を渡せるようにする（既定は実物の .shared）。
+    @ObservedObject var updater = UpdateChecker.shared
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
 
@@ -352,6 +355,7 @@ struct PopoverView: View {
                 .help("開発用の debug 構成です（設定の一番下にデバッグ項目があります）")
             #endif
             Spacer()
+            updateFooterButton
             Menu {
                 Button("再読み込み") { store.reload() }
                 Divider()
@@ -368,6 +372,54 @@ struct PopoverView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    /// アップデートがあるときだけ「⋯」の左に出す常設ボタン（TF #29）。縦のスペースを
+    /// 取らない控えめな訴求にする。右クリックでその版を次回起動まで抑制する（「後で」相当）。
+    /// 進行中はスピナーに、失敗時は警告アイコン（ホバーで理由）に、その場差し替え不可の
+    /// 実行形態ではラベルをリリースページ導線に、それぞれ差し替わる。
+    @ViewBuilder
+    private var updateFooterButton: some View {
+        if let update = updater.available {
+            let skipHint = "（右クリックでこのバージョンをスキップ）"
+            Group {
+                switch updater.phase {
+                case .working:
+                    ProgressView()
+                        .controlSize(.mini)
+                        .help("更新中…" + skipHint)
+                case .failed(let message):
+                    Button {
+                        updater.installOffered()
+                    } label: {
+                        Label("再試行", systemImage: "exclamationmark.triangle.fill")
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .help(message + skipHint)
+                case .idle:
+                    // フッターの DEBUG バッジと同じカプセル型のレシピ（塗り + 白文字）で、
+                    // 他の要素より一段目立たせる。
+                    Button {
+                        updater.installOffered()
+                    } label: {
+                        Text(updater.installsInPlace ? "アップデート" : "リリースページを開く")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(.blue, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("v\(update.version) が利用可能です" + skipHint)
+                }
+            }
+            .contextMenu {
+                Button("このバージョンをスキップ") { updater.skipOffered() }
+            }
+            .padding(.trailing, 4)
+        }
     }
 
     // MARK: - 部品・ユーティリティ
