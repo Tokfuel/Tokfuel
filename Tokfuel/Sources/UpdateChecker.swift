@@ -12,11 +12,10 @@ import Security
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
 
-    struct AvailableUpdate: Equatable, Sendable {
+    struct AvailableUpdate: Sendable {
         let version: String     // 先頭の "v" を落とした表示用バージョン
         let pageURL: URL        // リリースページ — その場差し替えできないときの導線
         let assetURL: URL
-        let assetName: String   // 拡張子で dmg / zip を判別する
     }
 
     enum InstallPhase: Equatable {
@@ -28,12 +27,20 @@ final class UpdateChecker: ObservableObject {
     @Published private(set) var available: AvailableUpdate?
     @Published private(set) var phase: InstallPhase = .idle
 
+    /// その場差し替えできる実行形態か。false（`swift run`・App Translocation・設置先が
+    /// 書き込み不可）なら、バナーのボタンはリリースページを開く動作としてラベルする。
+    let installsInPlace: Bool
+
     /// 「後で」を押した版。その版だけ次回起動まで抑制する（仕様どおり永続化しない）。
     private var skippedVersion: String?
     private var timer: Timer?
 
     private static let latestReleaseURL =
         URL(string: "https://api.github.com/repos/Tokfuel/Tokfuel/releases/latest")!
+
+    private init() {
+        installsInPlace = Self.installedAppURL() != nil
+    }
 
     /// 起動時に 1 回、以後 24 時間ごとに確認する。デーモンや launch agent は使わない。
     func startPeriodicChecks() {
@@ -42,6 +49,7 @@ final class UpdateChecker: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 24 * 60 * 60, repeats: true) { _ in
             Task { @MainActor in await UpdateChecker.shared.checkForUpdate() }
         }
+        timer?.tolerance = 60 * 60   // 定刻性は不要 — システムに起床をまとめさせる
     }
 
     func checkForUpdate() async {
@@ -55,18 +63,7 @@ final class UpdateChecker: ObservableObject {
         else { return }
 
         let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
-        guard Self.isNewer(release.tagName, than: current) else {
-            available = nil   // 追いついた（外で更新した・リリースが取り下げられた）ら畳む
-            return
-        }
-        let version = Self.dropLeadingV(release.tagName)
-        guard version != skippedVersion,
-              let asset = Self.pickAsset(release.assets),
-              let assetURL = URL(string: asset.browserDownloadURL),
-              let pageURL = URL(string: release.htmlURL)
-        else { return }
-        available = AvailableUpdate(version: version, pageURL: pageURL,
-                                    assetURL: assetURL, assetName: asset.name)
+        available = Self.evaluate(release, current: current, skipped: skippedVersion)
     }
 
     /// 「後で」— 提示中の版を次回起動まで出さない。
@@ -77,8 +74,7 @@ final class UpdateChecker: ObservableObject {
     }
 
     /// 「アップデート」— ダウンロード → 検証 → 差し替えヘルパー起動 → 自プロセス終了。
-    /// その場差し替えできない環境（`swift run`・App Translocation・設置先が書き込み不可）
-    /// では、代わりにリリースページを開く。
+    /// その場差し替えできない環境では、代わりにリリースページを開く。
     func installOffered() {
         guard let update = available, phase != .working else { return }
         guard let destination = Self.installedAppURL() else {
@@ -101,7 +97,7 @@ final class UpdateChecker: ObservableObject {
 
     /// GitHub Releases API のレスポンスのうち、使う項目だけを読む。
     struct Release: Decodable {
-        struct Asset: Decodable, Equatable, Sendable {
+        struct Asset: Decodable {
             let name: String
             let browserDownloadURL: String
 
@@ -122,6 +118,21 @@ final class UpdateChecker: ObservableObject {
         }
     }
 
+    /// リリース情報と現在のバージョンから、提示すべきアップデートを決める。
+    /// 追いついている（外で更新した・リリースが取り下げられた）・「後で」で抑制中・
+    /// 使えるアセットが無い、のいずれかなら nil（バナーを畳む）。
+    nonisolated static func evaluate(_ release: Release, current: String,
+                                     skipped: String?) -> AvailableUpdate? {
+        guard isNewer(release.tagName, than: current) else { return nil }
+        let version = dropLeadingV(release.tagName)
+        guard version != skipped,
+              let asset = pickAsset(release.assets),
+              let assetURL = URL(string: asset.browserDownloadURL),
+              let pageURL = URL(string: release.htmlURL)
+        else { return nil }
+        return AvailableUpdate(version: version, pageURL: pageURL, assetURL: assetURL)
+    }
+
     /// セマンティックバージョン比較。先頭の `v` を許容し、`.` 区切りを数値で比べる
     /// （足りない桁は 0 扱い）。数値にできないタグは「新しくない」に倒して提案しない。
     nonisolated static func isNewer(_ remote: String, than current: String) -> Bool {
@@ -136,11 +147,10 @@ final class UpdateChecker: ObservableObject {
     }
 
     nonisolated private static func versionComponents(_ tag: String) -> [Int]? {
-        let parts = dropLeadingV(tag.trimmingCharacters(in: .whitespaces))
+        let raw = dropLeadingV(tag.trimmingCharacters(in: .whitespaces))
             .split(separator: ".", omittingEmptySubsequences: false)
-            .map { Int($0) }
-        guard !parts.isEmpty, !parts.contains(nil) else { return nil }
-        return parts.compactMap { $0 }
+        let parts = raw.compactMap { Int($0) }
+        return parts.count == raw.count ? parts : nil
     }
 
     nonisolated private static func dropLeadingV(_ tag: String) -> String {
@@ -164,7 +174,7 @@ final class UpdateChecker: ObservableObject {
         case appMissing
         case wrongBundle
         case signatureInvalid
-        case commandFailed(String)
+        case commandFailed
 
         var errorDescription: String? {
             switch self {
@@ -189,6 +199,8 @@ final class UpdateChecker: ObservableObject {
 
     /// アセットを一時ディレクトリへ落とし、展開・検証し、差し替えヘルパーを起動する。
     /// 成功したら呼び出し側がプロセスを終了する（差し替えはヘルパーが引き継ぐ）。
+    /// nonisolated async なので main actor の外で走る — hdiutil / ditto の待ち合わせが
+    /// ブロッキングでも UI は固まらない（retok のサブプロセス実行と同じ割り切り）。
     nonisolated private static func downloadAndStageReplacement(
         _ update: AvailableUpdate, replacing destination: URL) async throws {
         guard let (downloaded, response) = try? await URLSession.shared.download(from: update.assetURL),
@@ -199,15 +211,12 @@ final class UpdateChecker: ObservableObject {
         let workDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("TokfuelUpdate-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
-        let archive = workDir.appendingPathComponent(update.assetName)
+        let archive = workDir.appendingPathComponent(update.assetURL.lastPathComponent)
         try FileManager.default.moveItem(at: downloaded, to: archive)
 
-        // hdiutil / ditto は待ち合わせがブロッキングなので、協調スレッドから逃がす。
-        try await Task.detached(priority: .userInitiated) {
-            let newApp = try extractApp(from: archive, into: workDir)
-            try validate(appAt: newApp)
-            try launchReplaceHelper(newApp: newApp, destination: destination)
-        }.value
+        let newApp = try extractApp(from: archive, into: workDir)
+        try validate(appAt: newApp)
+        try launchReplaceHelper(newApp: newApp, destination: destination)
     }
 
     /// アーカイブ（dmg / zip）から .app を取り出し、作業ディレクトリ内の URL を返す。
@@ -275,7 +284,7 @@ final class UpdateChecker: ObservableObject {
     }
 
     /// 外部コマンドを実行し、非 0 終了なら投げる。出力は使わないので捨てる。
-    nonisolated private static func run(_ tool: String, _ arguments: String...) throws {
+    nonisolated static func run(_ tool: String, _ arguments: String...) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: tool)
         process.arguments = arguments
@@ -283,6 +292,6 @@ final class UpdateChecker: ObservableObject {
         process.standardError = FileHandle.nullDevice
         try process.run()
         process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw UpdateError.commandFailed(tool) }
+        guard process.terminationStatus == 0 else { throw UpdateError.commandFailed }
     }
 }

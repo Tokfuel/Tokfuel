@@ -62,9 +62,12 @@ struct PopoverView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Button("アップデート") { updater.installOffered() }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
+                        // その場差し替えできない実行形態ではボタンに嘘をつかせない。
+                        Button(updater.installsInPlace ? "アップデート" : "リリースページを開く") {
+                            updater.installOffered()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
                         Button("後で") { updater.skipOffered() }
                             .buttonStyle(.bordered)
                             .controlSize(.small)

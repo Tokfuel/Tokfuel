@@ -161,14 +161,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
-        // では開始しない — 撮影中にバナーが混ざると README の絵が非決定になる。
-        #if DEBUG
-        let headless = ["--screenshot", "--ui-preview", "--verify-cursor-ui"]
-            .contains(where: CommandLine.arguments.contains)
-        if !headless { UpdateChecker.shared.startPeriodicChecks() }
-        #else
+        // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影にバナーは混ざらない。
         UpdateChecker.shared.startPeriodicChecks()
-        #endif
 
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
