@@ -108,10 +108,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSIONED_ZIP="$(ls dist/Tokfuel-*.zip)"
+
+          # 固定名のコピーも添付する。ダウンロードページはバージョンを知らずに
+          # releases/latest/download/Tokfuel-latest.zip を直リンクできる。
+          cp "$VERSIONED_ZIP" dist/Tokfuel-latest.zip
+
           gh release create "${{ steps.version.outputs.version }}" \
             --title "Tokfuel ${{ steps.version.outputs.version }}" \
             --generate-notes \
-            dist/Tokfuel-*.zip
+            "$VERSIONED_ZIP" dist/Tokfuel-latest.zip
 
   # README のスクリーンショットを、いま出したバージョンの実 UI から撮り直す（TF-0015）。
   # main へ直接 push はせず PR にする（人の目を一度通す・ブランチ保護と共存できる）。
