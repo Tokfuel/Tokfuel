@@ -20,7 +20,6 @@ dist/
 dist-mas/
 build/
 
-<<<<<<< HEAD
 # fastlane / signing assets (証明書・鍵は絶対にコミットしない)
 fastlane/report.xml
 vendor/bundle/
@@ -29,9 +28,6 @@ vendor/bundle/
 *.p12
 *.provisionprofile
 
-# Local AI-session state (.claude/skills IS tracked; these are per-machine)
-=======
 # Local AI-session state (.agents/skills IS tracked; .claude/skills is a symlink to it)
->>>>>>> origin/main
 .claude/worktrees/
 .serena/
