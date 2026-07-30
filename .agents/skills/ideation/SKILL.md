@@ -1,88 +1,96 @@
 ---
 name: ideation
 description: >-
-  Sounding board for Tokfuel feature ideation. Use when the user wants to brainstorm
-  potential features, explore what the app could do next, or turn a rough idea into a GitHub Issue.
-  Grounds the conversation in open issues, proposes new items or seeds, folds overlapping ideas into
-  existing issues, and — when the user is happy — opens a GitHub Issue with the proposal body.
-  Scope is proposal authoring only — it never implements the feature (that is the implementation skill).
+  Tokfuel の機能アイデアの壁打ち相手。機能のブレインストーミングをしたいとき、アプリの次の
+  一手を探りたいとき、粗いアイデアを GitHub Issue に仕立てたいときに使う。オープンな Issue を
+  土台に会話し、新しい項目や種を提案し、重複するアイデアは既存 Issue へ畳み込み、ユーザーが
+  納得したら提案本文で GitHub Issue を立てる。スコープは起案のみで、機能の実装は一切しない
+  （実装は implementation スキルの担当）。
 ---
 
-# Ideation
+# アイデア出し
 
-A sounding board for shaping Tokfuel features into GitHub Issues. You are the author and thinking
-partner, not the judge. Converse in the user's language.
+Tokfuel の機能アイデアを GitHub Issue の形に仕上げる壁打ち相手。起案者であり思考のパートナー
+として振る舞い、審判にはならない。会話は日本語を基本とする（ユーザーが別の言語で話しかけて
+きたら合わせる）。
 
-## Scope: proposal authoring only — never implement
+## スコープは起案のみ（実装しない）
 
-This skill **only** authors and shapes proposals. The deliverable is always a GitHub Issue, never
-working code. Do not write, modify, or refactor any product code (`Tokfuel/Sources/`, tests, build
-scripts) even if the implementation seems obvious.
+このスキルがするのは、提案を書き、形を整えることだけ。成果物は常に GitHub Issue であって、
+動くコードではない。実装が自明に見えても、プロダクトコード（`Tokfuel/Sources/`、テスト、
+ビルドスクリプト）を書いたり書き換えたりしない。
 
-If the user asks you to build an idea, point them to [`implementation`](../implementation/SKILL.md).
+ユーザーがアイデアの実装まで求めたら、[`implementation`](../implementation/SKILL.md) を案内する。
 
-## Project ground rules (these bound every idea)
+## プロジェクトのグラウンドルール（すべてのアイデアの枠）
 
-Any idea must respect these; say so when an idea brushes a boundary and reshape it rather than
-silently dropping it.
+どのアイデアもこの枠に収める。枠の境界に触れるアイデアは、黙って捨てるのではなく、その旨を
+伝えたうえで形を変える。
 
-1. **Local-only.** Collected data never leaves the Mac. Don't propose telemetry or any network send.
-2. **Zero setup stays zero.** Don't assume hooks or extra installs; the app reads Claude Code
-   transcripts directly. A feature that requires the user to configure Claude Code first fights this.
-3. **retok is vendored unmodified.** Don't propose editing the bundled retok in place (upstream PR
-   instead); keep its MIT license and attribution intact. See issue #5 for the native-port path.
-4. **python3 is an optional dependency.** The app must keep degrading gracefully without it
-   (Cost tab shows an error; other tabs work).
-5. **Swift 6 / SwiftUI / macOS 14+.** `swift build` must stay green.
+1. **ローカルオンリー**：収集したデータは Mac から出さない。テレメトリやネットワーク送信を
+   提案しない。
+2. **ゼロセットアップの維持**：フックや追加インストールを前提にしない。アプリは Claude Code の
+   トランスクリプトを直接読む。ユーザーに Claude Code 側の設定を求める機能はこの前提と衝突する。
+3. **retok は無改変で同梱**：同梱の retok をこの場で編集する提案はしない（変更は上流 PR で）。
+   MIT ライセンスとクレジット表記を維持する。ネイティブ移植の道筋は Issue #5 にある。
+4. **python3 は任意の依存**：python3 が無い環境でも緩やかに縮退し続けること（Cost タブは
+   エラー表示、他のタブは動く）。
+5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に通ること。
 
-## Workflow
+## 進め方
 
-### 1. Ground yourself in existing issues
+### 1. 既存 Issue で足場を作る
 
 ```bash
 gh issue list --repo Tokfuel/Tokfuel --state open --limit 50 \
   --json number,title,labels,body 2>/dev/null
 ```
 
-Every suggestion is anchored to what is already planned or deliberately parked — that is what makes
-this a sounding board and not a blank page.
+提案はどれも、すでに計画済みのもの、または意図して保留にしたものと突き合わせて出す。
+この足場が、白紙のブレストとの違いになる。
 
-### 2. Ideate with the user
+### 2. ユーザーとアイデアを往復させる
 
-Go back and forth. Offer concrete, bounded ideas; ask the questions that sharpen scope (who is it
-for, what is the observable outcome). Pull in adjacent issues as reference points ("this is close to
-#5 — extend it, or is it distinct?").
+具体的で範囲の見えるアイデアを出し、スコープを研ぐ質問（誰のためか、観測できる成果は何か）を
+返す。近い既存 Issue は参照点として持ち込む（「これは #5 に近い。拡張するか、別物として
+立てるか」）。
 
-### 3. Classify each surviving idea — tell the user which and why
+### 3. 生き残ったアイデアを分類し、判断と理由を伝える
 
-- **Overlaps an existing issue** → don't duplicate. Suggest amending that issue's body.
-- **Novel and scoped enough** → draft a new issue (step 4).
-- **Still unformed** → note it in the conversation and come back later.
+- **既存 Issue と重複する**：新規には立てない。その Issue の本文への追記を提案する。
+- **新規で、範囲も十分に絞れている**：新しい Issue を起案する（手順 4）。
+- **まだ形になっていない**：会話に書き留めて、後で戻る。
 
-### 4. Draft and open a new issue
+### 4. 新しい Issue を書いて立てる
 
-When the user is happy with the shape, open a GitHub Issue using the Proposal template format:
-- **Title:** short imperative phrase, no issue number prefix.
-- **Body (enhancement):** Introduction paragraph → `## Detailed design` → `## Progress` checklist.
-- **Body (bug):** Description paragraph → Root cause → Fix → `**Relevant files:**` list → `## Progress` checklist.
-- Reference relevant files/symbols inline. Cross-link blocking or related issues with `#N`.
-- **Label:** `enhancement 🚀` for features, `bugs 🐞` for bugs.
+ユーザーが形に納得したら、Proposal テンプレートの形式で GitHub Issue を立てる。
+
+- **言語**：タイトルも本文も日本語で書く。文章は
+  [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) の規範に従い、本文は敬体にする。
+- **タイトル**：内容を言い切る短い句。番号などの接頭辞は付けない。
+- **本文（enhancement）**：導入の段落 → `## 詳細設計` → `## 進捗` チェックリスト。
+- **本文（バグ）**：症状の段落 → 原因 → 修正方針 → `**関連ファイル**：` のリスト →
+  `## 進捗` チェックリスト。
+- 関連するファイルやシンボルは本文中で参照する。依存や関連の Issue は `#N` で相互リンクする。
+- **ラベル**：機能は `enhancement 🚀`、バグは `bugs 🐞`。
+- 古い Issue には英語見出し（`## Detailed design` など）のものが残っている。既存 Issue に
+  追記するときはその Issue の言語に合わせてよいが、新規 Issue は日本語で書く。
 
 ```bash
 gh issue create --repo Tokfuel/Tokfuel \
-  --title "<title>" \
+  --title "<タイトル>" \
   --label "enhancement 🚀" \
-  --body "<body>" 2>/dev/null
+  --body "<本文>" 2>/dev/null
 ```
 
-Then add it to the roadmap project:
+立てたらロードマップの Project に追加する。
 
 ```bash
 gh project item-add 1 --owner Tokfuel \
   --url "https://github.com/Tokfuel/Tokfuel/issues/<number>" 2>/dev/null
 ```
 
-## References
+## 参照
 
-- [`implementation`](../implementation/SKILL.md) — the counterpart that ships an issue.
-- [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) — for Japanese-language sessions.
+- [`implementation`](../implementation/SKILL.md)：ここで立てた Issue を実装して出荷する、対のスキル。
+- [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md)：Issue 本文を書くときの文章規範。

@@ -1,27 +1,27 @@
 ---
-name: "Bug report"
-about: "Something isn't working as expected"
+name: "バグ報告（Bug report）"
+about: "期待どおりに動かない"
 title: "Bug: "
-labels: bug
+labels: "bugs 🐞"
 assignees: ""
 ---
 
-<!-- Description: what went wrong, in one paragraph. Reference the relevant file/symbol. -->
+<!-- 症状：何がどうおかしいのか、一段落で書く。関連するファイルやシンボルを参照する。 -->
 
-## Steps to reproduce
+## 再現手順
 
 1. 
 2. 
 3. 
 
-## Expected vs actual
+## 期待と実際
 
 | | |
 |---|---|
-| Expected | |
-| Actual | |
+| 期待 | |
+| 実際 | |
 
-## Environment
+## 環境
 
 - macOS:
-- Tokfuel version:
+- Tokfuel のバージョン:

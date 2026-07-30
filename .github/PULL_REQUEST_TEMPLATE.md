@@ -1,39 +1,39 @@
 <!--
-  Fill the sections that apply and DELETE the rest — depth proportional to the diff.
-  A one-file fix needs only `## Summary` + `## Verification`; a cross-cutting feature
-  earns the full set. Write present-tense prose describing what the change *is*.
+  該当するセクションだけを埋め、残りは削除する。深さは差分に比例させる。
+  1 ファイルの修正なら「## 概要」と「## 検証」だけでよく、横断的な機能なら全部を書く。
+  本文は敬体で、この変更が「何であるか」を現在形の地の文で書く。
 
-  Title format: `[TF-NNNN] short imperative phrase` — the `[TF-NNNN]` prefix only when
-  the PR implements a numbered GitHub Issue. Omit the prefix for housekeeping PRs.
+  タイトルの形式：`[TF-NNNN] 変更を言い切る短い句`。`[TF-NNNN]` プレフィックスは番号付きの
+  GitHub Issue を実装する PR だけに付け、雑務の PR では省く。
 -->
 
-## Summary
+## 概要
 
 <!--
-  MANDATORY. What this PR does and why it matters, key nouns in **bold**.
-  If this closes an issue, say so: "Closes #N."
+  必須。この PR が何をするのか、なぜ意味があるのか。キーとなる名詞は**太字**にする。
+  Issue を閉じるなら「Closes #N」と書く。
 -->
 
-## What changed
+## 変更内容
 
 <!--
-  One bullet per file or component — **path** in bold, em-dash, then what it does and why.
-  Mark new files `(new)`. Delete if Summary already covers it.
+  ファイルまたはコンポーネントごとに 1 行。**パス**を太字にし、全角コロンに続けて何をなぜ
+  変えたかを書く。新規ファイルには（新規）を付ける。概要で足りるなら削除する。
 -->
 
-- **`Tokfuel/Sources/`** — …
+- **`Tokfuel/Sources/…`**：…
 
-## Scope
+## スコープ外
 
 <!--
-  What is deliberately NOT in this PR. Delete if nothing to bound.
+  この PR に意図して入れていないもの。区切るものが無ければ削除する。
 -->
 
-## Verification
+## 検証
 
 <!--
-  MANDATORY. Paste passing test output, then describe what new tests cover.
-  Call out anything untested (runtime-only paths, UI interactions).
+  必須。通ったテストの出力を貼り、新しいテストが何を守るかを書く。
+  未検証のもの（実行時のみの経路、UI 操作）は明示する。
 -->
 
 ```
@@ -41,5 +41,5 @@ swift test
 ```
 
 <!--
-  🤖 Generated with Claude Code — delete this line if you wrote the PR body yourself.
+  🤖 Generated with Claude Code（PR 本文を自分で書いた場合はこの行を削除する）
 -->
