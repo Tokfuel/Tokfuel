@@ -13,12 +13,14 @@ let package = Package(
                 .copy("Resources/locales"),
                 .copy("Resources/LICENSE-retok"),
                 .copy("Resources/README-retok.md")
-            ]
+            ],
+            linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .testTarget(
             name: "TokfuelTests",
             dependencies: ["Tokfuel"],
-            path: "Tokfuel/Tests"
+            path: "Tokfuel/Tests",
+            linkerSettings: [.linkedLibrary("sqlite3")]
         )
     ]
 )

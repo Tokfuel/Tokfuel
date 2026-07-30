@@ -8,8 +8,9 @@ struct SettingsView: View {
     #if DEBUG
     @ObservedObject private var debug = DebugSettings.shared
     #endif
-    /// メニューバー表示のプレビューに実データを出すためのストア（省略時はプレースホルダ表示）。
-    var store: UsageStore?
+    /// メニューバー表示のライブプレビューに実データを出すためのストア。
+    /// 集計が非同期に届いたらプレビューも追従させたいので監視する。
+    @ObservedObject var store: UsageStore
     @State private var showsAdvanced = false
     #if DEBUG
     @State private var showsDebug = false
@@ -17,7 +18,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("一般") {
+            Section {
                 Toggle(isOn: $settings.launchAtLogin) {
                     Text("ログイン時に自動起動")
                 }
@@ -26,29 +27,65 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 180)
+                Picker("コストのソース", selection: $settings.costSourceMode) {
+                    ForEach(CostSourceMode.allCases) { Text($0.label).tag($0) }
+                }
+                Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
+                    ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
+                }
+            } header: {
+                Text("一般")
+            } footer: {
+                Text("コストのソースは Cost タブとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            Section("メニューバー") {
-                ForEach(MenuBarDisplay.allCases) { option in
-                    Button {
-                        settings.menuBarDisplay = option
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: settings.menuBarDisplay == option
-                                  ? "inset.filled.circle" : "circle")
-                                .foregroundStyle(settings.menuBarDisplay == option
-                                                 ? Color.accentColor : Color.secondary)
-                            Text(option.label)
-                            Spacer()
-                            MenuBarPreviewChip(text: previewText(for: option))
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+            Section {
+                Picker("見る指標", selection: $settings.menuBarMetric) {
+                    ForEach(MenuBarMetric.allCases) { Text($0.label).tag($0) }
                 }
 
-                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
+                // 表現はプレビュー付きのラジオで並べる。分母を持てない組み合わせは
+                // 選べないようにして、選んだのに金額のままという食い違いを防ぐ。
+                ForEach(representationRows) { representationRow($0) }
+
+                if settings.menuBarRepresentation.drawsRing {
+                    Picker("ゲージの形", selection: $settings.menuBarGaugeShape) {
+                        ForEach(MenuBarGaugeShape.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.radioGroup)
+                    // タンクはアイコン自身がゲージなので、併記の選択肢が意味を持たない。
+                    if settings.menuBarGaugeShape.isSeparateFromIcon {
+                        Toggle("アイコンも並べる", isOn: $settings.menuBarShowsIcon)
+                    }
+                }
+
+                // 基準は、割合表現を選んでいなくても出す。選んだあとにしか出さないと、
+                // 予算未設定のユーザーはパーセントとリングが永久にグレーのままになる
+                // （選べない → 基準を変えられない → 選べない）。
+                if settings.menuBarMetric.supportsRatio {
+                    Picker("割合の基準", selection: $settings.menuBarPercentBasis) {
+                        ForEach(MenuBarPercentBasis.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.radioGroup)
+                    Text(settings.menuBarPercentBasis.note)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // ON のままだと上限を消したあとに解除できなくなるので、すでに ON なら出し続ける。
+                if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0
+                    || settings.menuBarShowsRemaining {
                     Toggle("予算までの残りを表示", isOn: $settings.menuBarShowsRemaining)
+                }
+            } header: {
+                Text("メニューバー")
+            } footer: {
+                if let note = menuBarNote(for: store.menuBarInput()) {
+                    Text(note)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -154,6 +191,8 @@ struct SettingsView: View {
                         if !debug.simulatesMissingMonth {
                             DebugAmountRow(title: "今月のコスト ($)",
                                            range: 0...500, value: $debug.monthCost)
+                            DebugAmountRow(title: "日次平均 ($)",
+                                           range: 0...50, value: $debug.averageCost)
                         }
                     }
                 }
@@ -192,25 +231,75 @@ struct SettingsView: View {
             })
     }
 
-    /// 各表示オプションでメニューバーに出る文字列。ストア未接続のプレビューでは "$–"。
-    /// 「予算までの残り」モードでは、予算のある項目を「残 上限 − 消費」に置き換える。
-    private func previewText(for option: MenuBarDisplay) -> String? {
-        let today = store.map { store in
-            settings.menuBarShowsRemaining && settings.dailyBudgetLimit > 0
-                ? "残 " + PopoverView.money(settings.dailyBudgetLimit - store.todayCost)
-                : PopoverView.money(store.todayCost)
+    /// 表現 1 行ぶんの素材。
+    private struct RepresentationRow: Identifiable {
+        let option: MenuBarRepresentation
+        let selectable: Bool
+        let content: MenuBarContent
+        var id: String { option.rawValue }
+    }
+
+    /// 全行ぶんをまとめて組む。入力（集計値と日付計算）はここで 1 度だけ作る
+    /// ——行ごとに組み直すと、同じ計算を表現の数だけやり直すことになる。
+    private var representationRows: [RepresentationRow] {
+        let input = store.menuBarInput()
+        return MenuBarRepresentation.allCases.map { option in
+            var probe = input
+            probe.representation = option
+            return RepresentationRow(
+                option: option,
+                selectable: MenuBarReadout.isSelectable(
+                    metric: settings.menuBarMetric, representation: option,
+                    basis: settings.menuBarPercentBasis,
+                    dailyLimit: settings.dailyBudgetLimit, monthlyLimit: settings.budgetLimit),
+                content: MenuBarReadout.content(for: probe))
         }
-        let month = store.map { store in
-            settings.menuBarShowsRemaining && settings.budgetLimit > 0
-                ? "残 " + PopoverView.money(settings.budgetLimit - store.budgetSpend)
-                : PopoverView.money(store.budgetSpend)
+    }
+
+    /// 表現 1 つぶんの行（ラジオ + ラベル + 実データのプレビュー）。
+    /// 選べない表現はプレビューを出さない（出すと選べるように見える）。
+    private func representationRow(_ row: RepresentationRow) -> some View {
+        let selected = settings.menuBarRepresentation == row.option
+        return Button {
+            // @Published は同値でも発火する。選択済みの行を押しただけで
+            // 32 日集計（python3）が走らないよう、変化したときだけ書く。
+            if settings.menuBarRepresentation != row.option {
+                settings.menuBarRepresentation = row.option
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: selected ? "inset.filled.circle" : "circle")
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                Text(row.option.label)
+                Spacer()
+                if row.selectable {
+                    MenuBarPreviewChip(image: MenuBarImage.statusItem(for: row.content),
+                                       text: row.content.title.isEmpty ? nil : row.content.title)
+                }
+            }
+            .contentShape(Rectangle())
         }
-        switch option {
-        case .iconOnly: return nil
-        case .prompts: return "\(store?.today.prompts ?? 0)"
-        case .cost: return today ?? "$–"
-        case .monthlyCost: return month ?? "$–"
-        case .bothCosts: return "\(today ?? "$–") · 月 \(month ?? "$–")"
+        .buttonStyle(.plain)
+        .disabled(!row.selectable)
+    }
+
+    /// グレーアウトや金額へのフォールバックの理由。見た目だけでは伝わらないので添える。
+    private func menuBarNote(for input: MenuBarInput) -> String? {
+        switch MenuBarReadout.ratioUnavailability(
+            metric: settings.menuBarMetric, basis: settings.menuBarPercentBasis,
+            dailyLimit: settings.dailyBudgetLimit, monthlyLimit: settings.budgetLimit) {
+        case .noRatio:
+            return "プロンプト数には分母が無いため、パーセントとリングは選べません。"
+        case .noLimit:
+            return "予算上限を基準にするには、選んだ指標の上限を設定してください。"
+                + "予算なしで割合を見たいときは基準を「過去 30 日の日次平均」にします。"
+        case nil:
+            // 選べてはいるが、まだ分母が無くて金額に落ちている状態を伝える。
+            guard settings.menuBarRepresentation.needsBasis,
+                  !MenuBarReadout.canRender(metric: settings.menuBarMetric,
+                                            representation: settings.menuBarRepresentation,
+                                            gauge: input.gauge) else { return nil }
+            return "コストの記録がまだ足りないため、いまは金額で表示しています。"
         }
     }
 }
@@ -239,14 +328,17 @@ struct DebugAmountRow: View {
 }
 #endif
 
-/// メニューバーの見た目を模したプレビューチップ（⛽️ アイコン + タイトル）。
+/// メニューバーの見た目を模したプレビューチップ（画像 + タイトル）。
+/// 画像は本物のステータス項目と同じ組み立てを通すので、見た目が実物と乖離しない。
 struct MenuBarPreviewChip: View {
+    var image: NSImage?
     let text: String?
 
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: "fuelpump.fill")
-                .font(.system(size: 10))
+            if let image {
+                Image(nsImage: image)
+            }
             if let text {
                 Text(text)
                     .font(.caption.monospacedDigit())

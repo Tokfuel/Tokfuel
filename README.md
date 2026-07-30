@@ -37,6 +37,16 @@
 
   Today's / period cost, daily chart, per-model breakdown, top sessions, and retok's saving tips.
 
+- 🖱️ **Cursor, too**
+
+  If Cursor is installed and you're signed in, today's Cursor usage is folded into the
+  same total and chart via Cursor's own dashboard API (using the session Cursor already
+  keeps on disk — nothing to paste). Offline or signed-out, it falls back to local
+  token snapshots (often a lower bound on Cursor 3.x). Pricing for the fallback path is
+  refreshed once a day from Cursor's published price table.
+  In Settings, choose combined / Claude only / Cursor only / side-by-side — the Cost tab
+  and menu bar both follow that choice (budget gauges still use the included sum).
+
 - 🚨 **Budgets**
 
   Independent monthly and daily limits.
@@ -44,8 +54,12 @@
 
 - 📊 **Menu-bar readout**
 
-  Today's cost, this month's, both, or the *remaining* budget.
-  Live previews in Settings.
+  Pick a metric (today, this month, both, prompts) and how to show it
+  (amount, percent, ring gauge, ring + percent, icon only) — or the *remaining* budget.
+  Percent and gauges measure against your budget limit or your 30-day daily average.
+  The gauge is either a ring (beside the ⛽️ icon or replacing it) or the ⛽️ icon itself
+  filling bottom-up like a fuel tank — blue inside budget, orange at the threshold, red over.
+  Today and this month are coloured independently. Live previews in Settings.
 
 - 💱 **USD or JPY**
 
@@ -54,8 +68,14 @@
 
 - 🔒 **Local-first**
 
+<<<<<<< HEAD
   No telemetry. The only network call is the opt-in exchange-rate fetch.
   Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
+=======
+  No telemetry. Network calls are: the opt-in exchange-rate fetch; if Cursor is
+  installed, the daily price-table refresh; and, when signed into Cursor, a usage
+  query to Cursor's dashboard API (auth + date range only — no prompts).
+>>>>>>> origin/main
 
 ## Install
 
@@ -87,6 +107,7 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - Tests: `swift test`
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
+- Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
 ## Acknowledgements
 

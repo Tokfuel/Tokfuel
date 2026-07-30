@@ -6,6 +6,7 @@ import Charts
 /// 設定時のみ） 3) 傾向と内訳（グラフ・モデル別・高額セッション）。
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
+    @ObservedObject private var settings = AppSettings.shared
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
 
@@ -19,8 +20,10 @@ struct PopoverView: View {
                         chartSection(report)
                         statsRow(report)
                         modelBreakdown(report)
-                        topSessionsSection(report)
-                        adviceSection(report)
+                        if settings.costSourceMode.includesClaude {
+                            topSessionsSection(report)
+                            adviceSection(report)
+                        }
                     } else if store.retokError == nil {
                         loadingSection
                     }
@@ -41,26 +44,54 @@ struct PopoverView: View {
 
     private var heroSection: some View {
         let t = store.today
+        let mode = settings.costSourceMode
         return VStack(alignment: .leading, spacing: 2) {
             Text("今日")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(Self.money(store.todayCost))
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+            if mode == .sideBySide {
+                HStack(alignment: .firstTextBaseline, spacing: 16) {
+                    heroAmount(label: "Claude", amount: store.claudeTodayCost)
+                    heroAmount(label: "Cursor", amount: store.cursorTodayCost)
+                }
+            } else {
+                Text(Self.money(store.todayCost))
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            if mode.includesClaude {
+                Text("\(t.prompts) プロンプト · \(t.sessions) セッション")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            // 合算では合計金額に含め、Cursor 内訳の副次行は出さない（並べて表示が内訳担当）。
+            if mode == .cursorOnly {
+                Text("Cursor（推定）")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private func heroAmount(label: String, amount: Double) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(Self.money(amount))
+                .font(.system(size: 26, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-            Text("\(t.prompts) プロンプト · \(t.sessions) セッション")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
     // MARK: - 2. 上限への近さ（設定している人にだけ見える）
 
     /// 予算の消費状況（今日・月）。上限を設定していなければ現れない。
+    /// 並べて表示でもゲージの分母は合算（設定した上限との近さを見るため）。
     @ViewBuilder
     private var budgetSection: some View {
-        let settings = AppSettings.shared
         if settings.dailyBudgetLimit > 0 {
             BudgetRow(title: "予算 (今日)", spend: store.todayCost, limit: settings.dailyBudgetLimit,
                       level: store.dailyBudgetLevel ?? .ok,
@@ -91,14 +122,22 @@ struct PopoverView: View {
                 .frame(width: 150)
                 .labelsHidden()
             }
-            Chart(report.dailySorted, id: \.date) { day in
+            Chart(store.chartRows(for: report), id: \.id) { row in
                 BarMark(
-                    x: .value("Date", shortDate(day.date)),
-                    y: .value("USD", day.cost)
+                    x: .value("Date", shortDate(row.date)),
+                    y: .value("USD", row.cost)
                 )
-                .foregroundStyle(Color.accentColor.gradient)
+                .foregroundStyle(by: .value("Source", row.source))
                 .cornerRadius(2)
             }
+            .chartForegroundStyleScale([
+                UsageStore.claudeSourceLabel: Color.accentColor.gradient,
+                UsageStore.secondarySourceLabel: Color.secondary.gradient
+            ])
+            .chartLegend(
+                settings.costSourceMode.includesClaude
+                    && settings.costSourceMode.includesCursor
+                    && !store.driverDaily.isEmpty ? .visible : .hidden)
             .chartXAxis {
                 AxisMarks(values: xAxisValues(report)) { _ in
                     AxisGridLine()
@@ -130,32 +169,43 @@ struct PopoverView: View {
     }
 
     /// 期間合計と診断値。ヒーローと違い控えめな副次統計として1行に並べる。
+    /// キャッシュヒット・プロンプト単価は Claude（retok）側の診断なので、Claude を含むときだけ出す。
     private func statsRow(_ report: RetokReport) -> some View {
-        HStack(spacing: 0) {
-            StatItem(label: "期間合計", value: Self.money(report.totals.cost))
-            StatItem(label: "キャッシュヒット",
-                     value: String(format: "%.0f%%", report.cacheHitRate * 100))
-            StatItem(label: "プロンプト単価",
-                     value: report.totals.prompts > 0
-                        ? Self.money(report.totals.cost / Double(report.totals.prompts)) : "–")
+        let period = store.periodTotalCost(for: report)
+        return HStack(spacing: 0) {
+            StatItem(label: "期間合計", value: Self.money(period))
+            if settings.costSourceMode.includesClaude {
+                StatItem(label: "キャッシュヒット",
+                         value: String(format: "%.0f%%", report.cacheHitRate * 100))
+                StatItem(label: "プロンプト単価",
+                         value: report.totals.prompts > 0
+                            ? Self.money(report.totals.cost / Double(report.totals.prompts)) : "–")
+            }
         }
     }
 
     @ViewBuilder
     private func modelBreakdown(_ report: RetokReport) -> some View {
-        let models = report.modelsSorted
-        if !models.isEmpty {
-            let maxCost = models.first?.usage.cost ?? 1
+        let rows = store.modelCostRows(for: report)
+        if !rows.isEmpty {
+            let maxCost = rows.map(\.cost).max() ?? 1
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("モデル別")
-                ForEach(models, id: \.model) { entry in
+                ForEach(rows) { row in
+                    if let source = row.source,
+                       row.id == rows.first(where: { $0.source == source })?.id {
+                        Text(source)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, source == rows.first?.source ? 0 : 4)
+                    }
                     HStack(spacing: 8) {
-                        Text(shortModel(entry.model))
+                        Text(shortModel(row.model))
                             .font(.caption)
                             .lineLimit(1)
                             .frame(width: 100, alignment: .leading)
-                        MeterBar(fraction: entry.usage.cost / maxCost, color: .secondary.opacity(0.45))
-                        Text(Self.money(entry.usage.cost))
+                        MeterBar(fraction: row.cost / maxCost, color: .secondary.opacity(0.45))
+                        Text(Self.money(row.cost))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                             .frame(width: 64, alignment: .trailing)
@@ -228,6 +278,17 @@ struct PopoverView: View {
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
+            #if DEBUG
+            // どちらの構成を入れたかを、ホバーせずひと目で分かるようにする。
+            // リリースビルドにはコンパイルされない。
+            Text(MenuBarReadout.debugMarker)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(.orange, in: Capsule())
+                .help("開発用の debug 構成です（設定の一番下にデバッグ項目があります）")
+            #endif
             Spacer()
             Menu {
                 Button("再読み込み") { store.reload() }

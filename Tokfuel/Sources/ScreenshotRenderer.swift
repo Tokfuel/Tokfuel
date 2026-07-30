@@ -159,7 +159,7 @@ enum ScreenshotRenderer {
     }
 
     /// ステータス項目の見え方を伝えるためのメニューバー帯。金額はフィクスチャの「今日」を
-    /// 本物と同じフォーマッタに通すので、`menuBarDisplay == .cost` の表示と一致する。
+    /// 本物と同じフォーマッタに通すので、指標「今日」× 表現「金額」の表示と一致する。
     private static func menuBar(now: Date) -> some View {
         HStack(spacing: 14) {
             Image(systemName: "apple.logo")

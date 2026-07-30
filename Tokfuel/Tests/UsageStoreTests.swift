@@ -2,6 +2,11 @@ import Foundation
 import Testing
 @testable import Tokfuel
 
+/// 日別コストのフィクスチャ。
+private func daily(_ pairs: [String: Double]) -> [String: RetokReport.DailyCost] {
+    pairs.mapValues { RetokReport.DailyCost(cost: $0, output: 0) }
+}
+
 /// `todayCost` は「不明」を返さない。レポート未取得も使っていない日も 0 として数える。
 /// これでメニューバーの `bothCosts` 表示から金額が消えなくなる（Issue #4）。
 @MainActor
@@ -14,12 +19,10 @@ struct UsageStoreTodayCostTests {
         return f.string(from: date)
     }
 
-    private func report(daily: [String: Double]) -> RetokReport {
+    private func report(daily costs: [String: Double]) -> RetokReport {
         RetokReport(
             periodDays: 30, filesScanned: 0, totals: .init(), cacheHitRate: 0,
-            perModel: [:],
-            daily: daily.mapValues { RetokReport.DailyCost(cost: $0, output: 0) },
-            advice: [], topSessions: [])
+            perModel: [:], daily: daily(costs), advice: [], topSessions: [])
     }
 
     @Test func レポート未取得でもゼロとして数える() {
@@ -38,6 +41,98 @@ struct UsageStoreTodayCostTests {
         let store = UsageStore()
         store.report = report(daily: [Self.dateString(Date()): 4.56])
         #expect(store.todayCost == 4.56)
+    }
+
+    @Test func 二次ソースの今日ぶんはtodayCostに加算される() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4.56])
+        store.driverDailyByID = ["cursor": [today: 1.44]]
+        #expect(store.todayCost == 6.0)
+    }
+
+    @Test func 二次ソースは日付が一致しなければ加算されない() {
+        let store = UsageStore()
+        store.report = report(daily: [Self.dateString(Date()): 4.56])
+        store.driverDailyByID = ["cursor": ["2020-01-01": 100]]
+        #expect(store.todayCost == 4.56)
+    }
+
+    @Test func 複数の二次ソースは合算される() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.driverDailyByID = ["cursor": [today: 1.0], "other": [today: 2.0]]
+        #expect(store.todayCost == 3.0)
+    }
+
+    @Test func driverDailyは全ソース横断で日別合算する() {
+        let store = UsageStore()
+        store.driverDailyByID = [
+            "cursor": ["2026-01-01": 1.0, "2026-01-02": 2.0],
+            "other": ["2026-01-01": 3.0]
+        ]
+        #expect(store.driverDaily["2026-01-01"] == 4.0)
+        #expect(store.driverDaily["2026-01-02"] == 2.0)
+    }
+
+    @Test func driverBreakdownは今日ゼロのソースを出さない() {
+        let store = UsageStore()
+        store.driverDailyByID = ["cursor": ["2020-01-01": 5.0]]   // 今日ではない
+        #expect(store.driverBreakdown.isEmpty)
+    }
+
+    @Test func driverBreakdownは今日ぶんの内訳を返す() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.driverDailyByID = ["cursor": [today: 3.1]]
+        #expect(store.driverBreakdown.count == 1)
+        #expect(store.driverBreakdown.first?.name == "Cursor")
+        #expect(store.driverBreakdown.first?.cost == 3.1)
+    }
+}
+
+/// メニューバーの割合表示の分母になる日次平均。
+/// 使い始めた直後でも不当に小さくならないことが要点。
+@MainActor
+struct UsageStoreDailyAverageTests {
+    @Test func 今日を除いた実績日の平均を返す() {
+        let costs = daily(["2026-07-01": 2, "2026-07-02": 4, "2026-07-30": 100])
+        #expect(UsageStore.dailyAverage(in: costs, since: "2026-06-30",
+                                       before: "2026-07-30") == 3)
+    }
+
+    @Test func 期間の外は数えない() {
+        let costs = daily(["2026-06-01": 100, "2026-07-01": 2, "2026-07-02": 4])
+        #expect(UsageStore.dailyAverage(in: costs, since: "2026-06-30",
+                                       before: "2026-07-30") == 3)
+    }
+
+    @Test func 記録の無い日は頭数に入れない() {
+        // 3 日しか使っていないユーザーでも、30 で割らず 3 で割る。
+        let costs = daily(["2026-07-01": 3, "2026-07-02": 3, "2026-07-03": 3])
+        #expect(UsageStore.dailyAverage(in: costs, since: "2026-06-30",
+                                       before: "2026-07-30") == 3)
+    }
+
+    @Test func 実績がなければゼロ() {
+        #expect(UsageStore.dailyAverage(in: [:], since: "2026-06-30", before: "2026-07-30") == 0)
+        #expect(UsageStore.dailyAverage(in: daily(["2026-07-01": 0]),
+                                       since: "2026-06-30", before: "2026-07-30") == 0)
+    }
+
+    /// 稼働日数は平均と同じ「実績のある日」を数える。数え方がずれると、
+    /// 平均 × 稼働日数で出す月側の分母が平常運転でも 100% に届かなくなる。
+    @Test func 稼働日数は実績のある日だけを数える() {
+        let costs = daily(["2026-06-30": 5, "2026-07-01": 2, "2026-07-02": 0, "2026-07-03": 4])
+        #expect(UsageStore.activeDays(in: costs, since: "2026-07-01") == 2)
+        #expect(UsageStore.activeDays(in: costs, since: "2026-06-30") == 3)
+        #expect(UsageStore.activeDays(in: [:], since: "2026-07-01") == 0)
+    }
+
+    @Test func 稼働日数は今日を含める() {
+        // 平均（今日を除く）と違い、こちらは「期間内にいくら使ったか」の相手なので今日も数える。
+        let costs = daily(["2026-07-29": 3, "2026-07-30": 3])
+        #expect(UsageStore.activeDays(in: costs, since: "2026-07-01") == 2)
     }
 }
 
