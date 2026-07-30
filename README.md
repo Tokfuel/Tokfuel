@@ -75,7 +75,8 @@
 
 ## Install
 
-1. Download `Tokfuel-x.y.z.zip` from [Releases](https://github.com/akidon0000/Tokfuel/releases).
+1. Download `Tokfuel-x.y.z.zip` from the [download page](https://tokfuel.github.io/Tokfuel/) or
+   [Releases](https://github.com/akidon0000/Tokfuel/releases).
 2. Unzip it and drag `Tokfuel.app` into `/Applications`.
 3. Launch it — releases are signed with a Developer ID and notarized by Apple, so it opens
    with no Gatekeeper warning.
