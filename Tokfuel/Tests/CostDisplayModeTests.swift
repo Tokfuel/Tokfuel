@@ -83,7 +83,7 @@ struct CostSourceModeUsageStoreTests {
         withSourceMode(.cursorOnly) {
             let rows = store.chartRows(for: store.report!)
             #expect(rows.count == 1)
-            #expect(rows.first?.source == UsageStore.secondarySourceLabel)
+            #expect(rows.first?.source == store.secondarySourceLabel)
         }
         withSourceMode(.combined) {
             #expect(store.chartRows(for: store.report!).count == 2)
@@ -105,7 +105,7 @@ struct CostSourceModeUsageStoreTests {
                 let rows = store.modelCostRows(for: store.report!)
                 #expect(rows.count == 2)
                 #expect(rows.contains { $0.source == UsageStore.claudeSourceLabel })
-                #expect(rows.contains { $0.source == UsageStore.secondarySourceLabel })
+                #expect(rows.contains { $0.source == store.secondarySourceLabel })
             }
         }
         withSourceMode(.cursorOnly) {

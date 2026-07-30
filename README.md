@@ -36,7 +36,7 @@
 
 - 💵 **Cost at a glance**
 
-  Today's / period cost, daily chart, per-model breakdown, top sessions, and retok's saving tips.
+  Today's / period cost, daily and cumulative charts (with a budget reference line and a month-end pace estimate), per-model breakdown, top sessions, and retok's saving tips.
 
 - 🖱️ **Cursor, too**
 

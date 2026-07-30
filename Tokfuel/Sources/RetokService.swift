@@ -1,8 +1,9 @@
 import Foundation
 
 /// retok --json の出力。コスト・トークン・キャッシュ効率・推奨事項を保持する。
-struct RetokReport: Decodable {
-    struct Totals: Decodable {
+/// Encodable も付けているのは ReportCache（前回レポートのディスク保存）のため。
+struct RetokReport: Codable {
+    struct Totals: Codable {
         var cost: Double = 0
         var input: Int = 0
         var output: Int = 0
@@ -18,19 +19,19 @@ struct RetokReport: Decodable {
         }
     }
 
-    struct ModelUsage: Decodable {
+    struct ModelUsage: Codable {
         var cost: Double = 0
         var input: Int = 0
         var output: Int = 0
         var requests: Int = 0
     }
 
-    struct DailyCost: Decodable {
+    struct DailyCost: Codable {
         var cost: Double = 0
         var output: Int = 0
     }
 
-    struct Advice: Decodable, Identifiable {
+    struct Advice: Codable, Identifiable {
         let severity: String   // "high" / "info" など
         let key: String
         let title: String
@@ -38,7 +39,7 @@ struct RetokReport: Decodable {
         var id: String { key }
     }
 
-    struct TopSession: Decodable, Identifiable {
+    struct TopSession: Codable, Identifiable {
         let session: String
         let project: String
         let cost: Double
