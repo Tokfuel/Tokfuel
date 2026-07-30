@@ -7,11 +7,13 @@ import Charts
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var updater = UpdateChecker.shared
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
+            updateBanner
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     heroSection
@@ -36,6 +38,53 @@ struct PopoverView: View {
         .frame(width: 360, height: 520)
         .onAppear {
             UsageEventLog.shared.log(.tabOpen, meta: ["tab": "cost"])
+        }
+    }
+
+    // MARK: - アップデートバナー（新バージョン検知時のみ）
+
+    /// 最上部の固定バナー（TF #29）。「後で」はその版を次回起動まで抑制する。
+    /// 失敗はここに 1 行で出し、リリースページへの手動導線を残す。
+    @ViewBuilder
+    private var updateBanner: some View {
+        if let update = updater.available {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .foregroundStyle(Color.accentColor)
+                    Text("v\(update.version) が利用可能です")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    if updater.phase == .working {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("更新中…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button("アップデート") { updater.installOffered() }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        Button("後で") { updater.skipOffered() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
+                }
+                if case let .failed(message) = updater.phase {
+                    HStack(spacing: 6) {
+                        Text(message)
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                        Button("リリースページを開く") { NSWorkspace.shared.open(update.pageURL) }
+                            .buttonStyle(.link)
+                            .font(.caption2)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(.quaternary.opacity(0.5))
+            Divider()
         }
     }
 

@@ -160,6 +160,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in self?.usageStore.reload() }
         }
 
+        // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
+        // では開始しない — 撮影中にバナーが混ざると README の絵が非決定になる。
+        #if DEBUG
+        let headless = ["--screenshot", "--ui-preview", "--verify-cursor-ui"]
+            .contains(where: CommandLine.arguments.contains)
+        if !headless { UpdateChecker.shared.startPeriodicChecks() }
+        #else
+        UpdateChecker.shared.startPeriodicChecks()
+        #endif
+
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
         if CommandLine.arguments.contains("--open-popover") {
