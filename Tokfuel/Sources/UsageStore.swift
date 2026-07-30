@@ -189,12 +189,20 @@ final class UsageStore: ObservableObject {
     private var reportGeneration = 0
     /// 32 日集計（予算・日次平均）側の同じ用途のカウンタ。
     private var budgetGeneration = 0
-    /// Cost タブの集計期間（日数。1 = 今日のみ）。最後に選んだ値を記憶する。
+    /// Cost タブの集計期間（日数）。最後に選んだ値を記憶する。
     @Published var reportDays: Int {
         didSet {
             if oldValue != reportDays {
                 UserDefaults.standard.set(reportDays, forKey: Keys.reportDays)
                 reloadReport()
+            }
+        }
+    }
+    /// 推移チャートの描画形式（日別バー / 累積折れ線）。純粋な表示切替なので再解析はしない。
+    @Published var costChartStyle: CostChartStyle {
+        didSet {
+            if oldValue != costChartStyle {
+                UserDefaults.standard.set(costChartStyle.rawValue, forKey: Keys.costChartStyle)
             }
         }
     }
@@ -214,11 +222,6 @@ final class UsageStore: ObservableObject {
     /// Codex CLI の日別使用量（CU-0009）。ログが無いマシンでは空のまま。
     @Published var codexDaily: [ProviderDayUsage] = []
 
-    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい
-    /// （`ProviderUsage.swift` の Codex 読み取りは UI 連結が無い死んだコードのままだが、
-    /// 同じ形で CostDriver に載せ替えるのが次の候補）。
-    private let costDrivers: [CostDriver] = [CursorCostDriver()]
-
     /// driver.id → (日付 → コスト)。ヒーロー・予算・グラフはここから合算する。
     /// reloadReport() と同じ期間で更新される（今日は常にこの範囲に含まれる）。
     /// private にしていないのは codexDaily と同じ理由 — テストから直接注入できるようにするため。
@@ -229,17 +232,29 @@ final class UsageStore: ObservableObject {
     /// driver.id → (モデル → 期間コスト)。レポート期間のモデル別内訳用。
     @Published var driverModelByID: [String: [String: Double]] = [:]
 
+    /// ScreenshotRenderer が UsageStore の初期化前に UserDefaults へ直接書くため公開している。
+    nonisolated static let costChartStyleKey = "costChartStyle"
+
     private enum Keys {
         static let reportDays = "reportDays"
+        static let costChartStyle = UsageStore.costChartStyleKey
         static let toolsPeriod = "toolsPeriod"
     }
 
     init() {
         let defaults = UserDefaults.standard
-        let stored = defaults.integer(forKey: Keys.reportDays)
-        reportDays = [1, 7, 30].contains(stored) ? stored : 30
+        reportDays = Self.sanitizedReportDays(defaults.integer(forKey: Keys.reportDays))
+        costChartStyle = CostChartStyle(
+            rawValue: defaults.string(forKey: Keys.costChartStyle) ?? "") ?? .daily
         toolsPeriod = PeriodFilter(rawValue: defaults.string(forKey: Keys.toolsPeriod) ?? "")
             ?? .days30
+    }
+
+    /// 保存済みの集計期間を現在の選択肢に丸める。かつて存在した「今日 (1)」は近い 7 日へ、
+    /// 未知の値は既定の 30 日に倒す。
+    nonisolated static func sanitizedReportDays(_ stored: Int) -> Int {
+        if [7, 30].contains(stored) { return stored }
+        return stored == 1 ? 7 : 30
     }
 
     // 予算期間内の消費額（ソース別。表示は costSourceMode で合成する）
@@ -422,9 +437,14 @@ final class UsageStore: ObservableObject {
         reportGeneration += 1
         let generation = reportGeneration
         isReportLoading = true
-        let today = Date()
-        let from = Self.dateString(Calendar.current.date(byAdding: .day, value: -(days - 1), to: today) ?? today)
-        let to = Self.dateString(today)
+        // stale-while-revalidate: ディスクの前回結果を先に出し、裏の再解析（数秒）が終わり
+        // 次第差し替える。期間切替や再起動直後に画面がスピナーへ戻らない。
+        let cacheKeyPath = claudeDir.standardizedFileURL.path
+        if let cached = ReportCache.shared.load(days: days, lang: lang, projectsPath: cacheKeyPath) {
+            report = cached
+        }
+        let from = Self.reportWindowStart(days: days)
+        let to = Self.dateString(Date())
         Task {
             // retok（外部プロセス）と二次ソース（SQLite）は互いに独立な I/O なので並行して走らせる。
             async let retokTask = RetokService.run(days: days, lang: lang, projectsDir: projectsOverride)
@@ -434,6 +454,7 @@ final class UsageStore: ObservableObject {
                 let r = try await retokTask
                 guard generation == self.reportGeneration else { return }
                 self.report = r
+                ReportCache.shared.save(r, days: days, lang: lang, projectsPath: cacheKeyPath)
                 self.retokError = nil
             } catch {
                 guard generation == self.reportGeneration else { return }
@@ -606,6 +627,12 @@ final class UsageStore: ObservableObject {
         dateFormatter.string(from: date)
     }
 
+    /// 表示窓の開始日（end を含む days 日間）。retok の --days と同じ数え方。
+    nonisolated static func reportWindowStart(days: Int, endingOn end: Date = Date()) -> String {
+        let start = Calendar.current.date(byAdding: .day, value: -(days - 1), to: end) ?? end
+        return dateString(start)
+    }
+
     /// 今日の集計（無ければ空の DailyUsage）。
     var today: DailyUsage {
         let key = Self.dateString(Date())
@@ -698,8 +725,8 @@ extension UsageStore {
         return merged
     }
 
-    /// 今日ぶんの二次ソース内訳（Claude は含まない）。ヒーローの補助行用。データが無い/0 の
-    /// ソースは出さない。
+    /// 今日ぶんの二次ソース内訳（Claude は含まない）。デバッグ表示・テスト用。データが無い/0 の
+    /// ソースは出さない（ヒーローの内訳キャプションは $0 も明示するため合算値を直接使う）。
     var driverBreakdown: [(name: String, cost: Double)] {
         let today = Self.dateString(Date())
         return Self.costDrivers.compactMap { driver in
@@ -730,7 +757,12 @@ extension UsageStore {
     }
 
     static let claudeSourceLabel = "Claude"
-    static let secondarySourceLabel = "Cursor 等"
+
+    /// 二次ソース側の系列ラベル。ドライバーが 1 つの間はその実名を出し、複数になったら
+    /// 「その他」に切り替える（実体のない対象を「等」で濁さない — TF #53）。
+    static var secondarySourceLabel: String {
+        costDrivers.count == 1 ? costDrivers[0].displayName : "その他"
+    }
 
     /// retok の日別コストと二次ソース（driverDaily）を積み上げグラフ用の行に変換する。
     /// 日付は両方の合併集合を使う（Claude が $0 の日でも Cursor だけ使った日は落とさない）。
@@ -740,7 +772,10 @@ extension UsageStore {
         let mode = AppSettings.shared.costSourceMode
         var claudeByDate: [String: Double] = [:]
         for day in report.dailySorted { claudeByDate[day.date] = day.cost }
-        let secondary = driverDaily   // 1 回だけ合算して使い回す
+        // 二次ソース側は表示窓で絞る。reloadBudget が予算窓（表示窓より広いことがある）の
+        // 日別を driverDailyByID に補完するため、絞らないと「7日」のグラフに 30 日分が漏れる。
+        let from = Self.reportWindowStart(days: report.periodDays)
+        let secondary = driverDaily.filter { $0.key >= from }
         var dates = Set<String>()
         if mode.includesClaude { dates.formUnion(claudeByDate.keys) }
         if mode.includesCursor { dates.formUnion(secondary.keys) }
@@ -753,6 +788,68 @@ extension UsageStore {
                 rows.append(ChartRow(date: date, source: Self.secondarySourceLabel, cost: other))
             }
             return rows
+        }
+    }
+
+    /// 累積折れ線の 1 点。その日までの合算コスト。
+    struct CumulativePoint: Identifiable {
+        let date: String
+        let total: Double
+        var id: String { date }
+    }
+
+    /// 表示窓の全日付（古い順）。累積線の X 軸はカテゴリなので、コストの無い日を落とすと
+    /// 日付が詰まって傾き＝ペースが歪む。この列で全日を点として埋める。
+    nonisolated static func windowDates(days: Int, endingOn end: Date = Date()) -> [String] {
+        let cal = Calendar.current
+        return (0..<days).reversed().compactMap { offset in
+            cal.date(byAdding: .day, value: -offset, to: end).map(dateString)
+        }
+    }
+
+    /// 積み上げ行（chartRows）を `dates` の並びに沿った累積列に畳む。ソースは分けず合計
+    /// 1 本にする（内訳は日別バーの担当。累積まで線を分けても判断は変わらない）。
+    /// コストの無い日は前日の値を引き継ぎ、dates に無い日付の行は数えない。
+    nonisolated static func cumulativeRows(from rows: [ChartRow],
+                                           over dates: [String]) -> [CumulativePoint] {
+        var byDate: [String: Double] = [:]
+        for row in rows { byDate[row.date, default: 0] += row.cost }
+        var running = 0.0
+        return dates.map { date in
+            running += byDate[date] ?? 0
+            return CumulativePoint(date: date, total: running)
+        }
+    }
+
+    /// 暦月予算の着地予測。月初からの消費を経過日数で割った日次ペースを月末まで伸ばす。
+    /// 消費が無い（外挿の根拠が無い）ときは予測を出さない。
+    nonisolated static func monthEndProjection(
+        spend: Double, now: Date = Date(), calendar: Calendar = .current
+    ) -> Double? {
+        guard spend > 0,
+              let daysInMonth = calendar.range(of: .day, in: .month, for: now)?.count
+        else { return nil }
+        return spend / Double(calendar.component(.day, from: now)) * Double(daysInMonth)
+    }
+
+    /// 累積ビューに添える予算の注釈。予算の窓と表示の窓の対応はここで 1 回だけ判定する
+    /// （ビュー側の別々の条件に散らすと、期間の選択肢が増えたとき片方だけ直る事故が起きる）。
+    enum BudgetChartAnnotation {
+        /// 予算窓と表示窓が一致している — 上限の参照線が引ける。
+        case referenceLine(limit: Double)
+        /// 暦月予算 — 窓はローリング表示と一致しないが、月末着地の予測なら窓に依存しない。
+        case monthEndProjection(amount: Double)
+    }
+
+    var cumulativeBudgetAnnotation: BudgetChartAnnotation? {
+        let settings = AppSettings.shared
+        guard settings.budgetLimit > 0 else { return nil }
+        switch settings.budgetPeriod {
+        case .rolling30:
+            return reportDays == 30 ? .referenceLine(limit: settings.budgetLimit) : nil
+        case .calendarMonth:
+            return Self.monthEndProjection(spend: budgetSpend)
+                .map { .monthEndProjection(amount: $0) }
         }
     }
 
@@ -774,9 +871,11 @@ extension UsageStore {
             .map { ($0.key, $0.value) }
     }
 
-    /// 期間合計（stats 行）。ソース表示モードに従う。
+    /// 期間合計（チャート下のキャプション用）。ソース表示モードに従う。
+    /// 二次ソースは chartRows と同じ理由で表示窓に絞る（予算窓の補完分を数えない）。
     func periodTotalCost(for report: RetokReport) -> Double {
-        let cursor = driverDaily.values.reduce(0, +)
+        let from = Self.reportWindowStart(days: report.periodDays)
+        let cursor = driverDaily.filter { $0.key >= from }.values.reduce(0, +)
         return Self.displayedSpend(
             claude: report.totals.cost, cursor: cursor,
             mode: AppSettings.shared.costSourceMode)

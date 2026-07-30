@@ -18,7 +18,6 @@ struct PopoverView: View {
                     budgetSection
                     if let report = store.report {
                         chartSection(report)
-                        statsRow(report)
                         modelBreakdown(report)
                         if settings.costSourceMode.includesClaude {
                             topSessionsSection(report)
@@ -42,47 +41,31 @@ struct PopoverView: View {
 
     // MARK: - 1. 今日のコスト（ヒーロー）
 
+    /// ヒーローは常に合計 1 つ。予算ゲージの分母（合算）と主役の数字を一致させ、
+    /// 「今日使いすぎているか」に一目で答える（TF #53）。
     private var heroSection: some View {
-        let t = store.today
         let mode = settings.costSourceMode
         return VStack(alignment: .leading, spacing: 2) {
             Text("今日")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Text(Self.money(store.todayCost))
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .contentTransition(.numericText())
+            // 並べて表示はヒーローを分割せず、内訳キャプション 1 行が担う。
             if mode == .sideBySide {
-                HStack(alignment: .firstTextBaseline, spacing: 16) {
-                    heroAmount(label: "Claude", amount: store.claudeTodayCost)
-                    heroAmount(label: "Cursor", amount: store.cursorTodayCost)
-                }
-            } else {
-                Text(Self.money(store.todayCost))
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-            }
-            if mode.includesClaude {
-                Text("\(t.prompts) プロンプト · \(t.sessions) セッション")
+                Text("\(UsageStore.claudeSourceLabel) \(Self.money(store.claudeTodayCost))"
+                     + " · \(UsageStore.secondarySourceLabel) \(Self.money(store.cursorTodayCost))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
-            // 合算では合計金額に含め、Cursor 内訳の副次行は出さない（並べて表示が内訳担当）。
             if mode == .cursorOnly {
                 Text("Cursor（推定）")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
-        }
-    }
-
-    private func heroAmount(label: String, amount: Double) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(Self.money(amount))
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .contentTransition(.numericText())
         }
     }
 
@@ -111,42 +94,39 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 sectionHeader("推移")
+                Picker("", selection: chartStyleSelection) {
+                    Image(systemName: "chart.bar.xaxis").tag(CostChartStyle.daily)
+                    Image(systemName: "chart.xyaxis.line").tag(CostChartStyle.cumulative)
+                }
+                .pickerStyle(.segmented)
+                .controlSize(.small)
+                .frame(width: 70)
+                .labelsHidden()
                 Spacer()
                 Picker("", selection: reportDaysSelection) {
-                    Text("今日").tag(1)
                     Text("7日").tag(7)
                     Text("30日").tag(30)
                 }
                 .pickerStyle(.segmented)
                 .controlSize(.small)
-                .frame(width: 150)
+                .frame(width: 100)
                 .labelsHidden()
             }
-            Chart(store.chartRows(for: report), id: \.id) { row in
-                BarMark(
-                    x: .value("Date", shortDate(row.date)),
-                    y: .value("USD", row.cost)
-                )
-                .foregroundStyle(by: .value("Source", row.source))
-                .cornerRadius(2)
+            Group {
+                switch store.costChartStyle {
+                case .daily: dailyChart(report)
+                case .cumulative: cumulativeChart(report)
+                }
             }
-            .chartForegroundStyleScale([
-                UsageStore.claudeSourceLabel: Color.accentColor.gradient,
-                UsageStore.secondarySourceLabel: Color.secondary.gradient
-            ])
-            .chartLegend(
-                settings.costSourceMode.includesClaude
-                    && settings.costSourceMode.includesCursor
-                    && !store.driverDaily.isEmpty ? .visible : .hidden)
+            // 軸は両形式で共通: X はラベルのみ（縦グリッドとティックは引かない）、
+            // Y は水平線 2〜3 本 — 色と線は情報を持つときだけ使う（TF #53）。
             .chartXAxis {
                 AxisMarks(values: xAxisValues(report)) { _ in
-                    AxisGridLine()
-                    AxisTick()
                     AxisValueLabel()
                 }
             }
             .chartYAxis {
-                AxisMarks { value in
+                AxisMarks(values: .automatic(desiredCount: 3)) { value in
                     AxisGridLine()
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
@@ -156,32 +136,86 @@ struct PopoverView: View {
                 }
             }
             .frame(height: 110)
-            // 期間切り替え中は古いグラフを薄くしてスピナーを重ね、再解析中であることを示す。
-            .opacity(store.isReportLoading ? 0.3 : 1)
-            .overlay {
+            // 再解析中も前回の絵を隠さない。右下の小さなインジケーターだけで進行を示す
+            // （stale-while-revalidate — TF #53）。
+            .overlay(alignment: .bottomTrailing) {
                 if store.isReportLoading {
                     ProgressView()
-                        .controlSize(.small)
+                        .controlSize(.mini)
+                        .padding(2)
                 }
             }
-            .animation(.easeInOut(duration: 0.15), value: store.isReportLoading)
+            chartCaption(report)
         }
     }
 
-    /// 期間合計と診断値。ヒーローと違い控えめな副次統計として1行に並べる。
-    /// キャッシュヒット・プロンプト単価は Claude（retok）側の診断なので、Claude を含むときだけ出す。
-    private func statsRow(_ report: RetokReport) -> some View {
-        let period = store.periodTotalCost(for: report)
-        return HStack(spacing: 0) {
-            StatItem(label: "期間合計", value: Self.money(period))
-            if settings.costSourceMode.includesClaude {
-                StatItem(label: "キャッシュヒット",
-                         value: String(format: "%.0f%%", report.cacheHitRate * 100))
-                StatItem(label: "プロンプト単価",
-                         value: report.totals.prompts > 0
-                            ? Self.money(report.totals.cost / Double(report.totals.prompts)) : "–")
+    /// 日別の積み上げバー。塗りはフラット単色（TF #53）。
+    private func dailyChart(_ report: RetokReport) -> some View {
+        Chart(store.chartRows(for: report), id: \.id) { row in
+            BarMark(
+                x: .value("Date", shortDate(row.date)),
+                y: .value("USD", row.cost)
+            )
+            .foregroundStyle(by: .value("Source", row.source))
+            .cornerRadius(2)
+        }
+        .chartForegroundStyleScale([
+            UsageStore.claudeSourceLabel: Color.accentColor,
+            UsageStore.secondarySourceLabel: Color.secondary
+        ])
+        .chartLegend(
+            settings.costSourceMode.includesClaude
+                && settings.costSourceMode.includesCursor
+                && !store.driverDaily.isEmpty ? .visible : .hidden)
+    }
+
+    /// 期間の累積折れ線（合計 1 本）。予算窓と表示窓が一致するとき（store が判定する）だけ、
+    /// 上限の参照線を破線で添える — ずれた期間に線を引くと嘘になる（TF #53）。
+    private func cumulativeChart(_ report: RetokReport) -> some View {
+        let points = UsageStore.cumulativeRows(
+            from: store.chartRows(for: report),
+            over: UsageStore.windowDates(days: report.periodDays))
+        return Chart {
+            ForEach(points) { point in
+                LineMark(
+                    x: .value("Date", shortDate(point.date)),
+                    y: .value("USD", point.total)
+                )
+            }
+            .foregroundStyle(Color.accentColor)
+            .lineStyle(StrokeStyle(lineWidth: 2))
+            if case let .referenceLine(limit) = store.cumulativeBudgetAnnotation {
+                RuleMark(y: .value("USD", limit))
+                    .foregroundStyle(.tertiary)
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                    // プロット領域の外へはみ出すと金額軸や余白に食い込むため、チャート内に収める。
+                    .annotation(position: .topLeading,
+                                overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))) {
+                        Text("予算 \(Self.money(limit))")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
             }
         }
+    }
+
+    /// チャート直下の副次統計 1 行。期間合計と（Claude を含むときだけ）プロンプト単価、
+    /// 累積ビューでは暦月予算の着地予測を添える。かつての 3 列 stats 行の置き換えで、
+    /// キャッシュヒット率は出さない（ユーザーが操作できない診断値。異常時は節約のヒントが伝える）。
+    private func chartCaption(_ report: RetokReport) -> some View {
+        var parts = ["合計 \(Self.money(store.periodTotalCost(for: report)))"]
+        if settings.costSourceMode.includesClaude, report.totals.prompts > 0 {
+            parts.append("プロンプト単価 "
+                         + Self.money(report.totals.cost / Double(report.totals.prompts)))
+        }
+        if store.costChartStyle == .cumulative,
+           case let .monthEndProjection(amount) = store.cumulativeBudgetAnnotation {
+            parts.append("このペースで月末 約\(Self.money(amount))")
+        }
+        return Text(parts.joined(separator: " · "))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
     }
 
     @ViewBuilder
@@ -337,6 +371,16 @@ struct PopoverView: View {
                 })
     }
 
+    /// チャート形式トグル用バインディング。期間ピッカーと同じ理由で操作時だけ記録する。
+    private var chartStyleSelection: Binding<CostChartStyle> {
+        Binding(get: { store.costChartStyle },
+                set: { style in
+                    store.costChartStyle = style
+                    UsageEventLog.shared.log(.periodChange,
+                                             meta: ["picker": "cost-style", "style": style.rawValue])
+                })
+    }
+
     /// X 軸に出す日付ラベル。10 日を超える期間では週の初めの日だけに間引く
     /// （30 日表示で全日付が潰れて読めなくなるのを防ぐ）。
     private func xAxisValues(_ report: RetokReport) -> [String] {
@@ -369,7 +413,7 @@ struct PopoverView: View {
     }
 }
 
-/// 予算 1 本ぶんの行（タイトル・消費/上限・メーター・警告ラベル）。今日と月で共用。
+/// 予算 1 本ぶんの行（タイトル・右肩の状態テキスト・メーター）。今日と月で共用。
 struct BudgetRow: View {
     let title: String
     let spend: Double
@@ -377,11 +421,13 @@ struct BudgetRow: View {
     let level: BudgetLevel
     let warnPercent: Int
 
+    /// 色は状態を示すときだけ付ける: 平常はニュートラル、警告でオレンジ、超過で赤。
+    /// 平常までアクセント色で塗ると、警告のオレンジと見分けがつかない（TF #53）。
     private var color: Color {
         switch level {
         case .over: return .red
         case .warning: return .orange
-        case .ok: return .accentColor
+        case .ok: return .secondary.opacity(0.45)
         }
     }
 
@@ -392,22 +438,29 @@ struct BudgetRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(PopoverView.money(spend)) / \(PopoverView.money(limit))")
+                trailingStatus
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(level == .ok ? AnyShapeStyle(.secondary) : AnyShapeStyle(color))
             }
             MeterBar(fraction: spend / limit,
                      marker: Double(warnPercent) / 100,
                      color: color)
-            if level == .over {
-                Label("上限を超えています", systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.red)
-            } else if level == .warning {
-                Label("残り \(PopoverView.money(limit - spend))", systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
-            }
+        }
+    }
+
+    /// 右肩の 1 行。平常は消費/上限、警告は残額、超過は超過額（アイコンは超過のみ）。
+    @ViewBuilder
+    private var trailingStatus: some View {
+        switch level {
+        case .ok:
+            Text("\(PopoverView.money(spend)) / \(PopoverView.money(limit))")
+                .foregroundStyle(.secondary)
+        case .warning:
+            Text("残り \(PopoverView.money(limit - spend))")
+                .foregroundStyle(.orange)
+        case .over:
+            Label("超過 \(PopoverView.money(spend - limit))",
+                  systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
         }
     }
 }
@@ -433,24 +486,6 @@ struct MeterBar: View {
             }
         }
         .frame(height: 6)
-    }
-}
-
-/// 副次統計の 1 項目。数値は控えめに、色は使わない。
-struct StatItem: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.callout.weight(.semibold))
-                .monospacedDigit()
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 
