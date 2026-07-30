@@ -61,8 +61,10 @@ struct Home: StaticPage {
                 Text("""
                 Tokfuel reads the transcripts Claude Code already writes under \
                 ~/.claude/projects/ — nothing to configure, nothing installed \
-                on top of what you already have. Everything stays on your Mac; \
-                the only network call is an opt-in daily exchange-rate fetch.
+                on top of what you already have. Usage data stays on your Mac. \
+                Disclosed network requests are limited to an opt-in exchange-rate \
+                fetch and, when Cursor is present, its published pricing and \
+                signed-in dashboard usage APIs. Prompts are never sent.
                 """)
                 .frame(maxWidth: 640)
                 .foregroundStyle(.secondary)

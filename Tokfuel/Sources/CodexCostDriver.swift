@@ -9,21 +9,29 @@ import Foundation
 struct CodexCostDriver {
     let id = "codex"
     let displayName = "Codex"
+
+    /// 走査元。Codex CLI 未インストールならこのパスが無く、driver は一切表に出ない。
+    static var defaultSessionsDir: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".codex/sessions", isDirectory: true)
+    }
 }
 
 extension CodexCostDriver: CostDriver {
     var isAvailable: Bool {
-        FileManager.default.fileExists(atPath: CodexUsageReader.defaultSessionsDir.path)
+        FileManager.default.fileExists(atPath: Self.defaultSessionsDir.path)
     }
 
-    func dailyCosts(from: String, to: String) async -> [String: Double] {
-        guard isAvailable else { return [:] }
-        guard let days = Self.daysNeeded(from: from, reference: Date()) else { return [:] }
+    /// モデル別内訳は持たない（retok の Codex 側は日別コストのみ使う）。
+    func snapshot(from: String, to: String) async -> CostSnapshot {
+        guard isAvailable else { return .empty }
+        guard let days = Self.daysNeeded(from: from, reference: Date()) else { return .empty }
         guard let report = try? await RetokService.run(days: days, lang: "en", provider: "codex")
-        else { return [:] }
-        return report.daily
+        else { return .empty }
+        let daily = report.daily
             .filter { $0.key >= from && $0.key <= to }
             .mapValues { $0.cost }
+        return CostSnapshot(daily: daily, byModel: [:])
     }
 
     /// retok の `--days` は「reference からの遡り日数」なので、from を含めるために必要な日数に

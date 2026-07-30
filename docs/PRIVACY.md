@@ -6,14 +6,13 @@ This policy describes what data the Tokfuel macOS app reads, stores, and transmi
 
 ## Summary
 
-Tokfuel collects no personal data and sends no usage data anywhere. Everything it reads — your Claude Code transcripts and Skill inventory — stays on your Mac. The app has no accounts, no tracking, no analytics, and no third-party SDKs. It makes a small number of narrow, disclosed network requests (see below) to fetch exchange rates and, if you use Cursor, Cursor's own price table and usage totals — never your usage data.
+Tokfuel collects no personal data and sends no prompts or local transcripts anywhere. Everything it reads from Claude Code stays on your Mac. The app has no accounts, no tracking, no analytics, and no third-party SDKs. It makes a small number of narrow, disclosed network requests (see below) to fetch exchange rates and, if you use Cursor, Cursor's own price table and dashboard usage totals.
 
 ## Data the app reads locally
 
 To visualize your Claude Code usage, Tokfuel reads files that Claude Code already writes on your Mac:
 
-- **Transcripts** under `~/.claude/projects/` — used to compute cost, token counts, and Skill / MCP / sub-agent activity.
-- **Skills** under `~/.claude/skills/` — used to show your skill inventory.
+- **Transcripts** under `~/.claude/projects/` — used locally to compute Claude Code cost, prompt count, and session count.
 - **Cursor's local token database** (`~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`), if Cursor is installed — used to estimate Cursor cost. This file is read locally; see below for the one case where a derived value (auth token, date range) leaves the Mac.
 - **Codex CLI session logs** under `~/.codex/sessions/`, if present — read on-device (via the bundled retok script) to estimate Codex cost, alongside session and token counts. This is a separate cost estimate, not merged into your Claude total.
 
@@ -23,7 +22,7 @@ Tokfuel currently reads only Claude Code's, Cursor's, and Codex's local files. I
 
 ## Network requests
 
-Tokfuel makes network requests only in these cases, and never sends your Claude Code transcripts or Skill usage:
+Tokfuel makes network requests only in these cases, and never sends your Claude Code transcripts or prompts:
 
 - **Exchange rate (opt-in).** When you switch the display currency to JPY, the app fetches the daily USD→JPY rate from the [Frankfurter API](https://frankfurter.dev) (`api.frankfurter.dev`), at most once per day. The request carries no usage data, no identifiers, and no content from your Mac. With the currency left at USD (the default), this request never happens.
 - **Cursor price table (automatic, if Cursor is detected).** To refine Cursor cost estimates, `CursorPricingService` fetches Cursor's own published price table from `cursor.com/docs/models-and-pricing` once a day. This is a page fetch only — no usage data is sent.

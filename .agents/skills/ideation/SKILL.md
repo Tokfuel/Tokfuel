@@ -31,8 +31,8 @@ silently dropping it.
    transcripts directly. A feature that requires the user to configure Claude Code first fights this.
 3. **retok is vendored unmodified.** Don't propose editing the bundled retok in place (upstream PR
    instead); keep its MIT license and attribution intact. See issue #5 for the native-port path.
-4. **python3 is an optional dependency.** The app must keep degrading gracefully without it
-   (Cost tab shows an error; other tabs work).
+4. **python3 is an optional dependency.** Claude cost analysis may show an error without it,
+   while settings, prompt counts, and Cursor data keep working.
 5. **Swift 6 / SwiftUI / macOS 14+.** `swift build` must stay green.
 
 ## Workflow
