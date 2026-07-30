@@ -30,10 +30,9 @@ silently dropping it.
 2. **Zero setup stays zero.** Don't assume hooks or extra installs; the app reads Claude Code
    transcripts directly. A feature that requires the user to configure Claude Code first fights this.
 3. **retok is vendored unmodified.** Don't propose editing the bundled retok in place (upstream PR
-   instead); keep its MIT license and attribution intact. See issue #5 for the native-port path.
-4. **python3 is an optional dependency.** The app must keep degrading gracefully without it
-   (Cost tab shows an error; other tabs work).
-5. **Swift 6 / SwiftUI / macOS 14+.** `swift build` must stay green.
+   instead); keep its MIT license and attribution intact. The shipped cost analyzer is the Swift
+   port in `Sources/Retok/` (issue #5) — proposals touching cost logic must keep it in parity.
+4. **Swift 6 / SwiftUI / macOS 14+.** `swift build` must stay green.
 
 ## Workflow
 

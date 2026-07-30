@@ -70,7 +70,6 @@
 **Requirements**
 
 - macOS 14 or later
-- `python3` for the cost analysis (ships with the Xcode Command Line Tools)
 
 **Build from source**
 
@@ -89,7 +88,8 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgements
 
-- **Cost analysis** — [retok](https://github.com/d-date/retok), bundled unmodified.
+- **Cost analysis** — a native Swift port of [retok](https://github.com/d-date/retok)
+  (the original script and locale data are bundled unmodified as the reference).
   © [Daiki Matsudate (@d-date)](https://github.com/d-date), [MIT License](Tokfuel/Sources/Resources/LICENSE-retok).
 - **App icon** — designed with [Icon Composer](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer);
   the source document lives in [Tokfuel/icon](https://github.com/Tokfuel/icon).

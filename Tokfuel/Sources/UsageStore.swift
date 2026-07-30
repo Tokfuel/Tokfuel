@@ -414,13 +414,10 @@ final class UsageStore: ObservableObject {
 
     // MARK: - 今日 / 昨日
 
-    /// ローカルタイムの YYYY-MM-DD 文字列。集計キーの書式はここが基準。
+    /// ローカルタイムの YYYY-MM-DD 文字列。レポートの日次キーと必ず一致するよう
+    /// RetokTime に委譲する（書式の基準はそちら）。
     static func dateString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: date)
+        RetokTime.localDayString(date)
     }
 
     /// 今日の集計（無ければ空の DailyUsage）。
@@ -429,7 +426,7 @@ final class UsageStore: ObservableObject {
         return daily.first { $0.date == key } ?? DailyUsage(date: key)
     }
 
-    /// 今日のコスト。レポート未取得（起動直後・python3 なし）も、今日の行が無い日も 0 とみなす。
+    /// 今日のコスト。レポート未取得（起動直後・解析前）も、今日の行が無い日も 0 とみなす。
     /// 「不明」を金額欄に出さない代わりに、retok が失敗した事実は Cost タブのエラー表示が伝える。
     var todayCost: Double {
         #if DEBUG

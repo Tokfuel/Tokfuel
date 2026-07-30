@@ -28,7 +28,7 @@ bash scripts/build.sh             # package + install Tokfuel.app to /Applicatio
 bash scripts/screenshot.sh        # regenerate assets/screenshot.png from the real UI
 ```
 
-The app reads Claude Code transcripts under `~/.claude/projects/` directly (no hooks or extra setup) — if you use Claude Code at all, you already have data to exercise the UI. The Cost tab additionally needs `python3` (ships with the Xcode Command Line Tools) to run the bundled retok.
+The app reads Claude Code transcripts under `~/.claude/projects/` directly (no hooks or extra setup) — if you use Claude Code at all, you already have data to exercise the UI. The cost analyzer is a native Swift port of retok, so no python3 is needed at runtime; python3 is only needed for the local parity test (`RETOK_PARITY=1 swift test --filter pythonParity`).
 
 **Debug section.** To check the menu-bar readout, icon colors, and budget alerts at an arbitrary
 amount instead of waiting for real usage, install a debug-configuration build:
@@ -109,7 +109,7 @@ bash scripts/build.sh             # Tokfuel.app をパッケージして /Applic
 bash scripts/screenshot.sh        # assets/screenshot.png を実物の UI から再生成
 ```
 
-アプリは `~/.claude/projects/` 配下の Claude Code トランスクリプトを直接読みます（フックや追加設定は不要）。Claude Code を使っていれば、UI を確認するデータはすでに手元にあります。Cost タブだけは同梱 retok の実行に `python3`（Xcode Command Line Tools に同梱）が必要です。
+アプリは `~/.claude/projects/` 配下の Claude Code トランスクリプトを直接読みます（フックや追加設定は不要）。Claude Code を使っていれば、UI を確認するデータはすでに手元にあります。コスト分析は retok の Swift 移植なので実行時に python3 は不要です（python3 が要るのはローカルのパリティテスト `RETOK_PARITY=1 swift test --filter pythonParity` だけです）。
 
 **デバッグセクション。** メニューバーの表示・アイコン色・予算アラートを、実際の使用量を待たずに任意の金額で確認できます。debug 構成のビルドを入れてください。
 

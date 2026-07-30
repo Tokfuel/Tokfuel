@@ -21,7 +21,8 @@ PR text per the conventions below.
 1. **Local-only** — never add telemetry or a network send.
 2. **Zero setup stays zero** — don't require the user to configure Claude Code or install hooks.
 3. **retok is vendored unmodified** — don't edit the bundled retok in place; keep its license/credit.
-4. **python3 is optional** — keep the Cost tab degrading gracefully when it is absent.
+4. **Cost analyzer parity** — the Swift port in `Sources/Retok/` mirrors the vendored `retok.py`;
+   keep them in sync (verify locally with `RETOK_PARITY=1 swift test --filter pythonParity`).
 5. **Swift 6 / SwiftUI / macOS 14+** — `swift build` must stay green.
 
 ## Workflow
@@ -64,7 +65,7 @@ the ground rules and how you reshaped the design to fit.
 ### 5. Implement
 
 - **Match surrounding style.** Comments explain *why*, not what, at the surrounding density.
-- **Honor the ground rules in the code** — local-only, graceful python3 absence, retok untouched.
+- **Honor the ground rules in the code** — local-only, retok untouched, analyzer parity kept.
 - **Tests are the regression net.** Cover new logic where it is testable without the full app.
 - **Docs are bilingual.** If you change documented behavior, update `README.md` **and**
   `README.ja.md`; write the Japanese under [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md).
