@@ -19,6 +19,6 @@ node_modules/
 dist/
 build/
 
-# Local AI-session state (.claude/skills IS tracked; these are per-machine)
+# Local AI-session state (.agents/skills IS tracked; .claude/skills is a symlink to it)
 .claude/worktrees/
 .serena/
