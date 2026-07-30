@@ -79,6 +79,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor [weak self] in self?.usageStore.reload() }
         }
 
+        // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
+        // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
+        UpdateChecker.shared.startPeriodicChecks()
+
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
         if CommandLine.arguments.contains("--open-popover") {
@@ -173,30 +177,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         #endif
-<<<<<<< HEAD
-
-        usageStore.reload()
-        updateStatusItem()
-
-        // ポップオーバーを開かなくてもメニューバーの数字が古くならないよう定期更新する。
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
-            Task { @MainActor [weak self] in self?.usageStore.reload() }
-        }
-
-        // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
-        // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
-        UpdateChecker.shared.startPeriodicChecks()
-
-        #if DEBUG
-        // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
-        if CommandLine.arguments.contains("--open-popover") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-                self?.togglePopover()
-            }
-        }
-        #endif
-=======
->>>>>>> origin/main
     }
 
     /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。

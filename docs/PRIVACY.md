@@ -6,11 +6,7 @@ This policy describes what data the Tokfuel macOS app reads, stores, and transmi
 
 ## Summary
 
-<<<<<<< HEAD
-Tokfuel collects no personal data and sends no usage data anywhere. Everything it reads — your Claude Code transcripts and Skill inventory — stays on your Mac. The app has no accounts, no tracking, no analytics, and no third-party SDKs. It makes a small number of narrow, disclosed network requests (see below) to fetch exchange rates, to check GitHub Releases for a newer app version, and, if you use Cursor, to fetch Cursor's own price table and usage totals — never your usage data.
-=======
-Tokfuel collects no personal data and sends no prompts or local transcripts anywhere. Everything it reads from Claude Code stays on your Mac. The app has no accounts, no tracking, no analytics, and no third-party SDKs. It makes a small number of narrow, disclosed network requests (see below) to fetch exchange rates and, if you use Cursor, Cursor's own price table and dashboard usage totals.
->>>>>>> origin/main
+Tokfuel collects no personal data and sends no prompts or local transcripts anywhere. Everything it reads from Claude Code stays on your Mac. The app has no accounts, no tracking, no analytics, and no third-party SDKs. It makes a small number of narrow, disclosed network requests (see below) to fetch exchange rates, to check GitHub Releases for a newer app version, and, if you use Cursor, Cursor's own price table and dashboard usage totals.
 
 ## Data the app reads locally
 

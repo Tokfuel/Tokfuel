@@ -6,25 +6,23 @@ import Charts
 /// 設定時のみ） 3) 傾向と内訳（グラフ・モデル別・高額セッション）。
 struct PopoverView: View {
     @ObservedObject var store: UsageStore
-<<<<<<< HEAD
-    @ObservedObject private var settings = AppSettings.shared
-    // private ではない — ScreenshotRenderer がフッターのアップデートボタンをプレビュー
-    // させるために、フィクスチャの UpdateChecker を渡せるようにする（既定は実物の .shared）。
-    @ObservedObject var updater = UpdateChecker.shared
-=======
     @ObservedObject private var settings: AppSettings
->>>>>>> origin/main
+    // ScreenshotRenderer がフッターのアップデートボタンをプレビューできるよう、フィクスチャの
+    // UpdateChecker を差し込めるようにしてある（既定は実物の .shared）。
+    @ObservedObject private var updater: UpdateChecker
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
 
     init(
         store: UsageStore,
         settings: AppSettings = .shared,
+        updater: UpdateChecker = .shared,
         onOpenSettings: @escaping () -> Void = {},
         onOpenAbout: @escaping () -> Void = {}
     ) {
         self.store = store
         self.settings = settings
+        self.updater = updater
         self.onOpenSettings = onOpenSettings
         self.onOpenAbout = onOpenAbout
     }
