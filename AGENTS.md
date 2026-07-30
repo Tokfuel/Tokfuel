@@ -9,7 +9,9 @@
 **Tokfuel** is a native SwiftUI macOS menu-bar app that visualizes local Claude
 Code usage — cost (via a bundled copy of [retok](https://github.com/d-date/retok)), Skill / MCP /
 sub-agent activity, a skill inventory, and budget alerts — with zero setup: it reads the
-transcripts Claude Code already writes under `~/.claude/projects/`. All sources live in
+transcripts Claude Code already writes under `~/.claude/projects/`. If Codex CLI
+(`~/.codex/sessions/`) or Cursor is also present on the Mac, their cost is estimated too — each
+as its own source, never merged unlabeled into the Claude total. All sources live in
 [`Tokfuel/Sources/`](Tokfuel/Sources/); see the README
 [Architecture](README.md#-architecture) section for the file map.
 

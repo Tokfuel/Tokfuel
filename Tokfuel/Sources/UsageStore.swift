@@ -447,7 +447,7 @@ final class UsageStore: ObservableObject {
         let to = Self.dateString(Date())
         Task {
             // retok（外部プロセス）と二次ソース（SQLite）は互いに独立な I/O なので並行して走らせる。
-            async let retokTask = RetokService.run(days: days, lang: lang, projectsDir: projectsOverride)
+            async let retokTask = RetokService.run(days: days, lang: lang, projectsDir: projectsOverride, provider: "claude")
             async let driverTask = self.fetchDriverDaily(from: from, to: to)
 
             do {
@@ -503,7 +503,7 @@ final class UsageStore: ObservableObject {
         let start = BudgetMonitor.periodStart(for: period)
         let today = Self.dateString(Date())
         Task {
-            async let retokTask = RetokService.run(days: 32, lang: "en", projectsDir: projectsOverride)
+            async let retokTask = RetokService.run(days: 32, lang: "en", projectsDir: projectsOverride, provider: "claude")
             async let driverTask = self.fetchDriverDaily(from: start, to: today)
 
             // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない — reloadReport() と
@@ -706,11 +706,15 @@ final class UsageStore: ObservableObject {
 // costDrivers 配列に 1 行足すだけで、この extension 側は変更不要。
 
 extension UsageStore {
-    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい
-    /// （`ProviderUsage.swift` の Codex 読み取りは UI 連結が無い死んだコードのままだが、
-    /// 同じ形で CostDriver に載せ替えるのが次の候補）。全インスタンス共通なので static —
-    /// extension はインスタンス保持型プロパティを持てないが、static は持てる。
-    private static let costDrivers: [CostDriver] = [CursorCostDriver()]
+    /// Claude（retok）に合算する二次コスト源。新しいソースを足すときはここに 1 行足すだけでよい。
+    /// 全インスタンス共通なので static — extension はインスタンス保持型プロパティを持てないが、
+    /// static は持てる。
+    private static let costDrivers: [CostDriver] = [CursorCostDriver(), CodexCostDriver()]
+
+    /// driver.id → 表示名。グラフの色分け（PopoverView）で使う。
+    static var secondarySourceNames: [String: String] {
+        Dictionary(uniqueKeysWithValues: costDrivers.map { ($0.id, $0.displayName) })
+    }
 
     private func driverCost(id: String, on date: String) -> Double {
         driverDailyByID[id]?[date] ?? 0
@@ -758,16 +762,11 @@ extension UsageStore {
 
     static let claudeSourceLabel = "Claude"
 
-    /// 二次ソース側の系列ラベル。ドライバーが 1 つの間はその実名を出し、複数になったら
-    /// 「その他」に切り替える（実体のない対象を「等」で濁さない — TF #53）。
-    static var secondarySourceLabel: String {
-        costDrivers.count == 1 ? costDrivers[0].displayName : "その他"
-    }
-
-    /// retok の日別コストと二次ソース（driverDaily）を積み上げグラフ用の行に変換する。
-    /// 日付は両方の合併集合を使う（Claude が $0 の日でも Cursor だけ使った日は落とさない）。
+    /// retok の日別コストと二次ソース（driverDailyByID）を積み上げグラフ用の行に変換する。
+    /// 日付は全ソースの合併集合を使う（Claude が $0 の日でも Cursor/Codex だけ使った日は落とさない）。
     /// コストが 0 の行は積まない（積み上げバーに幅 0 の区切りが入るのを避ける）。
-    /// `costSourceMode` で片方だけ選んでいるときはその側の系列だけ出す。
+    /// `costSourceMode` で片方だけ選んでいるときはその側の系列だけ出す。二次ソースは driver ごとに
+    /// 別の行・別の色にする（Cursor と Codex を 1 本の "Cursor 等" に混ぜない）。
     func chartRows(for report: RetokReport) -> [ChartRow] {
         let mode = AppSettings.shared.costSourceMode
         var claudeByDate: [String: Double] = [:]
@@ -775,17 +774,22 @@ extension UsageStore {
         // 二次ソース側は表示窓で絞る。reloadBudget が予算窓（表示窓より広いことがある）の
         // 日別を driverDailyByID に補完するため、絞らないと「7日」のグラフに 30 日分が漏れる。
         let from = Self.reportWindowStart(days: report.periodDays)
-        let secondary = driverDaily.filter { $0.key >= from }
         var dates = Set<String>()
         if mode.includesClaude { dates.formUnion(claudeByDate.keys) }
-        if mode.includesCursor { dates.formUnion(secondary.keys) }
+        if mode.includesCursor {
+            for byDate in driverDailyByID.values { dates.formUnion(byDate.keys.filter { $0 >= from }) }
+        }
+        let driverNames = Self.secondarySourceNames
         return dates.sorted().flatMap { date -> [ChartRow] in
             var rows: [ChartRow] = []
             if mode.includesClaude, let claude = claudeByDate[date], claude > 0 {
                 rows.append(ChartRow(date: date, source: Self.claudeSourceLabel, cost: claude))
             }
-            if mode.includesCursor, let other = secondary[date], other > 0 {
-                rows.append(ChartRow(date: date, source: Self.secondarySourceLabel, cost: other))
+            if mode.includesCursor {
+                for (id, byDate) in driverDailyByID {
+                    guard date >= from, let cost = byDate[date], cost > 0 else { continue }
+                    rows.append(ChartRow(date: date, source: driverNames[id] ?? id, cost: cost))
+                }
             }
             return rows
         }
@@ -900,7 +904,9 @@ extension UsageStore {
         case .separated:
             var rows: [ModelCostRow] = []
             rows += claude.map { ModelCostRow(source: Self.claudeSourceLabel, model: $0.0, cost: $0.1) }
-            rows += cursor.map { ModelCostRow(source: Self.secondarySourceLabel, model: $0.0, cost: $0.1) }
+            // cursorModelCosts は driverModelByID["cursor"] 専用（Codex はまだモデル別内訳を持たない）
+            // ので "Cursor" と実名を出す。複数 driver が持つようになったら見直す。
+            rows += cursor.map { ModelCostRow(source: "Cursor", model: $0.0, cost: $0.1) }
             return rows
         }
     }
