@@ -405,7 +405,7 @@ struct PopoverView: View {
                         Text(updater.installsInPlace ? "アップデート" : "リリースページを開く")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 5)
+                            .padding(.horizontal, 8)
                             .padding(.vertical, 2)
                             .background(.blue, in: Capsule())
                     }
