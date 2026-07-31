@@ -347,8 +347,8 @@ enum MenuBarReadout {
         case .percent, .ringAndValue:
             // リングは割合のインジケーターなので、添える数値も割合にそろえる。
             // リングが形で伝える値に、桁で読める精度（142% など）を足す関係になる。
-            // 取れていない Cursor だけを見ているときは 0% ではなく「—」（0% は誤情報）。
-            title = input.costSourceMode == .cursorOnly && input.cursorUnavailable
+            // 取れていない二次ソースだけを見ているときは 0% ではなく「—」（0% は誤情報）。
+            title = input.costSourceMode.showsSingleSecondarySource && input.cursorUnavailable
                 ? unavailableText
                 : joined(sides.compactMap(percentText))
         default:
@@ -379,8 +379,8 @@ enum MenuBarReadout {
             let cursorText = input.cursorUnavailable ? unavailableText : Money.format(cursor)
             return "Claude \(Money.format(claude)) · Cursor \(cursorText)"
         }
-        // Cursor だけを見ているときに Cursor が取れていなければ、金額そのものが不明。
-        if input.costSourceMode == .cursorOnly, input.cursorUnavailable {
+        // 二次ソースだけを見ているときにそれが取れていなければ、金額そのものが不明。
+        if input.costSourceMode.showsSingleSecondarySource, input.cursorUnavailable {
             return unavailableText
         }
         return Money.format(side.spend)

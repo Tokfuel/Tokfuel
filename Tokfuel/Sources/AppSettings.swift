@@ -127,9 +127,17 @@ final class AppSettings: ObservableObject {
         didSet { persist(displayCurrency.rawValue, forKey: Money.currencyKey) }
     }
 
-    /// ポップオーバーとメニューバーで Claude / Cursor のどちらを金額に含めるか。
+    /// ポップオーバーとメニューバーでどのコストソースを金額に含めるか。
     @Published var costSourceMode: CostSourceMode {
         didSet { persist(costSourceMode.rawValue, forKey: Keys.costSourceMode) }
+    }
+    /// Codex CLI のセッションログがこの Mac にあるか。起動時に 1 度だけ見る。
+    /// 無いときは「Codex のみ」を選べないようにする（選んでも常に $0 になるため）。
+    let codexInstalled: Bool
+
+    /// 「コストのソース」ピッカーに出す選択肢。
+    var availableCostSourceModes: [CostSourceMode] {
+        CostSourceMode.available(codexInstalled: codexInstalled)
     }
     /// 「モデル別」を 1 一覧にするか、ソースごとに分けるか。
     @Published var costModelBreakdownMode: CostModelBreakdownMode {
@@ -213,8 +221,10 @@ final class AppSettings: ObservableObject {
             && menuBarMetric.supportsRatio
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard,
+         codexInstalled: Bool = CodexCostDriver().isAvailable) {
         self.defaults = defaults
+        self.codexInstalled = codexInstalled
         // 初回起動時は「入れるだけで常駐」を実現するため、ログイン起動を既定 ON にする。
         let firstLaunch = !defaults.bool(forKey: Keys.hasLaunchedBefore)
         if firstLaunch {
@@ -242,8 +252,11 @@ final class AppSettings: ObservableObject {
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
             ?? .usd
-        costSourceMode = CostSourceMode(rawValue: defaults.string(forKey: Keys.costSourceMode) ?? "")
-            ?? .combined
+        // Codex が消えた Mac で「Codex のみ」が残っていると常に $0 になるので合算へ落とす
+        // （保存値は書き換えない。Codex が戻れば選択も戻る）。
+        costSourceMode = CostSourceMode.resolved(
+            CostSourceMode(rawValue: defaults.string(forKey: Keys.costSourceMode) ?? "") ?? .combined,
+            codexInstalled: codexInstalled)
         costModelBreakdownMode = CostModelBreakdownMode(
             rawValue: defaults.string(forKey: Keys.costModelBreakdownMode) ?? "") ?? .combined
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
