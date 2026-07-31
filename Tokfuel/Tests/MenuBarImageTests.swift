@@ -143,6 +143,43 @@ struct MenuBarTankTests {
     }
 }
 
+/// 追従モード（TF-0080）の明滅。実際の見え方は実機でしか確かめられないが、
+/// 「アルファだけを動かしている」ことと「テンプレート可否を変えない」ことはここで押さえる。
+struct MenuBarGlowTests {
+    private func plain(_ level: BudgetLevel? = nil) -> NSImage {
+        MenuBarImage.statusItem(for: content(gauges: seg([0.5], level)))!
+    }
+
+    @Test func 帯が通ったところは薄くなる() {
+        let base = plain()
+        // 位相 0 は帯が画像の下（画面外）にある瞬間なので、元の濃さのまま。
+        let start = MenuBarImage.glowing(base, phase: 0)
+        let middle = MenuBarImage.glowing(base, phase: 0.5)
+        #expect(abs(ink(start) - ink(base)) < 0.001)
+        #expect(ink(middle) < ink(base))
+        #expect(ink(middle) > 0)   // 消えはしない
+    }
+
+    @Test func 位相を進めると濃さが動く() {
+        let base = plain()
+        let quarter = ink(MenuBarImage.glowing(base, phase: 0.25))
+        let middle = ink(MenuBarImage.glowing(base, phase: 0.5))
+        #expect(abs(quarter - middle) > 0.001)
+    }
+
+    /// 色を足さずアルファだけを動かすので、予算しきい値の色は明滅中も変わらない。
+    @Test func テンプレート可否は変えない() {
+        #expect(MenuBarImage.glowing(plain(), phase: 0.5).isTemplate == true)
+        #expect(MenuBarImage.glowing(plain(.warning), phase: 0.5).isTemplate == false)
+    }
+
+    @Test func 読み上げ用の説明を引き継ぐ() {
+        let label = "今日の推定コスト: $5.00（50%）"
+        let base = MenuBarImage.statusItem(for: content(gauges: seg([0.5]), label: label))!
+        #expect(MenuBarImage.glowing(base, phase: 0.5).accessibilityDescription == label)
+    }
+}
+
 /// ステータス項目 1 個ぶんの画像の組み立て。
 struct MenuBarStatusItemImageTests {
     private let oneSide = 1 * MenuBarImage.side
@@ -194,6 +231,23 @@ struct MenuBarStatusItemImageTests {
     @Test func ゲージが無ければ平常時のアイコンは無彩色() {
         #expect(MenuBarImage.statusItem(for: content(iconLevel: .ok))?.isTemplate == true)
         #expect(MenuBarImage.statusItem(for: content(iconLevel: .warning))?.isTemplate == false)
+    }
+
+    @Test func 明滅の1コマでも項目が消えない() {
+        // nil を返すとステータス項目が消えてクリックできなくなる。位相を一周させて確かめる。
+        for phase in stride(from: 0.0, through: 1.0, by: 0.1) {
+            #expect(MenuBarImage.statusItem(for: content(gauges: seg([0.5])),
+                                            glowPhase: phase) != nil)
+            #expect(MenuBarImage.statusItem(for: content(), glowPhase: phase) != nil)
+        }
+        // 位相を渡さなければ通常の画像のまま。
+        #expect(MenuBarImage.statusItem(for: content(), glowPhase: nil) != nil)
+    }
+
+    @Test func 明滅させても寸法は変わらない() {
+        let plain = MenuBarImage.statusItem(for: content(gauges: seg([0.5])))!
+        let glowing = MenuBarImage.statusItem(for: content(gauges: seg([0.5])), glowPhase: 0.5)!
+        #expect(glowing.size == plain.size)
     }
 
     @Test func 読み上げ用の説明を持たせる() {

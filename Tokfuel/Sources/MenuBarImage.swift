@@ -34,6 +34,54 @@ enum MenuBarImage {
     private static let single: [(radius: CGFloat, width: CGFloat)] = [(5.7, 2.2)]
     private static let double: [(radius: CGFloat, width: CGFloat)] = [(3.2, 1.7), (6.3, 1.7)]
 
+    /// 追従モード（TF-0080）の明滅で 1 周期に使う秒数。
+    static let glowCycle: TimeInterval = 2
+    /// 明滅の 1 コマの間隔（秒）。12 fps 相当。
+    static let glowFrameInterval: TimeInterval = 1.0 / 12
+    /// 明滅の帯が通ったところの最小不透明度。0 にすると帯の位置でアイコンが消える。
+    private static let glowMinAlpha: CGFloat = 0.35
+    /// 明滅の帯の高さ（アイコン高さに対する比）。
+    private static let glowBandRatio: CGFloat = 0.7
+
+    /// ステータス項目の画像。`glowPhase`（0…1）を渡すと、追従モードを示す帯が
+    /// 下から上へ流れる 1 コマを描く（nil なら通常の画像）。
+    static func statusItem(for content: MenuBarContent, glowPhase: Double?) -> NSImage? {
+        guard let image = statusItem(for: content) else { return nil }
+        guard let glowPhase else { return image }
+        return glowing(image, phase: glowPhase)
+    }
+
+    /// アイコンの上を「液体が流れる」ように、半透明の帯を 1 本通した 1 コマ。
+    ///
+    /// 色を足さずアルファだけを動かすのは、予算しきい値の色（`combinedBudgetLevel`）を
+    /// そのまま活かすため。警告中はオレンジ、超過中は赤のまま明滅する。テンプレート画像
+    /// （平常時のアイコン）はアルファだけが意味を持つので、この方式ならメニューバーの
+    /// 明暗への追従も壊さずに済む。
+    static func glowing(_ base: NSImage, phase: Double) -> NSImage {
+        let size = base.size
+        let cycle = min(max(phase, 0), 1)
+        let image = NSImage(size: size, flipped: false) { rect in
+            base.draw(in: rect)
+            // 帯は画像の下（画面外）から上（画面外）へ 1 周期で通り抜ける。
+            let band = rect.height * glowBandRatio
+            let travel = rect.height + band
+            let originY = rect.minY - band + travel * CGFloat(cycle)
+            let bandRect = NSRect(x: rect.minX, y: originY, width: rect.width, height: band)
+            // destinationIn は「塗った矩形の中だけ」転送先のアルファに source のアルファを
+            // 掛ける。帯の外側は触らないので、通り過ぎたところは元の濃さに戻る。
+            let opaque = NSColor(white: 0, alpha: 1)
+            let gradient = NSGradient(colors: [opaque,
+                                               NSColor(white: 0, alpha: glowMinAlpha),
+                                               opaque])
+            NSGraphicsContext.current?.compositingOperation = .destinationIn
+            gradient?.draw(in: bandRect, angle: 90)
+            return true
+        }
+        image.isTemplate = base.isTemplate
+        image.accessibilityDescription = base.accessibilityDescription
+        return image
+    }
+
     /// ステータス項目の画像。ゲージが無ければアイコンだけ、あれば形に応じて組み立てる。
     /// ゲージを描けない指定でも、項目が消えないようアイコンにフォールバックする。
     static func statusItem(for content: MenuBarContent) -> NSImage? {

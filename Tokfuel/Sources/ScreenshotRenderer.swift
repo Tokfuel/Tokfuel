@@ -261,6 +261,9 @@ enum ScreenshotRenderer {
         settings.budgetPeriod = .calendarMonth
         // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
         settings.costSourceMode = .sideBySide
+        // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
+        settings.adaptiveRefreshEnabled = true
+        settings.activityAnimationEnabled = true
     }
 
     // MARK: - 合成（デスクトップ風の枠）

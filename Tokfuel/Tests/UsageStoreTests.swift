@@ -90,6 +90,38 @@ struct UsageStoreTodayCostTests {
         #expect(store.driverBreakdown.first?.cost == 3.1)
     }
 
+    /// 追従モード（TF-0080）の入力。表示モードで合成する前の生の値をソース別に返す。
+    @Test func todayCostBySourceはソース別の今日の額を返す() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4.5, "2020-01-01": 99])
+        store.driverDailyByID = ["cursor": [today: 1.5], "codex": ["2020-01-01": 9]]
+        let costs = store.todayCostBySource
+        #expect(costs["claude"] == 4.5)
+        #expect(costs["cursor"] == 1.5)
+        // 今日ぶんが無いソースは 0。キーごと落とすと、次の集計で「新しいソース」と誤認される。
+        #expect(costs["codex"] == 0)
+    }
+
+    /// 劣化中（TF-0073）の 0 は「使っていない」ではなく「取れなかった」。
+    /// これを 0 として渡すと、復旧した瞬間の 0 → 実額を「使用中」と読んで追従モードに入る。
+    @Test func todayCostBySourceは劣化したソースを外す() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4.5])
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:],
+                                   health: .degraded(.remoteUnavailable))
+        ])
+        let costs = store.todayCostBySource
+        #expect(costs["claude"] == 4.5)
+        #expect(costs["cursor"] == nil)
+
+        // 取得できるようになったら、また比較対象に戻る。
+        store.applyDriverSnapshots(["cursor": CostSnapshot(daily: [today: 1.5], byModel: [:])])
+        #expect(store.todayCostBySource["cursor"] == 1.5)
+    }
+
     @Test func 新しいスナップショットが空なら古いモデル内訳を消す() {
         let store = UsageStore()
         store.driverDailyByID = ["cursor": ["2026-07-30": 2]]
