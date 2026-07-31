@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var aboutWindow: NSWindow?
     private let usageStore = UsageStore()
     private let settings = AppSettings.shared
+    private let updater = UpdateChecker.shared
     private var cancellables = Set<AnyCancellable>()
     private var refreshTimer: Timer?
     /// ポップオーバー表示中の「外側クリックで閉じる」監視。
@@ -61,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = NSHostingController(
             rootView: PopoverView(store: usageStore,
                                   settings: settings,
+                                  updater: updater,
                                   onOpenSettings: { [weak self] in self?.openSettings() },
                                   onOpenAbout: { [weak self] in self?.openAbout() })
             .tint(.orange)   // 燃料ブランドのアクセント 1 色に統一
@@ -81,7 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
         // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
-        UpdateChecker.shared.startPeriodicChecks()
+        updater.startPeriodicChecks()
 
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
