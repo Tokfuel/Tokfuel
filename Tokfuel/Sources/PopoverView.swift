@@ -16,11 +16,13 @@ struct PopoverView: View {
     init(
         store: UsageStore,
         settings: AppSettings = .shared,
+        updater: UpdateChecker = .shared,
         onOpenSettings: @escaping () -> Void = {},
         onOpenAbout: @escaping () -> Void = {}
     ) {
         self.store = store
         self.settings = settings
+        self.updater = updater
         self.onOpenSettings = onOpenSettings
         self.onOpenAbout = onOpenAbout
     }
