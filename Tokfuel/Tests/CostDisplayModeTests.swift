@@ -154,6 +154,42 @@ struct CostSourceModeUsageStoreTests {
         #expect(content.title.contains(Money.format(2)))
     }
 
+    /// 取得できていない Cursor を 0 円として出すと「使っていない」と読めてしまう。
+    /// メニューバーはポップオーバーより情報量が少ないぶん、この誤読が起きやすい。
+    @Test func Cursorが取れていなければ金額ではなく不明にする() {
+        let input = MenuBarInput(
+            metric: .today, representation: .amount, costSourceMode: .sideBySide,
+            gauge: MenuBarGauge(todaySpend: 4, todayBasis: 0, monthSpend: 0, monthBasis: 0),
+            cursorUnavailable: true, todayClaude: 4, todayCursor: 0)
+        let content = MenuBarReadout.content(for: input)
+        #expect(content.title == "Claude \(Money.format(4)) · Cursor \(MenuBarReadout.unavailableText)")
+    }
+
+    @Test func Cursorのみで取れていなければ金額全体が不明() {
+        let input = MenuBarInput(
+            metric: .today, representation: .amount, costSourceMode: .cursorOnly,
+            gauge: MenuBarGauge(todaySpend: 0, todayBasis: 0, monthSpend: 0, monthBasis: 0),
+            cursorUnavailable: true)
+        #expect(MenuBarReadout.content(for: input).title == MenuBarReadout.unavailableText)
+    }
+
+    @Test func Cursorのみで取れていなければ割合も不明() {
+        // 0% は「使っていない」と同義に見えるので出さない。
+        let input = MenuBarInput(
+            metric: .today, representation: .percent, costSourceMode: .cursorOnly,
+            gauge: MenuBarGauge(todaySpend: 0, todayBasis: 20, monthSpend: 0, monthBasis: 20),
+            cursorUnavailable: true)
+        #expect(MenuBarReadout.content(for: input).title == MenuBarReadout.unavailableText)
+    }
+
+    @Test func 取れていれば従来どおり金額を出す() {
+        let input = MenuBarInput(
+            metric: .today, representation: .amount, costSourceMode: .sideBySide,
+            gauge: MenuBarGauge(todaySpend: 6, todayBasis: 0, monthSpend: 0, monthBasis: 0),
+            cursorUnavailable: false, todayClaude: 4, todayCursor: 2)
+        #expect(MenuBarReadout.content(for: input).title.contains(Money.format(2)))
+    }
+
     @Test func 合算モードの金額は1つの合計だけ() {
         let input = MenuBarInput(
             metric: .today, representation: .amount, costSourceMode: .combined,

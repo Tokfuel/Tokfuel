@@ -256,3 +256,135 @@ struct CursorCostDriverTests {
     }
 
 }
+
+/// WAL モードの `state.vscdb` を読み取り専用で開けるか。
+///
+/// 実機の Cursor は WAL でチェックポイント済み（`-wal` / `-shm` が無い）状態を残す。素の
+/// `SQLITE_OPEN_READONLY` はそれを開けず、しかも失敗するのは `open` ではなく `prepare` なので、
+/// 「テーブルが無い DB」と同じ静かな空返しに紛れる。ここが壊れると Cursor は常に 0 円になる。
+struct CursorSQLiteWALTests {
+    /// 実機の Cursor と同じ状態を作る: WAL モードで書き、チェックポイントして閉じ、
+    /// `-wal` / `-shm` を消す（Cursor 終了後のディレクトリはこの形になっている）。
+    /// この 3 点が揃ったときだけ素の読み取り専用が `SQLITE_CANTOPEN` になるので、
+    /// どれかを省くと回帰テストとして意味を失う。
+    private func makeCheckpointedWALDB(extraSQL: String) -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("cursor-wal-\(UUID().uuidString).sqlite")
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        #expect(sqlite3_exec(db, "PRAGMA journal_mode=WAL", nil, nil, nil) == SQLITE_OK)
+        #expect(sqlite3_exec(db, extraSQL, nil, nil, nil) == SQLITE_OK)
+        #expect(sqlite3_exec(db, "PRAGMA wal_checkpoint(TRUNCATE)", nil, nil, nil) == SQLITE_OK)
+        sqlite3_close(db)
+        for suffix in ["-wal", "-shm"] {
+            try? FileManager.default.removeItem(atPath: url.path + suffix)
+        }
+        // 前提の確認: 片付いた WAL DB は素の読み取り専用では prepare できない。
+        var plain: OpaquePointer?
+        #expect(sqlite3_open_v2(url.path, &plain, SQLITE_OPEN_READONLY, nil) == SQLITE_OK)
+        var stmt: OpaquePointer?
+        let prepared = sqlite3_prepare_v2(plain, "SELECT 1 FROM sqlite_master LIMIT 1",
+                                          -1, &stmt, nil)
+        sqlite3_finalize(stmt)
+        sqlite3_close(plain)
+        #expect(prepared == SQLITE_CANTOPEN)
+        return url
+    }
+
+    @Test func チェックポイント済みWALでもトークンを読める() {
+        let url = makeCheckpointedWALDB(extraSQL: """
+        CREATE TABLE ItemTable (key TEXT PRIMARY KEY, value TEXT);
+        INSERT INTO ItemTable VALUES ('cursorAuth/accessToken', 'wal-token');
+        """)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        #expect(CursorDashboardService.readAccessToken(dbPath: url.path) == "wal-token")
+    }
+
+    @Test func チェックポイント済みWALでもbubbleを走査できる() {
+        withPricing([("utest-wal-claude-4-sonnet", 3.0, 15.0)]) {
+            let json = """
+            {"createdAt": "2025-10-02T06:19:31.163Z", "tokenCount": {"inputTokens": 1000000, "outputTokens": 0}, "modelInfo": {"modelName": "utest-wal-claude-4-sonnet"}}
+            """
+            let url = makeCheckpointedWALDB(extraSQL: """
+            CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT);
+            INSERT INTO cursorDiskKV VALUES ('bubbleId:c1:b1', '\(json)');
+            """)
+            defer { try? FileManager.default.removeItem(at: url) }
+
+            let daily = CursorUsageReader.scan(dbPath: url.path,
+                                               from: "2025-01-01", to: "2025-12-31")
+            #expect(daily.values.reduce(0, +) == 3.0)
+        }
+    }
+
+    @Test func 開けないパスでも従来どおり空を返す() {
+        #expect(CursorSQLite.openReadOnly(path: "/nonexistent/state.vscdb") == nil)
+    }
+}
+
+/// ダッシュボード API に届かなかったことを `CostSnapshot.health` で伝えられるか。
+/// 金額が 0 になる点は昔から同じで、変わったのは「その 0 の意味が UI に届く」ところ。
+struct CursorCostDriverHealthTests {
+    /// 実在するが中身が空の DB。`isAvailable` を通し、ローカルスキャンは空になる。
+    private func makeEmptyDB() -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("cursor-health-\(UUID().uuidString).sqlite")
+        FileManager.default.createFile(atPath: url.path, contents: Data())
+        return url
+    }
+
+    @Test func API成功ならhealthはok() async {
+        let url = makeEmptyDB()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let driver = CursorCostDriver(stateDBURL: url) { _, _, _ in
+            .success(.init(daily: ["2026-07-30": 1.5], byModel: ["gpt-5": 1.5]))
+        }
+
+        let snapshot = await driver.snapshot(from: "2026-07-01", to: "2026-07-31")
+        #expect(snapshot.health == .ok)
+        #expect(snapshot.daily == ["2026-07-30": 1.5])
+    }
+
+    @Test func 認証情報が無ければsignedOutで劣化を伝える() async {
+        let url = makeEmptyDB()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let driver = CursorCostDriver(stateDBURL: url) { _, _, _ in .noCredentials }
+
+        let snapshot = await driver.snapshot(from: "2026-07-01", to: "2026-07-31")
+        #expect(snapshot.health == .degraded(.signedOut))
+        // 金額は 0 に落ちる（合算は壊さない）。区別は health だけが担う。
+        #expect(snapshot.daily.isEmpty)
+    }
+
+    @Test func API到達不能ならremoteUnavailableで劣化を伝える() async {
+        let url = makeEmptyDB()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let driver = CursorCostDriver(stateDBURL: url) { _, _, _ in .unreachable }
+
+        let snapshot = await driver.snapshot(from: "2026-07-01", to: "2026-07-31")
+        #expect(snapshot.health == .degraded(.remoteUnavailable))
+    }
+
+    @Test func 認証拒否はcredentialsRejectedで伝える() async {
+        // トークンはあるのにサーバが失効させている状態（実機で観測した 401）。
+        // サインインし直せば直る種類なので、到達不能とは区別する。
+        let url = makeEmptyDB()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let driver = CursorCostDriver(stateDBURL: url) { _, _, _ in .unauthorized }
+
+        let snapshot = await driver.snapshot(from: "2026-07-01", to: "2026-07-31")
+        #expect(snapshot.health == .degraded(.credentialsRejected))
+        #expect(CostSnapshot.Degradation.credentialsRejected.isRecoverableBySignIn)
+        #expect(CostSnapshot.Degradation.remoteUnavailable.isRecoverableBySignIn == false)
+    }
+
+    @Test func 未インストールなら劣化扱いにしない() async {
+        // Cursor を使っていない Mac に注意書きを出さない（zero-setup の劣化と同じ形）。
+        let driver = CursorCostDriver(stateDBURL: URL(fileURLWithPath: "/nonexistent/state.vscdb")) {
+            _, _, _ in .unreachable
+        }
+        let snapshot = await driver.snapshot(from: "2026-07-01", to: "2026-07-31")
+        #expect(snapshot.health == .ok)
+    }
+}

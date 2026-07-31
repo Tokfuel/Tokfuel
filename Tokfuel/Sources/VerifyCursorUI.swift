@@ -66,16 +66,19 @@ enum VerifyCursorUI {
         )
         // CostDriver 本番経路（ダッシュボード優先 → ローカルフォールバック）
         CursorDashboardService.resetCacheForTesting()
-        let daily = await driver.dailyCosts(from: from, to: today)
+        let snapshot = await driver.snapshot(from: from, to: today)
+        let daily = snapshot.daily
         let todayCost = daily[today] ?? 0
         print("today:", today)
         print("cursorTodayCost:", todayCost)
         print("cursorDays:", daily.count)
         print("cursorTotal:", daily.values.reduce(0, +))
+        print("health:", snapshot.health)
         print("hasAccessToken:", CursorDashboardService.readAccessToken(dbPath: driver.stateDBURL.path) != nil)
 
         let store = UsageStore()
-        store.driverDailyByID = ["cursor": daily]
+        // 日別だけでなく health も載せる。そうしないと「取れなかった $0」の注意書きが絵に出ない。
+        store.applyDriverSnapshots([driver.id: snapshot])
         store.report = minimalReport(todayClaude: 1.23)
         store.daily = [DailyUsage(date: today, prompts: 3, sessions: 1)]
         store.lastUpdated = Date()
