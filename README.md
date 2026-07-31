@@ -65,7 +65,9 @@
 - 🚨 **Budgets**
 
   Independent monthly and daily limits.
-  Near a limit the ⛽️ icon turns orange; over it, red — with a notification.
+  Near a limit the ⛽️ icon turns orange; over it, red — with a heads-up.
+  Choose how you get it: a notification, a floating alert window that follows you into
+  full-screen Spaces, or both. Either way it fires once, when the level rises.
 
 - 📊 **Menu-bar readout**
 

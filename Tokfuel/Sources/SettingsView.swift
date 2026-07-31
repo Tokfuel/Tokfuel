@@ -143,11 +143,14 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 220)
+                Picker("知らせ方", selection: $settings.budgetAlertStyle) {
+                    ForEach(BudgetAlertStyle.allCases) { Text($0.label).tag($0) }
+                }
             }
         } header: {
             Text("予算")
         } footer: {
-            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算し、内部では USD で保存します。")
+            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。アラートウィンドウは全画面の Space でも前面に出ます（どちらもレベルが上がったときの 1 回だけです）。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算し、内部では USD で保存します。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
