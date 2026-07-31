@@ -426,6 +426,11 @@ struct PopoverView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
+            // アクセントのオレンジは「注意して見るもの」（予算の警告・アップデート）に
+            // 取っておく。常設の操作口は左隣の更新時刻と同じ灰色に揃える。
+            // borderlessButton のラベルはティントで塗られるので、
+            // ラベル側の foregroundStyle ではなくここで色を指定する。
+            .tint(Color(nsColor: .tertiaryLabelColor))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
