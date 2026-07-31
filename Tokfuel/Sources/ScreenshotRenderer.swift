@@ -40,6 +40,14 @@ enum ScreenshotRenderer {
     static let dailyBudgetLimit: Double = 20
     /// Cursor（二次ソース）の今日のコスト。並べて表示モードで Claude と並ぶ絵になる。
     static let cursorTodayCost: Double = 4.20
+    /// Cursor のモデル別内訳 (USD)。合計は `cursorTodayCost` に一致させる（テストで検査）。
+    /// `composer-1` を $0 にして、価格表に無いモデル（`CursorPricing` が値付けできない）の
+    /// ヒントまで絵に入れる。値付けできたぶんは 1 モデルに寄せ、偏りのヒントも出す。
+    static let cursorModelCosts: [String: Double] = [
+        "claude-4.5-sonnet": 3.36,
+        "gpt-5-codex": 0.84,
+        "composer-1": 0
+    ]
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     static let previewUpdateVersion = "0.1.0"
 
@@ -117,6 +125,8 @@ enum ScreenshotRenderer {
     /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
     ///   断っている状態
     /// - `popover-cursor-signin`: 同じ注意書きに、サインインし直すボタンが付いた状態
+    /// - `popover-advice`: 同じ合成を末尾までスクロールした状態（「節約のヒント」は
+    ///   最初の 1 画面に入らないため、ここでしか見えない）
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
@@ -134,6 +144,7 @@ enum ScreenshotRenderer {
             ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
             ("popover-cursor-signin", try renderPNG(
                 store: degradedCursorStore(reason: .credentialsRejected))),
+            ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
@@ -151,10 +162,14 @@ enum ScreenshotRenderer {
     /// `ImageRenderer` ではなく `NSHostingView` を実際に描画させる。`ImageRenderer` は
     /// `ScrollView` の中身と AppKit 実装のコントロール（フッターの `Menu`・期間ピッカー）を
     /// 描けず、本文が空の絵になるため。
-    private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared) throws -> Data {
+    ///
+    /// `scrollsToBottom` はポップオーバーの `ScrollView` を末尾まで送ってから撮る。
+    /// 折り返しの下にあるセクション（節約のヒント）は、そうしないと絵に写らない。
+    private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared,
+                                  scrollsToBottom: Bool = false) throws -> Data {
         let view = NSHostingView(rootView: composition(store: store, updater: updater, now: Date()))
         view.frame = CGRect(origin: .zero, size: canvas)
-        return try capture(view, size: canvas)
+        return try capture(view, size: canvas, scrollsToBottom: scrollsToBottom)
     }
 
     /// 設定・About など、デスクトップ風の飾りを持たない単独ウィンドウを @2x で PNG にする。
@@ -189,17 +204,23 @@ enum ScreenshotRenderer {
         // Form/List は `.frame(height:)` で高さを固定していても中身は NSScrollView に収まる
         // だけで、開いた DisclosureGroup の中身は下にスクロールしないと写らない。
         // 折りたたみを開いた状態の絵は、実際の操作と同じく末尾までスクロールしてから撮る。
-        if scrollsToBottom, let scrollView = firstScrollView(in: hosting) {
+        if scrollsToBottom {
             RunLoop.current.run(until: Date().addingTimeInterval(settleSeconds))
-            scrollView.layoutSubtreeIfNeeded()
-            if let documentView = scrollView.documentView {
-                let maxY = max(0, documentView.bounds.height - scrollView.contentView.bounds.height)
-                scrollView.contentView.scroll(to: NSPoint(x: 0, y: maxY))
-                scrollView.reflectScrolledClipView(scrollView.contentView)
-            }
+            scrollToBottom(in: hosting)
         }
 
         return try capture(hosting, size: size)
+    }
+
+    /// 最初に見つかった `NSScrollView` を末尾まで送る。実際の操作と同じく、
+    /// 折り返しの下にあるものを絵に入れるために使う。
+    private static func scrollToBottom(in view: NSView) {
+        guard let scrollView = firstScrollView(in: view) else { return }
+        scrollView.layoutSubtreeIfNeeded()
+        guard let documentView = scrollView.documentView else { return }
+        let maxY = max(0, documentView.bounds.height - scrollView.contentView.bounds.height)
+        scrollView.contentView.scroll(to: NSPoint(x: 0, y: maxY))
+        scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 
     /// ビュー階層を降りて最初に見つかった `NSScrollView`（Form/List の実体）を返す。
@@ -212,7 +233,8 @@ enum ScreenshotRenderer {
     }
 
     /// `NSHostingView` を画面外のウィンドウで実描画させ、@2x の PNG データに焼く。
-    private static func capture(_ view: NSHostingView<some View>, size: CGSize) throws -> Data {
+    private static func capture(_ view: NSHostingView<some View>, size: CGSize,
+                                scrollsToBottom: Bool = false) throws -> Data {
         let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: .darkAqua)
@@ -223,6 +245,8 @@ enum ScreenshotRenderer {
         view.layoutSubtreeIfNeeded()
         // SwiftUI の更新はランループ越しに走るので、描画が落ち着くまで回してから取り込む。
         RunLoop.current.run(until: Date().addingTimeInterval(settleSeconds))
+        // スクロールはレイアウトが確定してからでないと送り先の座標が出ない。
+        if scrollsToBottom { scrollToBottom(in: view) }
         window.displayIfNeeded()
 
         // rep のピクセル数を論理サイズの 2 倍にし、size を論理サイズに戻すことで @2x になる。
@@ -340,6 +364,8 @@ enum ScreenshotRenderer {
         store.budgetSpend = budgetSpend
         // Cursor（二次ソース、TF-0032）。ヒーロー合計と内訳キャプションに出る今日ぶんだけ積む。
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
+        // モデル別内訳は「節約のヒント」の Cursor 由来（TF-0078）の入力でもある。
+        store.driverModelByID = ["cursor": cursorModelCosts]
         store.lastUpdated = Date()
         return store
     }
@@ -378,9 +404,18 @@ enum ScreenshotRenderer {
                                        output: Int(cost * 890), requests: Int(cost * 6))
             },
             daily: daily,
-            // ポップオーバーはスクロールするが、README には最初の 1 画面しか写らない。
-            // 高コストのセッションと節約のヒントは折り返しの下になるため空にしておく。
-            advice: [],
+            // README には最初の 1 画面しか写らないが、`popover-advice` の絵は末尾まで
+            // スクロールして撮る。retok 由来を 1 件置いて、Cursor 由来（CursorAdvice が
+            // cursorModelCosts から作る）と並んだ状態——ソースバッジと severity 順——を写す。
+            advice: [
+                RetokReport.Advice(
+                    severity: "medium",
+                    key: "adv_model_mix",
+                    title: "高価格モデルでの小粒セッションが 12 件 ($18.40)",
+                    detail: "一問一答や軽い確認は Haiku/Sonnet で十分なことが多いです。"
+                        + "/model で切り替えるか、軽い用途向けに別プロファイルを用意すると"
+                        + "節約できます。")
+            ],
             topSessions: []
         )
     }

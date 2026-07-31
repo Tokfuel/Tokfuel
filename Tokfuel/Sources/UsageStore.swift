@@ -747,4 +747,70 @@ extension UsageStore {
             return rows
         }
     }
+
+    // MARK: - 節約のヒント
+
+    /// 「節約のヒント」1 件。retok（Claude）由来と Tokfuel が組み立てた Cursor 由来を
+    /// 1 つのリストに並べるため、出どころを添えて持つ。
+    struct AdviceItem: Identifiable {
+        let source: String
+        let advice: RetokReport.Advice
+        var id: String { "\(source)|\(advice.key)" }
+    }
+
+    /// severity の強さ（小さいほど強い）。並び順にだけ使う。
+    /// retok は high / medium / low / info を返し、Cursor 由来は high / info を返す。
+    nonisolated static func severityRank(_ severity: String) -> Int {
+        switch severity {
+        case "high": return 0
+        case "medium", "warn": return 1
+        case "low": return 2
+        default: return 3
+        }
+    }
+
+    /// 表示する節約のヒント。`costSourceMode` に従って 2 系統を合成し、
+    /// severity（high が先）→ ソース名 → キーの順に並べる。
+    /// `claudeOnly` では Cursor 由来を、`cursorOnly` では retok 由来を出さない。
+    func adviceItems(for report: RetokReport) -> [AdviceItem] {
+        let mode = settings.costSourceMode
+        var items: [AdviceItem] = []
+        if mode.includesClaude {
+            items += report.advice.map { AdviceItem(source: Self.claudeSourceLabel, advice: $0) }
+        }
+        if mode.includesCursor {
+            items += CursorAdvice.hints(for: cursorAdviceInput(for: report))
+                .map { AdviceItem(source: CursorAdvice.sourceLabel, advice: $0) }
+        }
+        return items.sorted { lhs, rhs in
+            let lRank = Self.severityRank(lhs.advice.severity)
+            let rRank = Self.severityRank(rhs.advice.severity)
+            if lRank != rRank { return lRank < rRank }
+            if lhs.source != rhs.source { return lhs.source < rhs.source }
+            return lhs.advice.key < rhs.advice.key
+        }
+    }
+
+    /// Cursor の取得が劣化しているか（TF-0073 の `CostSnapshot.health`）。
+    /// 劣化していれば金額は実態より小さいので、その数字を根拠にした助言はしない。
+    /// `degradedSourceWarnings` と違いソース表示モードは見ない——ヒント側の絞り込みは
+    /// `adviceItems(for:)` が `costSourceMode` でやる。
+    var cursorFetchDegraded: Bool {
+        if case .degraded = driverHealthByID["cursor"] { return true }
+        return false
+    }
+
+    /// Cursor 由来のヒントの入力。金額はチャート・期間合計と同じ表示窓で切る
+    /// （予算窓の補完分が混ざると、割合の分母が表示と食い違う）。
+    private func cursorAdviceInput(for report: RetokReport) -> CursorAdvice.Input {
+        let from = Self.reportWindowStart(days: report.periodDays)
+        let cursorTotal = (driverDailyByID["cursor"] ?? [:])
+            .filter { $0.key >= from }
+            .values.reduce(0, +)
+        return CursorAdvice.Input(
+            modelCosts: driverModelByID["cursor"] ?? [:],
+            cursorTotal: cursorTotal,
+            claudeTotal: report.totals.cost,
+            isDegraded: cursorFetchDegraded)
+    }
 }

@@ -69,6 +69,24 @@ struct ScreenshotFixtureTests {
                 + ScreenshotRenderer.cursorTodayCost)
     }
 
+    @Test func Cursorのモデル別内訳は今日のコストに一致する() {
+        let sum = ScreenshotRenderer.cursorModelCosts.values.reduce(0, +)
+        #expect(abs(sum - ScreenshotRenderer.cursorTodayCost) < 0.0001)
+    }
+
+    @Test func 節約のヒントは両ソースぶんが絵に出る() {
+        // popover-advice の絵はここが空だと「節約のヒント」ごと消える（TF-0078）。
+        #expect(!ScreenshotRenderer.fixtureReport().advice.isEmpty)
+        let cursor = CursorAdvice.hints(for: .init(
+            modelCosts: ScreenshotRenderer.cursorModelCosts,
+            cursorTotal: ScreenshotRenderer.cursorTodayCost,
+            claudeTotal: ScreenshotRenderer.dailyCosts.reduce(0, +)))
+        // 値付けできないモデル（high）と高単価モデルへの偏り（info）の 2 件。
+        // Cursor の比率は Claude が大半なので立たない。
+        #expect(cursor.map(\.key).sorted() == [CursorAdvice.Key.dominantModel,
+                                               CursorAdvice.Key.unpricedModels].sorted())
+    }
+
     @Test func 月間予算は警告状態になる() {
         // 警告メーターと「残り」ラベルを絵に入れるための組み合わせ。
         #expect(BudgetMonitor.level(spend: ScreenshotRenderer.budgetSpend,
