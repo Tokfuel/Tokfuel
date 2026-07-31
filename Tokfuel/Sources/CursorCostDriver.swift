@@ -13,13 +13,29 @@ import SQLite3
 /// 古い会話分の下限推定になる。
 ///
 /// UI ではどちら経由でも「推定」と出す——プラン込み枠の換算や非公式 API の揺らぎがあるため。
+///
+/// フォールバックへ落ちたときは `CostSnapshot.health` を `.degraded` にする。金額は 0 でも
+/// 「使っていない」ではなく「取れていない」ので、UI がその 2 つを書き分けられるようにする。
 struct CursorCostDriver {
     let id = "cursor"
     let displayName = "Cursor"
     let stateDBURL: URL
 
-    init(stateDBURL: URL = CursorCostDriver.defaultStateDBURL) {
+    /// ダッシュボード API の呼び出し口。テストではネットワークへ出ないスタブを渡す。
+    typealias DashboardFetch = @Sendable (
+        _ from: String, _ to: String, _ dbPath: String
+    ) async -> CursorDashboardService.FetchOutcome
+
+    private let fetchDashboard: DashboardFetch
+
+    init(
+        stateDBURL: URL = CursorCostDriver.defaultStateDBURL,
+        fetchDashboard: DashboardFetch? = nil
+    ) {
         self.stateDBURL = stateDBURL
+        self.fetchDashboard = fetchDashboard ?? { from, to, dbPath in
+            await CursorDashboardService.fetch(from: from, to: to, dbPath: dbPath)
+        }
     }
 
     static var defaultStateDBURL: URL {
@@ -39,19 +55,84 @@ extension CursorCostDriver: CostDriver {
         FileManager.default.fileExists(atPath: stateDBURL.path)
     }
 
+    /// Cursor 本体。サインインが切れたときはこのアプリを前面に出すだけで、Tokfuel は
+    /// ログイン画面もトークン発行も持たない（他アプリの認証を代行しない）。
+    var signInBundleID: String? { "com.todesktop.230313mzl4w4u92" }
+
     func snapshot(from: String, to: String) async -> CostSnapshot {
         guard isAvailable else { return .empty }
         let path = stateDBURL.path
         // ダッシュボードが取れたらそれを信じる（空でもローカルへ落とさない）。
-        if let remote = await CursorDashboardService.fetchSnapshot(
-            from: from, to: to, dbPath: path
-        ) {
+        switch await fetchDashboard(from, to, path) {
+        case .success(let remote):
             return CostSnapshot(daily: remote.daily, byModel: remote.byModel)
+        case .noCredentials:
+            return await localSnapshot(path: path, from: from, to: to,
+                                       health: .degraded(.signedOut))
+        case .unauthorized:
+            return await localSnapshot(path: path, from: from, to: to,
+                                       health: .degraded(.credentialsRejected))
+        case .unreachable:
+            return await localSnapshot(path: path, from: from, to: to,
+                                       health: .degraded(.remoteUnavailable))
         }
+    }
+
+    /// `state.vscdb` のトークンスナップショットだけで作る下限推定。Cursor 3.x では
+    /// `tokenCount` が残らないので、直近の期間はたいてい空になる——だから `health` を持たせる。
+    private func localSnapshot(
+        path: String, from: String, to: String, health: CostSnapshot.Health
+    ) async -> CostSnapshot {
         let daily = await Task.detached(priority: .utility) {
             CursorUsageReader.scan(dbPath: path, from: from, to: to)
         }.value
-        return CostSnapshot(daily: daily, byModel: [:])
+        return CostSnapshot(daily: daily, byModel: [:], health: health)
+    }
+}
+
+/// Cursor の `state.vscdb` を読み取り専用で開く。
+///
+/// `state.vscdb` は WAL モード。Cursor がチェックポイントを終えると `-wal` / `-shm` が消え、
+/// その状態を素の `SQLITE_OPEN_READONLY` で開くと SQLite は `-shm` を作れず、
+/// **`sqlite3_open_v2` は成功したまま `sqlite3_prepare_v2` が** `SQLITE_CANTOPEN` を返す。
+/// 実機ではこれで `readAccessToken` も `CursorUsageReader.scan` も静かに失敗し、Cursor の
+/// コストが常に 0 円になっていた。
+///
+/// まず通常の読み取り専用で開き、クエリを作れないときだけ `immutable=1` で開き直す。
+/// `immutable=1` は「読んでいる間ファイルは変わらない」という宣言なので常用はしない——
+/// `-wal` が残っているうち（＝Cursor が書きかけ）は素の読み取り専用が成功するので、
+/// この経路には来ない。
+enum CursorSQLite {
+    /// 開けなければ nil（呼び出し側はいつもの「空を返す」に落ちる）。
+    static func openReadOnly(path: String) -> OpaquePointer? {
+        if let db = open(dsn: path, flags: SQLITE_OPEN_READONLY) {
+            if canQuery(db) { return db }
+            sqlite3_close(db)
+        }
+        let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
+        if let db = open(dsn: "file:\(encoded)?immutable=1",
+                         flags: SQLITE_OPEN_READONLY | SQLITE_OPEN_URI) {
+            if canQuery(db) { return db }
+            sqlite3_close(db)
+        }
+        return nil
+    }
+
+    private static func open(dsn: String, flags: Int32) -> OpaquePointer? {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(dsn, &db, flags, nil) == SQLITE_OK, let db else {
+            sqlite3_close(db)
+            return nil
+        }
+        return db
+    }
+
+    /// 実際に prepare してみる。WAL の `-shm` を作れない失敗はここでしか現れない。
+    private static func canQuery(_ db: OpaquePointer) -> Bool {
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        return sqlite3_prepare_v2(db, "SELECT 1 FROM sqlite_master LIMIT 1", -1, &stmt, nil)
+            == SQLITE_OK
     }
 }
 
@@ -61,11 +142,7 @@ enum CursorUsageReader {
     /// [from, to] 区間（両端含む、"YYYY-MM-DD"、ローカル日付）で日別コストを集計する。
     /// 失敗はすべて空辞書に落ちる（呼び出し側でエラー表示が必要な処理ではない）。
     static func scan(dbPath: String, from: String, to: String) -> [String: Double] {
-        var db: OpaquePointer?
-        guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let db else {
-            sqlite3_close(db)
-            return [:]
-        }
+        guard let db = CursorSQLite.openReadOnly(path: dbPath) else { return [:] }
         defer { sqlite3_close(db) }
 
         let composerModels = loadComposerModels(db: db)

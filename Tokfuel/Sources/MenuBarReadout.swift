@@ -101,6 +101,9 @@ struct MenuBarInput {
     /// 残額表示に使う予算上限（0 なら残額表示なし）。割合の分母とは独立。
     var dailyLimit: Double = 0
     var monthlyLimit: Double = 0
+    /// Cursor 側の金額が取得できていないか。true のときは 0 円ではなく「—」を出す
+    /// （劣化していれば金額は確実に足りないので、0 円と並べると誤情報になる）。
+    var cursorUnavailable = false
     /// 並べて表示用のソース別金額（ゲージの合算とは別に持つ）。
     var todayClaude: Double = 0
     var todayCursor: Double = 0
@@ -344,7 +347,10 @@ enum MenuBarReadout {
         case .percent, .ringAndValue:
             // リングは割合のインジケーターなので、添える数値も割合にそろえる。
             // リングが形で伝える値に、桁で読める精度（142% など）を足す関係になる。
-            title = joined(sides.compactMap(percentText))
+            // 取れていない Cursor だけを見ているときは 0% ではなく「—」（0% は誤情報）。
+            title = input.costSourceMode == .cursorOnly && input.cursorUnavailable
+                ? unavailableText
+                : joined(sides.compactMap(percentText))
         default:
             title = joined(sides.map { amountText($0, input: input) })
         }
@@ -370,10 +376,18 @@ enum MenuBarReadout {
         }
         if input.costSourceMode == .sideBySide {
             let (claude, cursor) = sideAmounts(side, input: input)
-            return "Claude \(Money.format(claude)) · Cursor \(Money.format(cursor))"
+            let cursorText = input.cursorUnavailable ? unavailableText : Money.format(cursor)
+            return "Claude \(Money.format(claude)) · Cursor \(cursorText)"
+        }
+        // Cursor だけを見ているときに Cursor が取れていなければ、金額そのものが不明。
+        if input.costSourceMode == .cursorOnly, input.cursorUnavailable {
+            return unavailableText
         }
         return Money.format(side.spend)
     }
+
+    /// 金額・割合が取れなかったことを示す表記。0 円や 0% と紛れない 1 文字にする。
+    static let unavailableText = "—"
 
     private static func sideAmounts(_ side: Side, input: MenuBarInput) -> (Double, Double) {
         // Side に今日/月の区別が無いのでラベルで分ける（sides が付けるラベルと一致）。

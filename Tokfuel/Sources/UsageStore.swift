@@ -72,6 +72,15 @@ final class UsageStore: ObservableObject {
     /// driver.id → (モデル → 期間コスト)。レポート期間のモデル別内訳用。
     @Published var driverModelByID: [String: [String: Double]] = [:]
 
+    /// driver.id → 直近の取得の確度。金額 0 が「使っていない」なのか「取れなかった」なのかを
+    /// ポップオーバーで書き分けるために持つ（金額そのものは driverDailyByID 側）。
+    @Published var driverHealthByID: [String: CostSnapshot.Health] = [:]
+
+    /// サインインボタンを押したあと、次にポップオーバーを開いたら 1 度だけ取り直す合図。
+    /// 「劣化しているなら開くたび取り直す」にはしない——retok の再実行を伴うので、
+    /// ユーザーが実際にサインインしに行った回だけに限る。
+    @Published var awaitingSignInRecheck = false
+
     /// ScreenshotRenderer が UsageStore の初期化前に UserDefaults へ直接書くため公開している。
     nonisolated static let costChartStyleKey = "costChartStyle"
     nonisolated static let reportPeriodKey = "reportPeriod"
@@ -208,6 +217,7 @@ final class UsageStore: ObservableObject {
                 dailyAverage: dailyAverage30, activeDays: activeDaysInPeriod),
             dailyLimit: settings.dailyBudgetLimit,
             monthlyLimit: settings.budgetLimit,
+            cursorUnavailable: !degradedSourceWarnings.isEmpty,
             todayClaude: claudeTodayCost,
             todayCursor: cursorTodayCost,
             monthClaude: claudeBudgetSpend,
@@ -377,6 +387,7 @@ final class UsageStore: ObservableObject {
                 var merged = self.driverDailyByID[id] ?? [:]
                 for (date, cost) in snapshot.daily { merged[date] = cost }
                 self.driverDailyByID[id] = merged
+                self.driverHealthByID[id] = snapshot.health
             }
 
             // 稼働日数・日次平均は retok 専用の指標。budgetSpend と違い二次ソースの分が無いので、
@@ -490,6 +501,46 @@ extension UsageStore {
     func applyDriverSnapshots(_ snapshots: [String: CostSnapshot]) {
         driverDailyByID = snapshots.mapValues(\.daily)
         driverModelByID = snapshots.mapValues(\.byModel)
+        driverHealthByID = snapshots.mapValues(\.health)
+    }
+
+    /// 劣化した二次ソース 1 件ぶんの注意書き。金額の 0 を「使っていない」と誤読させないため、
+    /// UI はこれをそのまま金額の近くに出す。
+    struct SourceWarning: Identifiable, Equatable {
+        /// driver.id。
+        let id: String
+        let name: String
+        let message: String
+        /// サインインし直せば直る劣化で、かつ前面に出せるアプリがあるときだけ入る。
+        /// UI はこれがある場合にサインインボタンを添える。
+        let signInBundleID: String?
+    }
+
+    /// 表示している金額が「取れなかった」だけで成り立っているか。
+    /// Cursor だけを見るモードで Cursor が劣化していると、ヒーローの 0 円は情報ではなく
+    /// 誤情報なので、金額の代わりに「—」を出すために使う。
+    var todayCostUnavailable: Bool {
+        settings.costSourceMode == .cursorOnly && !degradedSourceWarnings.isEmpty
+    }
+
+    /// 金額が取れなかった二次ソースの表示名。0 円として並べる代わりに「—」で出すために使う。
+    var unknownSourceNames: [String] {
+        degradedSourceWarnings.map(\.name)
+    }
+
+    /// 取得が劣化している二次ソースの注意書き。
+    /// Cursor を合計に含めないモード（Claude のみ）では出さない——見ていない数字の注意書きに
+    /// なるだけなので。
+    var degradedSourceWarnings: [SourceWarning] {
+        guard settings.costSourceMode.includesCursor else { return [] }
+        return costDrivers.compactMap { driver in
+            guard case .degraded(let reason) = driverHealthByID[driver.id] else { return nil }
+            return SourceWarning(
+                id: driver.id,
+                name: driver.displayName,
+                message: reason.message,
+                signInBundleID: reason.isRecoverableBySignIn ? driver.signInBundleID : nil)
+        }
     }
 
     /// driver.id → 表示名。グラフの色分け（PopoverView）で使う。costDrivers は注入可能な

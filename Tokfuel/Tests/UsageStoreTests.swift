@@ -104,6 +104,108 @@ struct UsageStoreTodayCostTests {
     }
 }
 
+/// 二次ソースが「$0」なのか「取れなかった」のかを UI に伝える経路。
+/// ここが黙って空辞書を返していたため、Cursor の使用量 API が止まった日に
+/// 「Cursor を使っていない」と読める画面になっていた。
+@MainActor
+struct UsageStoreDegradedSourceTests {
+    @Test func 劣化したソースは表示名と説明を返す() {
+        let store = UsageStore()
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:],
+                                   health: .degraded(.remoteUnavailable))
+        ])
+
+        let warnings = store.degradedSourceWarnings
+        #expect(warnings.count == 1)
+        #expect(warnings.first?.name == "Cursor")
+        #expect(warnings.first?.message == CostSnapshot.Degradation.remoteUnavailable.message)
+        // 到達不能はサインインでは直らないので、ボタンを出さない。
+        #expect(warnings.first?.signInBundleID == nil)
+    }
+
+    @Test func 認証拒否ならサインイン先を添える() {
+        let store = UsageStore()
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:],
+                                   health: .degraded(.credentialsRejected))
+        ])
+
+        let warning = store.degradedSourceWarnings.first
+        #expect(warning?.signInBundleID == CursorCostDriver().signInBundleID)
+        #expect(warning?.signInBundleID != nil)
+    }
+
+    @Test func 未サインインもサインイン先を添える() {
+        let store = UsageStore()
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:], health: .degraded(.signedOut))
+        ])
+        #expect(store.degradedSourceWarnings.first?.signInBundleID != nil)
+    }
+
+    @Test func 認証を持たないソースにはボタンを出さない() {
+        // Codex は認証を持たない（signInBundleID の既定が nil）。
+        let store = UsageStore(costDrivers: [CodexCostDriver()])
+        store.applyDriverSnapshots([
+            CodexCostDriver().id: CostSnapshot(daily: [:], byModel: [:],
+                                              health: .degraded(.credentialsRejected))
+        ])
+        #expect(store.degradedSourceWarnings.first?.signInBundleID == nil)
+    }
+
+    @Test func 取得できたソースは注意書きを出さない() {
+        let store = UsageStore()
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:])
+        ])
+        #expect(store.degradedSourceWarnings.isEmpty)
+    }
+
+    @Test func Claudeのみのモードでは出さない() {
+        let settings = AppSettings(defaults: UserDefaults(suiteName: "degraded-\(UUID())")!)
+        settings.costSourceMode = .claudeOnly
+        let store = UsageStore(settings: settings)
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:],
+                                   health: .degraded(.remoteUnavailable))
+        ])
+        #expect(store.degradedSourceWarnings.isEmpty)
+    }
+
+    @Test func 劣化したソースは0円ではなく不明として並ぶ() {
+        // 0 円と「取れなかった」を同じ見た目にしない（Issue の出発点そのもの）。
+        let caption = PopoverView.sideBySideCaption(
+            claudeCost: 12.34,
+            driverBreakdown: [],
+            unknownSources: ["Cursor"])
+        #expect(caption.contains("Cursor —"))
+        #expect(caption.contains("$0") == false)
+    }
+
+    @Test func Cursorのみのモードで劣化したら金額を出さない() {
+        let settings = AppSettings(defaults: UserDefaults(suiteName: "unavailable-\(UUID())")!)
+        settings.costSourceMode = .cursorOnly
+        let store = UsageStore(settings: settings)
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:],
+                                   health: .degraded(.credentialsRejected))
+        ])
+        #expect(store.todayCostUnavailable)
+
+        // 取れていれば通常表示に戻る。
+        store.applyDriverSnapshots(["cursor": CostSnapshot(daily: [:], byModel: [:])])
+        #expect(store.todayCostUnavailable == false)
+    }
+
+    @Test func 空のスナップショットは劣化状態も消す() {
+        let store = UsageStore()
+        store.driverHealthByID = ["cursor": .degraded(.signedOut)]
+        store.applyDriverSnapshots([:])
+        #expect(store.degradedSourceWarnings.isEmpty)
+    }
+}
+
 /// メニューバーの割合表示の分母になる日次平均。
 /// 使い始めた直後でも不当に小さくならないことが要点。
 @MainActor
