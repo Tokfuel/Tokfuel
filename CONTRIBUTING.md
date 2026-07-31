@@ -25,8 +25,15 @@ cd Tokfuel
 swift build            # debug build
 swift run -c release   # run the app from source
 bash scripts/build.sh             # package + install Tokfuel.app to /Applications
-bash scripts/screenshot.sh        # regenerate assets/screenshot.png from the real UI
+bash scripts/screenshot.sh        # regenerate README + Site screenshots from the real UI
 ```
+
+**Screenshots (README + download page).** `bash scripts/screenshot.sh` renders the real
+`PopoverView` once and writes the same PNG to both `assets/screenshot.png` (README) and
+`Site/Assets/images/screenshot.png` (GitHub Pages). After a UI change, run it locally and
+commit both files — don't leave the Site copy stale. Releases also open a review PR with a
+fresh pair (see `.github/workflows/release.yml`); that path still wants a human look before
+merge.
 
 The app reads Claude Code transcripts under `~/.claude/projects/` directly (no hooks or extra setup) — if you use Claude Code at all, you already have data to exercise the UI. Claude cost analysis additionally needs `python3` (ships with the Xcode Command Line Tools) to run the bundled retok.
 
@@ -106,8 +113,15 @@ cd Tokfuel
 swift build            # デバッグビルド
 swift run -c release   # ソースから実行
 bash scripts/build.sh             # Tokfuel.app をパッケージして /Applications にインストール
-bash scripts/screenshot.sh        # assets/screenshot.png を実物の UI から再生成
+bash scripts/screenshot.sh        # README + Site のスクリーンショットを実物の UI から再生成
 ```
+
+**スクリーンショット（README + ダウンロードページ）。** `bash scripts/screenshot.sh` は実物の
+`PopoverView` を 1 回描画し、同じ PNG を `assets/screenshot.png`（README）と
+`Site/Assets/images/screenshot.png`（GitHub Pages）の両方へ書き出します。UI を変えたら
+手元で実行して両ファイルをコミットしてください。Site 側だけ古いまま残さないこと。
+リリース時も同じペアを撮り直した確認用 PR が立ちます（`.github/workflows/release.yml`）。
+マージ前に目視してください。
 
 アプリは `~/.claude/projects/` 配下の Claude Code トランスクリプトを直接読みます（フックや追加設定は不要）。Claude Code を使っていれば、UI を確認するデータはすでに手元にあります。Claude のコスト分析だけは同梱 retok の実行に `python3`（Xcode Command Line Tools に同梱）が必要です。
 

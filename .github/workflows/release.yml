@@ -119,11 +119,12 @@ jobs:
             --generate-notes \
             "$VERSIONED_DMG" dist/Tokfuel-latest.dmg
 
-  # README のスクリーンショットを、いま出したバージョンの実 UI から撮り直す（TF-0015）。
-  # main へ直接 push はせず PR にする（人の目を一度通す・ブランチ保護と共存できる）。
-  # GITHUB_TOKEN で作った PR では他のワークフローが起動しないため、CI は回らない。
+  # README / Site のスクリーンショットを、いま出したバージョンの実 UI から撮り直す
+  # （TF-0015 / #62）。main へ直接 push はせず PR にする（人の目を一度通す・
+  # ブランチ保護と共存できる）。GITHUB_TOKEN で作った PR では他のワークフローが
+  # 起動しないため、CI は回らない。
   screenshot:
-    name: Refresh README screenshot
+    name: Refresh README and Site screenshots
     needs: release
     runs-on: macos-15
     permissions:
@@ -143,7 +144,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.release.outputs.version }}
         run: |
-          if git diff --quiet -- assets/screenshot.png; then
+          PATHS=(assets/screenshot.png Site/Assets/images/screenshot.png)
+          if git diff --quiet -- "${PATHS[@]}"; then
             echo "screenshot is already up to date"
             exit 0
           fi
@@ -151,11 +153,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git switch -c "$BRANCH"
-          git commit -m "chore(assets): refresh README screenshot for ${VERSION}" \
-            -- assets/screenshot.png
+          git commit -m "chore(assets): refresh README/Site screenshot for ${VERSION}" \
+            -- "${PATHS[@]}"
           # 同じバージョンを撮り直した場合はブランチを上書きし、PR は再利用する。
           git push --force origin "$BRANCH"
           gh pr create --base main --head "$BRANCH" \
-            --title "chore(assets): refresh README screenshot for ${VERSION}" \
-            --body "Rendered from the real \`PopoverView\` at ${VERSION} by \`scripts/screenshot.sh\` (TF-0015). Merge if the new screenshot looks right." \
+            --title "chore(assets): refresh README/Site screenshot for ${VERSION}" \
+            --body "Rendered from the real \`PopoverView\` at ${VERSION} by \`scripts/screenshot.sh\` (#62). Updates both README and the download page. Merge if the new screenshot looks right." \
             || echo "a PR for $BRANCH is already open"
