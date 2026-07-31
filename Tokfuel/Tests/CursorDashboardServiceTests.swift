@@ -63,9 +63,19 @@ struct CursorDashboardServiceParsingTests {
     }
 }
 
+/// キャッシュ（`CursorDashboardService` の static な共有状態）のキーは (from, to)。
+/// 並行実行されるテストが同じ窓を使うと互いの結果を拾ってしまうので、テストごとに違う窓を使う。
+/// イベントの日付は API 応答の timestamp だけで決まるため、窓をずらしても検証内容は変わらない。
+private func uniqueWindow(daysAgo: Int) -> (from: String, to: String) {
+    let day = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
+    let string = UsageStore.dateString(day)
+    return (string, string)
+}
+
 struct CursorDashboardServiceFetchTests {
     @Test func HTTP成功なら日別に合算する() async throws {
         CursorDashboardService.resetCacheForTesting()
+        let window = uniqueWindow(daysAgo: 100)
         let today = UsageStore.dateString(Date())
         let millis = Int64(Date().timeIntervalSince1970 * 1000)
         let payload = """
@@ -79,8 +89,8 @@ struct CursorDashboardServiceFetchTests {
         """.data(using: .utf8)!
 
         let daily = await CursorDashboardService.dailyCosts(
-            from: today,
-            to: today,
+            from: window.from,
+            to: window.to,
             dbPath: "/nonexistent/state.vscdb",
             accessToken: "test-token",
             session: { request in
@@ -100,10 +110,11 @@ struct CursorDashboardServiceFetchTests {
 
     @Test func HTTP失敗ならnilでローカルへ落とせる() async {
         CursorDashboardService.resetCacheForTesting()
+        let window = uniqueWindow(daysAgo: 101)
         let today = UsageStore.dateString(Date())
         let daily = await CursorDashboardService.dailyCosts(
-            from: today,
-            to: today,
+            from: window.from,
+            to: window.to,
             dbPath: "/nonexistent/state.vscdb",
             accessToken: "test-token",
             session: { _ in
@@ -121,10 +132,11 @@ struct CursorDashboardServiceFetchTests {
 
     @Test func トークンもセッションも無ければnil() async {
         CursorDashboardService.resetCacheForTesting()
+        let window = uniqueWindow(daysAgo: 102)
         let today = UsageStore.dateString(Date())
         let daily = await CursorDashboardService.dailyCosts(
-            from: today,
-            to: today,
+            from: window.from,
+            to: window.to,
             dbPath: "/nonexistent/state.vscdb"
         )
         #expect(daily == nil)
@@ -132,11 +144,12 @@ struct CursorDashboardServiceFetchTests {
 
     @Test func 成功してイベント0件なら空辞書() async throws {
         CursorDashboardService.resetCacheForTesting()
+        let window = uniqueWindow(daysAgo: 103)
         let today = UsageStore.dateString(Date())
         let payload = Data("{\"totalUsageEventsCount\":0,\"usageEventsDisplay\":[]}".utf8)
         let daily = await CursorDashboardService.dailyCosts(
-            from: today,
-            to: today,
+            from: window.from,
+            to: window.to,
             dbPath: "/nonexistent/state.vscdb",
             accessToken: "test-token",
             session: { _ in

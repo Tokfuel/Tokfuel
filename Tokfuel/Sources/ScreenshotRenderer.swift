@@ -112,6 +112,9 @@ enum ScreenshotRenderer {
     /// 撮影する全画面。ファイル名（拡張子なし）→ PNG データ。
     /// - `popover`: メニューバー帯付きの合成（README と同じ絵）
     /// - `popover-update`: 同じ合成に、フッターがアップデートボタンを提示中の状態を重ねたもの
+    /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
+    ///   断っている状態
+    /// - `popover-cursor-signin`: 同じ注意書きに、サインインし直すボタンが付いた状態
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
@@ -126,6 +129,9 @@ enum ScreenshotRenderer {
             ("popover", try renderPNG(store: store)),
             ("popover-update", try renderPNG(store: store,
                                              updater: .preview(version: previewUpdateVersion))),
+            ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
+            ("popover-cursor-signin", try renderPNG(
+                store: degradedCursorStore(reason: .credentialsRejected))),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
@@ -333,6 +339,20 @@ enum ScreenshotRenderer {
         // Cursor（二次ソース、TF-0032）。ヒーロー合計と内訳キャプションに出る今日ぶんだけ積む。
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
         store.lastUpdated = Date()
+        return store
+    }
+
+    /// Cursor の使用量 API に届かなかった状態。日別は空（＝ヒーローは Claude の分だけ）で、
+    /// 金額の下に劣化の注意書きが出る絵になる。
+    static func degradedCursorStore() -> UsageStore {
+        degradedCursorStore(reason: .remoteUnavailable)
+    }
+
+    /// Cursor の取得が劣化した状態。`credentialsRejected` の絵にはサインインボタンが付く。
+    static func degradedCursorStore(reason: CostSnapshot.Degradation) -> UsageStore {
+        let store = fixtureStore()
+        store.driverDailyByID = ["cursor": [:]]
+        store.driverHealthByID = ["cursor": .degraded(reason)]
         return store
     }
 

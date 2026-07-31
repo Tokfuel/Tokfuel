@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Charts
 
@@ -53,6 +54,11 @@ struct PopoverView: View {
         .frame(width: 360, height: 520)
         .onAppear {
             UsageEventLog.shared.log(.tabOpen, meta: ["tab": "cost"])
+            // サインインしに行ったあとの初回だけ、10 分の定期更新を待たずに拾い直す。
+            if store.awaitingSignInRecheck {
+                store.awaitingSignInRecheck = false
+                store.reloadReport()
+            }
         }
     }
 
@@ -66,7 +72,9 @@ struct PopoverView: View {
             Text("今日")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(Self.money(store.todayCost))
+            // 取れなかったぶんだけで作った 0 円は誤情報なので、金額ではなく「—」を出す
+            // （Cursor のみのモードで Cursor が劣化したときに起きる）。
+            Text(store.todayCostUnavailable ? "—" : Self.money(store.todayCost))
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -75,7 +83,8 @@ struct PopoverView: View {
             // まとめラベルにしない）。
             if mode == .sideBySide {
                 Text(Self.sideBySideCaption(claudeCost: store.claudeTodayCost,
-                                            driverBreakdown: store.driverBreakdown))
+                                            driverBreakdown: store.driverBreakdown,
+                                            unknownSources: store.unknownSourceNames))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -85,15 +94,66 @@ struct PopoverView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
+            sourceWarnings
         }
+    }
+
+    /// 二次ソースの取得が劣化しているときの注意書き。$0 を「今日は使っていない」と誤読させない
+    /// ため、フッター側のエラー行（retok 専用）ではなく金額のすぐ下に出す。
+    /// サインインし直せば直る劣化には、そのアプリを前面に出すボタンを添える——Tokfuel 自身は
+    /// ログイン画面を持たないので、サインインは本家アプリにそのまま任せる。
+    @ViewBuilder
+    private var sourceWarnings: some View {
+        ForEach(store.degradedSourceWarnings) { warning in
+            VStack(alignment: .leading, spacing: 6) {
+                Label("\(warning.name): \(warning.message)",
+                      systemImage: "exclamationmark.triangle")
+                if let bundleID = warning.signInBundleID {
+                    // 手順は注意書きの 1 行が担う。ボタンは実際にできること（前面に出す）を
+                    // そのままラベルにする——押しても Tokfuel はサインインを代行しない。
+                    Button("\(warning.name) を開く") {
+                        store.awaitingSignInRecheck = true
+                        Self.activateApp(bundleID: bundleID)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(Self.warningTint)
+                    .foregroundStyle(.primary)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(Self.warningTint)
+            .padding(.top, 6)
+        }
+    }
+
+    /// 注意書き（アイコンと文字）の色。金額の下でオレンジは予算ゲージの警告色と紛れるので、
+    /// 「取れていない」ことを言い切る赤にする。外観に合わせて振るのは、暗い側で映える明度が
+    /// そのままライト側ではコントラスト不足になるため（ライトでは暗い側へ寄せる）。
+    static let warningTint = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 1.00, green: 0.30, blue: 0.24, alpha: 1)
+            : NSColor(srgbRed: 0.82, green: 0.10, blue: 0.06, alpha: 1)
+    })
+
+    /// 指定アプリを前面に出す。見つからなければ何もしない（アンインストール直後など）。
+    /// サインインの完了は監視しない——10 分ごとの定期更新か、次にポップオーバーを開いた
+    /// ときの再取得が新しいトークンを拾う。
+    static func activateApp(bundleID: String) {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        else { return }
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
 
     /// 並べて表示のヒーロー内訳キャプション。driver ごとの実名で並べ、0 円のソースは省く
     /// （"その他" のような曖昧なまとめラベルにしない）。
+    /// 取得できなかったソースは 0 円として並べず「—」にする——0 円と「不明」は別の情報。
     static func sideBySideCaption(claudeCost: Double,
-                                  driverBreakdown: [(name: String, cost: Double)]) -> String {
+                                  driverBreakdown: [(name: String, cost: Double)],
+                                  unknownSources: [String] = []) -> String {
         var parts = ["\(UsageStore.claudeSourceLabel) \(money(claudeCost))"]
         parts += driverBreakdown.filter { $0.cost > 0 }.map { "\($0.name) \(money($0.cost))" }
+        parts += unknownSources.map { "\($0) —" }
         return parts.joined(separator: " · ")
     }
 

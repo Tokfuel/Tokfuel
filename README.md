@@ -44,7 +44,10 @@
   If Cursor is installed and you're signed in, today's Cursor usage is folded into the
   same total and chart via Cursor's own dashboard API (using the session Cursor already
   keeps on disk — nothing to paste). Offline or signed-out, it falls back to local
-  token snapshots (often a lower bound on Cursor 3.x). Pricing for the fallback path is
+  token snapshots (often a lower bound on Cursor 3.x) and the popover says so, so a $0
+  Cursor figure is never mistaken for "I didn't use it". If the reason is an expired
+  sign-in, the popover offers a button that brings Cursor to the front — you sign in there,
+  in Cursor's own UI, and Tokfuel picks the new session up. Pricing for the fallback path is
   refreshed once a day from Cursor's published price table.
   In Settings, choose combined / Claude only / Cursor only / side-by-side — the popover
   and menu bar both follow that choice (budget gauges still use the included sum).
