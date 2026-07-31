@@ -2,8 +2,9 @@
 import AppKit
 import SwiftUI
 
-/// README に貼るスクリーンショット (`assets/screenshot.png`) を、実物の `PopoverView` から
-/// 生成する（TF-0015）。手描きのモックアップと違い、UI を変えれば絵も追従する。
+/// README / Site に貼るスクリーンショットを、実物の `PopoverView` から生成する
+/// （TF-0015 / #62）。手描きのモックアップと違い、UI を変えれば絵も追従する。
+/// 既定では `scripts/screenshot.sh` が同じ PNG を README と Site の両方へ配る。
 ///
 /// `Tokfuel --screenshot <出力先>` で起動すると、常駐処理に入る前にここで PNG を書き出して
 /// 終了する。DEBUG ビルド専用なので配布バイナリには含まれない。

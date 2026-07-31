@@ -1,6 +1,8 @@
 #!/bin/bash
-# README 用スクリーンショット (assets/screenshot.png) を実物の UI から生成する（TF-0015）。
-# 使い方: bash scripts/screenshot.sh [出力先]
+# README / Site 用スクリーンショットを実物の UI から生成する（TF-0015 / #62）。
+# 使い方:
+#   bash scripts/screenshot.sh              # assets/ と Site/Assets/ の両方へ書き出す
+#   bash scripts/screenshot.sh <出力先>     # 指定パスだけへ書き出す（検証・デバッグ用）
 #
 # 絵の中身（フィクスチャ・レイアウト）は Tokfuel/Sources/ScreenshotRenderer.swift が持つ。
 # ここで渡す起動引数には理由がある:
@@ -11,17 +13,27 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="${1:-$PROJECT_DIR/assets/screenshot.png}"
+README_OUT="$PROJECT_DIR/assets/screenshot.png"
+SITE_OUT="$PROJECT_DIR/Site/Assets/images/screenshot.png"
+
+if [ "${1:-}" != "" ]; then
+  OUTS=("$1")
+else
+  OUTS=("$README_OUT" "$SITE_OUT")
+fi
 
 cd "$PROJECT_DIR"
 swift build
-"$PROJECT_DIR/.build/debug/Tokfuel" --screenshot "$OUT" -AppleAccentColor 1
+
+# 1 回だけ描画し、必要なら同じ PNG を両パスへ配る（描画コストを二重に払わない）。
+PRIMARY="${OUTS[0]}"
+"$PROJECT_DIR/.build/debug/Tokfuel" --screenshot "$PRIMARY" -AppleAccentColor 1
 
 # ウィンドウサーバに繋がらない環境では中身が空の画像ができてしまう。
-# それを README にコミットしないよう、寸法と容量で描画できたことを確かめる。
-WIDTH=$(sips -g pixelWidth "$OUT" | awk '/pixelWidth:/ { print $2 }')
-HEIGHT=$(sips -g pixelHeight "$OUT" | awk '/pixelHeight:/ { print $2 }')
-BYTES=$(stat -f%z "$OUT")
+# それを README / Site にコミットしないよう、寸法と容量で描画できたことを確かめる。
+WIDTH=$(sips -g pixelWidth "$PRIMARY" | awk '/pixelWidth:/ { print $2 }')
+HEIGHT=$(sips -g pixelHeight "$PRIMARY" | awk '/pixelHeight:/ { print $2 }')
+BYTES=$(stat -f%z "$PRIMARY")
 
 if [ "${WIDTH:-0}" -lt 1000 ] || [ "${HEIGHT:-0}" -lt 1000 ]; then
   echo "screenshot has unexpected dimensions: ${WIDTH}x${HEIGHT}" >&2
@@ -32,4 +44,11 @@ if [ "$BYTES" -lt 40000 ]; then
   exit 1
 fi
 
-echo "wrote $OUT (${WIDTH}x${HEIGHT}, ${BYTES} bytes)"
+for OUT in "${OUTS[@]:1}"; do
+  mkdir -p "$(dirname "$OUT")"
+  cp "$PRIMARY" "$OUT"
+done
+
+for OUT in "${OUTS[@]}"; do
+  echo "wrote $OUT (${WIDTH}x${HEIGHT}, ${BYTES} bytes)"
+done
