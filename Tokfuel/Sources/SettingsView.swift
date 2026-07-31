@@ -47,6 +47,7 @@ struct SettingsView: View {
             generalSection
             menuBarSection
             budgetSection
+            privacySection
             advancedSection
             #if DEBUG
             debugSection
@@ -164,6 +165,22 @@ struct SettingsView: View {
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 100)
                 .multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var privacySection: some View {
+        Section {
+            Toggle(isOn: $settings.analyticsConsent) {
+                Text("利用状況の送信を許可")
+                Text("タブ表示や設定変更など、Tokfuel 自身の操作だけを匿名で送ります。プロンプト・コスト・パスは送りません。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text("配布版ではクラッシュレポートを自動送信します（同意不要。プロンプトや利用料金は含みません）。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("プライバシー")
         }
     }
 

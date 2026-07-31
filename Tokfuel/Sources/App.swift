@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import AppKit
 
 @main
 struct TokfuelApp: App {
@@ -85,6 +86,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
         updater.startPeriodicChecks()
 
+        // Firebase（#22）。配布ビルド以外では no-op。Analytics は同意後のみ。
+        AnalyticsService.shared.start()
+        promptAnalyticsConsentIfNeeded()
+
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
         if CommandLine.arguments.contains("--open-popover") {
@@ -93,6 +98,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         #endif
+    }
+
+    /// 配布ビルドで、まだ Analytics 同意に答えていなければ初回ダイアログを出す。
+    /// Crashlytics は同意なしのためここでは扱わない。
+    private func promptAnalyticsConsentIfNeeded() {
+        guard RemoteDiagnosticsPolicy.isDistributionBuild else { return }
+        guard !settings.analyticsConsentAnswered else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let alert = NSAlert()
+            alert.messageText = "利用状況の送信"
+            alert.informativeText = """
+            Tokfuel の改善のため、タブ表示や設定変更などアプリ自身の操作を匿名で送れます。
+            プロンプト、コスト、ファイルパスなど Claude / Cursor 由来のデータは送りません。
+            あとから設定の「プライバシー」で変更できます。
+            """
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "許可する")
+            alert.addButton(withTitle: "許可しない")
+            let response = alert.runModal()
+            self.settings.analyticsConsent = (response == .alertFirstButtonReturn)
+        }
     }
 
     /// ストアと設定の変更を、メニューバー、通知、再集計へ接続する。
