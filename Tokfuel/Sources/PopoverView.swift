@@ -159,7 +159,8 @@ struct PopoverView: View {
                     AxisGridLine()
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
-                            Text("$\(Int(v))")
+                            // Match caption/hero currency (USD/JPY); series stays in USD.
+                            Text(Self.money(v))
                         }
                     }
                 }
