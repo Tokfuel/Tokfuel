@@ -40,11 +40,11 @@ final class UsageStore: ObservableObject {
     private var reportTask: Task<Void, Never>?
     private var budgetTask: Task<Void, Never>?
     private var transcriptTask: Task<Void, Never>?
-    /// ポップオーバーの集計期間（日数）。最後に選んだ値を記憶する。
-    @Published var reportDays: Int {
+    /// ポップオーバーの集計期間（暦ベース）。最後に選んだ値を記憶する。
+    @Published var reportPeriod: ReportPeriod {
         didSet {
-            if oldValue != reportDays {
-                defaults.set(reportDays, forKey: Keys.reportDays)
+            if oldValue != reportPeriod {
+                defaults.set(reportPeriod.rawValue, forKey: Keys.reportPeriod)
                 reloadReport()
             }
         }
@@ -74,9 +74,13 @@ final class UsageStore: ObservableObject {
 
     /// ScreenshotRenderer が UsageStore の初期化前に UserDefaults へ直接書くため公開している。
     nonisolated static let costChartStyleKey = "costChartStyle"
+    nonisolated static let reportPeriodKey = "reportPeriod"
+    /// 旧ローリング日数。新キー未設定時の移行読み取り専用。もう書かない。
+    nonisolated static let legacyReportDaysKey = "reportDays"
 
     private enum Keys {
-        static let reportDays = "reportDays"
+        static let reportPeriod = UsageStore.reportPeriodKey
+        static let legacyReportDays = UsageStore.legacyReportDaysKey
         static let costChartStyle = UsageStore.costChartStyleKey
     }
 
@@ -88,17 +92,22 @@ final class UsageStore: ObservableObject {
         self.settings = settings
         self.defaults = defaults
         self.costDrivers = costDrivers
-        let stored = defaults.integer(forKey: Keys.reportDays)
-        reportDays = Self.sanitizedReportDays(stored)
+        reportPeriod = Self.resolvedReportPeriod(in: defaults)
         costChartStyle = CostChartStyle(
             rawValue: defaults.string(forKey: Keys.costChartStyle) ?? "") ?? .daily
     }
 
-    /// 保存済みの集計期間を現在の選択肢に丸める。かつて存在した「今日 (1)」は近い 7 日へ、
-    /// 未知の値は既定の 30 日に倒す。
-    nonisolated static func sanitizedReportDays(_ stored: Int) -> Int {
-        if [7, 30, 365].contains(stored) { return stored }
-        return stored == 1 ? 7 : 30
+    /// 新キーがあればそれを使い、無ければ旧 `reportDays` から暦期間へ移す。既定は「今月」。
+    nonisolated static func resolvedReportPeriod(in defaults: UserDefaults) -> ReportPeriod {
+        if let raw = defaults.string(forKey: reportPeriodKey),
+           let period = ReportPeriod(rawValue: raw) {
+            return period
+        }
+        if defaults.object(forKey: legacyReportDaysKey) != nil {
+            return ReportPeriod.migrated(
+                fromLegacyDays: defaults.integer(forKey: legacyReportDaysKey))
+        }
+        return .thisMonth
     }
 
     // 予算期間内の消費額（ソース別。表示は costSourceMode で合成する）
@@ -257,7 +266,10 @@ final class UsageStore: ObservableObject {
 
     /// retok レポートを再取得する（設定変更や言語変更からも呼べるよう公開）。
     func reloadReport() {
-        let days = reportDays
+        let period = reportPeriod
+        let weekStart = settings.weekStart
+        let window = Self.reportWindow(period: period, weekStart: weekStart)
+        let days = window.days
         let lang = settings.language.resolved
         // Claude ディレクトリが既定と異なる場合のみ retok に projects を明示指定する。
         let claudeDir = settings.claudeDirectoryURL
@@ -271,13 +283,17 @@ final class UsageStore: ObservableObject {
         // stale-while-revalidate: ディスクの前回結果を先に出し、裏の再解析（数秒）が終わり
         // 次第差し替える。期間切替や再起動直後に画面がスピナーへ戻らない。
         let cacheKeyPath = claudeDir.standardizedFileURL.path
-        if let cached = ReportCache.shared.load(days: days, lang: lang, projectsPath: cacheKeyPath) {
+        if let cached = ReportCache.shared.load(
+            period: period, weekStart: weekStart, days: days,
+            lang: lang, projectsPath: cacheKeyPath
+        ) {
             report = cached
         }
-        let from = Self.reportWindowStart(days: days)
+        let from = window.start
         let to = Self.dateString(Date())
         reportTask = Task {
             // retok（外部プロセス）と二次ソース（SQLite）は互いに独立な I/O なので並行して走らせる。
+            // 暦窓の経過日数を --days に渡す（今日までの連続日なのでローリング N 日と同値）。
             async let retokTask = RetokService.run(
                 days: days, lang: lang, projectsDir: projectsOverride, provider: "claude"
             )
@@ -287,7 +303,9 @@ final class UsageStore: ObservableObject {
                 let r = try await retokTask
                 guard !Task.isCancelled, generation == self.reportGeneration else { return }
                 self.report = r
-                ReportCache.shared.save(r, days: days, lang: lang, projectsPath: cacheKeyPath)
+                ReportCache.shared.save(
+                    r, period: period, weekStart: weekStart, days: days,
+                    lang: lang, projectsPath: cacheKeyPath)
                 self.retokError = nil
             } catch is CancellationError {
                 return
@@ -386,6 +404,38 @@ final class UsageStore: ObservableObject {
     nonisolated static func reportWindowStart(days: Int, endingOn end: Date = Date()) -> String {
         let start = Calendar.current.date(byAdding: .day, value: -(days - 1), to: end) ?? end
         return dateString(start)
+    }
+
+    /// 暦ベースの表示窓。開始日（YYYY-MM-DD）と、retok に渡す経過日数。
+    struct ReportWindow: Equatable, Sendable {
+        let start: String
+        let days: Int
+    }
+
+    /// 今日 / 今週 / 今月 / 今年の開始〜 `end` までを、ローカル暦で数える。
+    nonisolated static func reportWindow(
+        period: ReportPeriod,
+        weekStart: WeekStart,
+        endingOn end: Date = Date(),
+        timeZone: TimeZone = .current
+    ) -> ReportWindow {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = timeZone
+        cal.firstWeekday = weekStart.weekday
+        let endDay = cal.startOfDay(for: end)
+        let startDay: Date
+        switch period {
+        case .today:
+            startDay = endDay
+        case .thisWeek:
+            startDay = cal.dateInterval(of: .weekOfYear, for: endDay)?.start ?? endDay
+        case .thisMonth:
+            startDay = cal.dateInterval(of: .month, for: endDay)?.start ?? endDay
+        case .thisYear:
+            startDay = cal.dateInterval(of: .year, for: endDay)?.start ?? endDay
+        }
+        let days = max(1, (cal.dateComponents([.day], from: startDay, to: endDay).day ?? 0) + 1)
+        return ReportWindow(start: LocalDay.string(from: startDay, calendar: cal), days: days)
     }
 
     /// 今日の集計（無ければ空の DailyUsage）。
@@ -504,7 +554,7 @@ extension UsageStore {
         var claudeByDate: [String: Double] = [:]
         for day in report.dailySorted { claudeByDate[day.date] = day.cost }
         // 二次ソース側は表示窓で絞る。reloadBudget が予算窓（表示窓より広いことがある）の
-        // 日別を driverDailyByID に補完するため、絞らないと「7日」のグラフに 30 日分が漏れる。
+        // 日別を driverDailyByID に補完するため、絞らないと短い表示窓に予算窓の日が漏れる。
         let from = Self.reportWindowStart(days: report.periodDays)
         var dates = Set<String>()
         if mode.includesClaude { dates.formUnion(claudeByDate.keys) }
@@ -581,8 +631,13 @@ extension UsageStore {
         guard settings.budgetLimit > 0 else { return nil }
         switch settings.budgetPeriod {
         case .rolling30:
-            return reportDays == 30 ? .referenceLine(limit: settings.budgetLimit) : nil
+            // チャート側にローリング 30 日窓は無いので、上限の参照線は出さない。
+            return nil
         case .calendarMonth:
+            // 予算窓と表示窓が初めて一致する組 — 上限の参照線を引ける。
+            if reportPeriod == .thisMonth {
+                return .referenceLine(limit: settings.budgetLimit)
+            }
             return Self.monthEndProjection(spend: budgetSpend)
                 .map { .monthEndProjection(amount: $0) }
         }

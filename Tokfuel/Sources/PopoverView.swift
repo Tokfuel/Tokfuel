@@ -131,14 +131,12 @@ struct PopoverView: View {
                 .frame(width: 70)
                 .labelsHidden()
                 Spacer()
-                Picker("", selection: reportDaysSelection) {
-                    Text("7日").tag(7)
-                    Text("30日").tag(30)
-                    Text("年").tag(365)
+                Picker("", selection: reportPeriodSelection) {
+                    ForEach(ReportPeriod.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .controlSize(.small)
-                .frame(width: 140)
+                .frame(width: 200)
                 .labelsHidden()
             }
             Group {
@@ -441,12 +439,12 @@ struct PopoverView: View {
 
     /// 期間ピッカー用バインディング。設定変更など画面外からの書き換えを
     /// period_change として誤記録しないよう、ピッカー操作のときだけ記録する。
-    private var reportDaysSelection: Binding<Int> {
-        Binding(get: { store.reportDays },
-                set: { days in
-                    store.reportDays = days
+    private var reportPeriodSelection: Binding<ReportPeriod> {
+        Binding(get: { store.reportPeriod },
+                set: { period in
+                    store.reportPeriod = period
                     UsageEventLog.shared.log(.periodChange,
-                                             meta: ["picker": "cost", "days": "\(days)"])
+                                             meta: ["picker": "cost", "period": period.rawValue])
                 })
     }
 
@@ -460,8 +458,8 @@ struct PopoverView: View {
                 })
     }
 
-    /// X 軸に出す日付ラベル。10 日を超える期間では週の初めの日だけに間引く
-    /// （30 日表示で全日付が潰れて読めなくなるのを防ぐ）。
+    /// X 軸に出す日付ラベル。10 日を超える期間では設定した週始まりの日だけに間引く
+    /// （今月・今年表示で全日付が潰れて読めなくなるのを防ぐ）。
     private func xAxisValues(_ report: RetokReport) -> [String] {
         let days = report.dailySorted
         guard days.count > 10 else { return days.map { shortDate($0.date) } }
@@ -469,10 +467,10 @@ struct PopoverView: View {
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd"
-        let cal = Calendar.current
+        let weekStart = settings.weekStart.weekday
         return days.filter { day in
             guard let date = f.date(from: day.date) else { return false }
-            return cal.component(.weekday, from: date) == cal.firstWeekday
+            return Calendar.current.component(.weekday, from: date) == weekStart
         }.map { shortDate($0.date) }
     }
 

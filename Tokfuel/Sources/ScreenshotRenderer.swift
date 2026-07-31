@@ -21,7 +21,9 @@ enum ScreenshotRenderer {
     static let canvas = CGSize(width: 640, height: 584)
     /// 描画が落ち着くまでランループを回す時間（秒）。
     static let settleSeconds: TimeInterval = 0.6
-    /// フィクスチャの集計期間（日）。期間ピッカーの選択位置にもそのまま出る。
+    /// フィクスチャの集計期間。期間ピッカーの選択位置にもそのまま出る。
+    static let reportPeriod: ReportPeriod = .thisWeek
+    /// フィクスチャの日数（「今週」絵用の 7 本。実行曜日には依存させない）。
     static let reportDays = 7
     /// 日ごとのコスト (USD)。末尾が「今日」。ヒーローの金額はこの最後の値になる。
     static let dailyCosts: [Double] = [8.42, 15.10, 6.05, 21.30, 11.80, 24.90, 12.34]
@@ -243,7 +245,7 @@ enum ScreenshotRenderer {
         defaults.set(DisplayCurrency.usd.rawValue, forKey: Money.currencyKey)
         // UsageStore は集計期間とチャート形式を UserDefaults から復元する。プロパティ経由で
         // 変えると retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。
-        defaults.set(reportDays, forKey: "reportDays")
+        defaults.set(reportPeriod.rawValue, forKey: UsageStore.reportPeriodKey)
         defaults.set(CostChartStyle.daily.rawValue, forKey: UsageStore.costChartStyleKey)
 
         let settings = AppSettings.shared
