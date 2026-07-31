@@ -1,17 +1,19 @@
 ---
-name: "Proposal"
-about: "New feature or improvement"
+name: "提案（Proposal）"
+about: "新機能や改善の提案"
 title: ""
-labels: enhancement
+labels: "enhancement 🚀"
 assignees: ""
 ---
 
-<!-- Introduction: what this adds or changes, in one paragraph. -->
+<!-- 導入：何を追加または変更するのか、一段落で書く。 -->
 
-<!-- Motivation: why is this needed? what problem does it solve? -->
+<!-- 動機：なぜ必要か。どんな問題を解決するのか。 -->
 
-<!-- Detailed design: how it works. Reference relevant files/symbols inline. -->
+## 詳細設計
 
-## Progress
+<!-- どう動くのか。関連するファイルやシンボルを本文中で参照する。 -->
+
+## 進捗
 
 - [ ] 

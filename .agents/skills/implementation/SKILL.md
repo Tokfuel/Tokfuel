@@ -1,102 +1,100 @@
 ---
 name: implementation
 description: >-
-  Implement a Tokfuel issue end to end, starting from its GitHub Issue number. Use when the
-  user names an issue to build — "/implementation #5", "implement #5", "start on #5", or an issue
-  title fragment — or otherwise asks to turn an existing proposal into shipped code. Treats the
-  issue body as the spec, grounds the work in the project ground rules, plans and confirms before
-  writing, implements with build/tests, reviews and refines the diff, closes the issue, and proves
-  `swift build` is green. The counterpart to the ideation skill.
+  Tokfuel の GitHub Issue を番号から最後まで実装するスキル。「/implementation #5」
+  「#5 を実装して」「implement #5」のように実装する Issue を名指しされたとき、または
+  タイトルの断片などで既存の提案をコードにするよう求められたときに使う。Issue 本文を仕様として
+  扱い、グラウンドルールに沿って計画を立て、確認を取ってから書き、ビルドとテストで実装し、
+  差分をレビューして磨き、Issue を閉じ、`swift build` が緑であることを示す。ideation スキルの
+  対になる実装側。
 ---
 
-# Implement a GitHub Issue
+# GitHub Issue の実装
 
-Take one Tokfuel GitHub Issue from its proposal to shipped, green code. You are the implementer;
-`swift build` (plus the built-in review skills) is the check — never an LLM verdict. The issue's
-**Detailed design** section is your spec. Converse in the user's language; write code, commits, and
-PR text per the conventions below.
+Tokfuel の GitHub Issue を 1 件、提案の状態から出荷済みの緑のコードまで運ぶ。判定は常に
+`swift build`（と組み込みのレビュー系スキル）であって、LLM の心証ではない。仕様は Issue 本文の
+「詳細設計」セクション（古い Issue では `Detailed design`）。会話は日本語を基本とし、コード、
+コミット、PR の文章は下の規約に従って書く。
 
-## Project ground rules (these bound every line)
+## プロジェクトのグラウンドルール（すべての行の枠）
 
-1. **Local-only** — never add telemetry or a network send.
-2. **Zero setup stays zero** — don't require the user to configure Claude Code or install hooks.
-3. **retok is vendored unmodified** — don't edit the bundled retok in place; keep its license/credit.
-4. **python3 is optional** — keep Claude cost analysis degrading gracefully when it is absent.
-5. **Swift 6 / SwiftUI / macOS 14+** — `swift build` must stay green.
+1. **ローカルオンリー**：テレメトリやネットワーク送信を追加しない。
+2. **ゼロセットアップの維持**：ユーザーに Claude Code の設定やフックの導入を求めない。
+3. **retok は無改変で同梱**：同梱の retok をこの場で編集しない。ライセンスとクレジットを維持する。
+4. **python3 は任意**：python3 が無くても Claude のコスト分析が緩やかに縮退する状態を保つ。
+5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に緑を保つ。
 
-## Workflow
+## 進め方
 
-### 1. Resolve the issue
+### 1. Issue を特定する
 
-Accept an issue number (`#5`, `5`) or a title fragment. Fetch the full issue body:
+Issue 番号（`#5`、`5`）でもタイトルの断片でも受け付ける。まず全文を取得する。
 
 ```bash
 gh issue view <number> --repo Tokfuel/Tokfuel --json number,title,body,labels 2>/dev/null
 ```
 
-**Before anything else, explain the issue to the user** — the number and title, a plain-language
-summary of what it proposes and why, and its current state. Confirm: if it is already closed, stop
-and ask what the user actually wants.
+**何よりも先に、その Issue をユーザーに説明する**。番号とタイトル、何をなぜ提案しているのかの
+平易な要約、現在の状態を伝える。すでにクローズ済みなら手を止め、本当は何をしたいのかを確認する。
 
-### 2. Ground yourself in the spec and the code
+### 2. 仕様とコードで足場を作る
 
-- Read the issue's **Detailed design** and any alternatives or constraints mentioned.
-- Open every file the issue references and read the surrounding code, so the change matches
-  what exists. For a large item, fan the reading out to the `Explore` agent and draft the strategy
-  with the `Plan` agent.
-- Check dependencies: if the design cross-references another open issue as a blocker, surface it
-  and ask how to proceed.
+- Issue の「詳細設計」と、そこに書かれた代替案や制約を読む。
+- Issue が参照するファイルはすべて開き、周辺コードまで読む。変更を既存の形に馴染ませるため。
+  大きな項目では、読む作業を `Explore` エージェントに広げ、方針は `Plan` エージェントで練る。
+- 依存関係を確かめる。設計が別のオープン Issue をブロッカーとして参照しているなら、それを
+  表に出し、どう進めるかを確認する。
 
-### 3. Set up a focused branch
+### 3. 焦点の絞れたブランチを用意する
 
-One topic per branch. If on `main`, branch off the latest origin:
-`git fetch origin && git switch -c claude/<slug> origin/main`. Touch only the files this
-issue needs; if the design forces a cross-cutting change, say so up front.
+ブランチは 1 トピックにつき 1 本。`main` 上にいるなら最新の origin から切る:
+`git fetch origin && git switch -c claude/<slug> origin/main`。触るのはこの Issue に必要な
+ファイルだけ。設計上どうしても横断的な変更になるなら、先にそう宣言する。
 
-### 4. Plan, then confirm before writing code
+### 4. 計画を立て、書く前に確認を取る
 
-Implementing a whole issue is large and hard to reverse, so get the user's go-ahead on a concrete
-plan first (consider `EnterPlanMode`). The plan names: the files you'll add/change and the shape of
-the change; the observable outcome that proves it works (a test, or a behavior to verify in the
-running app); the tests you'll add; any docs that must move (both languages); and any tension with
-the ground rules and how you reshaped the design to fit.
+Issue 1 件の実装は大きく、巻き戻しにくい。だから具体的な計画にユーザーの同意を得てから書く
+（`EnterPlanMode` の利用を検討する）。計画には次を含める。追加または変更するファイルと変更の
+形、動くことを証明する観測可能な結果（テスト、または実アプリで確かめる挙動）、追加するテスト、
+動かすべきドキュメント（日英両方）、グラウンドルールと擦れる点があるならその設計の直し方。
 
-### 5. Implement
+### 5. 実装する
 
-- **Match surrounding style.** Comments explain *why*, not what, at the surrounding density.
-- **Honor the ground rules in the code** — local-only, graceful python3 absence, retok untouched.
-- **Tests are the regression net.** Cover new logic where it is testable without the full app.
-- **Docs are bilingual.** If you change documented behavior, update `README.md` **and**
-  `README.ja.md`; write the Japanese under [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md).
+- **周囲のスタイルに合わせる**：コメントは what ではなく why を、周囲と同じ密度で書く。
+- **グラウンドルールをコードで守る**：ローカルオンリー、python3 不在時の縮退、retok 無改変。
+- **テストが回帰の網**：アプリ全体を起動せずに検証できる新ロジックにはテストを付ける。
+- **ドキュメントは日英併記**：文書化済みの挙動を変えたら `README.md` と `README.ja.md` の
+  両方を更新する。日本語は [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) に従う。
 
-### 6. Review and refine the diff
+### 6. 差分をレビューして磨く
 
-`swift build` proves it compiles; it does not judge design or logic. Close that gap on the diff,
-every time:
+`swift build` が証明するのはコンパイルが通ることだけで、設計やロジックの良し悪しは判定しない。
+その隙間を、毎回、差分に対して埋める。
 
-- Invoke the built-in **`simplify`** skill (reuse, dead code, over-abstraction) and apply its fixes.
-- Invoke the built-in **`code-review`** skill for correctness bugs the build can't see.
-- If the item's correctness depends on runtime behavior, drive the running app with the built-in
-  **`verify`** skill — build and install via `bash scripts/build.sh`, exercise the behavior,
-  and report what you saw — rather than claiming it works untested.
+- 組み込みの **`simplify`** スキル（再利用、死んだコード、過剰な抽象化）を実行し、修正を適用する。
+- 組み込みの **`code-review`** スキルで、ビルドには見えない正しさのバグを探す。
+- 正しさが実行時の挙動に懸かる項目なら、組み込みの **`verify`** スキルで実アプリを動かす。
+  `bash scripts/build.sh` でビルドとインストールをし、挙動を実際に操作して、見たものを報告する。
+  動作未確認のまま動くと主張しない。
 
-### 7. Verify
+### 7. 検証する
 
 ```bash
-swift build                    # must be green
-swift build -c release         # the release config scripts/build.sh uses
+swift build                    # 緑が必須
+swift build -c release         # scripts/build.sh が使うリリース構成
 ```
 
-Never leave the build red. Then, when the change is runtime-visible, `bash scripts/build.sh` and
-confirm the running app (via `verify`).
+ビルドを赤のまま残さない。実行時に見える変更なら、さらに `bash scripts/build.sh` で実アプリを
+確認する（`verify` を使う）。
 
-### 8. PR only when asked
+### 8. PR は求められたときだけ
 
-Push to your branch. Don't open a PR unless the user asks. Title and commits are imperative and
-scoped: `feat(<scope>): …` or `fix(<scope>): …`. Include `Closes #<number>` in the PR body to
-auto-close the issue on merge.
+自分のブランチへ push する。ユーザーに求められない限り PR は開かない。PR のタイトルと本文は
+日本語で、[PR テンプレート](../../../.github/PULL_REQUEST_TEMPLATE.md)に従う。コミットは
+`feat(<scope>):` や `fix(<scope>):` の形式で、要約を日本語で書く。PR 本文に `Closes #<number>` を
+入れて、マージで Issue が自動クローズされるようにする。
 
-## References
+## 参照
 
-- [`ideation`](../ideation/SKILL.md) — authors the proposal this ships.
-- The built-in **`simplify`** / **`code-review`** / **`verify`** skills — used in steps 6/7.
+- [`ideation`](../ideation/SKILL.md)：ここで実装する提案を起案する側。
+- 組み込みの **`simplify`** / **`code-review`** / **`verify`** スキル：手順 6 と 7 で使う。
