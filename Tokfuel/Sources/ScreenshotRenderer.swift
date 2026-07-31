@@ -240,6 +240,8 @@ enum ScreenshotRenderer {
         let defaults = UserDefaults.standard
         // 以降の設定変更を記録させない（`~/Library/Application Support/Tokfuel` に何も書かない）。
         defaults.set(false, forKey: UsageEventLog.enabledKey)
+        defaults.set(false, forKey: "analyticsConsent")
+        defaults.set(true, forKey: "analyticsConsentAnswered")
         defaults.set(DisplayCurrency.usd.rawValue, forKey: Money.currencyKey)
         // UsageStore は集計期間とチャート形式を UserDefaults から復元する。プロパティ経由で
         // 変えると retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。

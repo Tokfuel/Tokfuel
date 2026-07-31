@@ -120,6 +120,25 @@ final class AppSettings: ObservableObject {
         didSet { persist(eventLogEnabled, forKey: UsageEventLog.enabledKey) }
     }
 
+    /// Firebase Analytics への匿名利用イベント送信（#22）。デフォルト OFF。
+    /// 配布ビルド以外ではトグル値に関わらず送信しない（`RemoteDiagnosticsPolicy`）。
+    @Published var analyticsConsent: Bool {
+        didSet {
+            // 同意を先に Firebase へ反映してから記録する（OFF 時に setting_change を送らない）。
+            defaults.set(analyticsConsent, forKey: Keys.analyticsConsent)
+            defaults.set(true, forKey: Keys.analyticsConsentAnswered)
+            AnalyticsService.shared.applyAnalyticsConsent(analyticsConsent)
+            if analyticsConsent {
+                logChange(Keys.analyticsConsent)
+            }
+        }
+    }
+
+    /// 初回の Analytics 同意ダイアログを出し済みか。
+    var analyticsConsentAnswered: Bool {
+        defaults.bool(forKey: Keys.analyticsConsentAnswered)
+    }
+
     private enum Keys {
         static let launchAtLogin = "launchAtLogin"
         /// 指標 × 表現に分解する前の単一設定。移行のために読むだけで、もう書かない。
@@ -139,6 +158,8 @@ final class AppSettings: ObservableObject {
         static let budgetWarnPercent = "budgetWarnPercent"
         static let costSourceMode = "costSourceMode"
         static let costModelBreakdownMode = "costModelBreakdownMode"
+        static let analyticsConsent = "analyticsConsent"
+        static let analyticsConsentAnswered = "analyticsConsentAnswered"
     }
 
     /// 既定の Claude ディレクトリ（~/.claude）。
@@ -204,6 +225,7 @@ final class AppSettings: ObservableObject {
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
+        analyticsConsent = defaults.bool(forKey: Keys.analyticsConsent)
     }
 
     /// 設定を保存し、変更を利用イベントとして記録する（値そのものは書かない）。

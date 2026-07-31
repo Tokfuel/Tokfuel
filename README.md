@@ -84,12 +84,14 @@
 
 - 🔒 **Local-first**
 
-  No telemetry. Network calls are: the opt-in exchange-rate fetch; the update check
-  against GitHub Releases at launch and every 24 hours (the release file downloads only
-  when you click update); if Cursor is installed, the daily price-table refresh; and,
-  when signed into Cursor, a usage query to Cursor's dashboard API (auth + date range
-  only — no prompts). None of them carry usage data.
-  Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
+  Prompts and transcripts never leave your Mac. Network calls are: the opt-in
+  exchange-rate fetch; the update check against GitHub Releases at launch and every
+  24 hours (the release file downloads only when you click update); if Cursor is
+  installed, the daily price-table refresh; when signed into Cursor, a usage query to
+  Cursor's dashboard API (auth + date range only — no prompts); on **distribution
+  builds**, Crashlytics crash reports (no consent prompt); and, only if you opt in,
+  anonymous Firebase Analytics for app-UI events. Development builds never configure
+  Firebase. Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
 
 ## Install
 

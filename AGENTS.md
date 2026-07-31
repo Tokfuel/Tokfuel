@@ -16,8 +16,8 @@
 
 ## グラウンドルール（違反禁止）
 
-1. **ローカルオンリー**：収集したデータを Mac の外に出さない。テレメトリも送信もしない。
-   例外はオーナー承認済みの次の 4 つだけ。
+1. **ローカルオンリー**：Claude / Cursor / Codex 由来の利用データ（プロンプト、transcript、
+   コスト、パスなど）を Mac の外に出さない。例外はオーナー承認済みの次だけ。
    1. ユーザーが JPY 表示を有効にしたときは、`ExchangeRateService` が Frankfurter API から
       USD→JPY レートを 1 日 1 回取得する（リクエストに使用状況データは載らない）。
    2. Mac に Cursor を検出したときは、`CursorPricingService` が Cursor 自身が公開している
@@ -36,6 +36,11 @@
       ごとにポーリングして新しいバージョンを検知する。リリースアセットのダウンロードは、
       ユーザーがポップオーバーのフッターで「アップデート」ボタンを押したときだけ GitHub から
       行う。これらのリクエストに使用状況データ、トランスクリプト、識別子は載らない。
+   5. **配布ビルドのみ**（`scripts/release.sh` の `-DTOKFUEL_DISTRIBUTION`）、
+      Firebase Crashlytics へクラッシュレポートを送る（同意プロンプトなし。プロンプトや
+      コストは載せない）。開発用ビルドでは `FirebaseApp.configure()` を呼ばない。
+   6. **配布ビルドかつ**ユーザーが Analytics に同意したときだけ、Firebase Analytics へ
+      匿名のアプリ UI イベントを送る（デフォルト OFF。送信面は `AnalyticsService` に集約）。
 2. **ゼロセットアップの維持**：アプリは Claude Code のトランスクリプトを直接読む。機能を
    動かすために、フック、外部ツールのインストール、Claude Code 側の設定を要求しない。
 3. **retok は無改変で同梱**：`Sources/Resources/retok.py` と `locales/` は
@@ -44,8 +49,8 @@
    [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md) にある。
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
-5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。依存ゼロが
-   「誰でもすぐビルドできる」を支えている。
+5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
+   オーナー承認済みの `firebase-ios-sdk`（Analytics と Crashlytics 製品のみ、#22）。
 
 ## 検証ゲート
 

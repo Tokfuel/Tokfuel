@@ -53,9 +53,10 @@ Anything that breaks that is in scope:
 
 ## Out of scope
 
-- **The Gatekeeper warning on first launch.** Releases are ad-hoc signed, so macOS cannot verify the
-  publisher. This is known and documented in the README; Developer ID signing is tracked in
-  [#6](https://github.com/Tokfuel/Tokfuel/issues/6).
+- **Gatekeeper warnings from ad-hoc-signed builds.** Official releases are signed with a Developer ID
+  and notarized by Apple, so they open with no Gatekeeper warning (as documented in the README).
+  Local builds and release artifacts from environments without the Developer ID secrets fall back to
+  ad-hoc signing; the resulting Gatekeeper prompt is expected and is not a vulnerability.
 - **Bugs in `python3` or in upstream [retok](https://github.com/d-date/retok).** retok is vendored
   unmodified — please report those upstream. Tell us if the *way Tokfuel invokes it* is the problem.
 - **Attacks that require already controlling the user's account.** Everything Tokfuel reads is

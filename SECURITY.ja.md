@@ -50,9 +50,10 @@ Tokfuel は Mac 上の Claude Code トランスクリプトを読み、すべて
 
 ## 対象外
 
-- **初回起動時の Gatekeeper 警告**：リリースはアドホック署名のため、macOS は配布元を検証できません。
-  既知の挙動として README に記載しており、Developer ID 署名は
-  [#6](https://github.com/Tokfuel/Tokfuel/issues/6) で追跡しています。
+- **アドホック署名ビルドで出る Gatekeeper 警告**：公式リリースは Developer ID 署名済みかつ Apple による
+  公証済みのため、Gatekeeper の警告は出ません（README に記載のとおり）。Developer ID の secrets が無い
+  環境でのローカルビルドやリリース成果物はアドホック署名にフォールバックし、その場合に出る
+  Gatekeeper の警告は想定どおりの挙動であり、脆弱性ではありません。
 - **`python3` 本体や上流 [retok](https://github.com/d-date/retok) の不具合**：retok は無改変で同梱して
   いるため、上流へ報告してください。「Tokfuel の呼び出し方」に問題がある場合はこちらへお願いします。
 - **すでにユーザーアカウントを掌握している前提の攻撃**：Tokfuel が読むものはそのユーザーがすでに読める
