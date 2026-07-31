@@ -553,11 +553,13 @@ extension UsageStore {
         let mode = settings.costSourceMode
         var claudeByDate: [String: Double] = [:]
         for day in report.dailySorted { claudeByDate[day.date] = day.cost }
-        // 二次ソース側は表示窓で絞る。reloadBudget が予算窓（表示窓より広いことがある）の
-        // 日別を driverDailyByID に補完するため、絞らないと短い表示窓に予算窓の日が漏れる。
+        // 表示窓で絞る。二次ソースは reloadBudget が予算窓を補完しうるし、retok も
+        // `--days 1` なのに前後の日が daily に混ざる（今日表示で棒が 2 本になる）ことがある。
         let from = Self.reportWindowStart(days: report.periodDays)
         var dates = Set<String>()
-        if mode.includesClaude { dates.formUnion(claudeByDate.keys) }
+        if mode.includesClaude {
+            dates.formUnion(claudeByDate.keys.filter { $0 >= from })
+        }
         if mode.includesCursor {
             for byDate in driverDailyByID.values { dates.formUnion(byDate.keys.filter { $0 >= from }) }
         }
@@ -662,12 +664,15 @@ extension UsageStore {
     }
 
     /// 期間合計（チャート下のキャプション用）。ソース表示モードに従う。
-    /// 二次ソースは chartRows と同じ理由で表示窓に絞る（予算窓の補完分を数えない）。
+    /// Claude / 二次ソースとも表示窓に絞る（retok の余剰日や予算窓の補完分を数えない）。
     func periodTotalCost(for report: RetokReport) -> Double {
         let from = Self.reportWindowStart(days: report.periodDays)
+        let claude = report.daily
+            .filter { $0.key >= from }
+            .values.reduce(0) { $0 + $1.cost }
         let cursor = driverDaily.filter { $0.key >= from }.values.reduce(0, +)
         return Self.displayedSpend(
-            claude: report.totals.cost, cursor: cursor,
+            claude: claude, cursor: cursor,
             mode: settings.costSourceMode)
     }
 
