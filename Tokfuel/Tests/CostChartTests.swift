@@ -88,21 +88,93 @@ struct MonthEndProjectionTests {
     }
 }
 
-/// 保存済み集計期間の丸め。「今日 (1)」はピッカーから消えたので 7 日へ倒す。
-struct SanitizedReportDaysTests {
-    @Test func 現行の選択肢はそのまま() {
-        #expect(UsageStore.sanitizedReportDays(7) == 7)
-        #expect(UsageStore.sanitizedReportDays(30) == 30)
-        #expect(UsageStore.sanitizedReportDays(365) == 365)
+/// 旧ローリング日数 → 暦期間への移行と、暦窓の日数計算。
+struct ReportPeriodTests {
+    private let tokyo: TimeZone = TimeZone(identifier: "Asia/Tokyo")!
+
+    private func date(_ s: String) -> Date {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = tokyo
+        f.dateFormat = "yyyy-MM-dd"
+        return f.date(from: s)!
     }
 
-    @Test func かつての今日は近い7日へ倒す() {
-        #expect(UsageStore.sanitizedReportDays(1) == 7)
+    @Test func 旧日数からの移行() {
+        #expect(ReportPeriod.migrated(fromLegacyDays: 1) == .today)
+        #expect(ReportPeriod.migrated(fromLegacyDays: 7) == .thisWeek)
+        #expect(ReportPeriod.migrated(fromLegacyDays: 30) == .thisMonth)
+        #expect(ReportPeriod.migrated(fromLegacyDays: 365) == .thisYear)
+        #expect(ReportPeriod.migrated(fromLegacyDays: 0) == .thisMonth)
+        #expect(ReportPeriod.migrated(fromLegacyDays: 99) == .thisMonth)
     }
 
-    @Test func 未設定と未知の値は既定の30日() {
-        #expect(UsageStore.sanitizedReportDays(0) == 30)
-        #expect(UsageStore.sanitizedReportDays(99) == 30)
+    @Test func UserDefaultsの新キーを優先する() {
+        let suite = "tokfuel-report-period-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(7, forKey: UsageStore.legacyReportDaysKey)
+        defaults.set(ReportPeriod.thisYear.rawValue, forKey: UsageStore.reportPeriodKey)
+        #expect(UsageStore.resolvedReportPeriod(in: defaults) == .thisYear)
+    }
+
+    @Test func 旧キーだけのときは移行する() {
+        let suite = "tokfuel-report-period-legacy-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(7, forKey: UsageStore.legacyReportDaysKey)
+        #expect(UsageStore.resolvedReportPeriod(in: defaults) == .thisWeek)
+    }
+
+    @Test func 今月は1日から今日までの日数() {
+        let w = UsageStore.reportWindow(
+            period: .thisMonth, weekStart: .monday,
+            endingOn: date("2026-07-31"), timeZone: tokyo)
+        #expect(w.start == "2026-07-01")
+        #expect(w.days == 31)
+    }
+
+    @Test func 今週は月曜始まりで数える() {
+        // 2026-07-31 は金曜。月曜始まりなら 7/27〜7/31 の 5 日。
+        let w = UsageStore.reportWindow(
+            period: .thisWeek, weekStart: .monday,
+            endingOn: date("2026-07-31"), timeZone: tokyo)
+        #expect(w.start == "2026-07-27")
+        #expect(w.days == 5)
+    }
+
+    @Test func 今週は日曜始まりにも切り替えられる() {
+        // 同じ金曜でも日曜始まりなら 7/26〜7/31 の 6 日。
+        let w = UsageStore.reportWindow(
+            period: .thisWeek, weekStart: .sunday,
+            endingOn: date("2026-07-31"), timeZone: tokyo)
+        #expect(w.start == "2026-07-26")
+        #expect(w.days == 6)
+    }
+
+    @Test func 今週は土曜始まりにも切り替えられる() {
+        let w = UsageStore.reportWindow(
+            period: .thisWeek, weekStart: .saturday,
+            endingOn: date("2026-07-31"), timeZone: tokyo)
+        #expect(w.start == "2026-07-25")
+        #expect(w.days == 7)
+    }
+
+    @Test func 今年は1月1日から() {
+        let w = UsageStore.reportWindow(
+            period: .thisYear, weekStart: .monday,
+            endingOn: date("2026-07-31"), timeZone: tokyo)
+        #expect(w.start == "2026-01-01")
+        #expect(w.days == 212)
+    }
+
+    @Test func 今日は1日() {
+        let w = UsageStore.reportWindow(
+            period: .today, weekStart: .monday,
+            endingOn: date("2026-07-31"), timeZone: tokyo)
+        #expect(w.start == "2026-07-31")
+        #expect(w.days == 1)
     }
 }
 
@@ -130,8 +202,10 @@ struct ReportCacheTests {
         defer { try? FileManager.default.removeItem(at: dir) }
         let cache = ReportCache(directory: dir)
 
-        cache.save(fixture(), days: 7, lang: "ja", projectsPath: projects)
-        let loaded = cache.load(days: 7, lang: "ja", projectsPath: projects)
+        cache.save(fixture(), period: .thisWeek, weekStart: .monday, days: 7,
+                   lang: "ja", projectsPath: projects)
+        let loaded = cache.load(period: .thisWeek, weekStart: .monday, days: 7,
+                                lang: "ja", projectsPath: projects)
         #expect(loaded?.totals.cost == 12.5)
         #expect(loaded?.daily["2026-07-29"]?.cost == 12.5)
         #expect(loaded?.advice.first?.key == "k")
@@ -144,15 +218,22 @@ struct ReportCacheTests {
         defer { try? FileManager.default.removeItem(at: dir) }
         let cache = ReportCache(directory: dir)
 
-        cache.save(fixture(), days: 7, lang: "ja", projectsPath: projects)
-        #expect(cache.load(days: 30, lang: "ja", projectsPath: projects) == nil)
-        #expect(cache.load(days: 7, lang: "en", projectsPath: projects) == nil)
-        #expect(cache.load(days: 7, lang: "ja", projectsPath: "/Volumes/work/.claude") == nil)
+        cache.save(fixture(), period: .thisWeek, weekStart: .monday, days: 7,
+                   lang: "ja", projectsPath: projects)
+        #expect(cache.load(period: .thisMonth, weekStart: .monday, days: 7,
+                           lang: "ja", projectsPath: projects) == nil)
+        #expect(cache.load(period: .thisWeek, weekStart: .sunday, days: 7,
+                           lang: "ja", projectsPath: projects) == nil)
+        #expect(cache.load(period: .thisWeek, weekStart: .monday, days: 7,
+                           lang: "en", projectsPath: projects) == nil)
+        #expect(cache.load(period: .thisWeek, weekStart: .monday, days: 7,
+                           lang: "ja", projectsPath: "/Volumes/work/.claude") == nil)
     }
 
     @Test func キャッシュが無ければnil() {
         let cache = ReportCache(directory: FileManager.default.temporaryDirectory
             .appendingPathComponent("tokfuel-missing-\(UUID().uuidString)"))
-        #expect(cache.load(days: 7, lang: "ja", projectsPath: projects) == nil)
+        #expect(cache.load(period: .thisWeek, weekStart: .monday, days: 7,
+                           lang: "ja", projectsPath: projects) == nil)
     }
 }

@@ -76,21 +76,20 @@ swift assets/make-icon.swift   # rewrites assets/AppIcon.iconset/ and assets/App
 - [ ] UI changes include a screenshot or short GIF (maintainers can also add the `ui-preview 📸` label to a same-repo PR to have a bot render the popover — default and, with the footer's Update button showing, the update variant — settings — default/advanced/debug — and about screens — see `.github/workflows/ui-preview.yml`)
 - [ ] README / README.ja.md updated if user-visible behavior changed
 - [ ] No new dependencies (or, if so, explained in the PR description)
-- [ ] Roadmap changes pass `bash scripts/lint_roadmap.sh` (CI checks this too)
 
-### Roadmap (CU items)
+### Roadmap
 
-Planned and shipped features are tracked as **CU items** under [`roadmaps/`](roadmaps/README.md) —
-one directory per item with an English file and a Japanese mirror. Pick an open **Proposal** from
-the index if you're looking for something to build, or add a new item (the README there documents
-the format and ID rules). A PR that implements an item flips its `Status` to `Implemented` and
-prefixes the PR title `[CU-NNNN]`.
+Planned and shipped features are tracked as [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
+(TF-NNNN items). Use the **Proposal** template for new features and the **Bug report** template for
+bugs. The same backlog is also visible on
+[GitHub Project #1](https://github.com/orgs/Tokfuel/projects/1). A PR that implements a numbered
+issue prefixes the PR title `[TF-NNNN]`.
 
 ### Good first issues
 
-The [roadmap Proposals table](roadmaps/README.md#-proposals) and the "Unsorted ideas" list there
-are the up-to-date backlog. A **time-range filter** or the **edit-metrics visualization** are nice
-self-contained starters.
+Open [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues) and
+[Project #1](https://github.com/orgs/Tokfuel/projects/1) are the up-to-date backlog. Pick a small,
+self-contained Proposal if you're looking for something to build.
 
 ---
 
@@ -158,16 +157,16 @@ swift assets/make-icon.swift   # assets/AppIcon.iconset/ と assets/AppIcon.icns
 - [ ] UI 変更はスクリーンショットか短い GIF を添付（同一リポジトリの PR なら `ui-preview 📸` ラベルを付けて、ポップオーバー（既定・フッターにアップデートボタンが出た状態）・設定（既定/詳細展開/デバッグ展開）・About をまとめてボットに撮らせてもよい。fork からの PR では GitHub の権限制約で動かない — `.github/workflows/ui-preview.yml` 参照）
 - [ ] ユーザーから見える変更があれば README / README.ja.md も更新
 - [ ] 新規依存は追加しない（追加する場合は PR 本文で理由を説明）
-- [ ] roadmaps を触ったら `bash scripts/lint_roadmap.sh` が通る（CI でも確認します）
 
-### ロードマップ（CU 項目）
+### ロードマップ
 
-計画中・実装済みの機能は [`roadmaps/`](roadmaps/README-ja.md) 配下の **CU 項目**として管理しています。
-項目ごとに 1 ディレクトリで、英語ファイルと日本語ミラーを持ちます。作るものを探すなら索引の
-**Proposal** から選ぶか、新しい項目を追加してください（形式と ID の規則はそこの README にあります）。
-項目を実装する PR は `状態` を「実装済み」に変え、PR タイトルに `[CU-NNNN]` を付けます。
+計画中・実装済みの機能は [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)（TF-NNNN 項目）
+として管理しています。新機能は **Proposal**、バグは **Bug report** のテンプレートを使ってください。
+同じバックログは [GitHub Project #1](https://github.com/orgs/Tokfuel/projects/1) からも見えます。
+番号付きの Issue を実装する PR は、タイトル先頭に `[TF-NNNN]` を付けます。
 
 ### 最初の一歩におすすめ
 
-[ロードマップの Proposals 表](roadmaps/README-ja.md)と「未整理のアイデア」が最新のバックログです。
-「期間フィルタ」や「編集メトリクスの可視化」は単体で完結しやすい初手としておすすめです。
+オープンな [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues) と
+[Project #1](https://github.com/orgs/Tokfuel/projects/1) が最新のバックログです。
+作るものを探すなら、小さく完結しやすい Proposal を選んでください。

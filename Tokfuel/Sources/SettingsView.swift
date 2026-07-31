@@ -72,10 +72,13 @@ struct SettingsView: View {
             Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
                 ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
             }
+            Picker("週の始まり", selection: $settings.weekStart) {
+                ForEach(WeekStart.allCases) { Text($0.label).tag($0) }
+            }
         } header: {
             Text("一般")
         } footer: {
-            Text("コストのソースはポップオーバーとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。")
+            Text("コストのソースはポップオーバーとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。「週の始まり」は推移の「今週」に効きます。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

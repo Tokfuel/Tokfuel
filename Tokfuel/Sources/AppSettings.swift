@@ -36,6 +36,51 @@ enum BudgetPeriod: String, CaseIterable, Identifiable {
     }
 }
 
+/// 「今週」の週始まり。Calendar.weekday（1 = 日曜 … 7 = 土曜）に対応する。
+enum WeekStart: String, CaseIterable, Identifiable, Sendable {
+    case saturday, sunday, monday
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .saturday: return "土曜日"
+        case .sunday: return "日曜日"
+        case .monday: return "月曜日"
+        }
+    }
+    /// `Calendar.firstWeekday` / `component(.weekday)` と同じ番号。
+    var weekday: Int {
+        switch self {
+        case .sunday: return 1
+        case .monday: return 2
+        case .saturday: return 7
+        }
+    }
+}
+
+/// 推移チャートとコストレポートの集計窓（暦ベース。日数は日々変わる）。
+enum ReportPeriod: String, CaseIterable, Identifiable, Sendable {
+    case today, thisWeek, thisMonth, thisYear
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .today: return "今日"
+        case .thisWeek: return "今週"
+        case .thisMonth: return "今月"
+        case .thisYear: return "今年"
+        }
+    }
+
+    /// 旧 `reportDays`（ローリング日数）からの移行。未知値は「今月」。
+    static func migrated(fromLegacyDays days: Int) -> ReportPeriod {
+        switch days {
+        case 1: return .today
+        case 7: return .thisWeek
+        case 365: return .thisYear
+        default: return .thisMonth
+        }
+    }
+}
+
 /// アプリ全体の設定。UserDefaults に永続化し、変更は @Published で伝播する。
 @MainActor
 final class AppSettings: ObservableObject {
@@ -108,6 +153,10 @@ final class AppSettings: ObservableObject {
     @Published var budgetPeriod: BudgetPeriod {
         didSet { persist(budgetPeriod.rawValue, forKey: Keys.budgetPeriod) }
     }
+    /// 「今週」の週始まり（土 / 日 / 月）。既定は月曜。
+    @Published var weekStart: WeekStart {
+        didSet { persist(weekStart.rawValue, forKey: Keys.weekStart) }
+    }
     /// 警告を出すしきい値（上限に対する %）。
     @Published var budgetWarnPercent: Int {
         didSet { persist(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
@@ -136,6 +185,7 @@ final class AppSettings: ObservableObject {
         static let budgetLimit = "budgetLimit"
         static let dailyBudgetLimit = "dailyBudgetLimit"
         static let budgetPeriod = "budgetPeriod"
+        static let weekStart = "weekStart"
         static let budgetWarnPercent = "budgetWarnPercent"
         static let costSourceMode = "costSourceMode"
         static let costModelBreakdownMode = "costModelBreakdownMode"
@@ -201,6 +251,7 @@ final class AppSettings: ObservableObject {
         dailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)
         budgetPeriod = BudgetPeriod(rawValue: defaults.string(forKey: Keys.budgetPeriod) ?? "")
             ?? .calendarMonth
+        weekStart = WeekStart(rawValue: defaults.string(forKey: Keys.weekStart) ?? "") ?? .monday
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
