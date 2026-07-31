@@ -17,12 +17,9 @@ source "$PROJECT_DIR/scripts/package-app.sh"
 VERSION="${1:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROJECT_DIR/Info.plist")}"
 VERSION="${VERSION#v}"   # タグ名 v1.2.3 でも 1.2.3 でも受け付ける
 
-echo "Building $APP_NAME $VERSION (universal, TOKFUEL_DISTRIBUTION)..."
+echo "Building $APP_NAME $VERSION (universal)..."
 cd "$PROJECT_DIR"
-# -DTOKFUEL_DISTRIBUTION が付いたビルドだけ Crashlytics / Analytics を有効化する（#22）。
-# 手元の swift build / scripts/build.sh には付けない。
-swift build -c release --arch arm64 --arch x86_64 \
-  -Xswiftc -DTOKFUEL_DISTRIBUTION
+swift build -c release --arch arm64 --arch x86_64
 
 # ユニバーサルビルドの成果物は .build/apple/Products/Release に置かれる
 BUILD_DIR="$PROJECT_DIR/.build/apple/Products/Release"
@@ -42,10 +39,6 @@ else
   echo "CODESIGN_IDENTITY not set — using ad-hoc signing"
 fi
 codesign "${SIGN_FLAGS[@]}" "$APP_DIR"
-
-# Crashlytics 用 dSYM を生成してアップロード（失敗しても配布物自体は残す）。
-upload_crashlytics_dsym "$APP_DIR" "$PROJECT_DIR" || \
-  echo "warning: Crashlytics dSYM upload skipped or failed" >&2
 
 echo "Building DMG..."
 DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}.dmg"

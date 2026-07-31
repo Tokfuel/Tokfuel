@@ -18,13 +18,11 @@ Tokfuel の GitHub Issue を 1 件、提案の状態から出荷済みの緑の�
 
 ## プロジェクトのグラウンドルール（すべての行の枠）
 
-1. **ローカルオンリー**：Claude / Cursor / Codex 由来のデータを外に出さない。追加の通信は
-   AGENTS.md のオーナー承認済み例外に限る（配布ビルドの Crashlytics、オプトイン Analytics を含む）。
+1. **ローカルオンリー**：テレメトリやネットワーク送信を追加しない。
 2. **ゼロセットアップの維持**：ユーザーに Claude Code の設定やフックの導入を求めない。
 3. **retok は無改変で同梱**：同梱の retok をこの場で編集しない。ライセンスとクレジットを維持する。
 4. **python3 は任意**：python3 が無くても Claude のコスト分析が緩やかに縮退する状態を保つ。
-5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に緑を保つ。新規パッケージは原則禁止で、
-   例外は `firebase-ios-sdk`（Analytics / Crashlytics のみ）に限る。
+5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に緑を保つ。
 
 ## 進め方
 
