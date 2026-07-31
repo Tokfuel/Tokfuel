@@ -134,6 +134,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.usageStore.reloadReport() }
             .store(in: &cancellables)
+        // 「今週」の起点が変わったら表示窓を作り直す（他期間では結果は同じだが、再読込は安い）。
+        settings.$weekStart
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.usageStore.reloadReport() }
+            .store(in: &cancellables)
         // スキャン場所が変わったら再走査する。
         settings.$claudeDirectory.dropFirst()
             .receive(on: RunLoop.main)
