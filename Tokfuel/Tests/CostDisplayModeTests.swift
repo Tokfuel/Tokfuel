@@ -80,9 +80,11 @@ struct CostSourceModeUsageStoreTests {
     }
 
     private func report(daily costs: [String: Double],
-                        models: [String: Double] = [:]) -> RetokReport {
+                        models: [String: Double] = [:],
+                        periodDays: Int = 30) -> RetokReport {
         RetokReport(
-            periodDays: 30, filesScanned: 0, totals: .init(cost: costs.values.reduce(0, +)),
+            periodDays: periodDays, filesScanned: 0,
+            totals: .init(cost: costs.values.reduce(0, +)),
             cacheHitRate: 0,
             perModel: models.mapValues {
                 RetokReport.ModelUsage(cost: $0, input: 0, output: 0, requests: 0)
@@ -235,6 +237,23 @@ struct CostSourceModeUsageStoreTests {
         }
         withSourceMode(.combined) {
             #expect(store.chartRows(for: store.report!).count == 2)
+        }
+    }
+
+    @Test func chartRowsは表示窓より前の日を落とす() {
+        // retok は --days 1 でも前後の日が daily に混ざることがある。
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        let yesterday = Self.dateString(
+            Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+        store.report = report(
+            daily: [yesterday: 1, today: 4], periodDays: 1)
+        store.driverDailyByID = ["cursor": [yesterday: 9, today: 2]]
+
+        withSourceMode(.combined) {
+            let rows = store.chartRows(for: store.report!)
+            #expect(Set(rows.map(\.date)) == [today])
+            #expect(store.periodTotalCost(for: store.report!) == 6)
         }
     }
 

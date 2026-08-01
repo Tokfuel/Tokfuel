@@ -88,6 +88,52 @@ struct MonthEndProjectionTests {
     }
 }
 
+/// 推移チャート X 軸の間引き。今年で週ごとだとラベルが潰れる。
+struct ChartXAxisLabelTests {
+    private func isoDates(from start: String, count: Int) -> [String] {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        let cal = Calendar(identifier: .gregorian)
+        let origin = f.date(from: start)!
+        return (0..<count).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: origin).map(f.string)
+        }
+    }
+
+    @Test func 今週は全日を出す() {
+        let dates = isoDates(from: "2026-07-27", count: 5)
+        #expect(PopoverView.xAxisShortDates(
+            fromISODates: dates, period: .thisWeek, weekStart: 2)
+            == ["07/27", "07/28", "07/29", "07/30", "07/31"])
+    }
+
+    @Test func 今月は週始まりだけに間引く() {
+        let dates = isoDates(from: "2026-07-01", count: 31)
+        let labels = PopoverView.xAxisShortDates(
+            fromISODates: dates, period: .thisMonth, weekStart: 2) // Monday
+        #expect(labels == ["07/06", "07/13", "07/20", "07/27"])
+    }
+
+    @Test func 今年は月初だけ最大6個() {
+        let dates = isoDates(from: "2026-01-01", count: 365)
+        let labels = PopoverView.xAxisShortDates(
+            fromISODates: dates, period: .thisYear, weekStart: 2)
+        #expect(labels.count <= 6)
+        #expect(labels.first == "01/01")
+        #expect(labels.contains("07/01") || labels.contains("06/01") || labels.contains("08/01"))
+        // 週ごと（約 52）まで残っていないこと。
+        #expect(labels.count < 12)
+    }
+
+    @Test func 今年の表示文言は月だけ() {
+        #expect(PopoverView.xAxisLabel("01/01", period: .thisYear) == "1月")
+        #expect(PopoverView.xAxisLabel("12/01", period: .thisYear) == "12月")
+        #expect(PopoverView.xAxisLabel("07/06", period: .thisMonth) == "07/06")
+    }
+}
+
 /// 旧ローリング日数 → 暦期間への移行と、暦窓の日数計算。
 struct ReportPeriodTests {
     private let tokyo: TimeZone = TimeZone(identifier: "Asia/Tokyo")!
