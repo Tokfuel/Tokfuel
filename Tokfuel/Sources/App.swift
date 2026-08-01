@@ -100,10 +100,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #endif
     }
 
-    /// 配布ビルドで、まだ Analytics 同意に答えていなければ初回ダイアログを出す。
+    /// まだ Analytics 同意に答えていなければ初回ダイアログを出す。
+    /// 送信そのものは配布ビルド側のゲート（`RemoteDiagnosticsPolicy`）に従う。
     /// Crashlytics は同意なしのためここでは扱わない。
     private func promptAnalyticsConsentIfNeeded() {
-        guard RemoteDiagnosticsPolicy.isDistributionBuild else { return }
         guard !settings.analyticsConsentAnswered else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -117,6 +117,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             alert.alertStyle = .informational
             alert.addButton(withTitle: "許可する")
             alert.addButton(withTitle: "許可しない")
+            // accessory でもダイアログを前面に出す。
+            NSApp.activate(ignoringOtherApps: true)
             let response = alert.runModal()
             self.settings.analyticsConsent = (response == .alertFirstButtonReturn)
         }
