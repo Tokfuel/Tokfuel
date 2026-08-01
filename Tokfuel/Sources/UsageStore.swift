@@ -957,23 +957,12 @@ extension UsageStore {
                               title: $0.project, cost: $0.cost, isEstimated: false)
             }
         }
-<<<<<<< HEAD
-        if mode.includes(sourceID: CostSourceMode.cursorSourceID) {
-            let names = secondarySourceNames
-            for (id, sessions) in driverSessionsByID {
-                let source = names[id] ?? id
-                rows += sessions.map {
-                    TopSessionRow(id: "\(id)|\($0.id)", source: source,
-                                  title: $0.title, cost: $0.cost, isEstimated: true)
-                }
-=======
         let names = secondarySourceNames
         for (id, sessions) in driverSessionsByID where mode.includes(sourceID: id) {
             let source = names[id] ?? id
             rows += sessions.map {
                 TopSessionRow(id: "\(id)|\($0.id)", source: source,
                               title: $0.title, cost: $0.cost, isEstimated: true)
->>>>>>> origin/main
             }
         }
         // 並びが driver の辞書順に揺れないよう、同額は ID で決める。
