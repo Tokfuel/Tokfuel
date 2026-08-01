@@ -62,8 +62,10 @@ struct ScreenshotFixtureTests {
     @Test func 今日のコストが引ける() {
         // 日付キーの書式が UsageStore とずれると、ヒーローの金額が「–」になる。
         let store = ScreenshotRenderer.fixtureStore()
-        #expect(store.claudeTodayCost == ScreenshotRenderer.dailyCosts.last)
-        #expect(store.cursorTodayCost == ScreenshotRenderer.cursorTodayCost)
+        #expect(store.todayCost(forSource: CostSourceMode.claudeSourceID)
+                == ScreenshotRenderer.dailyCosts.last)
+        #expect(store.todayCost(forSource: CostSourceMode.cursorSourceID)
+                == ScreenshotRenderer.cursorTodayCost)
         // ヒーローは常に合算値（並べて表示は内訳キャプション行が担う。TF #53）。
         #expect(store.todayCost == (ScreenshotRenderer.dailyCosts.last ?? 0)
                 + ScreenshotRenderer.cursorTodayCost)

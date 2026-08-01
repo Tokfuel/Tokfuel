@@ -66,8 +66,9 @@ struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 180)
+            // Codex CLI が無い Mac では「Codex のみ」を出さない（常に $0 になるだけのため）。
             Picker("コストのソース", selection: $settings.costSourceMode) {
-                ForEach(CostSourceMode.allCases) { Text($0.label).tag($0) }
+                ForEach(settings.availableCostSourceModes) { Text($0.label).tag($0) }
             }
             Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
                 ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }

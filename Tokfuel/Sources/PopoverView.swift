@@ -37,11 +37,19 @@ struct PopoverView: View {
                     if let report = store.report {
                         chartSection(report)
                         modelBreakdown(report)
+<<<<<<< HEAD
                         // セッションは二次ソースも出せるのでソースモードの外に置く。
                         topSessionsSection(report)
                         // ヒントは Claude だけの話ではない（Cursor 由来も並ぶ）ので、
                         // ソースの選択による絞り込みは store 側の合成に任せる。
                         adviceSection(report)
+=======
+                        if settings.costSourceMode.includes(
+                            sourceID: CostSourceMode.claudeSourceID) {
+                            topSessionsSection(report)
+                            adviceSection(report)
+                        }
+>>>>>>> origin/claude/codex-only-source
                     } else if store.retokError == nil {
                         loadingSection
                     }
@@ -83,9 +91,10 @@ struct PopoverView: View {
             // driver ごとの実名で出し、0 円のソースは載せない（"その他" のような曖昧な
             // まとめラベルにしない）。
             if mode == .sideBySide {
-                Text(Self.sideBySideCaption(claudeCost: store.claudeTodayCost,
-                                            driverBreakdown: store.driverBreakdown,
-                                            unknownSources: store.unknownSourceNames))
+                Text(Self.sideBySideCaption(
+                    claudeCost: store.todayCost(forSource: CostSourceMode.claudeSourceID),
+                    driverBreakdown: store.driverBreakdown,
+                    unknownSources: store.unknownSourceNames))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -239,7 +248,10 @@ struct PopoverView: View {
 
     /// 日別の積み上げバー。塗りはフラット単色（TF #53）。
     private func dailyChart(_ report: RetokReport) -> some View {
-        Chart(store.chartRows(for: report), id: \.id) { row in
+        let rows = store.chartRows(for: report)
+        // 凡例は系列が 2 つ以上あるときだけ意味を持つ（単独ソースでは 1 色しか出ない）。
+        let showsLegend = Set(rows.map(\.source)).count > 1
+        return Chart(rows, id: \.id) { row in
             BarMark(
                 x: .value("Date", shortDate(row.date)),
                 y: .value("USD", row.cost)
@@ -252,10 +264,7 @@ struct PopoverView: View {
             "Cursor": Color.secondary,
             "Codex": Color.purple
         ])
-        .chartLegend(
-            settings.costSourceMode.includesClaude
-                && settings.costSourceMode.includesCursor
-                && !store.driverDaily.isEmpty ? .visible : .hidden)
+        .chartLegend(showsLegend ? .visible : .hidden)
     }
 
     /// 期間の累積折れ線（合計 1 本）。予算窓と表示窓が一致するとき（store が判定する）だけ、
@@ -293,7 +302,8 @@ struct PopoverView: View {
     /// キャッシュヒット率は出さない（ユーザーが操作できない診断値。異常時は節約のヒントが伝える）。
     private func chartCaption(_ report: RetokReport) -> some View {
         var parts = ["合計 \(Self.money(store.periodTotalCost(for: report)))"]
-        if settings.costSourceMode.includesClaude, report.totals.prompts > 0 {
+        if settings.costSourceMode.includes(sourceID: CostSourceMode.claudeSourceID),
+           report.totals.prompts > 0 {
             parts.append("プロンプト単価 "
                          + Self.money(report.totals.cost / Double(report.totals.prompts)))
         }
