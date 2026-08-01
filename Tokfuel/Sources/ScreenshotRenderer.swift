@@ -117,6 +117,7 @@ enum ScreenshotRenderer {
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
+    /// - `analytics-consent`: 初回 Analytics 同意ダイアログ（#22）
     static func allScreens() throws -> [(name: String, data: Data)] {
         let store = fixtureStore()
         // 設定は自身が .frame(width: 460, height: 620) を持つ（SettingsView.swift）ので
@@ -124,6 +125,8 @@ enum ScreenshotRenderer {
         // 高さは余裕を持った probeSize から実際の fittingSize へ縮める。
         let settingsSize = CGSize(width: 460, height: 620)
         let aboutProbeSize = CGSize(width: 320, height: 800)
+        // 同意ダイアログは幅固定・高さは中身任せ。余裕のある probe から fittingSize へ縮める。
+        let consentProbeSize = CGSize(width: 460, height: 400)
         return [
             ("popover", try renderPNG(store: store)),
             ("popover-update", try renderPNG(store: store,
@@ -135,7 +138,9 @@ enum ScreenshotRenderer {
             ("settings-debug", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true, initiallyShowsDebug: true),
                 probeSize: settingsSize, scrollsToBottom: true)),
-            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize))
+            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize)),
+            ("analytics-consent", try renderStandalone(
+                AnalyticsConsentView(), probeSize: consentProbeSize))
         ]
     }
 

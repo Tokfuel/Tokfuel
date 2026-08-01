@@ -67,6 +67,17 @@ Issue 1 件の実装は大きく、巻き戻しにくい。だから具体的な
 - **テストが回帰の網**：アプリ全体を起動せずに検証できる新ロジックにはテストを付ける。
 - **ドキュメントは日英併記**：文書化済みの挙動を変えたら `README.md` と `README.ja.md` の
   両方を更新する。日本語は [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) に従う。
+- **UI を足したら ui-preview も同じ PR で更新する（必須）**：`PopoverView` /
+  `SettingsView` / `AboutView`、または単独で見せる新規 View（同意ダイアログやアラートなど）を
+  追加・変更したときは、次を同じ差分に含める。怠るとレビュアーに新しい UI が見えない。
+  1. [`ScreenshotRenderer.allScreens()`](../../../Tokfuel/Sources/ScreenshotRenderer.swift)
+     にフィクスチャ画面を追加または更新する
+  2. [`.github/workflows/ui-preview.yml`](../../../.github/workflows/ui-preview.yml) の
+     `ORDER` と `screen_title` を揃える
+  3. ライブなシングルトン経由でしか到達できない状態は、`UpdateChecker.preview` や
+     `AppSettings` の `prepareDefaults()` と同じ形で注入可能なフィクスチャを用意する
+  4. ダイアログやパネルの文面は SwiftUI の表示 View に置き、ランタイムとプレビューで
+     同じ View を使う（`AnalyticsConsentView` の流儀）
 
 ### 6. 差分をレビューして磨く
 

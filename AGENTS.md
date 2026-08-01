@@ -67,15 +67,19 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、すべての
 そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
 書かない。
 
-`PopoverView`、`SettingsView`、`AboutView` の UI を追加または変更するときは、
+`PopoverView`、`SettingsView`、`AboutView`、および単独で見せる新規 View（同意ダイアログや
+アラートなど）を追加または変更するときは、同じ PR で
 `ScreenshotRenderer.allScreens()` のフィクスチャ画面（と
 [`ui-preview.yml`](.github/workflows/ui-preview.yml) の `ORDER` / `screen_title` リスト）も
 追加または更新して、`ui-preview 📸` ラベルが新しい状態を実際に描画できるようにする。ライブな
 シングルトン経由でしか到達できないビュー（ネットワーク応答や実際のインストールパスに依存する
 もの）には、`AppSettings.shared` が `prepareDefaults()` からフィクスチャ値を受け取るのと
-同じ形で、注入可能なフィクスチャを用意する（`UpdateChecker.preview` を参照）。これを怠ると
-新しい UI はレビュアーに見えないままになる（ポップオーバーのアップデートボタンが、TF-0029 の
-フォローアップまで実際にそうだった）。
+同じ形で、注入可能なフィクスチャを用意する（`UpdateChecker.preview` を参照）。ダイアログや
+パネルの文面は SwiftUI の表示 View に置き、ランタイムとプレビューで同じ View を使う
+（`AnalyticsConsentView` を参照）。これを怠ると新しい UI はレビュアーに見えないままになる
+（ポップオーバーのアップデートボタンが、TF-0029 のフォローアップまで実際にそうだった）。
+実装手順のチェックリストは [`implementation`](.agents/skills/implementation/SKILL.md) スキルに
+ある。
 
 ## ロードマップの回し方
 

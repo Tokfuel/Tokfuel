@@ -1,11 +1,13 @@
 name: UI Preview
 
 # ui-preview 📸 ラベルを付けると、メニューバー（既定 / フッターにアップデートボタンが
-# 出た状態）・設定（既定 / 詳細を開いた状態 / デバッグを開いた状態）・About の全画面を
-# 実物の UI からレンダリングし、PR コメントに絵として貼る
+# 出た状態）・設定（既定 / 詳細を開いた状態 / デバッグを開いた状態）・About・初回
+# Analytics 同意ダイアログの全画面を実物の UI からレンダリングし、PR コメントに絵として貼る
 # （TF-0034）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
 # `allScreens()`（README 用スクリーンショットを撮る TF-0015 の `renderPNG` を土台にした拡張）に
 # 任せ、ここでは撮った PNG 群を publish するだけ。
+# PopoverView / SettingsView / AboutView / 新規の単独 View を足したら、
+# `ScreenshotRenderer.allScreens()` と下の ORDER / screen_title も同じ PR で更新する。
 #
 # コメントに画像を直接添付する API は無いため、専用の orphan branch (ui-preview-images) に
 # PNG 群を push し、公開リポジトリの raw.githubusercontent.com URL を Markdown 画像として
@@ -62,10 +64,11 @@ jobs:
               settings-advanced) echo "設定 - 「詳細」を開いた状態" ;;
               settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
               about) echo "About" ;;
+              analytics-consent) echo "初回 Analytics 同意ダイアログ" ;;
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update settings settings-advanced settings-debug about)
+          ORDER=(popover popover-update settings settings-advanced settings-debug about analytics-consent)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
