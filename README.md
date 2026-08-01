@@ -78,6 +78,14 @@
   filling bottom-up like a fuel tank — blue inside budget, orange at the threshold, red over.
   Today and this month are coloured independently. Live previews in Settings.
 
+- ⚡ **Keeps up while you work**
+
+  The readout refreshes every 10 minutes when nothing is happening. As soon as today's
+  cost moves, it switches to once a minute for the next 5 minutes (extended on every
+  further move) and the ⛽️ icon pulses so you can tell it is tracking live. No extra
+  network requests. Both the faster refresh and the pulse can be turned off in Settings,
+  and the pulse also stops in Low Power Mode or with Reduce Motion enabled.
+
 - 💱 **USD or JPY**
 
   Budgets and all amounts switch currency.

@@ -38,6 +38,8 @@ final class UsageStore: ObservableObject {
     /// 32 日集計（予算・日次平均）側の同じ用途のカウンタ。
     private var budgetGeneration = 0
     private var reportTask: Task<Void, Never>?
+    /// 追従モードの軽い更新（reloadToday）。重い集計とは別に持ち、互いに打ち消し合わせない。
+    private var todayTask: Task<Void, Never>?
     private var budgetTask: Task<Void, Never>?
     private var transcriptTask: Task<Void, Never>?
     /// ポップオーバーの集計期間（暦ベース）。最後に選んだ値を記憶する。
@@ -204,7 +206,7 @@ final class UsageStore: ObservableObject {
 
     /// メニューバー表示の組み立てに渡す入力。ステータス項目と設定のライブプレビューで共用する。
     /// 別の表現で試算したいときは、返り値の `representation` を差し替える。
-    func menuBarInput() -> MenuBarInput {
+    func menuBarInput(isFollowing: Bool = false) -> MenuBarInput {
         return MenuBarInput(
             metric: settings.menuBarMetric,
             representation: settings.menuBarRepresentation,
@@ -228,7 +230,25 @@ final class UsageStore: ObservableObject {
             monthCursor: cursorBudgetSpend,
             // ゲージは側ごとに塗り分ける。今日だけしきい値を越えたら今日のゲージだけが変わる。
             todayLevel: dailyBudgetLevel,
-            monthLevel: budgetLevel)
+            monthLevel: budgetLevel,
+            isFollowing: isFollowing)
+    }
+
+    /// ソース別の今日の金額（USD）。追従モード（TF-0080）の `RefreshScheduler` が
+    /// 「金額が動いたか」を見るためだけの入力で、画面には出さない。
+    ///
+    /// 表示モード（`costSourceMode`）で合成する前の生の値を返す — 表示から外している
+    /// ソースが動いたときも、追従モードには入る。取得が劣化しているソース（TF-0073 の
+    /// `CostSnapshot.Health.degraded`）はキーごと落とす。劣化中の 0 は「使っていない」では
+    /// なく「取れなかった」なので、復旧した瞬間の 0 → 実額を増加と読むと誤発火する。
+    var todayCostBySource: [String: Double] {
+        let today = Self.dateString(Date())
+        var byID = ["claude": claudeTodayCost]
+        for (id, byDate) in driverDailyByID {
+            if case .degraded = driverHealthByID[id] { continue }
+            byID[id] = byDate[today] ?? 0
+        }
+        return byID
     }
 
     /// 月間予算のレベル（予算オフなら nil）。
@@ -264,16 +284,65 @@ final class UsageStore: ObservableObject {
         // Cursor の価格表を（インストールされていて、当日未取得なら）取り直す。今回の集計には
         // 間に合わなくてもよい — 取れれば次回以降の CursorPricing.cost() から新しい表を使う。
         Task { await CursorPricingService.refreshIfNeeded() }
-        // 走査元はバックグラウンドスレッドから @MainActor の設定を触らないよう、ここで解決して渡す。
+        rescanTranscripts()
+    }
+
+    /// 追従モード（TF-0080）の軽い更新。今日を含む短い窓だけを取り直し、32 日集計
+    /// （`reloadBudget`）と表示窓の再解析（`reloadReport`）は回さない。1 分間隔で
+    /// python3 のサブプロセスを走らせるので、走査日数は 1 日に絞る。
+    ///
+    /// 得られた今日のコストは、表示中のレポートに重ねる（レポートごと差し替えると
+    /// 推移グラフが 1 日分に痩せてしまう）。重い集計が走り始めたら結果は捨てる。
+    func reloadToday() {
+        let lang = settings.language.resolved
+        let claudeDir = settings.claudeDirectoryURL
+        let isDefault = claudeDir.standardizedFileURL.path
+            == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
+        let projectsOverride = isDefault ? nil : claudeDir.appendingPathComponent("projects")
+        let today = Self.dateString(Date())
+        let generation = reportGeneration
+        todayTask?.cancel()
+        todayTask = Task {
+            async let retokTask = RetokService.run(
+                days: 1, lang: lang, projectsDir: projectsOverride, provider: "claude"
+            )
+            async let driverTask = self.fetchDriverSnapshots(from: today, to: today)
+
+            // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない（CLAUDE.md ルール 4）。
+            let short = try? await retokTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            // 表示中のレポートがまだ無いうちは何もしない。1 日ぶんのレポートで埋めると、
+            // 期間合計もモデル別も今日だけの値になって誤解を招く（長期集計が届けば埋まる）。
+            if let short, let current = self.report {
+                self.report = current.merging(daily: short.daily)
+            }
+            let snapshots = await driverTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            // 日別と確度は reloadBudget と同じ扱いにする。追従中に Cursor が取れなくなったら、
+            // その場で劣化（TF-0073）へ倒して「—」と注意書きを出す。
+            for (id, snapshot) in snapshots {
+                var merged = self.driverDailyByID[id] ?? [:]
+                for (date, cost) in snapshot.daily { merged[date] = cost }
+                self.driverDailyByID[id] = merged
+                self.driverHealthByID[id] = snapshot.health
+            }
+        }
+        rescanTranscripts()
+    }
+
+    /// トランスクリプトを走査して「今日のプロンプト数」を更新する。
+    /// 走査元はバックグラウンドスレッドから @MainActor の設定を触らないよう、ここで解決して渡す。
+    private func rescanTranscripts() {
         let projectsDir = settings.claudeDirectoryURL.appendingPathComponent("projects")
         transcriptTask?.cancel()
         transcriptTask = Task.detached(priority: .userInitiated) {
             let daily = TranscriptScanner.scan(projectsDir: projectsDir)
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
-                self?.daily = daily
-                self?.lastUpdated = Date()
-                self?.isLoading = false
+                guard let self else { return }
+                self.daily = daily
+                self.lastUpdated = Date()
+                if self.isLoading { self.isLoading = false }
             }
         }
     }
