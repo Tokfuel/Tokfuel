@@ -40,7 +40,9 @@
   Today's / period cost, daily and cumulative charts for today / this week / this month /
   this year (calendar windows; week start is Sat/Sun/Mon in Settings), with a budget
   reference line when the chart matches a calendar-month budget and a month-end pace
-  estimate otherwise, per-model breakdown, top sessions, and retok's saving tips.
+  estimate otherwise, per-model breakdown, top sessions, and saving tips — retok's
+  Claude analysis plus Cursor-derived ones (model skew, models missing from the price
+  table, Cursor's share of the period), each badged with the source it came from.
 
 - 🖱️ **Cursor, too**
 
