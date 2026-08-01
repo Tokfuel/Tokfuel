@@ -37,10 +37,11 @@ struct PopoverView: View {
                     if let report = store.report {
                         chartSection(report)
                         modelBreakdown(report)
-                        if settings.costSourceMode.includesClaude {
-                            topSessionsSection(report)
-                            adviceSection(report)
-                        }
+                        // セッションは二次ソースも出せるのでソースモードの外に置く。
+                        topSessionsSection(report)
+                        // ヒントは Claude だけの話ではない（Cursor 由来も並ぶ）ので、
+                        // ソースの選択による絞り込みは store 側の合成に任せる。
+                        adviceSection(report)
                     } else if store.retokError == nil {
                         loadingSection
                     }
@@ -337,19 +338,28 @@ struct PopoverView: View {
         }
     }
 
+    /// 高コストの会話。Claude（retok のセッション）と二次ソース（Cursor の会話）を
+    /// コスト降順で 1 本のリストにする。どちらの会話かが分かるようソース名を添え、
+    /// ローカル DB から起こした二次ソースには「推定」まで添える（合計とは別物）。
     @ViewBuilder
     private func topSessionsSection(_ report: RetokReport) -> some View {
-        if !report.topSessions.isEmpty {
+        let rows = store.topSessionRows(for: report)
+        if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("高コストのセッション")
-                ForEach(report.topSessions.prefix(3)) { session in
-                    HStack(spacing: 8) {
-                        Text(session.project)
+                ForEach(rows) { row in
+                    HStack(spacing: 6) {
+                        Text(row.title)
                             .font(.caption)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                        Spacer()
-                        Text(Self.money(session.cost))
+                        Text(row.isEstimated ? "\(row.source)（推定）" : row.source)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                            .fixedSize()
+                        Spacer(minLength: 4)
+                        Text(Self.money(row.cost))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
@@ -358,13 +368,16 @@ struct PopoverView: View {
         }
     }
 
+    /// retok（Claude）由来と Cursor 由来を 1 つのリストで出す。合成・並び順・ソースごとの
+    /// 抑止はすべて store が決める（ここは並べるだけ）。
     @ViewBuilder
     private func adviceSection(_ report: RetokReport) -> some View {
-        if !report.advice.isEmpty {
+        let items = store.adviceItems(for: report)
+        if !items.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("節約のヒント")
-                ForEach(report.advice) { advice in
-                    AdviceRow(advice: advice)
+                ForEach(items) { item in
+                    AdviceRow(advice: item.advice, source: item.source)
                 }
             }
         }
@@ -426,6 +439,11 @@ struct PopoverView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
+            // アクセントのオレンジは「注意して見るもの」（予算の警告・アップデート）に
+            // 取っておく。常設の操作口は左隣の更新時刻と同じ灰色に揃える。
+            // borderlessButton のラベルはティントで塗られるので、
+            // ラベル側の foregroundStyle ではなくここで色を指定する。
+            .tint(Color(nsColor: .tertiaryLabelColor))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -626,9 +644,12 @@ struct MeterBar: View {
     }
 }
 
-/// retok の推奨事項 1 件。タップで詳細を開閉する。
+/// 節約のヒント 1 件。タップで詳細を開閉する。
+/// 出どころ（Claude / Cursor）はバッジで示す — 同じリストに 2 系統が並ぶので、
+/// どちらを見て言っているのかが分からないとヒントを判断に使えない。
 struct AdviceRow: View {
     let advice: RetokReport.Advice
+    let source: String
     @State private var isExpanded = false
 
     private var color: Color {
@@ -646,6 +667,13 @@ struct AdviceRow: View {
                       ? "exclamationmark.triangle.fill" : "lightbulb")
                     .font(.caption)
                     .foregroundStyle(color)
+                Text(source)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(.quaternary, in: Capsule())
+                    .fixedSize()
                 Text(advice.title)
                     .font(.caption)
                     .lineLimit(isExpanded ? nil : 1)

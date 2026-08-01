@@ -69,6 +69,49 @@ struct ScreenshotFixtureTests {
                 + ScreenshotRenderer.cursorTodayCost)
     }
 
+    @Test func Cursorのモデル別内訳は今日のコストに一致する() {
+        let sum = ScreenshotRenderer.cursorModelCosts.values.reduce(0, +)
+        #expect(abs(sum - ScreenshotRenderer.cursorTodayCost) < 0.0001)
+    }
+
+    @Test func 節約のヒントは両ソースぶんが絵に出る() {
+        // popover-advice の絵はここが空だと「節約のヒント」ごと消える（TF-0078）。
+        #expect(!ScreenshotRenderer.fixtureReport().advice.isEmpty)
+        let cursor = CursorAdvice.hints(for: .init(
+            modelCosts: ScreenshotRenderer.cursorModelCosts,
+            cursorTotal: ScreenshotRenderer.cursorTodayCost,
+            claudeTotal: ScreenshotRenderer.dailyCosts.reduce(0, +)))
+        // 値付けできないモデル（high）と高単価モデルへの偏り（info）の 2 件。
+        // Cursor の比率は Claude が大半なので立たない。
+        #expect(cursor.map(\.key).sorted() == [CursorAdvice.Key.dominantModel,
+                                               CursorAdvice.Key.unpricedModels].sorted())
+    }
+
+    /// `popover-sessions` の絵（TF-0077）は、Claude と Cursor が 1 本のリストに混ざった
+    /// 状態を見せるためのもの。片方に寄ると「マージしている」ことが絵から読めなくなる。
+    @Test func セッションのフィクスチャはClaudeとCursorが混ざる() {
+        let store = ScreenshotRenderer.sessionsFixtureStore()
+        #expect(store.driverSessionsByID["cursor"]?.count == 2)
+
+        let settings = AppSettings.shared
+        let previous = settings.costSourceMode
+        settings.costSourceMode = .sideBySide
+        defer { settings.costSourceMode = previous }
+
+        let report = ScreenshotRenderer.fixtureReport(
+            topSessions: ScreenshotRenderer.claudeTopSessions, advice: [])
+        let rows = store.topSessionRows(for: report)
+        #expect(rows.count == UsageStore.topSessionLimit)
+        #expect(Set(rows.map(\.source)) == ["Claude", "Cursor"])
+        #expect(rows.contains { $0.isEstimated })
+    }
+
+    /// README の 1 枚目は折り返しの上だけなので、セッション行を積まない状態のままにする。
+    @Test func READMEのフィクスチャはセッションを積まない() {
+        #expect(ScreenshotRenderer.fixtureReport().topSessions.isEmpty)
+        #expect(ScreenshotRenderer.fixtureStore().driverSessionsByID.isEmpty)
+    }
+
     @Test func 月間予算は警告状態になる() {
         // 警告メーターと「残り」ラベルを絵に入れるための組み合わせ。
         #expect(BudgetMonitor.level(spend: ScreenshotRenderer.budgetSpend,

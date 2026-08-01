@@ -113,6 +113,8 @@ struct MenuBarInput {
     /// 今日のゲージだけ色が変わる。予算が無い側は nil。
     var todayLevel: BudgetLevel?
     var monthLevel: BudgetLevel?
+    /// 追従モード中か（TF-0080）。表示する値そのものは変えず、アイコンの明滅にだけ効く。
+    var isFollowing = false
 }
 
 /// ゲージ 1 本ぶんの塗り。
@@ -135,6 +137,8 @@ struct MenuBarContent {
     var showsIcon = true
     /// 給油機アイコン単体の警告色に使うレベル（月・日の悪い方）。
     var iconLevel: BudgetLevel?
+    /// 追従モード中か。アイコンを明滅させるかの判断に使う（描画は MenuBarImage 側）。
+    var isFollowing = false
 }
 
 /// メニューバー表示の純粋なロジック。設定値と数値だけを受け取り、実際に描く表現・
@@ -332,12 +336,13 @@ enum MenuBarReadout {
         let representation = effectiveRepresentation(
             metric: input.metric, representation: input.representation, gauge: input.gauge)
         guard representation != .iconOnly else {
-            return MenuBarContent(toolTip: buildLabel("Tokfuel"))
+            return MenuBarContent(toolTip: buildLabel("Tokfuel"), isFollowing: input.isFollowing)
         }
         let sides = sides(of: input)
         guard !sides.isEmpty else {
             return MenuBarContent(title: "\(input.prompts)",
-                                  toolTip: buildLabel("今日のプロンプト数: \(input.prompts)"))
+                                  toolTip: buildLabel("今日のプロンプト数: \(input.prompts)"),
+                                  isFollowing: input.isFollowing)
         }
 
         let title: String
@@ -365,7 +370,8 @@ enum MenuBarReadout {
             // タンクはアイコン自身がゲージなので外せない。文字だけの表現でも常に出す
             // （数字だけ浮くと何のアプリの値か分からなくなる）。
             showsIcon: drawsGauge && input.shape.isSeparateFromIcon ? input.showsIcon : true,
-            iconLevel: [input.todayLevel, input.monthLevel].compactMap { $0 }.max())
+            iconLevel: [input.todayLevel, input.monthLevel].compactMap { $0 }.max(),
+            isFollowing: input.isFollowing)
     }
 
     /// 金額表示。残額モードかつ上限があれば「残 上限 − 消費」、なければ消費額。

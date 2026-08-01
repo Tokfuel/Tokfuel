@@ -136,6 +136,14 @@ final class AppSettings: ObservableObject {
     @Published var menuBarShowsRemaining: Bool {
         didSet { persist(menuBarShowsRemaining, forKey: Keys.menuBarShowsRemaining) }
     }
+    /// 使用額が動いている間だけ更新間隔を上げる（TF-0080）。オフなら常に 10 分間隔。
+    @Published var adaptiveRefreshEnabled: Bool {
+        didSet { persist(adaptiveRefreshEnabled, forKey: Keys.adaptiveRefreshEnabled) }
+    }
+    /// 追従モード中にメニューバーのアイコンを明滅させる。オフなら間隔だけが短くなる。
+    @Published var activityAnimationEnabled: Bool {
+        didSet { persist(activityAnimationEnabled, forKey: Keys.activityAnimationEnabled) }
+    }
     @Published var language: ReportLanguage {
         didSet { persist(language.rawValue, forKey: Keys.language) }
     }
@@ -201,6 +209,8 @@ final class AppSettings: ObservableObject {
         static let menuBarGaugeShape = "menuBarGaugeShape"
         static let menuBarShowsIcon = "menuBarShowsIcon"
         static let menuBarShowsRemaining = "menuBarShowsRemaining"
+        static let adaptiveRefreshEnabled = "adaptiveRefreshEnabled"
+        static let activityAnimationEnabled = "activityAnimationEnabled"
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let claudeDirectory = "claudeDirectory"
@@ -262,6 +272,12 @@ final class AppSettings: ObservableObject {
         menuBarShowsIcon = defaults.object(forKey: Keys.menuBarShowsIcon) == nil
             ? true : defaults.bool(forKey: Keys.menuBarShowsIcon)
         menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
+        // 追従モードとその明滅はどちらも既定オン。menuBarShowsIcon と同じく、未設定を
+        // false と読まないよう存在確認だけ object で行う。
+        adaptiveRefreshEnabled = defaults.object(forKey: Keys.adaptiveRefreshEnabled) == nil
+            ? true : defaults.bool(forKey: Keys.adaptiveRefreshEnabled)
+        activityAnimationEnabled = defaults.object(forKey: Keys.activityAnimationEnabled) == nil
+            ? true : defaults.bool(forKey: Keys.activityAnimationEnabled)
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
             ?? .usd
