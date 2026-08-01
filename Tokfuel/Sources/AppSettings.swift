@@ -36,6 +36,24 @@ enum BudgetPeriod: String, CaseIterable, Identifiable {
     }
 }
 
+/// 予算のしきい値に達したときの知らせ方。
+/// 出す条件（レベル上昇時に 1 回だけ）はどれを選んでも同じで、手段だけが変わる。
+enum BudgetAlertStyle: String, CaseIterable, Identifiable, Sendable {
+    case notification   // 通知センターのバナー（既定）
+    case alert          // 画面中央のアラートウィンドウ
+    case both
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .notification: return "通知"
+        case .alert: return "アラートウィンドウ"
+        case .both: return "通知とアラートウィンドウ"
+        }
+    }
+    var usesNotification: Bool { self != .alert }
+    var usesAlertWindow: Bool { self != .notification }
+}
+
 /// 「今週」の週始まり。Calendar.weekday（1 = 日曜 … 7 = 土曜）に対応する。
 enum WeekStart: String, CaseIterable, Identifiable, Sendable {
     case saturday, sunday, monday
@@ -118,6 +136,14 @@ final class AppSettings: ObservableObject {
     @Published var menuBarShowsRemaining: Bool {
         didSet { persist(menuBarShowsRemaining, forKey: Keys.menuBarShowsRemaining) }
     }
+    /// 使用額が動いている間だけ更新間隔を上げる（TF-0080）。オフなら常に 10 分間隔。
+    @Published var adaptiveRefreshEnabled: Bool {
+        didSet { persist(adaptiveRefreshEnabled, forKey: Keys.adaptiveRefreshEnabled) }
+    }
+    /// 追従モード中にメニューバーのアイコンを明滅させる。オフなら間隔だけが短くなる。
+    @Published var activityAnimationEnabled: Bool {
+        didSet { persist(activityAnimationEnabled, forKey: Keys.activityAnimationEnabled) }
+    }
     @Published var language: ReportLanguage {
         didSet { persist(language.rawValue, forKey: Keys.language) }
     }
@@ -127,9 +153,17 @@ final class AppSettings: ObservableObject {
         didSet { persist(displayCurrency.rawValue, forKey: Money.currencyKey) }
     }
 
-    /// ポップオーバーとメニューバーで Claude / Cursor のどちらを金額に含めるか。
+    /// ポップオーバーとメニューバーでどのコストソースを金額に含めるか。
     @Published var costSourceMode: CostSourceMode {
         didSet { persist(costSourceMode.rawValue, forKey: Keys.costSourceMode) }
+    }
+    /// Codex CLI のセッションログがこの Mac にあるか。起動時に 1 度だけ見る。
+    /// 無いときは「Codex のみ」を選べないようにする（選んでも常に $0 になるため）。
+    let codexInstalled: Bool
+
+    /// 「コストのソース」ピッカーに出す選択肢。
+    var availableCostSourceModes: [CostSourceMode] {
+        CostSourceMode.available(codexInstalled: codexInstalled)
     }
     /// 「モデル別」を 1 一覧にするか、ソースごとに分けるか。
     @Published var costModelBreakdownMode: CostModelBreakdownMode {
@@ -161,6 +195,10 @@ final class AppSettings: ObservableObject {
     @Published var budgetWarnPercent: Int {
         didSet { persist(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
     }
+    /// しきい値に達したときの知らせ方（通知 / アラートウィンドウ / 両方）。
+    @Published var budgetAlertStyle: BudgetAlertStyle {
+        didSet { persist(budgetAlertStyle.rawValue, forKey: Keys.budgetAlertStyle) }
+    }
 
     /// アプリ自身の UI 利用イベント記録（CU-0013）。ローカル限定・デフォルト有効。
     /// OFF にした事実は意図的に記録しない（オプトアウト後は 1 バイトも書かない）。
@@ -179,6 +217,8 @@ final class AppSettings: ObservableObject {
         static let menuBarGaugeShape = "menuBarGaugeShape"
         static let menuBarShowsIcon = "menuBarShowsIcon"
         static let menuBarShowsRemaining = "menuBarShowsRemaining"
+        static let adaptiveRefreshEnabled = "adaptiveRefreshEnabled"
+        static let activityAnimationEnabled = "activityAnimationEnabled"
         static let language = "language"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let claudeDirectory = "claudeDirectory"
@@ -187,6 +227,7 @@ final class AppSettings: ObservableObject {
         static let budgetPeriod = "budgetPeriod"
         static let weekStart = "weekStart"
         static let budgetWarnPercent = "budgetWarnPercent"
+        static let budgetAlertStyle = "budgetAlertStyle"
         static let costSourceMode = "costSourceMode"
         static let costModelBreakdownMode = "costModelBreakdownMode"
     }
@@ -213,8 +254,10 @@ final class AppSettings: ObservableObject {
             && menuBarMetric.supportsRatio
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard,
+         codexInstalled: Bool = CodexCostDriver().isAvailable) {
         self.defaults = defaults
+        self.codexInstalled = codexInstalled
         // 初回起動時は「入れるだけで常駐」を実現するため、ログイン起動を既定 ON にする。
         let firstLaunch = !defaults.bool(forKey: Keys.hasLaunchedBefore)
         if firstLaunch {
@@ -239,11 +282,20 @@ final class AppSettings: ObservableObject {
         menuBarShowsIcon = defaults.object(forKey: Keys.menuBarShowsIcon) == nil
             ? true : defaults.bool(forKey: Keys.menuBarShowsIcon)
         menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
+        // 追従モードとその明滅はどちらも既定オン。menuBarShowsIcon と同じく、未設定を
+        // false と読まないよう存在確認だけ object で行う。
+        adaptiveRefreshEnabled = defaults.object(forKey: Keys.adaptiveRefreshEnabled) == nil
+            ? true : defaults.bool(forKey: Keys.adaptiveRefreshEnabled)
+        activityAnimationEnabled = defaults.object(forKey: Keys.activityAnimationEnabled) == nil
+            ? true : defaults.bool(forKey: Keys.activityAnimationEnabled)
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
             ?? .usd
-        costSourceMode = CostSourceMode(rawValue: defaults.string(forKey: Keys.costSourceMode) ?? "")
-            ?? .combined
+        // Codex が消えた Mac で「Codex のみ」が残っていると常に $0 になるので合算へ落とす
+        // （保存値は書き換えない。Codex が戻れば選択も戻る）。
+        costSourceMode = CostSourceMode.resolved(
+            CostSourceMode(rawValue: defaults.string(forKey: Keys.costSourceMode) ?? "") ?? .combined,
+            codexInstalled: codexInstalled)
         costModelBreakdownMode = CostModelBreakdownMode(
             rawValue: defaults.string(forKey: Keys.costModelBreakdownMode) ?? "") ?? .combined
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
@@ -254,6 +306,8 @@ final class AppSettings: ObservableObject {
         weekStart = WeekStart(rawValue: defaults.string(forKey: Keys.weekStart) ?? "") ?? .monday
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
+        budgetAlertStyle = BudgetAlertStyle(
+            rawValue: defaults.string(forKey: Keys.budgetAlertStyle) ?? "") ?? .notification
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
     }
 

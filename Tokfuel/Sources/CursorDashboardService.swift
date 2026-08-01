@@ -26,6 +26,20 @@ enum CursorDashboardService {
         var byModel: [String: Double]
     }
 
+    /// 取得の結果。`Snapshot?` では潰れてしまう 2 つの失敗を分ける——呼び出し側
+    /// （`CursorCostDriver`）が「サインインしていない」と「API に届かない」を UI で
+    /// 書き分けるために必要。
+    enum FetchOutcome: Equatable {
+        case success(Snapshot)
+        /// `cursorAuth/accessToken` が無い（Cursor にサインインしていない）。
+        case noCredentials
+        /// トークンを送ったが拒否された（401 / 403）。`exp` が先でもサーバ側で失効している
+        /// ことがある（実機で観測: `/oauth/token` が `shouldLogout: true` を返す状態）。
+        case unauthorized
+        /// 呼べなかった（オフライン・タイムアウト・応答形式の変化など）。
+        case unreachable
+    }
+
     private struct CacheEntry {
         let fetchedAt: Date
         let from: String
@@ -55,6 +69,7 @@ enum CursorDashboardService {
     }
 
     /// 日別 + モデル別。同一キャッシュを共有するので `dailyCosts` の直後でも追加通信しない。
+    /// 失敗理由が要るときは `fetch(...)` を使う。
     static func fetchSnapshot(
         from: String,
         to: String,
@@ -63,35 +78,48 @@ enum CursorDashboardService {
         accessToken: String? = nil,
         session: HTTPPerformer? = nil
     ) async -> Snapshot? {
+        guard case .success(let snapshot) = await fetch(
+            from: from, to: to, dbPath: dbPath, now: now,
+            accessToken: accessToken, session: session
+        ) else { return nil }
+        return snapshot
+    }
+
+    /// 日別 + モデル別を、失敗理由まで残した形で返す。
+    static func fetch(
+        from: String,
+        to: String,
+        dbPath: String,
+        now: Date = Date(),
+        accessToken: String? = nil,
+        session: HTTPPerformer? = nil
+    ) async -> FetchOutcome {
         if let cached = cachedSnapshot(from: from, to: to, now: now) {
-            return cached
+            return .success(cached)
         }
         guard let token = accessToken ?? readAccessToken(dbPath: dbPath), !token.isEmpty else {
-            return nil
+            return .noCredentials
         }
-        guard let range = epochMillisRange(from: from, to: to) else { return nil }
+        guard let range = epochMillisRange(from: from, to: to) else { return .unreachable }
 
         let performer = session ?? defaultPerformer
-        guard let snapshot = await fetchAllPages(
+        let outcome = await fetchAllPages(
             token: token,
             startMillis: range.start,
             endMillis: range.end,
             perform: performer
-        ) else { return nil }
+        )
+        guard case .success(let snapshot) = outcome else { return outcome }
 
         storeCache(from: from, to: to, snapshot: snapshot, now: now)
-        return snapshot
+        return .success(snapshot)
     }
 
     // MARK: - Token
 
     /// `ItemTable` の `cursorAuth/accessToken`。無ければ nil。
     static func readAccessToken(dbPath: String) -> String? {
-        var db: OpaquePointer?
-        guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let db else {
-            sqlite3_close(db)
-            return nil
-        }
+        guard let db = CursorSQLite.openReadOnly(path: dbPath) else { return nil }
         defer { sqlite3_close(db) }
 
         var stmt: OpaquePointer?
@@ -119,7 +147,7 @@ enum CursorDashboardService {
         startMillis: Int64,
         endMillis: Int64,
         perform: HTTPPerformer
-    ) async -> Snapshot? {
+    ) async -> FetchOutcome {
         var daily: [String: Double] = [:]
         var byModel: [String: Double] = [:]
         var page = 1
@@ -131,7 +159,7 @@ enum CursorDashboardService {
                 startMillis: startMillis,
                 endMillis: endMillis,
                 page: page
-            ) else { return nil }
+            ) else { return .unreachable }
 
             var request = URLRequest(url: endpoint)
             request.httpMethod = "POST"
@@ -142,10 +170,14 @@ enum CursorDashboardService {
             request.httpBody = body
 
             guard let (data, response) = try? await perform(request),
-                  let http = response as? HTTPURLResponse,
-                  (200..<300).contains(http.statusCode),
+                  let http = response as? HTTPURLResponse
+            else { return .unreachable }
+            // 401 / 403 はトークンが死んでいる合図。オフラインと同じ扱いにすると
+            // 「サインインし直せば直る」ことが UI に伝わらない。
+            if http.statusCode == 401 || http.statusCode == 403 { return .unauthorized }
+            guard (200..<300).contains(http.statusCode),
                   let events = parseEventsResponse(data)
-            else { return nil }
+            else { return .unreachable }
 
             reportedTotal = events.totalCount
             for event in events.events {
@@ -163,7 +195,7 @@ enum CursorDashboardService {
             if events.events.count < pageSize { break }
             page += 1
         }
-        return Snapshot(daily: daily, byModel: byModel)
+        return .success(Snapshot(daily: daily, byModel: byModel))
     }
 
     private static func requestBody(startMillis: Int64, endMillis: Int64, page: Int) -> Data? {

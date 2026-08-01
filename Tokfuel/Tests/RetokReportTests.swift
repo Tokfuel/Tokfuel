@@ -59,4 +59,18 @@ struct RetokReportTests {
         #expect(report.cost(on: "2026-07-28") == 30.0)
         #expect(report.cost(on: "2026-01-01") == nil)
     }
+
+    /// 追従モード（TF-0080）は 1 日ぶんの結果を長期集計に重ねる。
+    /// 日別だけが差し替わり、期間・合計・モデル別は元のまま残る。
+    @Test func 日別だけを重ねられる() throws {
+        let report = try decode()
+        let merged = report.merging(daily: ["2026-07-28": .init(cost: 44.0, output: 10),
+                                            "2026-07-29": .init(cost: 5.0, output: 1)])
+        #expect(merged.cost(on: "2026-07-28") == 44.0)   // 上書き
+        #expect(merged.cost(on: "2026-07-29") == 5.0)    // 追加
+        #expect(merged.cost(on: "2026-07-27") == report.cost(on: "2026-07-27"))   // 据え置き
+        #expect(merged.totals.cost == report.totals.cost)
+        #expect(merged.periodDays == report.periodDays)
+        #expect(merged.modelsSorted.map(\.model) == report.modelsSorted.map(\.model))
+    }
 }

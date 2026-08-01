@@ -1,39 +1,64 @@
 import Foundation
 
-/// ポップオーバーとメニューバーで、Claude / Cursor のどちらを金額に含めるか。
+/// ポップオーバーとメニューバーで、どのコストソースを金額に含めるか。
+/// ソースは id で表す（Claude は `claudeSourceID`、二次ソースは `CostDriver.id`）。
 enum CostSourceMode: String, CaseIterable, Identifiable {
-    /// Claude + Cursor を 1 つの合計にする（既定）。
+    /// Claude + 二次ソースを 1 つの合計にする（既定）。
     case combined
     case claudeOnly
     case cursorOnly
+    case codexOnly
     /// ヒーローとメニューバーに Claude と Cursor を並べて出す。予算・ゲージの分母は合算。
     case sideBySide
 
     var id: String { rawValue }
+
+    /// Claude（retok）自身のソース id。`CostDriver.id` と同じ名前空間に置く。
+    static let claudeSourceID = "claude"
+    /// `CursorCostDriver.id` / `CodexCostDriver.id` と同じ値。単独モードの判定に使う。
+    static let cursorSourceID = "cursor"
+    static let codexSourceID = "codex"
 
     var label: String {
         switch self {
         case .combined: return "合算"
         case .claudeOnly: return "Claude のみ"
         case .cursorOnly: return "Cursor のみ"
+        case .codexOnly: return "Codex のみ"
         case .sideBySide: return "並べて表示"
         }
     }
 
-    /// 合算値（予算・ゲージ）に Claude を含めるか。
-    var includesClaude: Bool {
+    /// 合算値（予算・ゲージ・グラフ・モデル別）にこのソースを含めるか。
+    /// `sourceID` は `claudeSourceID` か `CostDriver.id`。単独モードは自分の id 以外を落とすので、
+    /// 将来ドライバが増えても「◯◯ のみ」に他ソースが紛れ込まない。
+    func includes(sourceID: String) -> Bool {
         switch self {
-        case .combined, .sideBySide, .claudeOnly: return true
-        case .cursorOnly: return false
+        case .combined, .sideBySide: return true
+        case .claudeOnly: return sourceID == Self.claudeSourceID
+        case .cursorOnly: return sourceID == Self.cursorSourceID
+        case .codexOnly: return sourceID == Self.codexSourceID
         }
     }
 
-    /// 合算値（予算・ゲージ）に Cursor を含めるか。
-    var includesCursor: Bool {
+    /// 二次ソース 1 つだけを見るモードか。そのソースが取れていないときは表示額そのものが
+    /// 不明になるので、メニューバーは 0 円ではなく「—」を出す。
+    var showsSingleSecondarySource: Bool {
         switch self {
-        case .combined, .sideBySide, .cursorOnly: return true
-        case .claudeOnly: return false
+        case .cursorOnly, .codexOnly: return true
+        case .combined, .claudeOnly, .sideBySide: return false
         }
+    }
+
+    /// 「コストのソース」ピッカーに出す選択肢。Codex CLI が無いときに「Codex のみ」を選べると
+    /// 常に $0 が並ぶだけなので、その場合は外す。
+    static func available(codexInstalled: Bool) -> [CostSourceMode] {
+        allCases.filter { $0 != .codexOnly || codexInstalled }
+    }
+
+    /// 保存済みのモードが選べなくなっていたら既定（合算）へ落とす。
+    static func resolved(_ mode: CostSourceMode, codexInstalled: Bool) -> CostSourceMode {
+        available(codexInstalled: codexInstalled).contains(mode) ? mode : .combined
     }
 }
 

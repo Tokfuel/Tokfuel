@@ -101,6 +101,9 @@ struct MenuBarInput {
     /// 残額表示に使う予算上限（0 なら残額表示なし）。割合の分母とは独立。
     var dailyLimit: Double = 0
     var monthlyLimit: Double = 0
+    /// Cursor 側の金額が取得できていないか。true のときは 0 円ではなく「—」を出す
+    /// （劣化していれば金額は確実に足りないので、0 円と並べると誤情報になる）。
+    var cursorUnavailable = false
     /// 並べて表示用のソース別金額（ゲージの合算とは別に持つ）。
     var todayClaude: Double = 0
     var todayCursor: Double = 0
@@ -110,6 +113,8 @@ struct MenuBarInput {
     /// 今日のゲージだけ色が変わる。予算が無い側は nil。
     var todayLevel: BudgetLevel?
     var monthLevel: BudgetLevel?
+    /// 追従モード中か（TF-0080）。表示する値そのものは変えず、アイコンの明滅にだけ効く。
+    var isFollowing = false
 }
 
 /// ゲージ 1 本ぶんの塗り。
@@ -132,6 +137,8 @@ struct MenuBarContent {
     var showsIcon = true
     /// 給油機アイコン単体の警告色に使うレベル（月・日の悪い方）。
     var iconLevel: BudgetLevel?
+    /// 追従モード中か。アイコンを明滅させるかの判断に使う（描画は MenuBarImage 側）。
+    var isFollowing = false
 }
 
 /// メニューバー表示の純粋なロジック。設定値と数値だけを受け取り、実際に描く表現・
@@ -329,12 +336,13 @@ enum MenuBarReadout {
         let representation = effectiveRepresentation(
             metric: input.metric, representation: input.representation, gauge: input.gauge)
         guard representation != .iconOnly else {
-            return MenuBarContent(toolTip: buildLabel("Tokfuel"))
+            return MenuBarContent(toolTip: buildLabel("Tokfuel"), isFollowing: input.isFollowing)
         }
         let sides = sides(of: input)
         guard !sides.isEmpty else {
             return MenuBarContent(title: "\(input.prompts)",
-                                  toolTip: buildLabel("今日のプロンプト数: \(input.prompts)"))
+                                  toolTip: buildLabel("今日のプロンプト数: \(input.prompts)"),
+                                  isFollowing: input.isFollowing)
         }
 
         let title: String
@@ -344,7 +352,10 @@ enum MenuBarReadout {
         case .percent, .ringAndValue:
             // リングは割合のインジケーターなので、添える数値も割合にそろえる。
             // リングが形で伝える値に、桁で読める精度（142% など）を足す関係になる。
-            title = joined(sides.compactMap(percentText))
+            // 取れていない二次ソースだけを見ているときは 0% ではなく「—」（0% は誤情報）。
+            title = input.costSourceMode.showsSingleSecondarySource && input.cursorUnavailable
+                ? unavailableText
+                : joined(sides.compactMap(percentText))
         default:
             title = joined(sides.map { amountText($0, input: input) })
         }
@@ -359,7 +370,8 @@ enum MenuBarReadout {
             // タンクはアイコン自身がゲージなので外せない。文字だけの表現でも常に出す
             // （数字だけ浮くと何のアプリの値か分からなくなる）。
             showsIcon: drawsGauge && input.shape.isSeparateFromIcon ? input.showsIcon : true,
-            iconLevel: [input.todayLevel, input.monthLevel].compactMap { $0 }.max())
+            iconLevel: [input.todayLevel, input.monthLevel].compactMap { $0 }.max(),
+            isFollowing: input.isFollowing)
     }
 
     /// 金額表示。残額モードかつ上限があれば「残 上限 − 消費」、なければ消費額。
@@ -370,10 +382,18 @@ enum MenuBarReadout {
         }
         if input.costSourceMode == .sideBySide {
             let (claude, cursor) = sideAmounts(side, input: input)
-            return "Claude \(Money.format(claude)) · Cursor \(Money.format(cursor))"
+            let cursorText = input.cursorUnavailable ? unavailableText : Money.format(cursor)
+            return "Claude \(Money.format(claude)) · Cursor \(cursorText)"
+        }
+        // 二次ソースだけを見ているときにそれが取れていなければ、金額そのものが不明。
+        if input.costSourceMode.showsSingleSecondarySource, input.cursorUnavailable {
+            return unavailableText
         }
         return Money.format(side.spend)
     }
+
+    /// 金額・割合が取れなかったことを示す表記。0 円や 0% と紛れない 1 文字にする。
+    static let unavailableText = "—"
 
     private static func sideAmounts(_ side: Side, input: MenuBarInput) -> (Double, Double) {
         // Side に今日/月の区別が無いのでラベルで分ける（sides が付けるラベルと一致）。
