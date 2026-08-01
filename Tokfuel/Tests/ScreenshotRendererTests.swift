@@ -69,7 +69,6 @@ struct ScreenshotFixtureTests {
                 + ScreenshotRenderer.cursorTodayCost)
     }
 
-<<<<<<< HEAD
     @Test func Cursorのモデル別内訳は今日のコストに一致する() {
         let sum = ScreenshotRenderer.cursorModelCosts.values.reduce(0, +)
         #expect(abs(sum - ScreenshotRenderer.cursorTodayCost) < 0.0001)
@@ -86,7 +85,8 @@ struct ScreenshotFixtureTests {
         // Cursor の比率は Claude が大半なので立たない。
         #expect(cursor.map(\.key).sorted() == [CursorAdvice.Key.dominantModel,
                                                CursorAdvice.Key.unpricedModels].sorted())
-=======
+    }
+
     /// `popover-sessions` の絵（TF-0077）は、Claude と Cursor が 1 本のリストに混ざった
     /// 状態を見せるためのもの。片方に寄ると「マージしている」ことが絵から読めなくなる。
     @Test func セッションのフィクスチャはClaudeとCursorが混ざる() {
@@ -99,7 +99,7 @@ struct ScreenshotFixtureTests {
         defer { settings.costSourceMode = previous }
 
         let report = ScreenshotRenderer.fixtureReport(
-            topSessions: ScreenshotRenderer.claudeTopSessions)
+            topSessions: ScreenshotRenderer.claudeTopSessions, advice: [])
         let rows = store.topSessionRows(for: report)
         #expect(rows.count == UsageStore.topSessionLimit)
         #expect(Set(rows.map(\.source)) == ["Claude", "Cursor"])
@@ -110,7 +110,6 @@ struct ScreenshotFixtureTests {
     @Test func READMEのフィクスチャはセッションを積まない() {
         #expect(ScreenshotRenderer.fixtureReport().topSessions.isEmpty)
         #expect(ScreenshotRenderer.fixtureStore().driverSessionsByID.isEmpty)
->>>>>>> origin/main
     }
 
     @Test func 月間予算は警告状態になる() {

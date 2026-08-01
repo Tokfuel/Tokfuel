@@ -38,15 +38,7 @@ struct PopoverView: View {
                         chartSection(report)
                         modelBreakdown(report)
                         // セッションは二次ソースも出せるのでソースモードの外に置く。
-                        // 節約のヒントは retok（Claude）だけが持つので中に残す。
                         topSessionsSection(report)
-                        if settings.costSourceMode.includesClaude {
-<<<<<<< HEAD
-                            topSessionsSection(report)
-=======
-                            adviceSection(report)
->>>>>>> origin/main
-                        }
                         // ヒントは Claude だけの話ではない（Cursor 由来も並ぶ）ので、
                         // ソースの選択による絞り込みは store 側の合成に任せる。
                         adviceSection(report)

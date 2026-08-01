@@ -777,7 +777,6 @@ extension UsageStore {
         }
     }
 
-<<<<<<< HEAD
     // MARK: - 節約のヒント
 
     /// 「節約のヒント」1 件。retok（Claude）由来と Tokfuel が組み立てた Cursor 由来を
@@ -842,7 +841,8 @@ extension UsageStore {
             cursorTotal: cursorTotal,
             claudeTotal: report.totals.cost,
             isDegraded: cursorFetchDegraded)
-=======
+    }
+
     // MARK: - 高コストのセッション
 
     /// セッション 1 行。Claude（retok）と二次ソースを同じ形にそろえ、1 本のリストに混ぜる。
@@ -889,6 +889,5 @@ extension UsageStore {
             .filter { $0.cost > 0 }
             .sorted { $0.cost == $1.cost ? $0.id < $1.id : $0.cost > $1.cost }
         return Array(sorted.prefix(limit))
->>>>>>> origin/main
     }
 }

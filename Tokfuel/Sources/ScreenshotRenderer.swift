@@ -40,7 +40,6 @@ enum ScreenshotRenderer {
     static let dailyBudgetLimit: Double = 20
     /// Cursor（二次ソース）の今日のコスト。並べて表示モードで Claude と並ぶ絵になる。
     static let cursorTodayCost: Double = 4.20
-<<<<<<< HEAD
     /// Cursor のモデル別内訳 (USD)。合計は `cursorTodayCost` に一致させる（テストで検査）。
     /// `composer-1` を $0 にして、価格表に無いモデル（`CursorPricing` が値付けできない）の
     /// ヒントまで絵に入れる。値付けできたぶんは 1 モデルに寄せ、偏りのヒントも出す。
@@ -49,10 +48,8 @@ enum ScreenshotRenderer {
         "gpt-5-codex": 0.84,
         "composer-1": 0
     ]
-=======
     /// ポップオーバー本体のサイズ（PopoverView 自身の `.frame` と同じ）。
     static let popoverSize = CGSize(width: 360, height: 520)
->>>>>>> origin/main
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     static let previewUpdateVersion = "0.1.0"
 
@@ -130,13 +127,10 @@ enum ScreenshotRenderer {
     /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
     ///   断っている状態
     /// - `popover-cursor-signin`: 同じ注意書きに、サインインし直すボタンが付いた状態
-<<<<<<< HEAD
-    /// - `popover-advice`: 同じ合成を末尾までスクロールした状態（「節約のヒント」は
-    ///   最初の 1 画面に入らないため、ここでしか見えない）
-=======
     /// - `popover-sessions`: ポップオーバー単体を末尾までスクロールした状態
     ///   （折り返しの下にある「高コストのセッション」を Claude + Cursor で写す）
->>>>>>> origin/main
+    /// - `popover-advice`: 同じ合成を末尾までスクロールした状態（「節約のヒント」は
+    ///   最初の 1 画面に入らないため、ここでしか見えない）
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
@@ -154,13 +148,10 @@ enum ScreenshotRenderer {
             ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
             ("popover-cursor-signin", try renderPNG(
                 store: degradedCursorStore(reason: .credentialsRejected))),
-<<<<<<< HEAD
-            ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
-=======
             ("popover-sessions", try renderStandalone(
                 PopoverView(store: sessionsFixtureStore()),
                 probeSize: popoverSize, scrollsToBottom: true)),
->>>>>>> origin/main
+            ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
@@ -402,9 +393,10 @@ enum ScreenshotRenderer {
 
     /// 「高コストのセッション」を写すためのフィクスチャ（TF-0077）。README の 1 枚目には
     /// 折り返しの下で入らないので、`popover-sessions` 画面だけがこちらを使う。
+    /// 末尾までスクロールするので、その下の節約のヒントは空にしてセッションが写るようにする。
     static func sessionsFixtureStore() -> UsageStore {
         let store = fixtureStore()
-        store.report = fixtureReport(topSessions: claudeTopSessions)
+        store.report = fixtureReport(topSessions: claudeTopSessions, advice: [])
         store.driverSessionsByID = ["cursor": cursorSessions]
         return store
     }
@@ -427,7 +419,22 @@ enum ScreenshotRenderer {
         ]
     }
 
-    static func fixtureReport(topSessions: [RetokReport.TopSession] = []) -> RetokReport {
+    /// `popover-advice` 用の retok 由来ヒント。Cursor 由来（CursorAdvice が
+    /// cursorModelCosts から作る）と並んだ状態——ソースバッジと severity 順——を写す。
+    static let fixtureAdvice: [RetokReport.Advice] = [
+        RetokReport.Advice(
+            severity: "medium",
+            key: "adv_model_mix",
+            title: "高価格モデルでの小粒セッションが 12 件 ($18.40)",
+            detail: "一問一答や軽い確認は Haiku/Sonnet で十分なことが多いです。"
+                + "/model で切り替えるか、軽い用途向けに別プロファイルを用意すると"
+                + "節約できます。")
+    ]
+
+    static func fixtureReport(
+        topSessions: [RetokReport.TopSession] = [],
+        advice: [RetokReport.Advice] = fixtureAdvice
+    ) -> RetokReport {
         var daily: [String: RetokReport.DailyCost] = [:]
         for (offset, cost) in dailyCosts.reversed().enumerated() {
             daily[dateString(daysAgo: offset)] = RetokReport.DailyCost(cost: cost,
@@ -447,27 +454,10 @@ enum ScreenshotRenderer {
                                        output: Int(cost * 890), requests: Int(cost * 6))
             },
             daily: daily,
-<<<<<<< HEAD
-            // README には最初の 1 画面しか写らないが、`popover-advice` の絵は末尾まで
-            // スクロールして撮る。retok 由来を 1 件置いて、Cursor 由来（CursorAdvice が
-            // cursorModelCosts から作る）と並んだ状態——ソースバッジと severity 順——を写す。
-            advice: [
-                RetokReport.Advice(
-                    severity: "medium",
-                    key: "adv_model_mix",
-                    title: "高価格モデルでの小粒セッションが 12 件 ($18.40)",
-                    detail: "一問一答や軽い確認は Haiku/Sonnet で十分なことが多いです。"
-                        + "/model で切り替えるか、軽い用途向けに別プロファイルを用意すると"
-                        + "節約できます。")
-            ],
-            topSessions: []
-=======
-            // ポップオーバーはスクロールするが、README には最初の 1 画面しか写らない。
-            // 節約のヒントは折り返しの下になるため空にしておく。高コストのセッションは
-            // ui-preview の `popover-sessions` 画面だけが積む。
-            advice: [],
+            // README には最初の 1 画面しか写らない。高コストのセッションは
+            // ui-preview の `popover-sessions`、節約のヒントは `popover-advice` が積む。
+            advice: advice,
             topSessions: topSessions
->>>>>>> origin/main
         )
     }
 
