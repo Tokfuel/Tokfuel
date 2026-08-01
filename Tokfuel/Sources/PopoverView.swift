@@ -37,19 +37,11 @@ struct PopoverView: View {
                     if let report = store.report {
                         chartSection(report)
                         modelBreakdown(report)
-<<<<<<< HEAD
-                        if settings.costSourceMode.includes(
-                            sourceID: CostSourceMode.claudeSourceID) {
-                            topSessionsSection(report)
-                            adviceSection(report)
-                        }
-=======
                         // セッションは二次ソースも出せるのでソースモードの外に置く。
                         topSessionsSection(report)
                         // ヒントは Claude だけの話ではない（Cursor 由来も並ぶ）ので、
                         // ソースの選択による絞り込みは store 側の合成に任せる。
                         adviceSection(report)
->>>>>>> origin/main
                     } else if store.retokError == nil {
                         loadingSection
                     }

@@ -249,7 +249,7 @@ final class UsageStore: ObservableObject {
     /// なく「取れなかった」なので、復旧した瞬間の 0 → 実額を増加と読むと誤発火する。
     var todayCostBySource: [String: Double] {
         let today = Self.dateString(Date())
-        var byID = ["claude": claudeTodayCost]
+        var byID = [CostSourceMode.claudeSourceID: report?.cost(on: today) ?? 0]
         for (id, byDate) in driverDailyByID {
             if case .degraded = driverHealthByID[id] { continue }
             byID[id] = byDate[today] ?? 0
@@ -536,15 +536,6 @@ final class UsageStore: ObservableObject {
     var today: DailyUsage {
         let key = Self.dateString(Date())
         return daily.first { $0.date == key } ?? DailyUsage(date: key)
-    }
-
-    /// 今日のソース別コスト（"claude" と各二次ソースの `CostDriver.id`）。
-    /// 合成はすべてここを通す。Claude のレポート未取得も 0 とみなす。
-    var todayCostBySource: [String: Double] {
-        let today = Self.dateString(Date())
-        var bySource = [CostSourceMode.claudeSourceID: report?.cost(on: today) ?? 0]
-        for (id, byDate) in driverDailyByID { bySource[id] = byDate[today] ?? 0 }
-        return bySource
     }
 
     /// 今日のソース 1 つぶんのコスト（"claude" または `CostDriver.id`）。
@@ -896,10 +887,10 @@ extension UsageStore {
     func adviceItems(for report: RetokReport) -> [AdviceItem] {
         let mode = settings.costSourceMode
         var items: [AdviceItem] = []
-        if mode.includesClaude {
+        if mode.includes(sourceID: CostSourceMode.claudeSourceID) {
             items += report.advice.map { AdviceItem(source: Self.claudeSourceLabel, advice: $0) }
         }
-        if mode.includesCursor {
+        if mode.includes(sourceID: CostSourceMode.cursorSourceID) {
             items += CursorAdvice.hints(for: cursorAdviceInput(for: report))
                 .map { AdviceItem(source: CursorAdvice.sourceLabel, advice: $0) }
         }
@@ -959,21 +950,19 @@ extension UsageStore {
     func topSessionRows(for report: RetokReport, limit: Int = topSessionLimit) -> [TopSessionRow] {
         let mode = settings.costSourceMode
         var rows: [TopSessionRow] = []
-        if mode.includesClaude {
+        if mode.includes(sourceID: CostSourceMode.claudeSourceID) {
             rows += report.topSessions.map {
                 TopSessionRow(id: "\(Self.claudeSourceLabel)|\($0.session)",
                               source: Self.claudeSourceLabel,
                               title: $0.project, cost: $0.cost, isEstimated: false)
             }
         }
-        if mode.includesCursor {
-            let names = secondarySourceNames
-            for (id, sessions) in driverSessionsByID {
-                let source = names[id] ?? id
-                rows += sessions.map {
-                    TopSessionRow(id: "\(id)|\($0.id)", source: source,
-                                  title: $0.title, cost: $0.cost, isEstimated: true)
-                }
+        let names = secondarySourceNames
+        for (id, sessions) in driverSessionsByID where mode.includes(sourceID: id) {
+            let source = names[id] ?? id
+            rows += sessions.map {
+                TopSessionRow(id: "\(id)|\($0.id)", source: source,
+                              title: $0.title, cost: $0.cost, isEstimated: true)
             }
         }
         // 並びが driver の辞書順に揺れないよう、同額は ID で決める。
