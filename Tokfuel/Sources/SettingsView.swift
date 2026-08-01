@@ -114,6 +114,19 @@ struct SettingsView: View {
                 || settings.menuBarShowsRemaining {
                 Toggle("予算までの残りを表示", isOn: $settings.menuBarShowsRemaining)
             }
+            Toggle(isOn: $settings.adaptiveRefreshEnabled) {
+                Text("使用中は更新を速める")
+                Text("金額が動いている間だけ 1 分間隔で更新し、5 分動かなければ 10 分間隔へ戻します")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Toggle(isOn: $settings.activityAnimationEnabled) {
+                Text("速めている間アイコンを明滅させる")
+                Text("低電力モードと「視差効果を減らす」が有効なときは明滅しません")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .disabled(!settings.adaptiveRefreshEnabled)
         } header: {
             Text("メニューバー")
         } footer: {

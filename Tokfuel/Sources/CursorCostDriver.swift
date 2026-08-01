@@ -88,6 +88,20 @@ extension CursorCostDriver: CostDriver {
         }.value
         return CostSnapshot(daily: daily, byModel: [:], health: health)
     }
+
+    /// 会話単位の内訳。ダッシュボード API のイベントには会話を識別する値が無い
+    /// （timestamp / chargedCents / model だけ）ので、API が成功していてもここだけは
+    /// ローカルの `state.vscdb` から作る。金額の桁が API 側とそろわないことがあるため、
+    /// UI は合計（ヒーロー）と別物であることが分かるよう「推定」と添えて出す。
+    /// ローカルが読めない・空の環境（#73、`health` が `.degraded` になる場合）では単に
+    /// 空を返す —— 会話が無いことは劣化表示の担当で、$0 の行を並べる意味は無い。
+    func sessions(from: String, to: String) async -> [CostSnapshot.Session] {
+        guard isAvailable else { return [] }
+        let path = stateDBURL.path
+        return await Task.detached(priority: .utility) {
+            CursorUsageReader.scanSessions(dbPath: path, from: from, to: to)
+        }.value
+    }
 }
 
 /// Cursor の `state.vscdb` を読み取り専用で開く。
@@ -139,35 +153,94 @@ enum CursorSQLite {
 /// `state.vscdb` の生の読み取り。SQLite3 の C API を直接叩く（新規パッケージ依存を増やさない
 /// ため——システムの libsqlite3 のみを使う）。
 enum CursorUsageReader {
+    /// Cursor の会話 1 件。`CostSnapshot.Session` と同じ形なので、driver 側は詰め替えずに返す。
+    typealias CursorSession = CostSnapshot.Session
+
+    /// 会話名が取れない composer の表示名。
+    static let untitledSessionTitle = "無題の会話"
+
+    /// 1 回の走査で得られる日別と会話別。同じ bubble 行から両方を作るので、
+    /// 呼び出し口が 2 つあっても SQLite を 2 度開かない。
+    struct ScanResult {
+        let daily: [String: Double]
+        let sessions: [CursorSession]
+
+        static let empty = ScanResult(daily: [:], sessions: [])
+    }
+
     /// [from, to] 区間（両端含む、"YYYY-MM-DD"、ローカル日付）で日別コストを集計する。
     /// 失敗はすべて空辞書に落ちる（呼び出し側でエラー表示が必要な処理ではない）。
     static func scan(dbPath: String, from: String, to: String) -> [String: Double] {
-        guard let db = CursorSQLite.openReadOnly(path: dbPath) else { return [:] }
+        scanAll(dbPath: dbPath, from: from, to: to).daily
+    }
+
+    /// [from, to] 区間の会話（composer）単位の内訳をコスト降順で返す。
+    /// コストが 0 のままの会話は落とす —— Cursor 3.x では `tokenCount` が残らず
+    /// ローカル走査が空になることがあり（#73）、そこで「$0 の会話」を並べても意味が無い。
+    static func scanSessions(dbPath: String, from: String, to: String) -> [CursorSession] {
+        scanAll(dbPath: dbPath, from: from, to: to).sessions
+    }
+
+    /// bubble 行の 1 パス走査。日別と会話別を同時に積む。
+    /// 開き方は `CursorSQLite.openReadOnly` に任せる（WAL のチェックポイント後に
+    /// `sqlite3_prepare_v2` が静かに落ちる問題は、そこで `immutable=1` へ落として回避する）。
+    static func scanAll(dbPath: String, from: String, to: String) -> ScanResult {
+        guard let db = CursorSQLite.openReadOnly(path: dbPath) else { return .empty }
         defer { sqlite3_close(db) }
 
-        let composerModels = loadComposerModels(db: db)
+        let composers = loadComposers(db: db)
 
         var stmt: OpaquePointer?
         let sql = "SELECT key, value FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'"
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-            return [:]
+            return .empty
         }
         defer { sqlite3_finalize(stmt) }
 
         var totals: [String: Double] = [:]
+        var accumulators: [String: SessionAccumulator] = [:]
         while sqlite3_step(stmt) == SQLITE_ROW {
             guard let keyRaw = sqlite3_column_text(stmt, 0),
                   let valueRaw = sqlite3_column_text(stmt, 1) else { continue }
             let key = String(cString: keyRaw)
-            let composerModel = composerId(fromBubbleKey: key).flatMap { composerModels[$0] }
+            let composer = composerId(fromBubbleKey: key)
             guard let cost = costEntry(
                 fromBubbleJSON: String(cString: valueRaw),
-                composerModelID: composerModel
+                composerModelID: composer.flatMap { composers[$0]?.model }
             ) else { continue }
             guard cost.date >= from, cost.date <= to else { continue }
             totals[cost.date, default: 0] += cost.amount
+            guard let composer else { continue }
+            var accumulator = accumulators[composer] ?? SessionAccumulator()
+            accumulator.add(cost)
+            accumulators[composer] = accumulator
         }
-        return totals
+
+        let sessions = accumulators.compactMap { id, accumulator -> CursorSession? in
+            guard accumulator.cost > 0 else { return nil }
+            return CursorSession(
+                id: id,
+                title: composers[id]?.title ?? untitledSessionTitle,
+                cost: accumulator.cost,
+                messages: accumulator.messages,
+                lastUsed: accumulator.lastUsed)
+        }
+        // コストが並んだときは ID 順にして、同じ DB からは常に同じ並びが出るようにする。
+        .sorted { $0.cost == $1.cost ? $0.id < $1.id : $0.cost > $1.cost }
+        return ScanResult(daily: totals, sessions: sessions)
+    }
+
+    /// 1 会話ぶんの積み上げ。走査中だけ使う可変の入れ物。
+    private struct SessionAccumulator {
+        var cost: Double = 0
+        var messages: Int = 0
+        var lastUsed: String = ""
+
+        mutating func add(_ entry: DatedCost) {
+            cost += entry.amount
+            messages += 1
+            if entry.date > lastUsed { lastUsed = entry.date }
+        }
     }
 
     struct DatedCost {
@@ -203,8 +276,16 @@ enum CursorUsageReader {
         return String(parts[1])
     }
 
-    /// `composerData:*` 行から `composerId → modelName` を先読みする。
-    private static func loadComposerModels(db: OpaquePointer) -> [String: String] {
+    /// `composerData:*` 行から先読みした 1 会話ぶんのメタ情報。
+    struct ComposerInfo {
+        /// `modelConfig.modelName`。bubble 側にモデルが無いときの価格付けに使う。
+        let model: String?
+        /// 会話名。無題の会話では nil。
+        let title: String?
+    }
+
+    /// `composerData:*` 行から `composerId → (modelName, 会話名)` を先読みする。
+    private static func loadComposers(db: OpaquePointer) -> [String: ComposerInfo] {
         var stmt: OpaquePointer?
         let sql = "SELECT key, value FROM cursorDiskKV WHERE key LIKE 'composerData:%'"
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
@@ -212,7 +293,7 @@ enum CursorUsageReader {
         }
         defer { sqlite3_finalize(stmt) }
 
-        var models: [String: String] = [:]
+        var composers: [String: ComposerInfo] = [:]
         while sqlite3_step(stmt) == SQLITE_ROW {
             guard let keyRaw = sqlite3_column_text(stmt, 0),
                   let valueRaw = sqlite3_column_text(stmt, 1) else { continue }
@@ -221,12 +302,28 @@ enum CursorUsageReader {
             let composerId = String(key.dropFirst("composerData:".count))
             guard !composerId.isEmpty,
                   let data = String(cString: valueRaw).data(using: .utf8),
-                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let model = modelID(fromComposer: object)
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             else { continue }
-            models[composerId] = model
+            let info = ComposerInfo(model: modelID(fromComposer: object),
+                                    title: title(fromComposer: object))
+            guard info.model != nil || info.title != nil else { continue }
+            composers[composerId] = info
         }
-        return models
+        return composers
+    }
+
+    /// 会話名。Cursor は `name` に持ち、古い形では最初の発話 `text` しか無いことがある。
+    /// 1 行に畳んで長さを切る（ポップオーバーの 1 行に収まればよく、全文は要らない）。
+    static func title(fromComposer object: [String: Any]) -> String? {
+        guard let raw = stringValue(object["name"]) ?? stringValue(object["text"]) else {
+            return nil
+        }
+        let flattened = raw.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        guard !flattened.isEmpty else { return nil }
+        return flattened.count > 80 ? String(flattened.prefix(80)) + "…" : flattened
     }
 
     private static func tokenCounts(from object: [String: Any]) -> (Int, Int) {

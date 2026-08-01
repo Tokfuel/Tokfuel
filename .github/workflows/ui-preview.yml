@@ -1,7 +1,7 @@
 name: UI Preview
 
-# ui-preview 📸 ラベルを付けると、メニューバー（既定 / フッターにアップデートボタンが
-# 出た状態）・設定（既定 / 詳細を開いた状態 / デバッグを開いた状態）・About の全画面を
+# ui-preview 📸 ラベルを付けると、メニューバー・設定・About の全画面（下の ORDER にある
+# 一覧。同じ画面の別状態も含む）を
 # 実物の UI からレンダリングし、PR コメントに絵として貼る
 # （TF-0034）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
 # `allScreens()`（README 用スクリーンショットを撮る TF-0015 の `renderPNG` を土台にした拡張）に
@@ -60,6 +60,8 @@ jobs:
               popover-update) echo "メニューバー - フッターにアップデートボタンが出た状態" ;;
               popover-cursor-degraded) echo "メニューバー - Cursor の使用量が取得できていない状態" ;;
               popover-cursor-signin) echo "メニューバー - Cursor のサインインが切れた状態" ;;
+              popover-sessions) echo "メニューバー - 末尾までスクロールした状態（高コストのセッション）" ;;
+              popover-advice) echo "メニューバー - 末尾までスクロールした状態（節約のヒント）" ;;
               settings) echo "設定" ;;
               settings-advanced) echo "設定 - 「詳細」を開いた状態" ;;
               settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
@@ -67,7 +69,7 @@ jobs:
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin settings settings-advanced settings-debug about)
+          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

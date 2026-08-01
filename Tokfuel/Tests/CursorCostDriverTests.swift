@@ -137,26 +137,31 @@ struct CursorCostDriverParsingTests {
     }
 }
 
+/// `cursorDiskKV` を持つ最小の SQLite フィクスチャを作る。scan()／scanSessions() で共用する。
+private func makeCursorFixtureDB(rows: [(key: String, value: String)]) -> URL {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("cursor-fixture-\(UUID().uuidString).sqlite")
+    var db: OpaquePointer?
+    #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+    defer { sqlite3_close(db) }
+    #expect(sqlite3_exec(db, "CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT)",
+                         nil, nil, nil) == SQLITE_OK)
+    for row in rows {
+        var stmt: OpaquePointer?
+        #expect(sqlite3_prepare_v2(db, "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
+                                   -1, &stmt, nil) == SQLITE_OK)
+        sqlite3_bind_text(stmt, 1, row.key, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_text(stmt, 2, row.value, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        #expect(sqlite3_step(stmt) == SQLITE_DONE)
+        sqlite3_finalize(stmt)
+    }
+    return url
+}
+
 /// `cursorDiskKV` を持つ最小の SQLite フィクスチャを作って scan() を検証する。
 struct CursorUsageReaderScanTests {
     private func makeFixtureDB(rows: [(key: String, value: String)]) -> URL {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("cursor-fixture-\(UUID().uuidString).sqlite")
-        var db: OpaquePointer?
-        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
-        defer { sqlite3_close(db) }
-        #expect(sqlite3_exec(db, "CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT)",
-                             nil, nil, nil) == SQLITE_OK)
-        for row in rows {
-            var stmt: OpaquePointer?
-            #expect(sqlite3_prepare_v2(db, "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
-                                       -1, &stmt, nil) == SQLITE_OK)
-            sqlite3_bind_text(stmt, 1, row.key, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-            sqlite3_bind_text(stmt, 2, row.value, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-            #expect(sqlite3_step(stmt) == SQLITE_DONE)
-            sqlite3_finalize(stmt)
-        }
-        return url
+        makeCursorFixtureDB(rows: rows)
     }
 
     private static let iso = "2025-10-02T06:19:31.163Z"
@@ -236,6 +241,117 @@ struct CursorUsageReaderScanTests {
     }
 }
 
+/// composerData / bubbleId のフィクスチャから会話単位の内訳を起こせるか（TF-0077）。
+struct CursorUsageReaderSessionTests {
+    private static let iso = "2025-10-02T06:19:31.163Z"
+    private static let isoNextDay = "2025-10-03T09:00:00.000Z"
+
+    private func bubble(_ iso: String, input: Int) -> String {
+        """
+        {"createdAt": "\(iso)", "tokenCount": {"inputTokens": \(input), "outputTokens": 0}}
+        """
+    }
+
+    @Test func composerIdでまとめて会話名と最終利用日を取る() {
+        let db = makeCursorFixtureDB(rows: [
+            ("composerData:c1", """
+             {"modelConfig": {"modelName": "utest20-claude-4-sonnet"}, "name": "レイアウト崩れを直す"}
+             """),
+            ("bubbleId:c1:b1", bubble(Self.iso, input: 1_000_000)),
+            ("bubbleId:c1:b2", bubble(Self.isoNextDay, input: 1_000_000))
+        ])
+        defer { try? FileManager.default.removeItem(at: db) }
+
+        withPricing([("utest20-claude-4-sonnet", 3.0, 15.0)]) {
+            let sessions = CursorUsageReader.scanSessions(
+                dbPath: db.path, from: "2025-01-01", to: "2026-12-31")
+            #expect(sessions.count == 1)
+            #expect(sessions.first?.id == "c1")
+            #expect(sessions.first?.title == "レイアウト崩れを直す")
+            #expect(sessions.first?.cost == 6.0)
+            #expect(sessions.first?.messages == 2)
+            #expect(sessions.first?.lastUsed == localDateString(iso: Self.isoNextDay))
+        }
+    }
+
+    @Test func 会話名が無ければ無題の会話になる() {
+        let db = makeCursorFixtureDB(rows: [
+            ("composerData:c1", "{\"modelConfig\": {\"modelName\": \"utest21-claude-4-sonnet\"}}"),
+            ("bubbleId:c1:b1", bubble(Self.iso, input: 1_000_000))
+        ])
+        defer { try? FileManager.default.removeItem(at: db) }
+
+        withPricing([("utest21-claude-4-sonnet", 3.0, 15.0)]) {
+            let sessions = CursorUsageReader.scanSessions(
+                dbPath: db.path, from: "2025-01-01", to: "2026-12-31")
+            #expect(sessions.first?.title == CursorUsageReader.untitledSessionTitle)
+        }
+    }
+
+    @Test func コスト降順に並べる() {
+        let db = makeCursorFixtureDB(rows: [
+            ("composerData:small", """
+             {"modelConfig": {"modelName": "utest22-claude-4-sonnet"}, "name": "小さい会話"}
+             """),
+            ("composerData:big", """
+             {"modelConfig": {"modelName": "utest22-claude-4-sonnet"}, "name": "大きい会話"}
+             """),
+            ("bubbleId:small:b1", bubble(Self.iso, input: 1_000_000)),
+            ("bubbleId:big:b1", bubble(Self.iso, input: 5_000_000))
+        ])
+        defer { try? FileManager.default.removeItem(at: db) }
+
+        withPricing([("utest22-claude-4-sonnet", 3.0, 15.0)]) {
+            let sessions = CursorUsageReader.scanSessions(
+                dbPath: db.path, from: "2025-01-01", to: "2026-12-31")
+            #expect(sessions.map(\.title) == ["大きい会話", "小さい会話"])
+        }
+    }
+
+    /// Cursor 3.x では価格を引けないモデルが $0 になる（#73）。$0 の会話は行にしない。
+    @Test func 価格を引けない会話は行にしない() {
+        let db = makeCursorFixtureDB(rows: [
+            ("composerData:c1", """
+             {"modelConfig": {"modelName": "utest23-never-cached-model"}, "name": "値付け不能"}
+             """),
+            ("bubbleId:c1:b1", bubble(Self.iso, input: 1_000_000))
+        ])
+        defer { try? FileManager.default.removeItem(at: db) }
+
+        #expect(CursorUsageReader.scanSessions(
+            dbPath: db.path, from: "2025-01-01", to: "2026-12-31").isEmpty)
+    }
+
+    @Test func 期間の外の会話は返さない() {
+        let db = makeCursorFixtureDB(rows: [
+            ("composerData:c1", """
+             {"modelConfig": {"modelName": "utest24-claude-4-sonnet"}, "name": "去年の会話"}
+             """),
+            ("bubbleId:c1:b1", bubble(Self.iso, input: 1_000_000))
+        ])
+        defer { try? FileManager.default.removeItem(at: db) }
+
+        withPricing([("utest24-claude-4-sonnet", 3.0, 15.0)]) {
+            #expect(CursorUsageReader.scanSessions(
+                dbPath: db.path, from: "2020-01-01", to: "2020-12-31").isEmpty)
+        }
+    }
+
+    @Test func 走査できないDBでも空を返す() {
+        #expect(CursorUsageReader.scanSessions(
+            dbPath: "/nonexistent/state.vscdb", from: "2026-01-01", to: "2026-12-31").isEmpty)
+    }
+
+    @Test func 会話名は1行に畳んで長さを切る() {
+        let long = String(repeating: "あ", count: 200)
+        #expect(CursorUsageReader.title(fromComposer: ["name": " 上の行 \n 下の行 "])
+                == "上の行 下の行")
+        #expect(CursorUsageReader.title(fromComposer: ["text": long])?.count == 81)
+        #expect(CursorUsageReader.title(fromComposer: ["name": "  \n "]) == nil)
+        #expect(CursorUsageReader.title(fromComposer: [:]) == nil)
+    }
+}
+
 /// CostDriver 準拠としての isAvailable / dailyCosts の zero-setup 劣化を確認する。
 struct CursorCostDriverTests {
     @Test func ファイルが無ければ利用不可で空を返す() async {
@@ -243,6 +359,14 @@ struct CursorCostDriverTests {
         #expect(driver.isAvailable == false)
         let costs = await driver.dailyCosts(from: "2026-01-01", to: "2026-12-31")
         #expect(costs.isEmpty)
+        let sessions = await driver.sessions(from: "2026-01-01", to: "2026-12-31")
+        #expect(sessions.isEmpty)
+    }
+
+    /// セッション単位を持たない driver は既定実装のまま空を返す（CodexCostDriver は無改変）。
+    @Test func セッションを持たないdriverは既定で空() async {
+        let sessions = await CodexCostDriver().sessions(from: "2026-01-01", to: "2026-12-31")
+        #expect(sessions.isEmpty)
     }
 
     @Test func ファイルがあれば利用可能() {
