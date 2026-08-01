@@ -36,6 +36,24 @@ enum BudgetPeriod: String, CaseIterable, Identifiable {
     }
 }
 
+/// 予算のしきい値に達したときの知らせ方。
+/// 出す条件（レベル上昇時に 1 回だけ）はどれを選んでも同じで、手段だけが変わる。
+enum BudgetAlertStyle: String, CaseIterable, Identifiable, Sendable {
+    case notification   // 通知センターのバナー（既定）
+    case alert          // 画面中央のアラートウィンドウ
+    case both
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .notification: return "通知"
+        case .alert: return "アラートウィンドウ"
+        case .both: return "通知とアラートウィンドウ"
+        }
+    }
+    var usesNotification: Bool { self != .alert }
+    var usesAlertWindow: Bool { self != .notification }
+}
+
 /// 「今週」の週始まり。Calendar.weekday（1 = 日曜 … 7 = 土曜）に対応する。
 enum WeekStart: String, CaseIterable, Identifiable, Sendable {
     case saturday, sunday, monday
@@ -177,6 +195,10 @@ final class AppSettings: ObservableObject {
     @Published var budgetWarnPercent: Int {
         didSet { persist(budgetWarnPercent, forKey: Keys.budgetWarnPercent) }
     }
+    /// しきい値に達したときの知らせ方（通知 / アラートウィンドウ / 両方）。
+    @Published var budgetAlertStyle: BudgetAlertStyle {
+        didSet { persist(budgetAlertStyle.rawValue, forKey: Keys.budgetAlertStyle) }
+    }
 
     /// アプリ自身の UI 利用イベント記録（CU-0013）。ローカル限定・デフォルト有効。
     /// OFF にした事実は意図的に記録しない（オプトアウト後は 1 バイトも書かない）。
@@ -205,6 +227,7 @@ final class AppSettings: ObservableObject {
         static let budgetPeriod = "budgetPeriod"
         static let weekStart = "weekStart"
         static let budgetWarnPercent = "budgetWarnPercent"
+        static let budgetAlertStyle = "budgetAlertStyle"
         static let costSourceMode = "costSourceMode"
         static let costModelBreakdownMode = "costModelBreakdownMode"
     }
@@ -283,6 +306,8 @@ final class AppSettings: ObservableObject {
         weekStart = WeekStart(rawValue: defaults.string(forKey: Keys.weekStart) ?? "") ?? .monday
         let warn = defaults.integer(forKey: Keys.budgetWarnPercent)
         budgetWarnPercent = (50...99).contains(warn) ? warn : 80
+        budgetAlertStyle = BudgetAlertStyle(
+            rawValue: defaults.string(forKey: Keys.budgetAlertStyle) ?? "") ?? .notification
         eventLogEnabled = UsageEventLog.isEnabled(in: defaults)
     }
 

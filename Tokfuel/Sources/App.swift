@@ -208,17 +208,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。
     private func notifyBudgetIfNeeded() {
+        // 知らせ方（通知 / アラートウィンドウ）は設定から読んで引数で渡す。
+        let style = settings.budgetAlertStyle
+        let openSettings: () -> Void = { [weak self] in self?.openSettings() }
         if let level = usageStore.budgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .monthly, level: level, spend: usageStore.budgetSpend,
                 limit: settings.budgetLimit,
-                periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod))
+                periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod),
+                style: style, onOpenSettings: openSettings)
         }
         if let level = usageStore.dailyBudgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .daily, level: level, spend: usageStore.todayCost,
                 limit: settings.dailyBudgetLimit,
-                periodKey: BudgetMonitor.dailyPeriodKey())
+                periodKey: BudgetMonitor.dailyPeriodKey(),
+                style: style, onOpenSettings: openSettings)
         }
     }
 

@@ -66,10 +66,11 @@ jobs:
               settings-advanced) echo "設定 - 「詳細」を開いた状態" ;;
               settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
               about) echo "About" ;;
+              budget-alert) echo "予算アラートのウィンドウ" ;;
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about)
+          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
