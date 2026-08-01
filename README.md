@@ -56,8 +56,9 @@
   refreshed once a day from Cursor's published price table.
   Top sessions lists Cursor conversations next to Claude's, estimated from the local
   database (the dashboard API has no per-conversation breakdown).
-  In Settings, choose combined / Claude only / Cursor only / side-by-side — the popover
-  and menu bar both follow that choice (budget gauges still use the included sum).
+  In Settings, choose combined / Claude only / Cursor only / Codex only / side-by-side —
+  the popover and menu bar both follow that choice (budget gauges still use the included
+  sum). "Codex only" appears once Codex CLI is present on the Mac.
 
 - 🤖 **Codex, too**
 
