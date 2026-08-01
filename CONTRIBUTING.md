@@ -22,6 +22,7 @@ Thanks for your interest! This is a small, personal-use macOS menu-bar app, but 
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
 
+bash scripts/setup.sh             # install local git hooks (.githooks)
 swift build            # debug build
 swift run -c release   # run the app from source
 bash scripts/build.sh             # package + install Tokfuel.app to /Applications
@@ -109,6 +110,7 @@ self-contained Proposal if you're looking for something to build.
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
 
+bash scripts/setup.sh             # ローカルの git hooks（.githooks）を取り込む
 swift build            # デバッグビルド
 swift run -c release   # ソースから実行
 bash scripts/build.sh             # Tokfuel.app をパッケージして /Applications にインストール
