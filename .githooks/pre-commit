@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Reject commits whose author/committer email is @sansan.com
+set -euo pipefail
+
+blocked_domain="sansan.com"
+
+extract_email() {
+  # "Name <email>" -> "email"
+  sed -n 's/.*<\([^>]*\)>.*/\1/p'
+}
+
+check_ident() {
+  local kind="$1"
+  local ident="$2"
+  local email
+  email="$(printf '%s\n' "$ident" | extract_email | tr '[:upper:]' '[:lower:]')"
+
+  if [[ -z "$email" ]]; then
+    return 0
+  fi
+
+  if [[ "$email" == *"@${blocked_domain}" ]]; then
+    printf 'error: refusing commit: %s email is @%s (%s)\n' \
+      "$kind" "$blocked_domain" "$email" >&2
+    printf 'hint: git config user.email を個人用に切り替えるか、\n' >&2
+    printf '      GIT_AUTHOR_EMAIL / GIT_COMMITTER_EMAIL を上書きしてください\n' >&2
+    exit 1
+  fi
+}
+
+check_ident "author" "$(git var GIT_AUTHOR_IDENT)"
+check_ident "committer" "$(git var GIT_COMMITTER_IDENT)"
