@@ -69,6 +69,31 @@ struct ScreenshotFixtureTests {
                 + ScreenshotRenderer.cursorTodayCost)
     }
 
+    /// `popover-sessions` の絵（TF-0077）は、Claude と Cursor が 1 本のリストに混ざった
+    /// 状態を見せるためのもの。片方に寄ると「マージしている」ことが絵から読めなくなる。
+    @Test func セッションのフィクスチャはClaudeとCursorが混ざる() {
+        let store = ScreenshotRenderer.sessionsFixtureStore()
+        #expect(store.driverSessionsByID["cursor"]?.count == 2)
+
+        let settings = AppSettings.shared
+        let previous = settings.costSourceMode
+        settings.costSourceMode = .sideBySide
+        defer { settings.costSourceMode = previous }
+
+        let report = ScreenshotRenderer.fixtureReport(
+            topSessions: ScreenshotRenderer.claudeTopSessions)
+        let rows = store.topSessionRows(for: report)
+        #expect(rows.count == UsageStore.topSessionLimit)
+        #expect(Set(rows.map(\.source)) == ["Claude", "Cursor"])
+        #expect(rows.contains { $0.isEstimated })
+    }
+
+    /// README の 1 枚目は折り返しの上だけなので、セッション行を積まない状態のままにする。
+    @Test func READMEのフィクスチャはセッションを積まない() {
+        #expect(ScreenshotRenderer.fixtureReport().topSessions.isEmpty)
+        #expect(ScreenshotRenderer.fixtureStore().driverSessionsByID.isEmpty)
+    }
+
     @Test func 月間予算は警告状態になる() {
         // 警告メーターと「残り」ラベルを絵に入れるための組み合わせ。
         #expect(BudgetMonitor.level(spend: ScreenshotRenderer.budgetSpend,

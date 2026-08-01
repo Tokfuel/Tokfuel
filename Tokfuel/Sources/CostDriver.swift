@@ -52,6 +52,20 @@ struct CostSnapshot: Sendable, Equatable {
             }
         }
     }
+
+    /// 二次ソースの会話（セッション）1 件ぶんの内訳。`RetokReport.TopSession` と同じ粒度に
+    /// そろえてあり、「高コストのセッション」で Claude の行と 1 本のリストに混ぜられる。
+    struct Session: Sendable, Equatable, Identifiable {
+        /// ソース内で一意な ID（Cursor なら composerId）。
+        let id: String
+        /// 表示名。会話名が取れないときはソース側が既定の文言を入れる。
+        let title: String
+        let cost: Double
+        /// やり取りの数（Cursor なら bubble 数）。
+        let messages: Int
+        /// 最終利用日（ローカル "YYYY-MM-DD"）。
+        let lastUsed: String
+    }
 }
 
 /// Claude/retok に加えて合算する二次コスト源のための共通面。
@@ -70,6 +84,10 @@ protocol CostDriver: Sendable {
 
     /// [from, to] 区間（両端含む、"YYYY-MM-DD"）のコスト。
     func snapshot(from: String, to: String) async -> CostSnapshot
+
+    /// [from, to] 区間のセッション単位の内訳（任意実装）。
+    /// セッションを識別できないソースは既定実装のまま空を返し、UI にも一切現れない。
+    func sessions(from: String, to: String) async -> [CostSnapshot.Session]
 }
 
 extension CostDriver {
@@ -78,4 +96,7 @@ extension CostDriver {
     func dailyCosts(from: String, to: String) async -> [String: Double] {
         await snapshot(from: from, to: to).daily
     }
+
+    /// セッション単位を持たないソース（Codex 等）の既定。
+    func sessions(from: String, to: String) async -> [CostSnapshot.Session] { [] }
 }
