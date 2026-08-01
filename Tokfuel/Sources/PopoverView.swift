@@ -37,8 +37,10 @@ struct PopoverView: View {
                     if let report = store.report {
                         chartSection(report)
                         modelBreakdown(report)
+                        // セッションは二次ソースも出せるのでソースモードの外に置く。
+                        // 節約のヒントは retok（Claude）だけが持つので中に残す。
+                        topSessionsSection(report)
                         if settings.costSourceMode.includesClaude {
-                            topSessionsSection(report)
                             adviceSection(report)
                         }
                     } else if store.retokError == nil {
@@ -337,19 +339,28 @@ struct PopoverView: View {
         }
     }
 
+    /// 高コストの会話。Claude（retok のセッション）と二次ソース（Cursor の会話）を
+    /// コスト降順で 1 本のリストにする。どちらの会話かが分かるようソース名を添え、
+    /// ローカル DB から起こした二次ソースには「推定」まで添える（合計とは別物）。
     @ViewBuilder
     private func topSessionsSection(_ report: RetokReport) -> some View {
-        if !report.topSessions.isEmpty {
+        let rows = store.topSessionRows(for: report)
+        if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("高コストのセッション")
-                ForEach(report.topSessions.prefix(3)) { session in
-                    HStack(spacing: 8) {
-                        Text(session.project)
+                ForEach(rows) { row in
+                    HStack(spacing: 6) {
+                        Text(row.title)
                             .font(.caption)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                        Spacer()
-                        Text(Self.money(session.cost))
+                        Text(row.isEstimated ? "\(row.source)（推定）" : row.source)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                            .fixedSize()
+                        Spacer(minLength: 4)
+                        Text(Self.money(row.cost))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }

@@ -81,6 +81,10 @@ final class UsageStore: ObservableObject {
     /// ユーザーが実際にサインインしに行った回だけに限る。
     @Published var awaitingSignInRecheck = false
 
+    /// driver.id → セッション（会話）別の内訳。「高コストのセッション」で Claude の
+    /// retok セッションとマージする。セッションを識別できない driver は現れない。
+    @Published var driverSessionsByID: [String: [CostSnapshot.Session]] = [:]
+
     /// ScreenshotRenderer が UsageStore の初期化前に UserDefaults へ直接書くため公開している。
     nonisolated static let costChartStyleKey = "costChartStyle"
     nonisolated static let reportPeriodKey = "reportPeriod"
@@ -308,6 +312,7 @@ final class UsageStore: ObservableObject {
                 days: days, lang: lang, projectsDir: projectsOverride, provider: "claude"
             )
             async let driverTask = self.fetchDriverSnapshots(from: from, to: to)
+            async let sessionTask = self.fetchDriverSessions(from: from, to: to)
 
             do {
                 let r = try await retokTask
@@ -331,6 +336,11 @@ final class UsageStore: ObservableObject {
             // 日別とモデル別を同じ取得結果から一括更新する。フォールバック後に古いモデル別だけ
             // 残る状態を作らないため、空の内訳も含めて毎回置き換える。
             self.applyDriverSnapshots(snapshots)
+
+            // セッション別も同じ世代で置き換える（古い会話が残り続けないように）。
+            let sessions = await sessionTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            self.applyDriverSessions(sessions)
         }
     }
 
@@ -504,6 +514,12 @@ extension UsageStore {
         driverHealthByID = snapshots.mapValues(\.health)
     }
 
+    /// セッション別内訳を置き換える。applyDriverSnapshots と同じく、取得できなかった回は
+    /// 空になる（古い会話を残さない）。
+    func applyDriverSessions(_ sessions: [String: [CostSnapshot.Session]]) {
+        driverSessionsByID = sessions
+    }
+
     /// 劣化した二次ソース 1 件ぶんの注意書き。金額の 0 を「使っていない」と誤読させないため、
     /// UI はこれをそのまま金額の近くに出す。
     struct SourceWarning: Identifiable, Equatable {
@@ -579,6 +595,19 @@ extension UsageStore {
         var byID: [String: CostSnapshot] = [:]
         for driver in costDrivers where driver.isAvailable {
             byID[driver.id] = await driver.snapshot(from: from, to: to)
+        }
+        return byID
+    }
+
+    /// セッション別内訳を持つ driver（既定実装は空）から会話を集める。
+    /// 空のソースはキーごと落とし、UI 側で「0 件のソース」を気にしなくてよくする。
+    private func fetchDriverSessions(
+        from: String, to: String
+    ) async -> [String: [CostSnapshot.Session]] {
+        var byID: [String: [CostSnapshot.Session]] = [:]
+        for driver in costDrivers where driver.isAvailable {
+            let sessions = await driver.sessions(from: from, to: to)
+            if !sessions.isEmpty { byID[driver.id] = sessions }
         }
         return byID
     }
@@ -746,5 +775,53 @@ extension UsageStore {
             rows += cursor.map { ModelCostRow(source: "Cursor", model: $0.0, cost: $0.1) }
             return rows
         }
+    }
+
+    // MARK: - 高コストのセッション
+
+    /// セッション 1 行。Claude（retok）と二次ソースを同じ形にそろえ、1 本のリストに混ぜる。
+    struct TopSessionRow: Identifiable {
+        let id: String
+        /// ソース名（"Claude" / "Cursor" …）。モデル別内訳と同じく行に添えて区別する。
+        let source: String
+        let title: String
+        let cost: Double
+        /// ローカル DB から起こした推定額か。UI は「推定」と添えて、ヒーローの合計とは
+        /// 別物であることを示す（Cursor はダッシュボード API の合計と桁がそろわないことがある）。
+        let isEstimated: Bool
+    }
+
+    /// セクションに出す件数。
+    static let topSessionLimit = 3
+
+    /// Claude（retok）と二次ソースの会話をコスト降順でマージした上位数件。
+    /// `costSourceMode` に従い、含めないソースの行は作らない（`claudeOnly` なら Cursor 行なし）。
+    /// 二次ソースは driver が返した会話だけを並べる —— ローカル走査が空になる環境（#73）では
+    /// 単に行が増えず、両ソースとも 0 件ならセクションごと消える。
+    func topSessionRows(for report: RetokReport, limit: Int = topSessionLimit) -> [TopSessionRow] {
+        let mode = settings.costSourceMode
+        var rows: [TopSessionRow] = []
+        if mode.includesClaude {
+            rows += report.topSessions.map {
+                TopSessionRow(id: "\(Self.claudeSourceLabel)|\($0.session)",
+                              source: Self.claudeSourceLabel,
+                              title: $0.project, cost: $0.cost, isEstimated: false)
+            }
+        }
+        if mode.includesCursor {
+            let names = secondarySourceNames
+            for (id, sessions) in driverSessionsByID {
+                let source = names[id] ?? id
+                rows += sessions.map {
+                    TopSessionRow(id: "\(id)|\($0.id)", source: source,
+                                  title: $0.title, cost: $0.cost, isEstimated: true)
+                }
+            }
+        }
+        // 並びが driver の辞書順に揺れないよう、同額は ID で決める。
+        let sorted = rows
+            .filter { $0.cost > 0 }
+            .sorted { $0.cost == $1.cost ? $0.id < $1.id : $0.cost > $1.cost }
+        return Array(sorted.prefix(limit))
     }
 }

@@ -40,6 +40,8 @@ enum ScreenshotRenderer {
     static let dailyBudgetLimit: Double = 20
     /// Cursor（二次ソース）の今日のコスト。並べて表示モードで Claude と並ぶ絵になる。
     static let cursorTodayCost: Double = 4.20
+    /// ポップオーバー本体のサイズ（PopoverView 自身の `.frame` と同じ）。
+    static let popoverSize = CGSize(width: 360, height: 520)
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     static let previewUpdateVersion = "0.1.0"
 
@@ -117,6 +119,8 @@ enum ScreenshotRenderer {
     /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
     ///   断っている状態
     /// - `popover-cursor-signin`: 同じ注意書きに、サインインし直すボタンが付いた状態
+    /// - `popover-sessions`: ポップオーバー単体を末尾までスクロールした状態
+    ///   （折り返しの下にある「高コストのセッション」を Claude + Cursor で写す）
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
@@ -134,6 +138,9 @@ enum ScreenshotRenderer {
             ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
             ("popover-cursor-signin", try renderPNG(
                 store: degradedCursorStore(reason: .credentialsRejected))),
+            ("popover-sessions", try renderStandalone(
+                PopoverView(store: sessionsFixtureStore()),
+                probeSize: popoverSize, scrollsToBottom: true)),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
@@ -358,7 +365,34 @@ enum ScreenshotRenderer {
         return store
     }
 
-    static func fixtureReport() -> RetokReport {
+    /// 「高コストのセッション」を写すためのフィクスチャ（TF-0077）。README の 1 枚目には
+    /// 折り返しの下で入らないので、`popover-sessions` 画面だけがこちらを使う。
+    static func sessionsFixtureStore() -> UsageStore {
+        let store = fixtureStore()
+        store.report = fixtureReport(topSessions: claudeTopSessions)
+        store.driverSessionsByID = ["cursor": cursorSessions]
+        return store
+    }
+
+    /// Claude（retok）側のセッション。Cursor 側と交互に並ぶ金額にして、マージの絵にする。
+    static let claudeTopSessions: [RetokReport.TopSession] = [
+        RetokReport.TopSession(session: "8f2c1a4b", project: "tokfuel/menu-bar-gauge",
+                               cost: 18.42, prompts: 64, maxContext: 168_000),
+        RetokReport.TopSession(session: "3b90de17", project: "tokfuel/cost-popover",
+                               cost: 7.05, prompts: 22, maxContext: 92_000)
+    ]
+
+    /// Cursor（二次ソース）側の会話。ローカル DB からの推定なので UI に「推定」が付く。
+    static var cursorSessions: [CostSnapshot.Session] {
+        [
+            CostSnapshot.Session(id: "0041d255", title: "SwiftUI のレイアウト崩れを直す",
+                                 cost: 11.20, messages: 38, lastUsed: dateString(daysAgo: 0)),
+            CostSnapshot.Session(id: "9c7ee301", title: CursorUsageReader.untitledSessionTitle,
+                                 cost: 2.60, messages: 9, lastUsed: dateString(daysAgo: 2))
+        ]
+    }
+
+    static func fixtureReport(topSessions: [RetokReport.TopSession] = []) -> RetokReport {
         var daily: [String: RetokReport.DailyCost] = [:]
         for (offset, cost) in dailyCosts.reversed().enumerated() {
             daily[dateString(daysAgo: offset)] = RetokReport.DailyCost(cost: cost,
@@ -379,9 +413,10 @@ enum ScreenshotRenderer {
             },
             daily: daily,
             // ポップオーバーはスクロールするが、README には最初の 1 画面しか写らない。
-            // 高コストのセッションと節約のヒントは折り返しの下になるため空にしておく。
+            // 節約のヒントは折り返しの下になるため空にしておく。高コストのセッションは
+            // ui-preview の `popover-sessions` 画面だけが積む。
             advice: [],
-            topSessions: []
+            topSessions: topSessions
         )
     }
 
