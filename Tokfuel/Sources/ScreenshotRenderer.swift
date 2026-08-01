@@ -134,6 +134,8 @@ enum ScreenshotRenderer {
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
+    /// - `budget-alert`: 予算アラートのウィンドウ（TF #81。ライブな `UsageStore` は通さず、
+    ///   `budgetAlertContent` のフィクスチャだけを描く）
     static func allScreens() throws -> [(name: String, data: Data)] {
         let store = fixtureStore()
         // 設定は自身が .frame(width: 460, height: 620) を持つ（SettingsView.swift）ので
@@ -141,6 +143,8 @@ enum ScreenshotRenderer {
         // 高さは余裕を持った probeSize から実際の fittingSize へ縮める。
         let settingsSize = CGSize(width: 460, height: 620)
         let aboutProbeSize = CGSize(width: 320, height: 800)
+        // 予算アラートは幅 360 だけを持つので、高さは fittingSize へ縮める（About と同じ）。
+        let alertProbeSize = CGSize(width: 360, height: 400)
         return [
             ("popover", try renderPNG(store: store)),
             ("popover-update", try renderPNG(store: store,
@@ -159,7 +163,9 @@ enum ScreenshotRenderer {
             ("settings-debug", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true, initiallyShowsDebug: true),
                 probeSize: settingsSize, scrollsToBottom: true)),
-            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize))
+            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize)),
+            ("budget-alert", try renderStandalone(BudgetAlertView(content: budgetAlertContent),
+                                                  probeSize: alertProbeSize))
         ]
     }
 
@@ -290,6 +296,7 @@ enum ScreenshotRenderer {
         settings.dailyBudgetLimit = dailyBudgetLimit
         settings.budgetWarnPercent = 80
         settings.budgetPeriod = .calendarMonth
+        settings.budgetAlertStyle = .notification
         // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
         settings.costSourceMode = .sideBySide
         // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
@@ -392,6 +399,16 @@ enum ScreenshotRenderer {
         store.driverDailyByID = ["cursor": [:]]
         store.driverHealthByID = ["cursor": .degraded(reason)]
         return store
+    }
+
+    /// 予算アラート（TF #81）のフィクスチャ。ライブな `UsageStore` は通さず、他の絵と同じ
+    /// `budgetSpend` / `budgetLimit` から作るので、ポップオーバーの予算ゲージと数字が揃う。
+    /// 250 / 300 は警告レベルなので `message` は必ず返る（nil になるのは `.ok` のときだけ）。
+    static var budgetAlertContent: BudgetAlertContent {
+        BudgetAlertContent(
+            kind: .monthly, level: .warning, spend: budgetSpend, limit: budgetLimit,
+            message: BudgetMonitor.message(kind: .monthly, level: .warning,
+                                           spend: budgetSpend, limit: budgetLimit)!)
     }
 
     /// 「高コストのセッション」を写すためのフィクスチャ（TF-0077）。README の 1 枚目には

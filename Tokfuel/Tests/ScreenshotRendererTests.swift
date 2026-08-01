@@ -121,6 +121,16 @@ struct ScreenshotFixtureTests {
                                     warnPercent: 80) == .warning)
     }
 
+    @Test func 予算アラートのフィクスチャは警告状態で文面を持つ() {
+        // 絵に出る金額はポップオーバーの予算ゲージと同じ組み合わせにする（TF #81）。
+        let content = ScreenshotRenderer.budgetAlertContent
+        #expect(content.level == .warning)
+        #expect(content.spend == ScreenshotRenderer.budgetSpend)
+        #expect(content.limit == ScreenshotRenderer.budgetLimit)
+        #expect(content.percent == 83)
+        #expect(!content.message.title.isEmpty)
+    }
+
     @Test func 日次予算は超過しない() {
         let today = ScreenshotRenderer.dailyCosts.last ?? 0
         #expect(BudgetMonitor.level(spend: today,
