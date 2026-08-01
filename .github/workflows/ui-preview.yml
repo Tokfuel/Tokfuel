@@ -70,11 +70,7 @@ jobs:
               *) echo "$1" ;;
             esac
           }
-<<<<<<< HEAD
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin settings settings-advanced settings-debug about budget-alert)
-=======
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about)
->>>>>>> origin/main
+          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

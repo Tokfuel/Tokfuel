@@ -401,7 +401,6 @@ enum ScreenshotRenderer {
         return store
     }
 
-<<<<<<< HEAD
     /// 予算アラート（TF #81）のフィクスチャ。ライブな `UsageStore` は通さず、他の絵と同じ
     /// `budgetSpend` / `budgetLimit` から作るので、ポップオーバーの予算ゲージと数字が揃う。
     /// 250 / 300 は警告レベルなので `message` は必ず返る（nil になるのは `.ok` のときだけ）。
@@ -412,8 +411,6 @@ enum ScreenshotRenderer {
                                            spend: budgetSpend, limit: budgetLimit)!)
     }
 
-    static func fixtureReport() -> RetokReport {
-=======
     /// 「高コストのセッション」を写すためのフィクスチャ（TF-0077）。README の 1 枚目には
     /// 折り返しの下で入らないので、`popover-sessions` 画面だけがこちらを使う。
     /// 末尾までスクロールするので、その下の節約のヒントは空にしてセッションが写るようにする。
@@ -458,7 +455,6 @@ enum ScreenshotRenderer {
         topSessions: [RetokReport.TopSession] = [],
         advice: [RetokReport.Advice] = fixtureAdvice
     ) -> RetokReport {
->>>>>>> origin/main
         var daily: [String: RetokReport.DailyCost] = [:]
         for (offset, cost) in dailyCosts.reversed().enumerated() {
             daily[dateString(daysAgo: offset)] = RetokReport.DailyCost(cost: cost,
