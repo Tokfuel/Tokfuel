@@ -67,6 +67,27 @@ enum Money {
     nonisolated static func unitSymbol(currency: DisplayCurrency, rate: Double) -> String {
         currency == .jpy && rate > 0 ? "¥" : "$"
     }
+
+    /// チャート Y 軸向けの短い表記。プロット値は表示通貨建て（`displayAmount`）を渡す。
+    /// 円は桁区切りを付けず、1 万以上は「万」に畳んで軸幅を抑える。
+    nonisolated static func formatAxis(
+        _ displayAmount: Double,
+        currency: DisplayCurrency,
+        rate: Double
+    ) -> String {
+        if currency == .jpy, rate > 0 {
+            let yen = displayAmount.rounded()
+            if abs(yen) >= 10_000 {
+                let man = yen / 10_000
+                if man == man.rounded() {
+                    return "¥\(Int(man))万"
+                }
+                return String(format: "¥%.1f万", man)
+            }
+            return "¥\(Int(yen))"
+        }
+        return String(format: "$%.0f", displayAmount.rounded())
+    }
 }
 
 /// Frankfurter API (https://frankfurter.dev) から USD→JPY レートを取得する。

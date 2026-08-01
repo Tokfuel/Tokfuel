@@ -210,20 +210,32 @@ struct PopoverView: View {
             // 軸は両形式で共通: X はラベルのみ（縦グリッドとティックは引かない）、
             // Y は水平線 2〜3 本 — 色と線は情報を持つときだけ使う（TF #53）。
             .chartXAxis {
-                AxisMarks(values: xAxisValues(report)) { _ in
-                    AxisValueLabel()
-                }
-            }
-            .chartYAxis {
-                AxisMarks(values: .automatic(desiredCount: 3)) { value in
-                    AxisGridLine()
+                let period = store.reportPeriod
+                AxisMarks(values: xAxisValues(report)) { value in
                     AxisValueLabel {
-                        if let v = value.as(Double.self) {
-                            Text("$\(Int(v))")
+                        if let short = value.as(String.self) {
+                            Text(verbatim: Self.xAxisLabel(short, period: period))
+                                .font(.caption2)
                         }
                     }
                 }
             }
+            // 系列を表示通貨建てで描くので、automatic の目盛りも円なら 0 / 500 / 1000
+            // のようにきれいな整数になる（USD 目盛りをラベルだけ換算すると端数が残る）。
+            .chartYAxis {
+                let currency = settings.displayCurrency
+                let rate = Money.currentRate()
+                AxisMarks(values: .automatic(desiredCount: 3)) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let v = value.as(Double.self) {
+                            Text(verbatim: Money.formatAxis(v, currency: currency, rate: rate))
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .id(settings.displayCurrency)
             .frame(height: 110)
             // 再解析中も前回の絵を隠さない。右下の小さなインジケーターだけで進行を示す
             // （stale-while-revalidate — TF #53）。
@@ -246,7 +258,7 @@ struct PopoverView: View {
         return Chart(rows, id: \.id) { row in
             BarMark(
                 x: .value("Date", shortDate(row.date)),
-                y: .value("USD", row.cost)
+                y: .value("Cost", chartAmount(row.cost))
             )
             .foregroundStyle(by: .value("Source", row.source))
             .cornerRadius(2)
@@ -269,13 +281,13 @@ struct PopoverView: View {
             ForEach(points) { point in
                 LineMark(
                     x: .value("Date", shortDate(point.date)),
-                    y: .value("USD", point.total)
+                    y: .value("Cost", chartAmount(point.total))
                 )
             }
             .foregroundStyle(Color.accentColor)
             .lineStyle(StrokeStyle(lineWidth: 2))
             if case let .referenceLine(limit) = store.cumulativeBudgetAnnotation {
-                RuleMark(y: .value("USD", limit))
+                RuleMark(y: .value("Cost", chartAmount(limit)))
                     .foregroundStyle(.tertiary)
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     // プロット領域の外へはみ出すと金額軸や余白に食い込むため、チャート内に収める。
@@ -287,6 +299,14 @@ struct PopoverView: View {
                     }
             }
         }
+    }
+
+    /// チャート系列用。内部 USD を表示通貨建てに直す（軸のきれいな目盛りのため）。
+    private func chartAmount(_ usd: Double) -> Double {
+        Money.displayAmount(
+            forUSD: usd,
+            currency: settings.displayCurrency,
+            rate: Money.currentRate())
     }
 
     /// チャート直下の副次統計 1 行。期間合計と（Claude を含むときだけ）プロンプト単価、
@@ -538,23 +558,90 @@ struct PopoverView: View {
                 })
     }
 
-    /// X 軸に出す日付ラベル。10 日を超える期間では設定した週始まりの日だけに間引く
-    /// （今月・今年表示で全日付が潰れて読めなくなるのを防ぐ）。
+    /// X 軸に出すカテゴリ値（`shortDate` と同じ MM/DD）。チャートの X と一致させる。
     private func xAxisValues(_ report: RetokReport) -> [String] {
-        let days = report.dailySorted
-        guard days.count > 10 else { return days.map { shortDate($0.date) } }
+        let dates: [String]
+        switch store.costChartStyle {
+        case .cumulative:
+            // 累積は窓の全日がカテゴリになるので、ラベル候補も窓に合わせる。
+            dates = UsageStore.windowDates(days: report.periodDays)
+        case .daily:
+            let fromRows = Array(Set(store.chartRows(for: report).map(\.date))).sorted()
+            if fromRows.isEmpty {
+                // chartRows が空でも、retok の余剰日を軸に載せない。
+                let from = UsageStore.reportWindowStart(days: report.periodDays)
+                dates = report.dailySorted.map(\.date).filter { $0 >= from }
+            } else {
+                dates = fromRows
+            }
+        }
+        return Self.xAxisShortDates(
+            fromISODates: dates,
+            period: store.reportPeriod,
+            weekStart: settings.weekStart.weekday)
+    }
+
+    /// 期間に応じて X 軸ラベル用の MM/DD を間引く。今年は月初だけ（必要ならさらに間引く）。
+    nonisolated static func xAxisShortDates(
+        fromISODates dates: [String],
+        period: ReportPeriod,
+        weekStart: Int
+    ) -> [String] {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd"
-        let weekStart = settings.weekStart.weekday
-        return days.filter { day in
-            guard let date = f.date(from: day.date) else { return false }
-            return Calendar.current.component(.weekday, from: date) == weekStart
-        }.map { shortDate($0.date) }
+        switch period {
+        case .today, .thisWeek:
+            return dates.map(shortDate)
+        case .thisMonth:
+            guard dates.count > 10 else { return dates.map(shortDate) }
+            return dates.filter { iso in
+                guard let date = f.date(from: iso) else { return false }
+                return Calendar.current.component(.weekday, from: date) == weekStart
+            }.map(shortDate)
+        case .thisYear:
+            // 週ごとだと約 52 個になり潰れる。月初に落とす。多すぎるときだけ均等間引き。
+            let monthStarts = dates.filter { iso in
+                guard let date = f.date(from: iso) else { return false }
+                return Calendar.current.component(.day, from: date) == 1
+            }
+            let picks = monthStarts.isEmpty
+                ? evenlySpaced(dates, maxCount: 6)
+                : evenlySpaced(monthStarts, maxCount: 6)
+            return picks.map(shortDate)
+        }
+    }
+
+    /// 軸に載せる文字列。今年は「M月」にして幅を抑える（カテゴリ値自体は MM/DD のまま）。
+    nonisolated static func xAxisLabel(_ shortDate: String, period: ReportPeriod) -> String {
+        guard period == .thisYear else { return shortDate }
+        let parts = shortDate.split(separator: "/")
+        guard let month = parts.first.flatMap({ Int($0) }) else { return shortDate }
+        return "\(month)月"
+    }
+
+    /// 先頭と末尾を含むよう、最大 `maxCount` 個へ均等に間引く。
+    nonisolated static func evenlySpaced(_ items: [String], maxCount: Int) -> [String] {
+        guard maxCount > 0, !items.isEmpty else { return [] }
+        guard items.count > maxCount, maxCount > 1 else { return items }
+        var result: [String] = []
+        var seen = Set<Int>()
+        for i in 0..<maxCount {
+            let index = Int((Double(i) * Double(items.count - 1)
+                             / Double(maxCount - 1)).rounded())
+            if seen.insert(index).inserted {
+                result.append(items[index])
+            }
+        }
+        return result
     }
 
     private func shortDate(_ date: String) -> String {
+        Self.shortDate(date)
+    }
+
+    nonisolated static func shortDate(_ date: String) -> String {
         let parts = date.split(separator: "-")
         return parts.count == 3 ? "\(parts[1])/\(parts[2])" : date
     }
