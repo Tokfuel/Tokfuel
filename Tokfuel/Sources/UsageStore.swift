@@ -719,17 +719,11 @@ extension UsageStore {
         let from = Self.reportWindowStart(days: report.periodDays)
         let showsClaude = mode.includes(sourceID: CostSourceMode.claudeSourceID)
         var dates = Set<String>()
-<<<<<<< HEAD
-        if mode.includesClaude {
+        if showsClaude {
             dates.formUnion(claudeByDate.keys.filter { $0 >= from })
         }
-        if mode.includesCursor {
-            for byDate in driverDailyByID.values { dates.formUnion(byDate.keys.filter { $0 >= from }) }
-=======
-        if showsClaude { dates.formUnion(claudeByDate.keys) }
         for (id, byDate) in driverDailyByID where mode.includes(sourceID: id) {
             dates.formUnion(byDate.keys.filter { $0 >= from })
->>>>>>> origin/main
         }
         let driverNames = secondarySourceNames
         return dates.sorted().flatMap { date -> [ChartRow] in
@@ -833,21 +827,15 @@ extension UsageStore {
     /// Claude / 二次ソースとも表示窓に絞る（retok の余剰日や予算窓の補完分を数えない）。
     func periodTotalCost(for report: RetokReport) -> Double {
         let from = Self.reportWindowStart(days: report.periodDays)
-<<<<<<< HEAD
-        let claude = report.daily
-            .filter { $0.key >= from }
-            .values.reduce(0) { $0 + $1.cost }
-        let cursor = driverDaily.filter { $0.key >= from }.values.reduce(0, +)
-        return Self.displayedSpend(
-            claude: claude, cursor: cursor,
-            mode: settings.costSourceMode)
-=======
-        var bySource = [CostSourceMode.claudeSourceID: report.totals.cost]
+        var bySource = [
+            CostSourceMode.claudeSourceID: report.daily
+                .filter { $0.key >= from }
+                .values.reduce(0) { $0 + $1.cost }
+        ]
         for (id, byDate) in driverDailyByID {
             bySource[id] = byDate.filter { $0.key >= from }.values.reduce(0, +)
         }
         return Self.displayedSpend(bySource: bySource, mode: settings.costSourceMode)
->>>>>>> origin/main
     }
 
     /// 「モデル別」セクション用の行。ソースフィルタと内訳モードに従う。
