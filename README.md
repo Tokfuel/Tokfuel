@@ -54,16 +54,11 @@
   sign-in, the popover offers a button that brings Cursor to the front — you sign in there,
   in Cursor's own UI, and Tokfuel picks the new session up. Pricing for the fallback path is
   refreshed once a day from Cursor's published price table.
-<<<<<<< HEAD
   Top sessions lists Cursor conversations next to Claude's, estimated from the local
   database (the dashboard API has no per-conversation breakdown).
-  In Settings, choose combined / Claude only / Cursor only / side-by-side — the popover
-  and menu bar both follow that choice (budget gauges still use the included sum).
-=======
   In Settings, choose combined / Claude only / Cursor only / Codex only / side-by-side —
   the popover and menu bar both follow that choice (budget gauges still use the included
   sum). "Codex only" appears once Codex CLI is present on the Mac.
->>>>>>> origin/claude/codex-only-source
 
 - 🤖 **Codex, too**
 
