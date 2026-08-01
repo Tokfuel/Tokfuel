@@ -108,9 +108,8 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、すべての
   実装する PR は、タイトル先頭に `[TF-NNNN]` を付ける。
 - UI の状態は `@MainActor` に置く。`UsageStore` を唯一の情報源に保ち、`PopoverView` は
   純粋な表示層のまま。設定は `AppSettings`（UserDefaults ベース）に置く。
-- Git hooks は [`.githooks/`](.githooks/) で管理する。`core.hooksPath` はローカル設定なので
-  リポジトリには含まれない。セッション開始時、クローン直後、または `.githooks/` に更新が
-  あったときは、次で取り込む。
+- Git hooks は [`.githooks/`](.githooks/) で管理する。セッション開始時、クローン直後、または
+  `.githooks/` に更新があったときは、次で取り込む。
 
   ```bash
   bash scripts/setup.sh
