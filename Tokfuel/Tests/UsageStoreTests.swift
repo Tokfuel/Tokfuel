@@ -206,6 +206,92 @@ struct UsageStoreDegradedSourceTests {
     }
 }
 
+/// 「高コストのセッション」の Claude / 二次ソースのマージ（TF-0077）。
+@MainActor
+struct UsageStoreTopSessionTests {
+    private func report(_ sessions: [(String, String, Double)]) -> RetokReport {
+        RetokReport(
+            periodDays: 30, filesScanned: 0, totals: .init(), cacheHitRate: 0,
+            perModel: [:], daily: [:], advice: [],
+            topSessions: sessions.map {
+                RetokReport.TopSession(session: $0.0, project: $0.1, cost: $0.2,
+                                       prompts: 1, maxContext: 1)
+            })
+    }
+
+    private func session(_ id: String, _ title: String, _ cost: Double) -> CostSnapshot.Session {
+        CostSnapshot.Session(id: id, title: title, cost: cost, messages: 1,
+                             lastUsed: "2026-07-30")
+    }
+
+    /// 共有設定を汚さないよう、テストごとに専用の UserDefaults スイートで store を作る。
+    private func store(mode: CostSourceMode) -> UsageStore {
+        let settings = AppSettings(defaults: UserDefaults(suiteName: "top-sessions-\(UUID())")!)
+        settings.costSourceMode = mode
+        return UsageStore(settings: settings)
+    }
+
+    @Test func コスト降順にマージして上位3件だけ出す() {
+        let store = store(mode: .combined)
+        let report = report([("s1", "claude-a", 18.0), ("s2", "claude-b", 4.0)])
+        store.driverSessionsByID = ["cursor": [session("c1", "cursor-a", 11.0),
+                                               session("c2", "cursor-b", 1.0)]]
+
+        let rows = store.topSessionRows(for: report)
+        #expect(rows.map(\.title) == ["claude-a", "cursor-a", "claude-b"])
+        #expect(rows.map(\.source) == ["Claude", "Cursor", "Claude"])
+        #expect(rows.map(\.isEstimated) == [false, true, false])
+    }
+
+    @Test func claudeのみのモードではCursorの行を出さない() {
+        let report = report([("s1", "claude-a", 4.0)])
+        let sessions = ["cursor": [session("c1", "cursor-a", 11.0)]]
+
+        let claudeOnly = store(mode: .claudeOnly)
+        claudeOnly.driverSessionsByID = sessions
+        #expect(claudeOnly.topSessionRows(for: report).map(\.title) == ["claude-a"])
+
+        let cursorOnly = store(mode: .cursorOnly)
+        cursorOnly.driverSessionsByID = sessions
+        #expect(cursorOnly.topSessionRows(for: report).map(\.title) == ["cursor-a"])
+    }
+
+    /// ローカル走査が空になる環境（#73）では Cursor 行が増えないだけで、$0 の行は並ばない。
+    @Test func 二次ソースが空なら行は増えない() {
+        let store = store(mode: .combined)
+        #expect(store.topSessionRows(for: report([("s1", "claude-a", 4.0)])).count == 1)
+    }
+
+    @Test func 両ソースとも空なら行が無くセクションは消える() {
+        #expect(store(mode: .combined).topSessionRows(for: report([])).isEmpty)
+    }
+
+    @Test func ゼロ円のセッションは並べない() {
+        let store = store(mode: .combined)
+        store.driverSessionsByID = ["cursor": [session("c1", "cursor-zero", 0)]]
+        #expect(store.topSessionRows(for: report([("s1", "claude-a", 4.0)])).map(\.title)
+                == ["claude-a"])
+    }
+
+    @Test func 同額でも並びが揺れない() {
+        let store = store(mode: .combined)
+        let report = report([("s1", "claude-a", 5.0)])
+        store.driverSessionsByID = ["cursor": [session("c1", "cursor-a", 5.0)]]
+
+        let first = store.topSessionRows(for: report).map(\.id)
+        for _ in 0..<20 {
+            #expect(store.topSessionRows(for: report).map(\.id) == first)
+        }
+    }
+
+    @Test func 新しい取得結果で古い会話を置き換える() {
+        let store = UsageStore()
+        store.driverSessionsByID = ["cursor": [session("stale", "古い会話", 9)]]
+        store.applyDriverSessions([:])
+        #expect(store.driverSessionsByID.isEmpty)
+    }
+}
+
 /// メニューバーの割合表示の分母になる日次平均。
 /// 使い始めた直後でも不当に小さくならないことが要点。
 @MainActor
