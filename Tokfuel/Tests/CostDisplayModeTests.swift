@@ -3,18 +3,69 @@ import Testing
 @testable import Tokfuel
 
 @Suite struct CostDisplayModeTests {
+    private static let bySource = ["claude": 4.0, "cursor": 2.0, "codex": 1.0]
+
     @Test func displayedSpendはモードごとに合成する() {
-        #expect(UsageStore.displayedSpend(claude: 4, cursor: 2, mode: .combined) == 6)
-        #expect(UsageStore.displayedSpend(claude: 4, cursor: 2, mode: .sideBySide) == 6)
-        #expect(UsageStore.displayedSpend(claude: 4, cursor: 2, mode: .claudeOnly) == 4)
-        #expect(UsageStore.displayedSpend(claude: 4, cursor: 2, mode: .cursorOnly) == 2)
+        let spend = Self.bySource
+        #expect(UsageStore.displayedSpend(bySource: spend, mode: .combined) == 7)
+        #expect(UsageStore.displayedSpend(bySource: spend, mode: .sideBySide) == 7)
+        #expect(UsageStore.displayedSpend(bySource: spend, mode: .claudeOnly) == 4)
+        #expect(UsageStore.displayedSpend(bySource: spend, mode: .cursorOnly) == 2)
+        #expect(UsageStore.displayedSpend(bySource: spend, mode: .codexOnly) == 1)
     }
 
-    @Test func includesフラグは並べてでも両方true() {
-        #expect(CostSourceMode.sideBySide.includesClaude)
-        #expect(CostSourceMode.sideBySide.includesCursor)
-        #expect(!CostSourceMode.claudeOnly.includesCursor)
-        #expect(!CostSourceMode.cursorOnly.includesClaude)
+    @Test func includesはソースid単位で判定する() {
+        #expect(CostSourceMode.sideBySide.includes(sourceID: "claude"))
+        #expect(CostSourceMode.sideBySide.includes(sourceID: "cursor"))
+        #expect(CostSourceMode.sideBySide.includes(sourceID: "codex"))
+        #expect(!CostSourceMode.claudeOnly.includes(sourceID: "cursor"))
+        #expect(!CostSourceMode.claudeOnly.includes(sourceID: "codex"))
+        #expect(!CostSourceMode.cursorOnly.includes(sourceID: "claude"))
+        #expect(!CostSourceMode.cursorOnly.includes(sourceID: "codex"))
+        #expect(CostSourceMode.codexOnly.includes(sourceID: "codex"))
+        #expect(!CostSourceMode.codexOnly.includes(sourceID: "claude"))
+        #expect(!CostSourceMode.codexOnly.includes(sourceID: "cursor"))
+        // 未知のドライバが増えても、合算には入り「◯◯ のみ」には混ざらない。
+        #expect(CostSourceMode.combined.includes(sourceID: "gemini"))
+        #expect(!CostSourceMode.cursorOnly.includes(sourceID: "gemini"))
+    }
+
+    @Test func Codex未インストールなら選択肢から外す() {
+        #expect(CostSourceMode.available(codexInstalled: true).contains(.codexOnly))
+        #expect(!CostSourceMode.available(codexInstalled: false).contains(.codexOnly))
+        // 他の選択肢は減らさない。
+        #expect(CostSourceMode.available(codexInstalled: false).count
+                == CostSourceMode.allCases.count - 1)
+        #expect(CostSourceMode.resolved(.codexOnly, codexInstalled: false) == .combined)
+        #expect(CostSourceMode.resolved(.codexOnly, codexInstalled: true) == .codexOnly)
+        #expect(CostSourceMode.resolved(.cursorOnly, codexInstalled: false) == .cursorOnly)
+    }
+}
+
+@MainActor
+struct CostSourceModeSettingsTests {
+    /// 保存済みの `codexOnly` は、Codex が消えた Mac では合算として読み込む。
+    @Test func 保存済みのCodexのみは未インストールなら合算へ落ちる() {
+        let name = "tokfuel-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        defaults.set(CostSourceMode.codexOnly.rawValue, forKey: "costSourceMode")
+
+        #expect(AppSettings(defaults: defaults, codexInstalled: false).costSourceMode == .combined)
+        #expect(AppSettings(defaults: defaults, codexInstalled: true).costSourceMode == .codexOnly)
+        // 保存値そのものは書き換えない（Codex が戻れば選択も戻る）。
+        #expect(defaults.string(forKey: "costSourceMode") == CostSourceMode.codexOnly.rawValue)
+    }
+
+    @Test func ピッカーの選択肢はCodexの有無で変わる() {
+        let name = "tokfuel-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let without = AppSettings(defaults: defaults, codexInstalled: false)
+        #expect(!without.availableCostSourceModes.contains(.codexOnly))
+        let with = AppSettings(defaults: defaults, codexInstalled: true)
+        #expect(with.availableCostSourceModes.contains(.codexOnly))
     }
 }
 
@@ -67,6 +118,103 @@ struct CostSourceModeUsageStoreTests {
         withSourceMode(.claudeOnly) { #expect(store.todayCost == 4) }
         withSourceMode(.cursorOnly) { #expect(store.todayCost == 2) }
         withSourceMode(.sideBySide) { #expect(store.todayCost == 6) }
+    }
+
+    @Test func todayCostはCodexを単独で出せる() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4])
+        store.driverDailyByID = ["cursor": [today: 2], "codex": [today: 1]]
+
+        withSourceMode(.combined) { #expect(store.todayCost == 7) }
+        withSourceMode(.codexOnly) { #expect(store.todayCost == 1) }
+        withSourceMode(.cursorOnly) { #expect(store.todayCost == 2) }
+        withSourceMode(.claudeOnly) { #expect(store.todayCost == 4) }
+        // 並べて表示の Cursor 側は二次ソース合計のまま（この Issue では拡張しない）。
+        #expect(store.secondaryTodayCost == 3)
+        #expect(store.todayCost(forSource: CostSourceMode.codexSourceID) == 1)
+    }
+
+    /// Codex 未インストール（driverDailyByID に codex が無い）なら「Codex のみ」は $0。
+    @Test func Codexのデータが無ければCodexのみは0になる() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4])
+        store.driverDailyByID = ["cursor": [today: 2]]
+
+        withSourceMode(.codexOnly) {
+            #expect(store.todayCost == 0)
+            #expect(store.periodTotalCost(for: store.report!) == 0)
+            #expect(store.chartRows(for: store.report!).isEmpty)
+        }
+    }
+
+    @Test func 予算の消費もソースモードで合成する() {
+        let store = UsageStore()
+        store.setBudgetSpend(bySource: ["claude": 40, "cursor": 20, "codex": 10])
+
+        withSourceMode(.combined) { #expect(store.budgetSpend == 70) }
+        withSourceMode(.claudeOnly) { #expect(store.budgetSpend == 40) }
+        withSourceMode(.cursorOnly) { #expect(store.budgetSpend == 20) }
+        withSourceMode(.codexOnly) { #expect(store.budgetSpend == 10) }
+        // 予算の分母（settings.budgetLimit）は変わらず、消費だけが選んだソースぶんになる。
+        #expect(store.claudeBudgetSpend == 40)
+        #expect(store.secondaryBudgetSpend == 30)
+    }
+
+    /// 劣化警告と「金額が取れていない」は、表示対象に入っているドライバだけを見る。
+    @Test func 劣化警告は表示対象のソースだけ出す() {
+        let name = "tokfuel-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = AppSettings(defaults: defaults, codexInstalled: true)
+        let store = UsageStore(settings: settings)
+        let today = Self.dateString(Date())
+        store.applyDriverSnapshots([
+            "cursor": CostSnapshot(daily: [:], byModel: [:],
+                                   health: .degraded(.remoteUnavailable)),
+            "codex": CostSnapshot(daily: [today: 1], byModel: [:])
+        ])
+
+        // Codex は劣化していないので、Cursor の注意書きは出さないし金額も隠さない。
+        settings.costSourceMode = .codexOnly
+        #expect(store.degradedSourceWarnings.isEmpty)
+        #expect(store.todayCostUnavailable == false)
+        #expect(store.todayCost == 1)
+
+        settings.costSourceMode = .cursorOnly
+        #expect(store.degradedSourceWarnings.map(\.id) == ["cursor"])
+        #expect(store.todayCostUnavailable)
+
+        // Claude を含むモードは注意書きだけ出し、金額は隠さない（retok 側のエラー行が担う）。
+        settings.costSourceMode = .combined
+        #expect(store.degradedSourceWarnings.map(\.id) == ["cursor"])
+        #expect(store.todayCostUnavailable == false)
+    }
+
+    @Test func chartRowsはCodexのみでCodex系列だけ出す() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4])
+        store.driverDailyByID = ["cursor": [today: 2], "codex": [today: 1]]
+
+        withSourceMode(.codexOnly) {
+            let rows = store.chartRows(for: store.report!)
+            #expect(rows.count == 1)
+            #expect(rows.first?.source == "Codex")
+            #expect(rows.first?.cost == 1)
+        }
+    }
+
+    @Test func periodTotalCostはソースモードでフィルタする() {
+        let store = UsageStore()
+        let today = Self.dateString(Date())
+        store.report = report(daily: [today: 4])
+        store.driverDailyByID = ["cursor": [today: 2], "codex": [today: 1]]
+
+        withSourceMode(.combined) { #expect(store.periodTotalCost(for: store.report!) == 7) }
+        withSourceMode(.codexOnly) { #expect(store.periodTotalCost(for: store.report!) == 1) }
+        withSourceMode(.claudeOnly) { #expect(store.periodTotalCost(for: store.report!) == 4) }
     }
 
     @Test func chartRowsはソースモードで系列を絞る() {
@@ -136,6 +284,12 @@ struct CostSourceModeUsageStoreTests {
                 let rows = store.modelCostRows(for: store.report!)
                 #expect(rows.count == 1)
                 #expect(rows.first?.model == "gpt-5")
+            }
+        }
+        // Codex はモデル別内訳を持たないので、セクションごと空になる。
+        withSourceMode(.codexOnly) {
+            withModelBreakdown(.combined) {
+                #expect(store.modelCostRows(for: store.report!).isEmpty)
             }
         }
     }
