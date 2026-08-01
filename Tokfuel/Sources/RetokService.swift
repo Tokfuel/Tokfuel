@@ -82,6 +82,19 @@ struct RetokReport: Codable {
     }
 
     func cost(on date: String) -> Double? { daily[date]?.cost }
+
+    /// 日別コストだけを `other` で上書きした新しいレポート（TF-0080）。
+    ///
+    /// 追従モードは走査日数 1 日で retok を回すので、返るのは今日ぶんだけの薄いレポートになる。
+    /// それで丸ごと置き換えると推移グラフと期間合計が 1 日に痩せるため、日別だけを重ねる。
+    /// 合計・モデル別は次の長期集計（10 分間隔）で追いつく。
+    func merging(daily other: [String: DailyCost]) -> RetokReport {
+        var merged = daily
+        for (date, value) in other { merged[date] = value }
+        return RetokReport(periodDays: periodDays, filesScanned: filesScanned, totals: totals,
+                           cacheHitRate: cacheHitRate, perModel: perModel, daily: merged,
+                           advice: advice, topSessions: topSessions)
+    }
 }
 
 /// バンドルした retok（Python スクリプト）を実行して JSON レポートを得る。
