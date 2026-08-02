@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import AppKit
 
 @main
 struct TokfuelApp: App {
@@ -18,6 +19,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var settingsWindow: NSWindow?
     private var aboutWindow: NSWindow?
+    /// 初回 Analytics 同意ダイアログ。答えるまで保持する。
+    private var analyticsConsentWindow: NSWindow?
     private let usageStore = UsageStore()
     private let settings = AppSettings.shared
     private let updater = UpdateChecker.shared
@@ -95,6 +98,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
         updater.startPeriodicChecks()
 
+        // Firebase（#22）。配布ビルド以外では no-op。Analytics は同意後のみ。
+        AnalyticsService.shared.start()
+        promptAnalyticsConsentIfNeeded()
+
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
         if CommandLine.arguments.contains("--open-popover") {
@@ -103,6 +110,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         #endif
+    }
+
+    /// まだ Analytics 同意に答えていなければ初回ダイアログを出す。
+    /// 送信そのものは配布ビルド側のゲート（`RemoteDiagnosticsPolicy`）に従う。
+    /// Crashlytics は同意なしのためここでは扱わない。
+    /// 中身は `AnalyticsConsentView`（ui-preview と同じビュー）なので、文面を変えたら絵も追従する。
+    private func promptAnalyticsConsentIfNeeded() {
+        guard !settings.analyticsConsentAnswered else { return }
+        guard analyticsConsentWindow == nil else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let root = AnalyticsConsentView(
+                onAllow: { [weak self] in self?.finishAnalyticsConsent(allow: true) },
+                onDeny: { [weak self] in self?.finishAnalyticsConsent(allow: false) }
+            )
+            .tint(.orange)
+            let hosting = NSHostingController(rootView: root)
+            let window = NSWindow(contentViewController: hosting)
+            window.styleMask = [.titled, .closable]
+            window.title = AnalyticsConsentView.title
+            window.isReleasedWhenClosed = false
+            window.center()
+            self.analyticsConsentWindow = window
+            // accessory でもダイアログを前面に出す。
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    private func finishAnalyticsConsent(allow: Bool) {
+        settings.analyticsConsent = allow
+        analyticsConsentWindow?.orderOut(nil)
+        analyticsConsentWindow = nil
     }
 
     /// ストアと設定の変更を、メニューバー、通知、再集計へ接続する。

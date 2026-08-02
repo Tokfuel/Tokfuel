@@ -1,11 +1,13 @@
 name: UI Preview
 
-# ui-preview 📸 ラベルを付けると、メニューバー・設定・About の全画面（下の ORDER にある
-# 一覧。同じ画面の別状態も含む）を
+# ui-preview 📸 ラベルを付けると、メニューバー・設定・About・予算アラート・初回
+# Analytics 同意ダイアログの全画面（下の ORDER にある一覧。同じ画面の別状態も含む）を
 # 実物の UI からレンダリングし、PR コメントに絵として貼る
 # （TF-0034）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
 # `allScreens()`（README 用スクリーンショットを撮る TF-0015 の `renderPNG` を土台にした拡張）に
 # 任せ、ここでは撮った PNG 群を publish するだけ。
+# PopoverView / SettingsView / AboutView / 新規の単独 View を足したら、
+# `ScreenshotRenderer.allScreens()` と下の ORDER / screen_title も同じ PR で更新する。
 #
 # コメントに画像を直接添付する API は無いため、専用の orphan branch (ui-preview-images) に
 # PNG 群を push し、公開リポジトリの raw.githubusercontent.com URL を Markdown 画像として
@@ -67,10 +69,11 @@ jobs:
               settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
               about) echo "About" ;;
               budget-alert) echo "予算アラートのウィンドウ" ;;
+              analytics-consent) echo "初回 Analytics 同意ダイアログ" ;;
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert)
+          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert analytics-consent)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

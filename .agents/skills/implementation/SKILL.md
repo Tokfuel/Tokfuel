@@ -18,11 +18,13 @@ Tokfuel の GitHub Issue を 1 件、提案の状態から出荷済みの緑の�
 
 ## プロジェクトのグラウンドルール（すべての行の枠）
 
-1. **ローカルオンリー**：テレメトリやネットワーク送信を追加しない。
+1. **ローカルオンリー**：Claude / Cursor / Codex 由来のデータを外に出さない。追加の通信は
+   AGENTS.md のオーナー承認済み例外に限る（配布ビルドの Crashlytics、オプトイン Analytics を含む）。
 2. **ゼロセットアップの維持**：ユーザーに Claude Code の設定やフックの導入を求めない。
 3. **retok は無改変で同梱**：同梱の retok をこの場で編集しない。ライセンスとクレジットを維持する。
 4. **python3 は任意**：python3 が無くても Claude のコスト分析が緩やかに縮退する状態を保つ。
-5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に緑を保つ。
+5. **Swift 6 / SwiftUI / macOS 14+**：`swift build` は常に緑を保つ。新規パッケージは原則禁止で、
+   例外は `firebase-ios-sdk`（Analytics / Crashlytics のみ）に限る。
 
 ## 進め方
 
@@ -65,6 +67,17 @@ Issue 1 件の実装は大きく、巻き戻しにくい。だから具体的な
 - **テストが回帰の網**：アプリ全体を起動せずに検証できる新ロジックにはテストを付ける。
 - **ドキュメントは日英併記**：文書化済みの挙動を変えたら `README.md` と `README.ja.md` の
   両方を更新する。日本語は [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) に従う。
+- **UI を足したら ui-preview も同じ PR で更新する（必須）**：`PopoverView` /
+  `SettingsView` / `AboutView`、または単独で見せる新規 View（同意ダイアログやアラートなど）を
+  追加・変更したときは、次を同じ差分に含める。怠るとレビュアーに新しい UI が見えない。
+  1. [`ScreenshotRenderer.allScreens()`](../../../Tokfuel/Sources/ScreenshotRenderer.swift)
+     にフィクスチャ画面を追加または更新する
+  2. [`.github/workflows/ui-preview.yml`](../../../.github/workflows/ui-preview.yml) の
+     `ORDER` と `screen_title` を揃える
+  3. ライブなシングルトン経由でしか到達できない状態は、`UpdateChecker.preview` や
+     `AppSettings` の `prepareDefaults()` と同じ形で注入可能なフィクスチャを用意する
+  4. ダイアログやパネルの文面は SwiftUI の表示 View に置き、ランタイムとプレビューで
+     同じ View を使う（`AnalyticsConsentView` の流儀）
 
 ### 6. 差分をレビューして磨く
 

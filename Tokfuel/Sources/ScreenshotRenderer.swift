@@ -136,6 +136,7 @@ enum ScreenshotRenderer {
     /// - `about`: 「Tokfuel について」ウィンドウ
     /// - `budget-alert`: 予算アラートのウィンドウ（TF #81。ライブな `UsageStore` は通さず、
     ///   `budgetAlertContent` のフィクスチャだけを描く）
+    /// - `analytics-consent`: 初回 Analytics 同意ダイアログ（#22）
     static func allScreens() throws -> [(name: String, data: Data)] {
         let store = fixtureStore()
         // 設定は自身が .frame(width: 460, height: 620) を持つ（SettingsView.swift）ので
@@ -145,6 +146,8 @@ enum ScreenshotRenderer {
         let aboutProbeSize = CGSize(width: 320, height: 800)
         // 予算アラートは幅 360 だけを持つので、高さは fittingSize へ縮める（About と同じ）。
         let alertProbeSize = CGSize(width: 360, height: 400)
+        // 同意ダイアログは幅固定・高さは中身任せ。余裕のある probe から fittingSize へ縮める。
+        let consentProbeSize = CGSize(width: 460, height: 400)
         return [
             ("popover", try renderPNG(store: store)),
             ("popover-update", try renderPNG(store: store,
@@ -165,7 +168,9 @@ enum ScreenshotRenderer {
                 probeSize: settingsSize, scrollsToBottom: true)),
             ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize)),
             ("budget-alert", try renderStandalone(BudgetAlertView(content: budgetAlertContent),
-                                                  probeSize: alertProbeSize))
+                                                  probeSize: alertProbeSize)),
+            ("analytics-consent", try renderStandalone(
+                AnalyticsConsentView(), probeSize: consentProbeSize))
         ]
     }
 
@@ -285,6 +290,8 @@ enum ScreenshotRenderer {
         let defaults = UserDefaults.standard
         // 以降の設定変更を記録させない（`~/Library/Application Support/Tokfuel` に何も書かない）。
         defaults.set(false, forKey: UsageEventLog.enabledKey)
+        defaults.set(false, forKey: "analyticsConsent")
+        defaults.set(true, forKey: "analyticsConsentAnswered")
         defaults.set(DisplayCurrency.usd.rawValue, forKey: Money.currencyKey)
         // UsageStore は集計期間とチャート形式を UserDefaults から復元する。プロパティ経由で
         // 変えると retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。

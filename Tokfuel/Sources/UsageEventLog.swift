@@ -11,6 +11,7 @@ enum AppSupport {
 
 /// Tokfuel 自身の UI 利用イベント（CU-0013）。名前は JSONL 上の `event` 値になる。
 enum UsageEvent: String {
+    case appLaunch = "app_launch"
     case popoverOpen = "popover_open"
     case tabOpen = "tab_open"
     case periodChange = "period_change"
@@ -63,7 +64,12 @@ final class UsageEventLog: @unchecked Sendable {
     // MARK: - 書き込み
 
     /// イベントを 1 行追記する。無効時は何もしない。失敗は致命的ではないため握りつぶす。
+    /// 配布ビルドかつ Analytics 同意があるときは、同じイベントを `AnalyticsService` にも渡す（#22）。
     func log(_ event: UsageEvent, meta: [String: String] = [:], at date: Date = Date()) {
+        // ローカル記録が OFF でも、同意済み Analytics には載せられるように先に転送する。
+        DispatchQueue.main.async {
+            AnalyticsService.shared.track(event, meta: meta)
+        }
         guard Self.isEnabled(in: defaults) else { return }
         guard let line = Self.encodeLine(event: event, meta: meta, date: date) else { return }
         queue.async { [self] in

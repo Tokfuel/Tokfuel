@@ -16,8 +16,8 @@
 
 ## グラウンドルール（違反禁止）
 
-1. **ローカルオンリー**：収集したデータを Mac の外に出さない。テレメトリも送信もしない。
-   例外はオーナー承認済みの次の 4 つだけ。
+1. **ローカルオンリー**：Claude / Cursor / Codex 由来の利用データ（プロンプト、transcript、
+   コスト、パスなど）を Mac の外に出さない。例外はオーナー承認済みの次だけ。
    1. ユーザーが JPY 表示を有効にしたときは、`ExchangeRateService` が Frankfurter API から
       USD→JPY レートを 1 日 1 回取得する（リクエストに使用状況データは載らない）。
    2. Mac に Cursor を検出したときは、`CursorPricingService` が Cursor 自身が公開している
@@ -36,6 +36,11 @@
       ごとにポーリングして新しいバージョンを検知する。リリースアセットのダウンロードは、
       ユーザーがポップオーバーのフッターで「アップデート」ボタンを押したときだけ GitHub から
       行う。これらのリクエストに使用状況データ、トランスクリプト、識別子は載らない。
+   5. **配布ビルドのみ**（`scripts/release.sh` の `-DTOKFUEL_DISTRIBUTION`）、
+      Firebase Crashlytics へクラッシュレポートを送る（同意プロンプトなし。プロンプトや
+      コストは載せない）。開発用ビルドでは `FirebaseApp.configure()` を呼ばない。
+   6. **配布ビルドかつ**ユーザーが Analytics に同意したときだけ、Firebase Analytics へ
+      匿名のアプリ UI イベントを送る（デフォルト OFF。送信面は `AnalyticsService` に集約）。
 2. **ゼロセットアップの維持**：アプリは Claude Code のトランスクリプトを直接読む。機能を
    動かすために、フック、外部ツールのインストール、Claude Code 側の設定を要求しない。
 3. **retok は無改変で同梱**：`Sources/Resources/retok.py` と `locales/` は
@@ -44,8 +49,8 @@
    [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md) にある。
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
-5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。依存ゼロが
-   「誰でもすぐビルドできる」を支えている。
+5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
+   オーナー承認済みの `firebase-ios-sdk`（Analytics と Crashlytics 製品のみ、#22）。
 
 ## 検証ゲート
 
@@ -62,15 +67,19 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、すべての
 そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
 書かない。
 
-`PopoverView`、`SettingsView`、`AboutView` の UI を追加または変更するときは、
+`PopoverView`、`SettingsView`、`AboutView`、および単独で見せる新規 View（同意ダイアログや
+アラートなど）を追加または変更するときは、同じ PR で
 `ScreenshotRenderer.allScreens()` のフィクスチャ画面（と
 [`ui-preview.yml`](.github/workflows/ui-preview.yml) の `ORDER` / `screen_title` リスト）も
 追加または更新して、`ui-preview 📸` ラベルが新しい状態を実際に描画できるようにする。ライブな
 シングルトン経由でしか到達できないビュー（ネットワーク応答や実際のインストールパスに依存する
 もの）には、`AppSettings.shared` が `prepareDefaults()` からフィクスチャ値を受け取るのと
-同じ形で、注入可能なフィクスチャを用意する（`UpdateChecker.preview` を参照）。これを怠ると
-新しい UI はレビュアーに見えないままになる（ポップオーバーのアップデートボタンが、TF-0029 の
-フォローアップまで実際にそうだった）。
+同じ形で、注入可能なフィクスチャを用意する（`UpdateChecker.preview` を参照）。ダイアログや
+パネルの文面は SwiftUI の表示 View に置き、ランタイムとプレビューで同じ View を使う
+（`AnalyticsConsentView` を参照）。これを怠ると新しい UI はレビュアーに見えないままになる
+（ポップオーバーのアップデートボタンが、TF-0029 のフォローアップまで実際にそうだった）。
+実装手順のチェックリストは [`implementation`](.agents/skills/implementation/SKILL.md) スキルに
+ある。
 
 ## ロードマップの回し方
 
