@@ -28,6 +28,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var refreshTimer: Timer?
     /// ポップオーバー表示中の「外側クリックで閉じる」監視。
     private var outsideClickMonitor: Any?
+    /// 使用額が動いている間だけ更新間隔を上げる状態機械（TF-0080）。判定はここが持つ。
+    private var scheduler = RefreshScheduler()
+    /// 追従モード中か。メニューバーの明滅の可否に効く。
+    private var isFollowing = false
+    /// 長期集計（32 日）を最後に回した時刻。追従中でもここは基準間隔のまま保つ。
+    private var lastFullReload = Date.distantPast
+    /// 明滅アニメーションのタイマーと位相（0…1）。
+    private var glowTimer: Timer?
+    private var glowPhase: Double = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
@@ -76,13 +85,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         bindStateChanges()
 
+        lastFullReload = Date()
         usageStore.reload()
         updateStatusItem()
 
         // ポップオーバーを開かなくてもメニューバーの数字が古くならないよう定期更新する。
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
-            Task { @MainActor [weak self] in self?.usageStore.reload() }
-        }
+        // 間隔は RefreshScheduler が決める（平常は 10 分、使用額が動いている間だけ 1 分）。
+        armRefreshTimer(interval: RefreshScheduler.baseInterval)
+        observeSystemState()
 
         // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
         // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
@@ -140,9 +150,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         usageStore.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] in
+                // 金額が動いたかの判定は、集計が届いたこのタイミングでしかできない。
+                self?.observeActivity()
                 self?.updateStatusItem()
                 self?.notifyBudgetIfNeeded()
             }
+            .store(in: &cancellables)
+
+        // 追従モードと明滅のトグル。オフにしたら間隔とアニメーションを即座に戻す。
+        Publishers.Merge(settings.$adaptiveRefreshEnabled.dropFirst().map { _ in () },
+                         settings.$activityAnimationEnabled.dropFirst().map { _ in () })
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.applyRefreshDecision() }
             .store(in: &cancellables)
 
         // 設定変更を反映する。月表示や日次平均基準に切り替えたら 32 日集計も必要になる。
@@ -229,18 +248,126 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。
     private func notifyBudgetIfNeeded() {
+        // 知らせ方（通知 / アラートウィンドウ）は設定から読んで引数で渡す。
+        let style = settings.budgetAlertStyle
+        let openSettings: () -> Void = { [weak self] in self?.openSettings() }
         if let level = usageStore.budgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .monthly, level: level, spend: usageStore.budgetSpend,
                 limit: settings.budgetLimit,
-                periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod))
+                periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod),
+                style: style, onOpenSettings: openSettings)
         }
         if let level = usageStore.dailyBudgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .daily, level: level, spend: usageStore.todayCost,
                 limit: settings.dailyBudgetLimit,
-                periodKey: BudgetMonitor.dailyPeriodKey())
+                periodKey: BudgetMonitor.dailyPeriodKey(),
+                style: style, onOpenSettings: openSettings)
         }
+    }
+
+    // MARK: - 追従モード（TF-0080）
+
+    /// スリープ復帰・低電力モード・視差効果の設定変更を拾う。
+    /// 復帰時だけは経過時間にかかわらず 1 回即時更新し、そこで動きがあれば追従モードに入る。
+    private func observeSystemState() {
+        let workspace = NSWorkspace.shared.notificationCenter
+        workspace.addObserver(forName: NSWorkspace.didWakeNotification,
+                              object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.refreshAfterWake() }
+        }
+        // 明滅を止める条件（低電力モード / 視差効果を減らす）は、その場で切り替わる。
+        workspace.addObserver(forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+                              object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.updateGlowAnimation() }
+        }
+        NotificationCenter.default.addObserver(
+            forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.updateGlowAnimation() }
+        }
+    }
+
+    /// 定期更新の 1 回ぶん。追従中の合間は「今日」の窓だけを取り直し、長期集計（32 日）は
+    /// 基準間隔のまま回す（1 分ごとに 32 日走査をやり直さない）。
+    private func refreshTick() {
+        let now = Date()
+        // タイマーの起動誤差で 1 回飛ばさないよう、基準間隔の手前でも長期集計に切り替える。
+        if now.timeIntervalSince(lastFullReload) >= RefreshScheduler.baseInterval - 5 {
+            lastFullReload = now
+            usageStore.reload()
+        } else {
+            usageStore.reloadToday()
+        }
+        // 無風のまま 5 分が過ぎていれば、ここで基準間隔へ戻る。
+        applyRefreshDecision(now: now)
+    }
+
+    /// スリープ復帰時の 1 回だけの即時更新。
+    private func refreshAfterWake() {
+        lastFullReload = Date()
+        usageStore.reload()
+        applyRefreshDecision()
+    }
+
+    /// 届いた集計値を状態機械に渡し、間隔とアニメーションをそろえる。
+    private func observeActivity(now: Date = Date()) {
+        let decision = scheduler.observe(costs: usageStore.todayCostBySource, now: now,
+                                         enabled: settings.adaptiveRefreshEnabled)
+        apply(decision)
+    }
+
+    /// 金額を観測せず、経過時間と設定だけで間隔を見直す。
+    private func applyRefreshDecision(now: Date = Date()) {
+        apply(scheduler.resolve(now: now, enabled: settings.adaptiveRefreshEnabled))
+    }
+
+    private func apply(_ decision: RefreshScheduler.Decision) {
+        isFollowing = decision.isFollowing
+        if decision.intervalChanged { armRefreshTimer(interval: decision.interval) }
+        updateGlowAnimation()
+    }
+
+    private func armRefreshTimer(interval: TimeInterval) {
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            Task { @MainActor [weak self] in self?.refreshTick() }
+        }
+    }
+
+    /// アイコンを明滅させてよいか。省電力とアクセシビリティの設定が優先で、
+    /// どちらの場合も金額の更新間隔（追従モードそのもの）は変えない。
+    private var animatesActivity: Bool {
+        isFollowing
+            && settings.adaptiveRefreshEnabled
+            && settings.activityAnimationEnabled
+            && !ProcessInfo.processInfo.isLowPowerModeEnabled
+            && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
+    /// 明滅タイマーを条件に合わせて張り替える。止めるときは通常の画像へ戻す。
+    private func updateGlowAnimation() {
+        guard animatesActivity else {
+            guard glowTimer != nil || glowPhase != 0 else { return }
+            glowTimer?.invalidate()
+            glowTimer = nil
+            glowPhase = 0
+            updateStatusItem()
+            return
+        }
+        guard glowTimer == nil else { return }
+        glowTimer = Timer.scheduledTimer(withTimeInterval: MenuBarImage.glowFrameInterval,
+                                         repeats: true) { _ in
+            Task { @MainActor [weak self] in self?.advanceGlow() }
+        }
+    }
+
+    /// 明滅の 1 コマぶん位相を進めて描き直す。
+    private func advanceGlow() {
+        let step = MenuBarImage.glowFrameInterval / MenuBarImage.glowCycle
+        glowPhase = (glowPhase + step).truncatingRemainder(dividingBy: 1)
+        updateStatusItem()
     }
 
     // MARK: - メニューバーの表示
@@ -249,8 +376,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 何を出すかの判断は MenuBarReadout（設定プレビューと共用の純粋な計算）が持つ。
     private func updateStatusItem() {
         guard let button = statusItem.button else { return }
-        let content = MenuBarReadout.content(for: usageStore.menuBarInput())
-        button.image = MenuBarImage.statusItem(for: content)
+        let content = MenuBarReadout.content(for: usageStore.menuBarInput(isFollowing: isFollowing))
+        let animates = content.isFollowing && animatesActivity
+        button.image = MenuBarImage.statusItem(for: content,
+                                               glowPhase: animates ? glowPhase : nil)
         // アイコンと数字がくっつくので 1 文字ぶん空ける。
         button.title = content.title.isEmpty ? "" : " " + content.title
         button.toolTip = content.toolTip

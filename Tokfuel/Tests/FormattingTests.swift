@@ -41,6 +41,14 @@ struct MoneyFormattingTests {
         }
     }
 
+    @Test func チャート軸の円は桁区切りなしで万以上は畳む() {
+        #expect(Money.formatAxis(0, currency: .jpy, rate: 150) == "¥0")
+        #expect(Money.formatAxis(1500, currency: .jpy, rate: 150) == "¥1500")
+        #expect(Money.formatAxis(10_000, currency: .jpy, rate: 150) == "¥1万")
+        #expect(Money.formatAxis(25_000, currency: .jpy, rate: 150) == "¥2.5万")
+        #expect(Money.formatAxis(12, currency: .usd, rate: 0) == "$12")
+    }
+
     // メニューバーのタイトルは金額の書式に乗るため、表示通貨を握っているこのスイート内に置く
     // （別スイートに置くと、上のテストが円に切り替えている間と並走して落ちる）。
     // 通貨に依らない組み立ての性質は MenuBarContentTests が受け持つ。

@@ -18,6 +18,7 @@ enum UsageEvent: String {
     case settingsOpen = "settings_open"
     case settingChange = "setting_change"
     case notificationShown = "notification_shown"
+    case alertShown = "alert_shown"
     case experimentExposure = "experiment_exposure"   // CU-0014 用の予約
 }
 

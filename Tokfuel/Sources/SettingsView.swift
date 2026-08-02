@@ -67,8 +67,9 @@ struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 180)
+            // Codex CLI が無い Mac では「Codex のみ」を出さない（常に $0 になるだけのため）。
             Picker("コストのソース", selection: $settings.costSourceMode) {
-                ForEach(CostSourceMode.allCases) { Text($0.label).tag($0) }
+                ForEach(settings.availableCostSourceModes) { Text($0.label).tag($0) }
             }
             Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
                 ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
@@ -114,6 +115,19 @@ struct SettingsView: View {
                 || settings.menuBarShowsRemaining {
                 Toggle("予算までの残りを表示", isOn: $settings.menuBarShowsRemaining)
             }
+            Toggle(isOn: $settings.adaptiveRefreshEnabled) {
+                Text("使用中は更新を速める")
+                Text("金額が動いている間だけ 1 分間隔で更新し、5 分動かなければ 10 分間隔へ戻します")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Toggle(isOn: $settings.activityAnimationEnabled) {
+                Text("速めている間アイコンを明滅させる")
+                Text("低電力モードと「視差効果を減らす」が有効なときは明滅しません")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .disabled(!settings.adaptiveRefreshEnabled)
         } header: {
             Text("メニューバー")
         } footer: {
@@ -144,11 +158,14 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 220)
+                Picker("知らせ方", selection: $settings.budgetAlertStyle) {
+                    ForEach(BudgetAlertStyle.allCases) { Text($0.label).tag($0) }
+                }
             }
         } header: {
             Text("予算")
         } footer: {
-            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算し、内部では USD で保存します。")
+            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。アラートウィンドウは全画面の Space でも前面に出ます（どちらもレベルが上がったときの 1 回だけです）。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算し、内部では USD で保存します。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

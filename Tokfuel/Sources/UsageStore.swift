@@ -38,6 +38,8 @@ final class UsageStore: ObservableObject {
     /// 32 日集計（予算・日次平均）側の同じ用途のカウンタ。
     private var budgetGeneration = 0
     private var reportTask: Task<Void, Never>?
+    /// 追従モードの軽い更新（reloadToday）。重い集計とは別に持ち、互いに打ち消し合わせない。
+    private var todayTask: Task<Void, Never>?
     private var budgetTask: Task<Void, Never>?
     private var transcriptTask: Task<Void, Never>?
     /// ポップオーバーの集計期間（暦ベース）。最後に選んだ値を記憶する。
@@ -71,6 +73,19 @@ final class UsageStore: ObservableObject {
 
     /// driver.id → (モデル → 期間コスト)。レポート期間のモデル別内訳用。
     @Published var driverModelByID: [String: [String: Double]] = [:]
+
+    /// driver.id → 直近の取得の確度。金額 0 が「使っていない」なのか「取れなかった」なのかを
+    /// ポップオーバーで書き分けるために持つ（金額そのものは driverDailyByID 側）。
+    @Published var driverHealthByID: [String: CostSnapshot.Health] = [:]
+
+    /// サインインボタンを押したあと、次にポップオーバーを開いたら 1 度だけ取り直す合図。
+    /// 「劣化しているなら開くたび取り直す」にはしない——retok の再実行を伴うので、
+    /// ユーザーが実際にサインインしに行った回だけに限る。
+    @Published var awaitingSignInRecheck = false
+
+    /// driver.id → セッション（会話）別の内訳。「高コストのセッション」で Claude の
+    /// retok セッションとマージする。セッションを識別できない driver は現れない。
+    @Published var driverSessionsByID: [String: [CostSnapshot.Session]] = [:]
 
     /// ScreenshotRenderer が UsageStore の初期化前に UserDefaults へ直接書くため公開している。
     nonisolated static let costChartStyleKey = "costChartStyle"
@@ -110,9 +125,8 @@ final class UsageStore: ObservableObject {
         return .thisMonth
     }
 
-    // 予算期間内の消費額（ソース別。表示は costSourceMode で合成する）
-    @Published private var reportedClaudeBudgetSpend: Double = 0
-    @Published private var reportedCursorBudgetSpend: Double = 0
+    // 予算期間内の消費額（ソース id 別。表示は costSourceMode で合成する）
+    @Published private var reportedBudgetSpendBySource: [String: Double] = [:]
 
     /// DEBUG では読み取りだけデバッグ上書きを通す。書き込みは常に実データ側へ入るので、
     /// 上書きを OFF にすればそのまま元の数字に戻る。
@@ -123,25 +137,31 @@ final class UsageStore: ObservableObject {
             if let override = DebugSettings.shared.month { return override }
             #endif
             return Self.displayedSpend(
-                claude: reportedClaudeBudgetSpend,
-                cursor: reportedCursorBudgetSpend,
+                bySource: reportedBudgetSpendBySource,
                 mode: settings.costSourceMode)
         }
         set {
             // スクリーンショット用フィクスチャと予算オフ時のクリア。合算を Claude 側に載せ、
-            // Cursor 側は 0 にする（表示モードが合算なら見た目は同じ）。
-            if reportedClaudeBudgetSpend != newValue { reportedClaudeBudgetSpend = newValue }
-            if reportedCursorBudgetSpend != 0 { reportedCursorBudgetSpend = 0 }
+            // 二次ソース側は落とす（表示モードが合算なら見た目は同じ）。
+            setBudgetSpend(bySource: [CostSourceMode.claudeSourceID: newValue])
         }
     }
 
-    var claudeBudgetSpend: Double { reportedClaudeBudgetSpend }
-    var cursorBudgetSpend: Double { reportedCursorBudgetSpend }
+    /// ソース 1 つぶんの予算期間内消費額（"claude" または `CostDriver.id`）。
+    func budgetSpend(forSource id: String) -> Double { reportedBudgetSpendBySource[id] ?? 0 }
+
+    var claudeBudgetSpend: Double { budgetSpend(forSource: CostSourceMode.claudeSourceID) }
+
+    /// 二次ソース（Claude 以外）の合計。並べて表示の Cursor 側に出す。
+    var secondaryBudgetSpend: Double {
+        reportedBudgetSpendBySource
+            .filter { $0.key != CostSourceMode.claudeSourceID }
+            .values.reduce(0, +)
+    }
 
     /// テスト・スクリーンショットからソース別予算を直接入れる。
-    func setBudgetSpend(claude: Double, cursor: Double) {
-        if reportedClaudeBudgetSpend != claude { reportedClaudeBudgetSpend = claude }
-        if reportedCursorBudgetSpend != cursor { reportedCursorBudgetSpend = cursor }
+    func setBudgetSpend(bySource: [String: Double]) {
+        if reportedBudgetSpendBySource != bySource { reportedBudgetSpendBySource = bySource }
     }
 
     // 過去 30 日の日次平均コスト（未算出・レポート未取得なら 0）
@@ -191,7 +211,7 @@ final class UsageStore: ObservableObject {
 
     /// メニューバー表示の組み立てに渡す入力。ステータス項目と設定のライブプレビューで共用する。
     /// 別の表現で試算したいときは、返り値の `representation` を差し替える。
-    func menuBarInput() -> MenuBarInput {
+    func menuBarInput(isFollowing: Bool = false) -> MenuBarInput {
         return MenuBarInput(
             metric: settings.menuBarMetric,
             representation: settings.menuBarRepresentation,
@@ -208,13 +228,33 @@ final class UsageStore: ObservableObject {
                 dailyAverage: dailyAverage30, activeDays: activeDaysInPeriod),
             dailyLimit: settings.dailyBudgetLimit,
             monthlyLimit: settings.budgetLimit,
-            todayClaude: claudeTodayCost,
-            todayCursor: cursorTodayCost,
+            cursorUnavailable: !degradedSourceWarnings.isEmpty,
+            // 並べて表示は Claude と二次ソース合計の 2 列（この Issue では拡張しない）。
+            todayClaude: todayCost(forSource: CostSourceMode.claudeSourceID),
+            todayCursor: secondaryTodayCost,
             monthClaude: claudeBudgetSpend,
-            monthCursor: cursorBudgetSpend,
+            monthCursor: secondaryBudgetSpend,
             // ゲージは側ごとに塗り分ける。今日だけしきい値を越えたら今日のゲージだけが変わる。
             todayLevel: dailyBudgetLevel,
-            monthLevel: budgetLevel)
+            monthLevel: budgetLevel,
+            isFollowing: isFollowing)
+    }
+
+    /// ソース別の今日の金額（USD）。追従モード（TF-0080）の `RefreshScheduler` が
+    /// 「金額が動いたか」を見るためだけの入力で、画面には出さない。
+    ///
+    /// 表示モード（`costSourceMode`）で合成する前の生の値を返す — 表示から外している
+    /// ソースが動いたときも、追従モードには入る。取得が劣化しているソース（TF-0073 の
+    /// `CostSnapshot.Health.degraded`）はキーごと落とす。劣化中の 0 は「使っていない」では
+    /// なく「取れなかった」なので、復旧した瞬間の 0 → 実額を増加と読むと誤発火する。
+    var todayCostBySource: [String: Double] {
+        let today = Self.dateString(Date())
+        var byID = [CostSourceMode.claudeSourceID: report?.cost(on: today) ?? 0]
+        for (id, byDate) in driverDailyByID {
+            if case .degraded = driverHealthByID[id] { continue }
+            byID[id] = byDate[today] ?? 0
+        }
+        return byID
     }
 
     /// 月間予算のレベル（予算オフなら nil）。
@@ -250,16 +290,65 @@ final class UsageStore: ObservableObject {
         // Cursor の価格表を（インストールされていて、当日未取得なら）取り直す。今回の集計には
         // 間に合わなくてもよい — 取れれば次回以降の CursorPricing.cost() から新しい表を使う。
         Task { await CursorPricingService.refreshIfNeeded() }
-        // 走査元はバックグラウンドスレッドから @MainActor の設定を触らないよう、ここで解決して渡す。
+        rescanTranscripts()
+    }
+
+    /// 追従モード（TF-0080）の軽い更新。今日を含む短い窓だけを取り直し、32 日集計
+    /// （`reloadBudget`）と表示窓の再解析（`reloadReport`）は回さない。1 分間隔で
+    /// python3 のサブプロセスを走らせるので、走査日数は 1 日に絞る。
+    ///
+    /// 得られた今日のコストは、表示中のレポートに重ねる（レポートごと差し替えると
+    /// 推移グラフが 1 日分に痩せてしまう）。重い集計が走り始めたら結果は捨てる。
+    func reloadToday() {
+        let lang = settings.language.resolved
+        let claudeDir = settings.claudeDirectoryURL
+        let isDefault = claudeDir.standardizedFileURL.path
+            == URL(fileURLWithPath: AppSettings.defaultClaudeDirectory).standardizedFileURL.path
+        let projectsOverride = isDefault ? nil : claudeDir.appendingPathComponent("projects")
+        let today = Self.dateString(Date())
+        let generation = reportGeneration
+        todayTask?.cancel()
+        todayTask = Task {
+            async let retokTask = RetokService.run(
+                days: 1, lang: lang, projectsDir: projectsOverride, provider: "claude"
+            )
+            async let driverTask = self.fetchDriverSnapshots(from: today, to: today)
+
+            // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない（CLAUDE.md ルール 4）。
+            let short = try? await retokTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            // 表示中のレポートがまだ無いうちは何もしない。1 日ぶんのレポートで埋めると、
+            // 期間合計もモデル別も今日だけの値になって誤解を招く（長期集計が届けば埋まる）。
+            if let short, let current = self.report {
+                self.report = current.merging(daily: short.daily)
+            }
+            let snapshots = await driverTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            // 日別と確度は reloadBudget と同じ扱いにする。追従中に Cursor が取れなくなったら、
+            // その場で劣化（TF-0073）へ倒して「—」と注意書きを出す。
+            for (id, snapshot) in snapshots {
+                var merged = self.driverDailyByID[id] ?? [:]
+                for (date, cost) in snapshot.daily { merged[date] = cost }
+                self.driverDailyByID[id] = merged
+                self.driverHealthByID[id] = snapshot.health
+            }
+        }
+        rescanTranscripts()
+    }
+
+    /// トランスクリプトを走査して「今日のプロンプト数」を更新する。
+    /// 走査元はバックグラウンドスレッドから @MainActor の設定を触らないよう、ここで解決して渡す。
+    private func rescanTranscripts() {
         let projectsDir = settings.claudeDirectoryURL.appendingPathComponent("projects")
         transcriptTask?.cancel()
         transcriptTask = Task.detached(priority: .userInitiated) {
             let daily = TranscriptScanner.scan(projectsDir: projectsDir)
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
-                self?.daily = daily
-                self?.lastUpdated = Date()
-                self?.isLoading = false
+                guard let self else { return }
+                self.daily = daily
+                self.lastUpdated = Date()
+                if self.isLoading { self.isLoading = false }
             }
         }
     }
@@ -298,6 +387,7 @@ final class UsageStore: ObservableObject {
                 days: days, lang: lang, projectsDir: projectsOverride, provider: "claude"
             )
             async let driverTask = self.fetchDriverSnapshots(from: from, to: to)
+            async let sessionTask = self.fetchDriverSessions(from: from, to: to)
 
             do {
                 let r = try await retokTask
@@ -321,6 +411,11 @@ final class UsageStore: ObservableObject {
             // 日別とモデル別を同じ取得結果から一括更新する。フォールバック後に古いモデル別だけ
             // 残る状態を作らないため、空の内訳も含めて毎回置き換える。
             self.applyDriverSnapshots(snapshots)
+
+            // セッション別も同じ世代で置き換える（古い会話が残り続けないように）。
+            let sessions = await sessionTask
+            guard !Task.isCancelled, generation == self.reportGeneration else { return }
+            self.applyDriverSessions(sessions)
         }
     }
 
@@ -364,19 +459,18 @@ final class UsageStore: ObservableObject {
                 .filter { $0.key >= start }
                 .values.reduce(0) { $0 + $1.cost } ?? 0
             let driverSnapshots = await driverTask
-            let driverSpend = driverSnapshots.values
-                .reduce(0) { $0 + $1.daily.values.reduce(0, +) }
-            if self.reportedClaudeBudgetSpend != claudeSpend {
-                self.reportedClaudeBudgetSpend = claudeSpend
+            // ソース id 別に持つ。表示モードが「◯◯ のみ」なら、この辞書から該当 id だけを拾う。
+            var spendBySource = [CostSourceMode.claudeSourceID: claudeSpend]
+            for (id, snapshot) in driverSnapshots {
+                spendBySource[id] = snapshot.daily.values.reduce(0, +)
             }
-            if self.reportedCursorBudgetSpend != driverSpend {
-                self.reportedCursorBudgetSpend = driverSpend
-            }
+            self.setBudgetSpend(bySource: spendBySource)
             // reloadReport より予算窓の方が広いことがあるので、日別も予算側の結果で補完する。
             for (id, snapshot) in driverSnapshots {
                 var merged = self.driverDailyByID[id] ?? [:]
                 for (date, cost) in snapshot.daily { merged[date] = cost }
                 self.driverDailyByID[id] = merged
+                self.driverHealthByID[id] = snapshot.health
             }
 
             // 稼働日数・日次平均は retok 専用の指標。budgetSpend と違い二次ソースの分が無いので、
@@ -444,36 +538,28 @@ final class UsageStore: ObservableObject {
         return daily.first { $0.date == key } ?? DailyUsage(date: key)
     }
 
-    /// 今日の Claude（retok）コスト。
-    var claudeTodayCost: Double {
-        report?.cost(on: Self.dateString(Date())) ?? 0
-    }
+    /// 今日のソース 1 つぶんのコスト（"claude" または `CostDriver.id`）。
+    func todayCost(forSource id: String) -> Double { todayCostBySource[id] ?? 0 }
 
-    /// 今日の Cursor 等二次ソースコスト。
-    var cursorTodayCost: Double {
+    /// 今日の二次ソース合計（Claude を含まない）。並べて表示の Cursor 側に出す。
+    var secondaryTodayCost: Double {
         driverDaily[Self.dateString(Date())] ?? 0
     }
 
-    /// 今日の表示コスト。`costSourceMode` に従って Claude / Cursor を含める。
+    /// 今日の表示コスト。`costSourceMode` が選んだソースだけを合算する。
     /// レポート未取得も 0 とみなす（「不明」は出さず、retok 失敗はエラー表示が伝える）。
     var todayCost: Double {
         #if DEBUG
         if let override = DebugSettings.shared.today { return override }
         #endif
-        return Self.displayedSpend(
-            claude: claudeTodayCost,
-            cursor: cursorTodayCost,
-            mode: settings.costSourceMode)
+        return Self.displayedSpend(bySource: todayCostBySource, mode: settings.costSourceMode)
     }
 
-    /// ソース表示モードに従って 2 源を合成する。
+    /// ソース表示モードが選んだ id ぶんだけを合算する。
     nonisolated static func displayedSpend(
-        claude: Double, cursor: Double, mode: CostSourceMode
+        bySource: [String: Double], mode: CostSourceMode
     ) -> Double {
-        var total = 0.0
-        if mode.includesClaude { total += claude }
-        if mode.includesCursor { total += cursor }
-        return total
+        bySource.reduce(0) { $0 + (mode.includes(sourceID: $1.key) ? $1.value : 0) }
     }
 
 }
@@ -490,6 +576,68 @@ extension UsageStore {
     func applyDriverSnapshots(_ snapshots: [String: CostSnapshot]) {
         driverDailyByID = snapshots.mapValues(\.daily)
         driverModelByID = snapshots.mapValues(\.byModel)
+        driverHealthByID = snapshots.mapValues(\.health)
+    }
+
+    /// セッション別内訳を置き換える。applyDriverSnapshots と同じく、取得できなかった回は
+    /// 空になる（古い会話を残さない）。
+    func applyDriverSessions(_ sessions: [String: [CostSnapshot.Session]]) {
+        driverSessionsByID = sessions
+    }
+
+    /// 劣化した二次ソース 1 件ぶんの注意書き。金額の 0 を「使っていない」と誤読させないため、
+    /// UI はこれをそのまま金額の近くに出す。
+    struct SourceWarning: Identifiable, Equatable {
+        /// driver.id。
+        let id: String
+        let name: String
+        let message: String
+        /// サインインし直せば直る劣化で、かつ前面に出せるアプリがあるときだけ入る。
+        /// UI はこれがある場合にサインインボタンを添える。
+        let signInBundleID: String?
+    }
+
+    /// 表示対象になっている二次ソース（表示モードが選んだ id のドライバ）。
+    /// 劣化警告と「金額が取れていない」の判定は、この集合だけを見る。
+    var displayedDrivers: [any CostDriver] {
+        let mode = settings.costSourceMode
+        return costDrivers.filter { mode.includes(sourceID: $0.id) }
+    }
+
+    private func isDegraded(_ id: String) -> Bool {
+        if case .degraded = driverHealthByID[id] { return true }
+        return false
+    }
+
+    /// 表示している金額が「取れなかった」だけで成り立っているか。
+    /// 表示対象の二次ソースが全滅していると、ヒーローの 0 円は情報ではなく誤情報なので、
+    /// 金額の代わりに「—」を出すために使う。Claude を含むモードでは扱わない
+    /// ——retok の失敗はフッターのエラー行が伝えるため。
+    var todayCostUnavailable: Bool {
+        guard !settings.costSourceMode.includes(sourceID: CostSourceMode.claudeSourceID)
+        else { return false }
+        let displayed = displayedDrivers
+        guard !displayed.isEmpty else { return false }
+        return displayed.allSatisfy { isDegraded($0.id) }
+    }
+
+    /// 金額が取れなかった二次ソースの表示名。0 円として並べる代わりに「—」で出すために使う。
+    var unknownSourceNames: [String] {
+        degradedSourceWarnings.map(\.name)
+    }
+
+    /// 取得が劣化している二次ソースの注意書き。表示対象に入っているドライバのぶんだけ出す
+    /// ——合計に含めていないソース（「Claude のみ」での Cursor など）の注意書きは、
+    /// 見ていない数字の話にしかならない。
+    var degradedSourceWarnings: [SourceWarning] {
+        displayedDrivers.compactMap { driver in
+            guard case .degraded(let reason) = driverHealthByID[driver.id] else { return nil }
+            return SourceWarning(
+                id: driver.id,
+                name: driver.displayName,
+                message: reason.message,
+                signInBundleID: reason.isRecoverableBySignIn ? driver.signInBundleID : nil)
+        }
     }
 
     /// driver.id → 表示名。グラフの色分け（PopoverView）で使う。costDrivers は注入可能な
@@ -532,6 +680,19 @@ extension UsageStore {
         return byID
     }
 
+    /// セッション別内訳を持つ driver（既定実装は空）から会話を集める。
+    /// 空のソースはキーごと落とし、UI 側で「0 件のソース」を気にしなくてよくする。
+    private func fetchDriverSessions(
+        from: String, to: String
+    ) async -> [String: [CostSnapshot.Session]] {
+        var byID: [String: [CostSnapshot.Session]] = [:]
+        for driver in costDrivers where driver.isAvailable {
+            let sessions = await driver.sessions(from: from, to: to)
+            if !sessions.isEmpty { byID[driver.id] = sessions }
+        }
+        return byID
+    }
+
     // MARK: - グラフ用の積み上げ行（PopoverView は描画に専念させ、集計はここに置く）
 
     /// グラフ 1 本ぶんの行。同じ日付でも Claude と二次ソースは別行にして BarMark を積み上げる。
@@ -553,25 +714,26 @@ extension UsageStore {
         let mode = settings.costSourceMode
         var claudeByDate: [String: Double] = [:]
         for day in report.dailySorted { claudeByDate[day.date] = day.cost }
-        // 二次ソース側は表示窓で絞る。reloadBudget が予算窓（表示窓より広いことがある）の
-        // 日別を driverDailyByID に補完するため、絞らないと短い表示窓に予算窓の日が漏れる。
+        // 表示窓で絞る。二次ソースは reloadBudget が予算窓を補完しうるし、retok も
+        // `--days 1` なのに前後の日が daily に混ざる（今日表示で棒が 2 本になる）ことがある。
         let from = Self.reportWindowStart(days: report.periodDays)
+        let showsClaude = mode.includes(sourceID: CostSourceMode.claudeSourceID)
         var dates = Set<String>()
-        if mode.includesClaude { dates.formUnion(claudeByDate.keys) }
-        if mode.includesCursor {
-            for byDate in driverDailyByID.values { dates.formUnion(byDate.keys.filter { $0 >= from }) }
+        if showsClaude {
+            dates.formUnion(claudeByDate.keys.filter { $0 >= from })
+        }
+        for (id, byDate) in driverDailyByID where mode.includes(sourceID: id) {
+            dates.formUnion(byDate.keys.filter { $0 >= from })
         }
         let driverNames = secondarySourceNames
         return dates.sorted().flatMap { date -> [ChartRow] in
             var rows: [ChartRow] = []
-            if mode.includesClaude, let claude = claudeByDate[date], claude > 0 {
+            if showsClaude, let claude = claudeByDate[date], claude > 0 {
                 rows.append(ChartRow(date: date, source: Self.claudeSourceLabel, cost: claude))
             }
-            if mode.includesCursor {
-                for (id, byDate) in driverDailyByID {
-                    guard date >= from, let cost = byDate[date], cost > 0 else { continue }
-                    rows.append(ChartRow(date: date, source: driverNames[id] ?? id, cost: cost))
-                }
+            for (id, byDate) in driverDailyByID where mode.includes(sourceID: id) {
+                guard date >= from, let cost = byDate[date], cost > 0 else { continue }
+                rows.append(ChartRow(date: date, source: driverNames[id] ?? id, cost: cost))
             }
             return rows
         }
@@ -662,23 +824,30 @@ extension UsageStore {
     }
 
     /// 期間合計（チャート下のキャプション用）。ソース表示モードに従う。
-    /// 二次ソースは chartRows と同じ理由で表示窓に絞る（予算窓の補完分を数えない）。
+    /// Claude / 二次ソースとも表示窓に絞る（retok の余剰日や予算窓の補完分を数えない）。
     func periodTotalCost(for report: RetokReport) -> Double {
         let from = Self.reportWindowStart(days: report.periodDays)
-        let cursor = driverDaily.filter { $0.key >= from }.values.reduce(0, +)
-        return Self.displayedSpend(
-            claude: report.totals.cost, cursor: cursor,
-            mode: settings.costSourceMode)
+        var bySource = [
+            CostSourceMode.claudeSourceID: report.daily
+                .filter { $0.key >= from }
+                .values.reduce(0) { $0 + $1.cost }
+        ]
+        for (id, byDate) in driverDailyByID {
+            bySource[id] = byDate.filter { $0.key >= from }.values.reduce(0, +)
+        }
+        return Self.displayedSpend(bySource: bySource, mode: settings.costSourceMode)
     }
 
     /// 「モデル別」セクション用の行。ソースフィルタと内訳モードに従う。
     func modelCostRows(for report: RetokReport) -> [ModelCostRow] {
         let mode = settings.costSourceMode
         let breakdown = settings.costModelBreakdownMode
-        let claude: [(String, Double)] = mode.includesClaude
+        let claude: [(String, Double)] = mode.includes(sourceID: CostSourceMode.claudeSourceID)
             ? report.modelsSorted.map { ($0.model, $0.usage.cost) }.filter { $0.1 > 0 }
             : []
-        let cursor: [(String, Double)] = mode.includesCursor ? cursorModelCosts : []
+        // Codex はモデル別内訳を持たないので、「Codex のみ」ではこのセクションが空になる。
+        let cursor: [(String, Double)] = mode.includes(sourceID: CostSourceMode.cursorSourceID)
+            ? cursorModelCosts : []
 
         switch breakdown {
         case .combined:
@@ -695,5 +864,117 @@ extension UsageStore {
             rows += cursor.map { ModelCostRow(source: "Cursor", model: $0.0, cost: $0.1) }
             return rows
         }
+    }
+
+    // MARK: - 節約のヒント
+
+    /// 「節約のヒント」1 件。retok（Claude）由来と Tokfuel が組み立てた Cursor 由来を
+    /// 1 つのリストに並べるため、出どころを添えて持つ。
+    struct AdviceItem: Identifiable {
+        let source: String
+        let advice: RetokReport.Advice
+        var id: String { "\(source)|\(advice.key)" }
+    }
+
+    /// severity の強さ（小さいほど強い）。並び順にだけ使う。
+    /// retok は high / medium / low / info を返し、Cursor 由来は high / info を返す。
+    nonisolated static func severityRank(_ severity: String) -> Int {
+        switch severity {
+        case "high": return 0
+        case "medium", "warn": return 1
+        case "low": return 2
+        default: return 3
+        }
+    }
+
+    /// 表示する節約のヒント。`costSourceMode` に従って 2 系統を合成し、
+    /// severity（high が先）→ ソース名 → キーの順に並べる。
+    /// `claudeOnly` では Cursor 由来を、`cursorOnly` では retok 由来を出さない。
+    func adviceItems(for report: RetokReport) -> [AdviceItem] {
+        let mode = settings.costSourceMode
+        var items: [AdviceItem] = []
+        if mode.includes(sourceID: CostSourceMode.claudeSourceID) {
+            items += report.advice.map { AdviceItem(source: Self.claudeSourceLabel, advice: $0) }
+        }
+        if mode.includes(sourceID: CostSourceMode.cursorSourceID) {
+            items += CursorAdvice.hints(for: cursorAdviceInput(for: report))
+                .map { AdviceItem(source: CursorAdvice.sourceLabel, advice: $0) }
+        }
+        return items.sorted { lhs, rhs in
+            let lRank = Self.severityRank(lhs.advice.severity)
+            let rRank = Self.severityRank(rhs.advice.severity)
+            if lRank != rRank { return lRank < rRank }
+            if lhs.source != rhs.source { return lhs.source < rhs.source }
+            return lhs.advice.key < rhs.advice.key
+        }
+    }
+
+    /// Cursor の取得が劣化しているか（TF-0073 の `CostSnapshot.health`）。
+    /// 劣化していれば金額は実態より小さいので、その数字を根拠にした助言はしない。
+    /// `degradedSourceWarnings` と違いソース表示モードは見ない——ヒント側の絞り込みは
+    /// `adviceItems(for:)` が `costSourceMode` でやる。
+    var cursorFetchDegraded: Bool {
+        if case .degraded = driverHealthByID["cursor"] { return true }
+        return false
+    }
+
+    /// Cursor 由来のヒントの入力。金額はチャート・期間合計と同じ表示窓で切る
+    /// （予算窓の補完分が混ざると、割合の分母が表示と食い違う）。
+    private func cursorAdviceInput(for report: RetokReport) -> CursorAdvice.Input {
+        let from = Self.reportWindowStart(days: report.periodDays)
+        let cursorTotal = (driverDailyByID["cursor"] ?? [:])
+            .filter { $0.key >= from }
+            .values.reduce(0, +)
+        return CursorAdvice.Input(
+            modelCosts: driverModelByID["cursor"] ?? [:],
+            cursorTotal: cursorTotal,
+            claudeTotal: report.totals.cost,
+            isDegraded: cursorFetchDegraded)
+    }
+
+    // MARK: - 高コストのセッション
+
+    /// セッション 1 行。Claude（retok）と二次ソースを同じ形にそろえ、1 本のリストに混ぜる。
+    struct TopSessionRow: Identifiable {
+        let id: String
+        /// ソース名（"Claude" / "Cursor" …）。モデル別内訳と同じく行に添えて区別する。
+        let source: String
+        let title: String
+        let cost: Double
+        /// ローカル DB から起こした推定額か。UI は「推定」と添えて、ヒーローの合計とは
+        /// 別物であることを示す（Cursor はダッシュボード API の合計と桁がそろわないことがある）。
+        let isEstimated: Bool
+    }
+
+    /// セクションに出す件数。
+    static let topSessionLimit = 3
+
+    /// Claude（retok）と二次ソースの会話をコスト降順でマージした上位数件。
+    /// `costSourceMode` に従い、含めないソースの行は作らない（`claudeOnly` なら Cursor 行なし）。
+    /// 二次ソースは driver が返した会話だけを並べる —— ローカル走査が空になる環境（#73）では
+    /// 単に行が増えず、両ソースとも 0 件ならセクションごと消える。
+    func topSessionRows(for report: RetokReport, limit: Int = topSessionLimit) -> [TopSessionRow] {
+        let mode = settings.costSourceMode
+        var rows: [TopSessionRow] = []
+        if mode.includes(sourceID: CostSourceMode.claudeSourceID) {
+            rows += report.topSessions.map {
+                TopSessionRow(id: "\(Self.claudeSourceLabel)|\($0.session)",
+                              source: Self.claudeSourceLabel,
+                              title: $0.project, cost: $0.cost, isEstimated: false)
+            }
+        }
+        let names = secondarySourceNames
+        for (id, sessions) in driverSessionsByID where mode.includes(sourceID: id) {
+            let source = names[id] ?? id
+            rows += sessions.map {
+                TopSessionRow(id: "\(id)|\($0.id)", source: source,
+                              title: $0.title, cost: $0.cost, isEstimated: true)
+            }
+        }
+        // 並びが driver の辞書順に揺れないよう、同額は ID で決める。
+        let sorted = rows
+            .filter { $0.cost > 0 }
+            .sorted { $0.cost == $1.cost ? $0.id < $1.id : $0.cost > $1.cost }
+        return Array(sorted.prefix(limit))
     }
 }
