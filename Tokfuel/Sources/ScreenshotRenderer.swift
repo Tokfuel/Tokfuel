@@ -309,6 +309,8 @@ enum ScreenshotRenderer {
         // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
         settings.adaptiveRefreshEnabled = true
         settings.activityAnimationEnabled = true
+        // 外観 Picker の選択状態を絵に固定する（システム追従だと CI の見た目がぶれる）。
+        settings.appearanceMode = .dark
     }
 
     // MARK: - 合成（デスクトップ風の枠）

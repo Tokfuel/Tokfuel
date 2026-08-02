@@ -99,6 +99,19 @@ enum ReportPeriod: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// アプリ UI の外観。既定は macOS の外観に追従する。
+enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
+    case system, light, dark
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .system: return "システム"
+        case .light: return "ライト"
+        case .dark: return "ダーク"
+        }
+    }
+}
+
 /// アプリ全体の設定。UserDefaults に永続化し、変更は @Published で伝播する。
 @MainActor
 final class AppSettings: ObservableObject {
@@ -146,6 +159,10 @@ final class AppSettings: ObservableObject {
     }
     @Published var language: ReportLanguage {
         didSet { persist(language.rawValue, forKey: Keys.language) }
+    }
+    /// アプリ UI の外観（ポップオーバー・設定・About）。既定はシステム追従。
+    @Published var appearanceMode: AppearanceMode {
+        didSet { persist(appearanceMode.rawValue, forKey: Keys.appearanceMode) }
     }
 
     /// 金額の表示通貨。日本円は Frankfurter API のレート（1 日 1 回取得）で換算する。
@@ -239,6 +256,7 @@ final class AppSettings: ObservableObject {
         static let adaptiveRefreshEnabled = "adaptiveRefreshEnabled"
         static let activityAnimationEnabled = "activityAnimationEnabled"
         static let language = "language"
+        static let appearanceMode = "appearanceMode"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let claudeDirectory = "claudeDirectory"
         static let budgetLimit = "budgetLimit"
@@ -310,6 +328,8 @@ final class AppSettings: ObservableObject {
         activityAnimationEnabled = defaults.object(forKey: Keys.activityAnimationEnabled) == nil
             ? true : defaults.bool(forKey: Keys.activityAnimationEnabled)
         language = ReportLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .auto
+        appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: Keys.appearanceMode) ?? "")
+            ?? .system
         displayCurrency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
             ?? .usd
         // Codex が消えた Mac で「Codex のみ」が残っていると常に $0 になるので合算へ落とす

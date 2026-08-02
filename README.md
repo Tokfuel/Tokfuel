@@ -91,6 +91,11 @@
   network requests. Both the faster refresh and the pulse can be turned off in Settings,
   and the pulse also stops in Low Power Mode or with Reduce Motion enabled.
 
+- 🎨 **Appearance**
+
+  In Settings, choose System / Light / Dark for the popover, Settings, and About.
+  System follows macOS Appearance.
+
 - 💱 **USD or JPY**
 
   Budgets and all amounts switch currency.
@@ -98,7 +103,7 @@
 
 - 🔄 **In-app updates**
 
-  At launch and then every 24 hours, the app checks
+  At launch and then every hour, the app checks
   [GitHub Releases](https://github.com/akidon0000/Tokfuel/releases) for a newer version
   and shows an **Update** button next to the popover's ⋯ menu. One click downloads the
   release, verifies its code signature, swaps the app in place, and relaunches.
@@ -107,7 +112,7 @@
 
   Prompts and transcripts never leave your Mac. Network calls are: the opt-in
   exchange-rate fetch; the update check against GitHub Releases at launch and every
-  24 hours (the release file downloads only when you click update); if Cursor is
+  hour (the release file downloads only when you click update); if Cursor is
   installed, the daily price-table refresh; when signed into Cursor, a usage query to
   Cursor's dashboard API (auth + date range only — no prompts); on **distribution
   builds**, Crashlytics crash reports (no consent prompt); and, only if you opt in,

@@ -138,6 +138,14 @@ struct PopoverView: View {
             : NSColor(srgbRed: 0.82, green: 0.10, blue: 0.06, alpha: 1)
     })
 
+    /// フッターの常設操作口（⋯ メニュー）の色。ライトでは tertiary、ダークでは secondary。
+    /// セマンティック色そのものは外観追従だが、tertiary はダークで薄すぎるので段階を上げる。
+    static let chromeTint = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? .secondaryLabelColor
+            : .tertiaryLabelColor
+    })
+
     /// 指定アプリを前面に出す。見つからなければ何もしない（アンインストール直後など）。
     /// サインインの完了は監視しない——10 分ごとの定期更新か、次にポップオーバーを開いた
     /// ときの再取得が新しいトークンを拾う。
@@ -433,7 +441,8 @@ struct PopoverView: View {
             if let date = store.lastUpdated {
                 Text("更新 \(date, style: .time)")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    // ⋯ と同じく、ダークでは tertiary だと背景に溶ける。
+                    .foregroundStyle(Self.chromeTint)
             }
             #if DEBUG
             // どちらの構成を入れたかを、ホバーせずひと目で分かるようにする。
@@ -462,10 +471,11 @@ struct PopoverView: View {
             .menuIndicator(.hidden)
             .fixedSize()
             // アクセントのオレンジは「注意して見るもの」（予算の警告・アップデート）に
-            // 取っておく。常設の操作口は左隣の更新時刻と同じ灰色に揃える。
+            // 取っておく。常設の操作口は灰色のままにする。
             // borderlessButton のラベルはティントで塗られるので、
             // ラベル側の foregroundStyle ではなくここで色を指定する。
-            .tint(Color(nsColor: .tertiaryLabelColor))
+            // tertiary はダークで背景に溶けやすいので、外観に合わせて一段上げる。
+            .tint(Self.chromeTint)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

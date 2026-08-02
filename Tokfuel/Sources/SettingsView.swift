@@ -60,6 +60,9 @@ struct SettingsView: View {
     private var generalSection: some View {
         Section {
             Toggle("ログイン時に自動起動", isOn: $settings.launchAtLogin)
+            Picker("外観", selection: $settings.appearanceMode) {
+                ForEach(AppearanceMode.allCases) { Text($0.label).tag($0) }
+            }
             Picker("通貨", selection: $settings.displayCurrency) {
                 ForEach(DisplayCurrency.allCases) {
                     Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0)
@@ -80,7 +83,7 @@ struct SettingsView: View {
         } header: {
             Text("一般")
         } footer: {
-            Text("コストのソースはポップオーバーとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。「週の始まり」は推移の「今週」に効きます。")
+            Text("外観はポップオーバー、設定、About に効きます。「システム」は macOS の外観に追従します。コストのソースはポップオーバーとメニューバーの両方に効きます。並べて表示でも予算ゲージは合算です。「週の始まり」は推移の「今週」に効きます。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

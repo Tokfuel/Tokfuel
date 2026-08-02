@@ -34,4 +34,19 @@ struct AppSettingsTests {
         #expect(reloaded.adaptiveRefreshEnabled == false)
         #expect(reloaded.activityAnimationEnabled == false)
     }
+
+    @Test func 外観モードの既定はシステムで永続化する() {
+        let name = "tokfuel-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        let settings = AppSettings(defaults: defaults)
+        #expect(settings.appearanceMode == .system)
+
+        settings.appearanceMode = .dark
+        #expect(defaults.string(forKey: "appearanceMode") == AppearanceMode.dark.rawValue)
+
+        let reloaded = AppSettings(defaults: defaults)
+        #expect(reloaded.appearanceMode == .dark)
+    }
 }
