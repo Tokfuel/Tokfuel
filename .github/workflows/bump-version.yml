@@ -1,0 +1,104 @@
+name: Bump version
+
+# Actions の「Run workflow」から bump を選ぶ（または custom で v なし指定）と、
+# VERSION と Info.plist だけを上げた PR を main 向けに開く。
+# タグ打ちや GitHub Release は行わない。マージ後に release.yml が VERSION 変更を見て出荷する。
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "バージョンの上げ方（VERSION ファイルから算出）。明示指定するときは custom"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+        default: patch
+      version:
+        description: "bump=custom のときだけ。先頭の v は不要（例: 0.0.7）"
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Open bump PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve next version
+        id: version
+        run: |
+          git fetch --tags --force
+          bash scripts/resolve-release-version.sh \
+            "${{ inputs.bump }}" \
+            "${{ inputs.version }}"
+
+      - name: Update VERSION and Info.plist
+        env:
+          NEXT: ${{ steps.version.outputs.version }}
+        run: |
+          printf '%s\n' "$NEXT" > VERSION
+          python3 - <<'PY'
+          import os
+          import plistlib
+
+          next_version = os.environ["NEXT"]
+          path = "Info.plist"
+          with open(path, "rb") as f:
+              data = plistlib.load(f)
+          data["CFBundleShortVersionString"] = next_version
+          with open(path, "wb") as f:
+              plistlib.dump(data, f, fmt=plistlib.FMT_XML)
+          print(f"CFBundleShortVersionString={next_version}")
+          PY
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          BUMP: ${{ inputs.bump }}
+        run: |
+          BRANCH="claude/bump-${NEXT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add VERSION Info.plist
+          git commit -m "chore(release): bump version to ${NEXT}"
+          git push --force origin "$BRANCH"
+
+          BODY=$(cat <<EOF
+          ## 概要
+
+          \`VERSION\` を **${CURRENT}** から **${NEXT}** へ上げます（bump: \`${BUMP}\`）。
+
+          マージすると \`release.yml\` が \`VERSION\` の変更を検知し、タグ \`${TAG}\` の GitHub Release まで進めます。
+
+          ## 変更内容
+
+          - **\`VERSION\`**：${CURRENT} → ${NEXT}
+          - **\`Info.plist\`**：\`CFBundleShortVersionString\` を同じ値に揃える
+
+          ## 検証
+
+          - [ ] 版番号が意図どおりか
+          - [ ] マージ後に Release ワークフローが緑か
+          EOF
+          )
+
+          if [ "$(gh pr list --head "$BRANCH" --base main --json number --jq 'length')" != "0" ]; then
+            echo "PR for $BRANCH already open; pushing updated commit only"
+            exit 0
+          fi
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(release): bump version to ${NEXT}" \
+            --body "$BODY"

@@ -1,17 +1,14 @@
 name: Release
 
-# 2 通りで起動できる:
-# - Actions の「Run workflow」からバージョン（例 v0.0.4）を入力 → main にタグを打って
-#   ビルドし、GitHub Release まで自動作成する（推奨フロー）。
-# - v* タグを手で push した場合も従来どおり動く。
+# 手動起動はしない（bump は bump-version.yml）。起動は次の 2 通り:
+# - main への push で VERSION が変わったとき（bump PR のマージ。推奨フロー）
+# - v* タグを手で push したとき（従来互換）
+# VERSION 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
 on:
   push:
+    branches: [main]
+    paths: [VERSION]
     tags: ["v*"]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "リリースするバージョン（例: v0.0.4）"
-        required: true
 
 permissions:
   contents: write
@@ -22,30 +19,59 @@ jobs:
     runs-on: macos-15
     outputs:
       version: ${{ steps.version.outputs.version }}
+      skip: ${{ steps.version.outputs.skip }}
     # if: の条件式は secrets コンテキストを直接参照できないため、env 経由で一度だけ判定する。
     env:
       HAS_DEVELOPER_ID_CERT: ${{ secrets.DEVELOPER_ID_P12 != '' }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Resolve version
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
-          else
+          git fetch --tags --force
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF_NAME}"
+            case "$VERSION" in
+              v[0-9]*.[0-9]*.[0-9]*) ;;
+              *) echo "version must look like v0.0.4, got: $VERSION" >&2; exit 1 ;;
+            esac
+            SKIP=false
+          elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
+            BARE="$(tr -d '[:space:]' < VERSION)"
+            case "$BARE" in
+              [0-9]*.[0-9]*.[0-9]*) ;;
+              *) echo "VERSION must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
+            esac
+            VERSION="v${BARE}"
+            if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
+              echo "tag ${VERSION} already exists; skipping release" >&2
+              SKIP=true
+            else
+              SKIP=false
+            fi
+          else
+            echo "unsupported ref: ${GITHUB_REF}" >&2
+            exit 1
           fi
-          case "$VERSION" in
-            v[0-9]*.[0-9]*.[0-9]*) ;;
-            *) echo "version must look like v0.0.4, got: $VERSION" >&2; exit 1 ;;
-          esac
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=${VERSION}"
+            echo "skip=${SKIP}"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## Release version"
+            echo ""
+            echo "- Ref: \`${GITHUB_REF}\`"
+            echo "- Version: \`${VERSION}\`"
+            echo "- Skip: \`${SKIP}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      # 手動起動のときは、いまチェックアウトしている main の先頭にタグを打つ。
+      # VERSION 起点のときだけ、いまの main 先頭にタグを打つ。
       # （GITHUB_TOKEN によるタグ push は他のワークフローを起動しないので二重実行にならない）
       - name: Tag main
-        if: github.event_name == 'workflow_dispatch'
+        if: steps.version.outputs.skip != 'true' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -53,16 +79,18 @@ jobs:
           git push origin "${{ steps.version.outputs.version }}"
 
       - name: Show toolchain
+        if: steps.version.outputs.skip != 'true'
         run: |
           swift --version
           xcodebuild -version
 
       - name: Test
+        if: steps.version.outputs.skip != 'true'
         run: swift test
 
       # DEVELOPER_ID_P12 が未設定なら何もせず、release.sh は従来どおり ad-hoc 署名で動く。
       - name: Import Developer ID certificate
-        if: ${{ env.HAS_DEVELOPER_ID_CERT == 'true' }}
+        if: ${{ steps.version.outputs.skip != 'true' && env.HAS_DEVELOPER_ID_CERT == 'true' }}
         env:
           DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
           DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
@@ -88,11 +116,12 @@ jobs:
           rm -f "$CERT_PATH"
 
       - name: Build & package
+        if: steps.version.outputs.skip != 'true'
         run: bash scripts/release.sh "${{ steps.version.outputs.version }}"
 
       # 公証は Developer ID 署名済みのときのみ行う（ad-hoc 署名は notarytool が reject する）。
       - name: Notarize & staple
-        if: ${{ env.HAS_DEVELOPER_ID_CERT == 'true' }}
+        if: ${{ steps.version.outputs.skip != 'true' && env.HAS_DEVELOPER_ID_CERT == 'true' }}
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -105,6 +134,7 @@ jobs:
           rm -f "$APP_STORE_CONNECT_KEY_PATH"
 
       - name: Create GitHub Release
+        if: steps.version.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -126,6 +156,7 @@ jobs:
   screenshot:
     name: Refresh README and Site screenshots
     needs: release
+    if: needs.release.outputs.skip != 'true'
     runs-on: macos-15
     permissions:
       contents: write
