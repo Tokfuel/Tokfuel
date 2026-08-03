@@ -1,0 +1,133 @@
+name: Bump version
+
+# Actions の「Run workflow」から platform と bump を選ぶ（または custom で v なし指定）と、
+# versions/<platform> を上げた PR を main 向けに開く。
+# タグ打ちや GitHub Release は行わない。マージ後に release.yml が出荷する。
+#
+# いま有効な platform は macos のみ。windows などを足すときは:
+#   1. versions/<platform> を作る
+#   2. この inputs.platform.options に追加する
+#   3. scripts/resolve-release-version.sh の known_platform / tag_for を解放する
+#   4. release.yml にその platform 用ジョブを足す
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "対象プラットフォーム（版は versions/<platform> が正本）"
+        type: choice
+        options:
+          - macos
+          # - windows
+        default: macos
+      bump:
+        description: "バージョンの上げ方。明示指定するときは custom"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+        default: patch
+      version:
+        description: "bump=custom のときだけ。先頭の v は不要（例: 0.0.7）"
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Open bump PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve next version
+        id: version
+        run: |
+          git fetch --tags --force
+          bash scripts/resolve-release-version.sh \
+            "${{ inputs.platform }}" \
+            "${{ inputs.bump }}" \
+            "${{ inputs.version }}"
+
+      - name: Update version files
+        env:
+          PLATFORM: ${{ steps.version.outputs.platform }}
+          NEXT: ${{ steps.version.outputs.version }}
+          VERSION_FILE: ${{ steps.version.outputs.version_file }}
+        run: |
+          printf '%s\n' "$NEXT" > "$VERSION_FILE"
+          # macOS だけ Info.plist も同じ値に揃える（他 platform では触らない）。
+          if [ "$PLATFORM" = "macos" ]; then
+            python3 - <<'PY'
+          import os
+          import plistlib
+
+          next_version = os.environ["NEXT"]
+          path = "Info.plist"
+          with open(path, "rb") as f:
+              data = plistlib.load(f)
+          data["CFBundleShortVersionString"] = next_version
+          with open(path, "wb") as f:
+              plistlib.dump(data, f, fmt=plistlib.FMT_XML)
+          print(f"CFBundleShortVersionString={next_version}")
+          PY
+          fi
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLATFORM: ${{ steps.version.outputs.platform }}
+          NEXT: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          VERSION_FILE: ${{ steps.version.outputs.version_file }}
+          BUMP: ${{ inputs.bump }}
+        run: |
+          BRANCH="claude/bump-${PLATFORM}-${NEXT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add "$VERSION_FILE"
+          if [ "$PLATFORM" = "macos" ]; then
+            git add Info.plist
+          fi
+          git commit -m "chore(release): bump ${PLATFORM} version to ${NEXT}"
+          git push --force origin "$BRANCH"
+
+          BODY=$(cat <<EOF
+          ## 概要
+
+          \`${VERSION_FILE}\`（**${PLATFORM}**）を **${CURRENT}** から **${NEXT}** へ上げます（bump: \`${BUMP}\`）。
+
+          マージすると \`release.yml\` が変更を検知し、タグ \`${TAG}\` の GitHub Release まで進めます。
+
+          ## 変更内容
+
+          - **\`${VERSION_FILE}\`**：${CURRENT} → ${NEXT}
+          EOF
+          )
+          if [ "$PLATFORM" = "macos" ]; then
+            BODY="${BODY}
+          - **\`Info.plist\`**：\`CFBundleShortVersionString\` を同じ値に揃える
+          "
+          fi
+          BODY="${BODY}
+          ## 検証
+
+          - [ ] 版番号と platform が意図どおりか
+          - [ ] マージ後に Release ワークフローが緑か
+          "
+
+          if [ "$(gh pr list --head "$BRANCH" --base main --json number --jq 'length')" != "0" ]; then
+            echo "PR for $BRANCH already open; pushing updated commit only"
+            exit 0
+          fi
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(release): bump ${PLATFORM} version to ${NEXT}" \
+            --body "$BODY"
