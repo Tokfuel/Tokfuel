@@ -2,7 +2,8 @@
 # 配布用の Tokfuel.app を dist/ に作り、GitHub Release に添付できる
 # drag-to-Applications DMG を出力する。
 # 使い方: bash scripts/release.sh [バージョン]
-#   バージョン省略時は Info.plist の CFBundleShortVersionString を使う。
+#   バージョン省略時は versions/macos、無ければ Info.plist の
+#   CFBundleShortVersionString を使う。
 #   Apple Silicon / Intel 両対応のユニバーサルバイナリでビルドする。
 #   CODESIGN_IDENTITY を設定すると Developer ID 署名（hardened runtime 有効）になる。
 #   未設定ならこれまでどおり ad-hoc 署名（secrets 不要でローカルから実行できる）。
@@ -14,7 +15,15 @@ DIST_DIR="$PROJECT_DIR/dist"
 APP_DIR="$DIST_DIR/${APP_NAME}.app"
 source "$PROJECT_DIR/scripts/package-app.sh"
 
-VERSION="${1:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROJECT_DIR/Info.plist")}"
+default_version() {
+  if [ -f "$PROJECT_DIR/versions/macos" ]; then
+    tr -d '[:space:]' <"$PROJECT_DIR/versions/macos"
+  else
+    /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROJECT_DIR/Info.plist"
+  fi
+}
+
+VERSION="${1:-$(default_version)}"
 VERSION="${VERSION#v}"   # タグ名 v1.2.3 でも 1.2.3 でも受け付ける
 
 echo "Building $APP_NAME $VERSION (universal, TOKFUEL_DISTRIBUTION)..."
