@@ -43,6 +43,7 @@
   estimate otherwise, per-model breakdown, top sessions, and saving tips — retok's
   Claude analysis plus Cursor-derived ones (model skew, models missing from the price
   table, Cursor's share of the period), each badged with the source it came from.
+  Expand a tip to copy a ready-to-paste prompt that asks Claude how to act on it.
 
 - 🖱️ **Cursor, too**
 
