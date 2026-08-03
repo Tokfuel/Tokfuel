@@ -1,21 +1,24 @@
 name: Release
 
 # 手動起動はしない（bump は bump-version.yml）。起動は次の 2 通り:
-# - main への push で VERSION が変わったとき（bump PR のマージ。推奨フロー）
-# - v* タグを手で push したとき（従来互換）
-# VERSION 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
+# - main への push で versions/macos が変わったとき（bump PR のマージ。推奨フロー）
+# - v* タグを手で push したとき（従来互換・macOS）
+# versions/macos 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
+#
+# 版の正本はプラットフォーム別（versions/<platform>）。いま出荷ジョブがあるのは
+# macOS のみ。windows などを足すときは versions/windows の paths と専用ジョブを追加する。
 on:
   push:
     branches: [main]
-    paths: [VERSION]
+    paths: [versions/macos]
     tags: ["v*"]
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build & publish
+  release-macos:
+    name: Build & publish (macOS)
     runs-on: macos-15
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -32,18 +35,19 @@ jobs:
         id: version
         run: |
           git fetch --tags --force
+          PLATFORM=macos
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF_NAME}"
             case "$VERSION" in
               v[0-9]*.[0-9]*.[0-9]*) ;;
-              *) echo "version must look like v0.0.4, got: $VERSION" >&2; exit 1 ;;
+              *) echo "macOS tag must look like v0.0.4, got: $VERSION" >&2; exit 1 ;;
             esac
             SKIP=false
           elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
-            BARE="$(tr -d '[:space:]' < VERSION)"
+            BARE="$(tr -d '[:space:]' < versions/macos)"
             case "$BARE" in
               [0-9]*.[0-9]*.[0-9]*) ;;
-              *) echo "VERSION must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
+              *) echo "versions/macos must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
             esac
             VERSION="v${BARE}"
             if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
@@ -57,18 +61,20 @@ jobs:
             exit 1
           fi
           {
+            echo "platform=${PLATFORM}"
             echo "version=${VERSION}"
             echo "skip=${SKIP}"
           } >> "$GITHUB_OUTPUT"
           {
             echo "## Release version"
             echo ""
+            echo "- Platform: \`${PLATFORM}\`"
             echo "- Ref: \`${GITHUB_REF}\`"
             echo "- Version: \`${VERSION}\`"
             echo "- Skip: \`${SKIP}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # VERSION 起点のときだけ、いまの main 先頭にタグを打つ。
+      # versions/macos 起点のときだけ、いまの main 先頭にタグを打つ。
       # （GITHUB_TOKEN によるタグ push は他のワークフローを起動しないので二重実行にならない）
       - name: Tag main
         if: steps.version.outputs.skip != 'true' && github.ref == 'refs/heads/main'
@@ -155,8 +161,8 @@ jobs:
   # 起動しないため、CI は回らない。
   screenshot:
     name: Refresh README and Site screenshots
-    needs: release
-    if: needs.release.outputs.skip != 'true'
+    needs: release-macos
+    if: needs.release-macos.outputs.skip != 'true'
     runs-on: macos-15
     permissions:
       contents: write
@@ -173,7 +179,7 @@ jobs:
       - name: Open a PR if the screenshot changed
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.release.outputs.version }}
+          VERSION: ${{ needs.release-macos.outputs.version }}
         run: |
           PATHS=(assets/screenshot.png Site/Assets/images/screenshot.png)
           if git diff --quiet -- "${PATHS[@]}"; then
