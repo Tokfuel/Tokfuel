@@ -122,7 +122,9 @@ enum ScreenshotRenderer {
     }
 
     /// 撮影する全画面。ファイル名（拡張子なし）→ PNG データ。
-    /// - `popover`: メニューバー帯付きの合成（README と同じ絵）
+    /// - `popover`: メニューバー帯付きの合成（README と同じ絵・ダーク）
+    /// - `popover-light`: ポップオーバー単体をライト外観で撮った状態。フッターの
+    ///   `chromeTint`（ライトは tertiary）と、ダーク既定の `popover` を見比べる用（TF-0096）
     /// - `popover-update`: 同じ合成に、フッターがアップデートボタンを提示中の状態を重ねたもの
     /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
     ///   断っている状態
@@ -134,7 +136,7 @@ enum ScreenshotRenderer {
     /// - `popover-advice-expanded`: ヒントを開いた状態。詳細と「プロンプトをコピー」は
     ///   展開しないと出ないので、折り畳んだ `popover-advice` では絵に写らない
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
-    ///   デバッグを開いた状態）
+    ///   デバッグを開いた状態）。一般の「外観」Picker は `prepareDefaults` でダーク固定
     /// - `about`: 「Tokfuel について」ウィンドウ
     /// - `budget-alert`: 予算アラートのウィンドウ（TF #81。ライブな `UsageStore` は通さず、
     ///   `budgetAlertContent` のフィクスチャだけを描く）
@@ -152,6 +154,9 @@ enum ScreenshotRenderer {
         let consentProbeSize = CGSize(width: 460, height: 400)
         return [
             ("popover", try renderPNG(store: store)),
+            ("popover-light", try renderStandalone(
+                PopoverView(store: store),
+                probeSize: popoverSize, colorScheme: .light)),
             ("popover-update", try renderPNG(store: store,
                                              updater: .preview(version: previewUpdateVersion))),
             ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
@@ -202,11 +207,12 @@ enum ScreenshotRenderer {
     /// で実寸へ縮める。幅・高さとも `.frame` で固定しているビュー（`SettingsView`）では
     /// `probeSize` がそのまま最終サイズになる。
     private static func renderStandalone<V: View>(
-        _ rootView: V, probeSize: CGSize, scrollsToBottom: Bool = false
+        _ rootView: V, probeSize: CGSize, scrollsToBottom: Bool = false,
+        colorScheme: ColorScheme = .dark
     ) throws -> Data {
         let hosting = NSHostingView(rootView:
             rootView
-                .environment(\.colorScheme, .dark)
+                .environment(\.colorScheme, colorScheme)
                 .environment(\.locale, Locale(identifier: "ja_JP"))
                 .tint(.orange)
                 .background(Color(nsColor: .windowBackgroundColor)))
@@ -214,6 +220,8 @@ enum ScreenshotRenderer {
         hosting.frame = CGRect(origin: .zero, size: probeSize)
         let probeWindow = NSWindow(contentRect: hosting.frame, styleMask: [.borderless],
                                    backing: .buffered, defer: false)
+        // chromeTint など NSAppearance 依存色はウィンドウ外観を見るので、絵の scheme と揃える。
+        probeWindow.appearance = nsAppearance(for: colorScheme)
         probeWindow.contentView = hosting
         probeWindow.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
         probeWindow.orderFrontRegardless()
@@ -232,7 +240,7 @@ enum ScreenshotRenderer {
             scrollToBottom(in: hosting)
         }
 
-        return try capture(hosting, size: size)
+        return try capture(hosting, size: size, colorScheme: colorScheme)
     }
 
     /// 最初に見つかった `NSScrollView` を末尾まで送る。実際の操作と同じく、
@@ -255,12 +263,19 @@ enum ScreenshotRenderer {
         return nil
     }
 
+    /// SwiftUI の `colorScheme` に対応する AppKit 外観。動的 NSColor（`chromeTint` など）は
+    /// ウィンドウの appearance を見るので、environment だけ変えても絵が追従しない。
+    private static func nsAppearance(for colorScheme: ColorScheme) -> NSAppearance? {
+        NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
+    }
+
     /// `NSHostingView` を画面外のウィンドウで実描画させ、@2x の PNG データに焼く。
     private static func capture(_ view: NSHostingView<some View>, size: CGSize,
-                                scrollsToBottom: Bool = false) throws -> Data {
+                                scrollsToBottom: Bool = false,
+                                colorScheme: ColorScheme = .dark) throws -> Data {
         let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
                               styleMask: [.borderless], backing: .buffered, defer: false)
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.appearance = nsAppearance(for: colorScheme)
         window.backgroundColor = .clear
         window.contentView = view
         window.setFrameOrigin(NSPoint(x: -20_000, y: -20_000))
@@ -314,6 +329,8 @@ enum ScreenshotRenderer {
         // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
         settings.adaptiveRefreshEnabled = true
         settings.activityAnimationEnabled = true
+        // 外観 Picker の選択状態を絵に固定する（システム追従だと CI の見た目がぶれる）。
+        settings.appearanceMode = .dark
     }
 
     // MARK: - 合成（デスクトップ風の枠）

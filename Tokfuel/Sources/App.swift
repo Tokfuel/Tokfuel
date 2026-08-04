@@ -56,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.setActivationPolicy(.accessory)
         settings.syncLoginItem()
+        applyAppearance()
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -162,6 +163,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                          settings.$activityAnimationEnabled.dropFirst().map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.applyRefreshDecision() }
+            .store(in: &cancellables)
+
+        // 外観は起動時に一度当て、あとは設定変更で即時反映する（再起動は不要）。
+        settings.$appearanceMode
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.applyAppearance() }
             .store(in: &cancellables)
 
         // 設定変更を反映する。月表示や日次平均基準に切り替えたら 32 日集計も必要になる。
@@ -410,6 +418,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 保存済みの外観を `NSApp` に当てる。`system` は `nil`（OS 追従）に戻す。
+    private func applyAppearance() {
+        NSApp.appearance = settings.appearanceMode.nsAppearance
+    }
+
     /// 設定ウィンドウを開く。アクセサリアプリのため明示的に前面化する。
     private func openSettings() {
         closePopover()
@@ -443,5 +456,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         aboutWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+extension AppearanceMode {
+    /// `NSApp.appearance` に渡す値。`system` は OS 追従のため `nil`。
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
     }
 }

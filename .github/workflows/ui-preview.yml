@@ -61,7 +61,8 @@ jobs:
           # macos ランナーの既定 bash は 3.2（連想配列非対応）なので case で代用する。
           screen_title() {
             case "$1" in
-              popover) echo "メニューバー（ポップオーバー）" ;;
+              popover) echo "メニューバー（ポップオーバー・ダーク）" ;;
+              popover-light) echo "ポップオーバー - ライト外観（フッターの操作口コントラスト）" ;;
               popover-update) echo "メニューバー - フッターにアップデートボタンが出た状態" ;;
               popover-cursor-degraded) echo "メニューバー - Cursor の使用量が取得できていない状態" ;;
               popover-cursor-signin) echo "メニューバー - Cursor のサインインが切れた状態" ;;
@@ -77,7 +78,7 @@ jobs:
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice popover-advice-expanded settings settings-advanced settings-debug about budget-alert analytics-consent)
+          ORDER=(popover popover-light popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice popover-advice-expanded settings settings-advanced settings-debug about budget-alert analytics-consent)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
