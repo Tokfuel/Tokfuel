@@ -26,13 +26,3 @@ jobs:
 
       - name: Build
         run: swift build -c release
-
-  site:
-    name: Build download page (Site/)
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Build
-        working-directory: Site
-        run: swift run
