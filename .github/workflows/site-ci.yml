@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   site:
-    name: Build download page (Site/)
+    name: Build web page
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
