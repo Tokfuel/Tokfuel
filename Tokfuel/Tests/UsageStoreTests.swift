@@ -238,6 +238,84 @@ struct UsageStoreDegradedSourceTests {
     }
 }
 
+/// 金額が付かない使用（#91 の金額不明・#100 のプラン枠内）を UI が書き分けるための経路。
+@MainActor
+struct UsageStoreUnbilledUsageTests {
+    private static func dateString(_ date: Date) -> String { UsageStore.dateString(date) }
+
+    private func snapshot(
+        today: Double = 0,
+        unbilled: [String: Int] = [:],
+        unpriced: [String: Int] = [:]
+    ) -> CostSnapshot {
+        let today0 = Self.dateString(Date())
+        return CostSnapshot(
+            daily: [today0: today],
+            byModel: [:],
+            unbilled: CostSnapshot.UnbilledUsage(tokensByModel: unbilled,
+                                                days: unbilled.isEmpty ? [] : [today0]),
+            unpriced: CostSnapshot.UnbilledUsage(tokensByModel: unpriced,
+                                                days: unpriced.isEmpty ? [] : [today0]))
+    }
+
+    @Test func プラン枠内の利用は補足として出す() {
+        let store = UsageStore()
+        store.applyDriverSnapshots([
+            "cursor": snapshot(unbilled: ["cursor-grok-4.5-high-fast": 574_362])
+        ])
+        let notice = store.unbilledSourceNotices.first
+        #expect(store.unbilledSourceNotices.count == 1)
+        #expect(notice?.name == "Cursor")
+        #expect(notice?.message.contains("cursor-grok-4.5-high-fast") == true)
+        // 金額そのものは正しい 0 なので、金額を伏せる側（—）には回さない。
+        #expect(store.unpricedSourceNotices.isEmpty)
+        #expect(store.unknownSourceNames.isEmpty)
+    }
+
+    @Test func 金額不明の利用は警告として出す() {
+        let store = UsageStore()
+        store.applyDriverSnapshots(["cursor": snapshot(unpriced: ["composer-2.5-fast": 500])])
+        let notice = store.unpricedSourceNotices.first
+        #expect(notice?.name == "Cursor")
+        #expect(notice?.message.contains("composer-2.5-fast") == true)
+        #expect(store.unbilledSourceNotices.isEmpty)
+    }
+
+    @Test func モデルが多いときは畳んで1行に収める() {
+        #expect(UsageStore.modelList(["a", "b"]) == "a, b")
+        #expect(UsageStore.modelList(["a", "b", "c", "d"]) == "a, b ほか 2 件")
+    }
+
+    @Test func Cursorのみで金額不明しか無ければ金額を伏せる() {
+        let settings = AppSettings(defaults: UserDefaults(suiteName: "unpriced-\(UUID())")!)
+        settings.costSourceMode = .cursorOnly
+        let store = UsageStore(settings: settings)
+        store.applyDriverSnapshots(["cursor": snapshot(unpriced: ["composer-2.5-fast": 500])])
+        #expect(store.todayCostUnavailable)
+        #expect(store.unknownSourceNames == ["Cursor"])
+
+        // プラン枠内だけの日は「本当に $0」なので、金額はそのまま出す。
+        store.applyDriverSnapshots([
+            "cursor": snapshot(unbilled: ["cursor-grok-4.5-high-fast": 1_000])
+        ])
+        #expect(store.todayCostUnavailable == false)
+
+        // 金額不明のイベントがあっても、請求される利用が乗っている日は金額を出す。
+        store.applyDriverSnapshots([
+            "cursor": snapshot(today: 1.5, unpriced: ["composer-2.5-fast": 500])
+        ])
+        #expect(store.todayCostUnavailable == false)
+    }
+
+    @Test func 空のスナップショットは記録も消す() {
+        let store = UsageStore()
+        store.applyDriverSnapshots(["cursor": snapshot(unpriced: ["composer-2.5-fast": 500])])
+        store.applyDriverSnapshots(["cursor": CostSnapshot(daily: [:], byModel: [:])])
+        #expect(store.unpricedSourceNotices.isEmpty)
+        #expect(store.unbilledSourceNotices.isEmpty)
+    }
+}
+
 /// 「高コストのセッション」の Claude / 二次ソースのマージ（TF-0077）。
 @MainActor
 struct UsageStoreTopSessionTests {

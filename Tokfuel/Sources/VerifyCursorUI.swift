@@ -74,6 +74,10 @@ enum VerifyCursorUI {
         print("cursorDays:", daily.count)
         print("cursorTotal:", daily.values.reduce(0, +))
         print("health:", snapshot.health)
+        // 請求されなかったぶん・金額を出せなかったぶん（#100 / #91）。金額 0 の説明がここに出る。
+        print("unbilledModels:", snapshot.unbilled.tokensByModel)
+        print("unbilledToday:", snapshot.unbilled.includes(day: today))
+        print("unpricedModels:", snapshot.unpriced.tokensByModel)
         print("hasAccessToken:", CursorDashboardService.readAccessToken(dbPath: driver.stateDBURL.path) != nil)
 
         let store = UsageStore()
@@ -85,6 +89,8 @@ enum VerifyCursorUI {
 
         let breakdown = store.driverBreakdown
         print("driverBreakdown:", breakdown)
+        print("unbilledNotices:", store.unbilledSourceNotices.map(\.message))
+        print("unpricedNotices:", store.unpricedSourceNotices.map(\.message))
         print("todayCost(combined):", store.todayCost)
         if todayCost > 0 {
             print("VERIFY_OK: Cursor folded into combined total "

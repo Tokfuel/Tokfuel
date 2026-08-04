@@ -29,6 +29,9 @@ enum CursorAdvice {
         /// 期間内の Cursor モデル別コスト (USD)。値が 0 のモデルは、`CursorPricing` が
         /// 価格を引けず $0 として計上したもの（当て推量の単価は使わない仕様）。
         var modelCosts: [String: Double] = [:]
+        /// 金額を出せなかったモデル ID（`CostSnapshot.unpriced` 由来）。ダッシュボード経路では
+        /// 金額の出ないイベントが `modelCosts` に載らないので、こちらで受ける（#91）。
+        var unpricedModels: [String] = []
         /// 期間内の Cursor 合計コスト (USD)。モデル別内訳が空でも日別からは出せるので別に受ける。
         var cursorTotal: Double = 0
         /// 期間内の Claude (retok) 合計コスト (USD)。
@@ -45,10 +48,14 @@ enum CursorAdvice {
     /// 区別できない 0 からは何も言わない。
     static func hints(for input: Input) -> [RetokReport.Advice] {
         guard !input.isDegraded else { return [] }
-        guard !input.modelCosts.isEmpty || input.cursorTotal > 0 else { return [] }
+        guard !input.modelCosts.isEmpty || !input.unpricedModels.isEmpty || input.cursorTotal > 0
+        else { return [] }
 
         var hints: [RetokReport.Advice] = []
-        if let hint = unpricedModelsHint(modelCosts: input.modelCosts) { hints.append(hint) }
+        if let hint = unpricedModelsHint(modelCosts: input.modelCosts,
+                                         unpricedModels: input.unpricedModels) {
+            hints.append(hint)
+        }
         if let hint = dominantModelHint(modelCosts: input.modelCosts) { hints.append(hint) }
         if let hint = shareHint(cursorTotal: input.cursorTotal, claudeTotal: input.claudeTotal) {
             hints.append(hint)
@@ -58,14 +65,23 @@ enum CursorAdvice {
 
     // MARK: - 個別の判定
 
-    /// 価格表に無かったモデル。金額が実際より小さく出ているので、他のヒントより先に伝える。
-    static func unpricedModelsHint(modelCosts: [String: Double]) -> RetokReport.Advice? {
-        let unpriced = modelCosts.filter { $0.value <= 0 }.keys.sorted()
+    /// 金額を出せなかったモデル。金額が実際より小さく出ているので、他のヒントより先に伝える。
+    /// ローカル走査の $0（価格表に無いモデル）と、ダッシュボードで金額欄が読めなかったぶん
+    /// （`unpricedModels`）の両方を 1 件のヒントにまとめる。
+    static func unpricedModelsHint(modelCosts: [String: Double],
+                                   unpricedModels: [String] = []) -> RetokReport.Advice? {
+        // 金額が付いた実績もあるモデルは挙げない——そのモデルの単価が引けていないとは
+        // 言えないので、名前を出すと「避けるべきモデル」を読み違える。
+        let priced = Set(modelCosts.filter { $0.value > 0 }.keys)
+        let unpriced = Set(modelCosts.filter { $0.value <= 0 }.keys)
+            .union(unpricedModels)
+            .subtracting(priced)
+            .sorted()
         guard !unpriced.isEmpty else { return nil }
         return RetokReport.Advice(
             severity: "high",
             key: Key.unpricedModels,
-            title: "\(unpriced.count) 件のモデルが価格表に無く、コストが実際より小さく出ています",
+            title: "\(unpriced.count) 件のモデルの金額が出ず、コストが実際より小さく出ています",
             detail: "対象は \(unpriced.joined(separator: ", ")) です。"
                 + "Tokfuel は Cursor 公式の価格表に無いモデルを、当て推量の単価ではなく $0 として"
                 + "数えます。表示中の Cursor コストはこのぶんだけ下振れしているので、"

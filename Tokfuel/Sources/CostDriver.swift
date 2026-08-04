@@ -6,8 +6,40 @@ struct CostSnapshot: Sendable, Equatable {
     var byModel: [String: Double]
     /// この取得がどこまで信用できるか。既定は `.ok`（＝金額 0 は「使っていない」の意味）。
     var health: Health = .ok
+    /// 使ったが請求されなかったぶん（プランの included 枠、エラーで無課金など）。
+    /// 金額としては 0 が正しいので `daily` には足さず、$0 を「使っていない」と誤読させない
+    /// ための材料としてだけ持つ。
+    var unbilled = UnbilledUsage()
+    /// 金額を出せなかったぶん（課金区分も金額欄も読めなかったイベント）。
+    /// こちらの 0 は「請求が無い」ではなく「いくらか分からない」なので、UI では区別する。
+    var unpriced = UnbilledUsage()
 
     static let empty = CostSnapshot(daily: [:], byModel: [:])
+
+    /// 合算に入れなかった使用の記録。金額は一切持たない——持てないからここに来ている。
+    struct UnbilledUsage: Sendable, Equatable {
+        /// モデル ID → トークン数の合計。注意書きに「どのモデルか」を出すために持つ。
+        var tokensByModel: [String: Int] = [:]
+        /// 該当イベントがあったローカル日付（"YYYY-MM-DD"）。ヒーローの「今日」が
+        /// この状態かどうかを日単位で判定するために持つ。
+        var days: Set<String> = []
+
+        /// モデルが分からないイベントをまとめるキー。
+        static let unknownModelLabel = "モデル不明"
+
+        var isEmpty: Bool { tokensByModel.isEmpty }
+
+        /// 注意書きに並べるモデル名。辞書順にして、同じ取得からは同じ並びが出るようにする。
+        var models: [String] { tokensByModel.keys.sorted() }
+
+        func includes(day: String) -> Bool { days.contains(day) }
+
+        mutating func add(model: String?, day: String?, tokens: Int) {
+            let key = model.flatMap { $0.isEmpty ? nil : $0 } ?? Self.unknownModelLabel
+            tokensByModel[key, default: 0] += tokens
+            if let day { days.insert(day) }
+        }
+    }
 
     /// 「本当に $0」と「取れなかったので $0」を呼び出し側が区別できるようにするための状態。
     /// 金額そのものは失敗しても 0 に落とす（合算を壊さない）が、その 0 の意味はここが伝える。

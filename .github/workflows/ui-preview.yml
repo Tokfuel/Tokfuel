@@ -62,6 +62,7 @@ jobs:
               popover-update) echo "メニューバー - フッターにアップデートボタンが出た状態" ;;
               popover-cursor-degraded) echo "メニューバー - Cursor の使用量が取得できていない状態" ;;
               popover-cursor-signin) echo "メニューバー - Cursor のサインインが切れた状態" ;;
+              popover-cursor-unbilled) echo "メニューバー - Cursor の利用に金額が付かない状態（プラン枠内・未価格）" ;;
               popover-sessions) echo "メニューバー - 末尾までスクロールした状態（高コストのセッション）" ;;
               popover-advice) echo "メニューバー - 末尾までスクロールした状態（節約のヒント）" ;;
               settings) echo "設定" ;;
@@ -73,7 +74,7 @@ jobs:
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert analytics-consent)
+          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-cursor-unbilled popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert analytics-consent)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
