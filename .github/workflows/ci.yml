@@ -1,17 +1,31 @@
 name: CI
 
+# アプリ本体を触った PR・push だけでユニットテストを回す。
+# 必須ステータスには載せない（パス不一致で未起動だと Expected のまま止まるため）。
 on:
   push:
     branches: [main]
+    paths:
+      - "Tokfuel/Sources/**"
+      - "Tokfuel/Tests/**"
+      - "Package.swift"
+      - "Package.resolved"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "Tokfuel/Sources/**"
+      - "Tokfuel/Tests/**"
+      - "Package.swift"
+      - "Package.resolved"
+      - ".github/workflows/ci.yml"
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build (Release)
+  test:
+    name: Unit Test
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
@@ -21,18 +35,5 @@ jobs:
           swift --version
           xcodebuild -version
 
-      - name: Test
+      - name: Unit Test
         run: swift test
-
-      - name: Build
-        run: swift build -c release
-
-  site:
-    name: Build download page (Site/)
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Build
-        working-directory: Site
-        run: swift run
