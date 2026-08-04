@@ -97,32 +97,6 @@ struct PopoverView: View {
                     .foregroundStyle(.tertiary)
             }
             sourceWarnings
-            unpricedNotices
-            unbilledNotices
-        }
-    }
-
-    /// 金額を出せなかった使用の注意書き（#91）。劣化警告と同じ強さで出す——どちらも
-    /// 「表示中の金額が実態より小さい」ことを伝える行なので、色を分ける理由が無い。
-    @ViewBuilder
-    private var unpricedNotices: some View {
-        ForEach(store.unpricedSourceNotices) { notice in
-            Label("\(notice.name): \(notice.message)", systemImage: "exclamationmark.triangle")
-                .font(.caption)
-                .foregroundStyle(Self.warningTint)
-                .padding(.top, 6)
-        }
-    }
-
-    /// プラン枠内・無課金で $0 になっている使用の注意書き（#100）。金額そのものは正しいので
-    /// 警告色にはせず、$0 を「今日は使っていない」と読ませないための補足に留める。
-    @ViewBuilder
-    private var unbilledNotices: some View {
-        ForEach(store.unbilledSourceNotices) { notice in
-            Label("\(notice.name): \(notice.message)", systemImage: "info.circle")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.top, 6)
         }
     }
 

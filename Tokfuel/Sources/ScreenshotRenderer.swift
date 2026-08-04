@@ -127,7 +127,6 @@ enum ScreenshotRenderer {
     /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
     ///   断っている状態
     /// - `popover-cursor-signin`: 同じ注意書きに、サインインし直すボタンが付いた状態
-    /// - `popover-cursor-unbilled`: Cursor の利用に金額が付かない状態（プラン枠内 + 未価格）
     /// - `popover-sessions`: ポップオーバー単体を末尾までスクロールした状態
     ///   （折り返しの下にある「高コストのセッション」を Claude + Cursor で写す）
     /// - `popover-advice`: 同じ合成を末尾までスクロールした状態（「節約のヒント」は
@@ -156,7 +155,6 @@ enum ScreenshotRenderer {
             ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
             ("popover-cursor-signin", try renderPNG(
                 store: degradedCursorStore(reason: .credentialsRejected))),
-            ("popover-cursor-unbilled", try renderPNG(store: unbilledCursorStore())),
             ("popover-sessions", try renderStandalone(
                 PopoverView(store: sessionsFixtureStore()),
                 probeSize: popoverSize, scrollsToBottom: true)),
@@ -407,23 +405,6 @@ enum ScreenshotRenderer {
         let store = fixtureStore()
         store.driverDailyByID = ["cursor": [:]]
         store.driverHealthByID = ["cursor": .degraded(reason)]
-        return store
-    }
-
-    /// 取得は成功しているのに Cursor の金額が付かない状態（#100 のプラン枠内 + #91 の未価格）。
-    /// 金額のすぐ下に、補足（プラン枠内）と警告（金額化できない）の 2 行が出る絵になる。
-    static func unbilledCursorStore() -> UsageStore {
-        let store = fixtureStore()
-        let today = dateString(daysAgo: 0)
-        store.driverDailyByID = ["cursor": [today: 0]]
-        store.driverModelByID = ["cursor": [:]]
-        store.driverUnbilledByID = ["cursor": CostSnapshot.UnbilledUsage(
-            tokensByModel: ["cursor-grok-4.5-high-fast": 574_362,
-                            "composer-2.5-fast": 88_140],
-            days: [today])]
-        store.driverUnpricedByID = ["cursor": CostSnapshot.UnbilledUsage(
-            tokensByModel: ["gpt-5.6-sol-medium": 12_400],
-            days: [today])]
         return store
     }
 

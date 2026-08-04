@@ -65,10 +65,7 @@ extension CursorCostDriver: CostDriver {
         // ダッシュボードが取れたらそれを信じる（空でもローカルへ落とさない）。
         switch await fetchDashboard(from, to, path) {
         case .success(let remote):
-            // プラン枠内・無課金（#100）と金額を出せなかったぶん（#91）は金額には入れず、
-            // そのまま UI へ渡す —— $0 の意味を書き分けるのは表示側の担当。
-            return CostSnapshot(daily: remote.daily, byModel: remote.byModel,
-                                unbilled: remote.unbilled, unpriced: remote.unpriced)
+            return CostSnapshot(daily: remote.daily, byModel: remote.byModel)
         case .noCredentials:
             return await localSnapshot(path: path, from: from, to: to,
                                        health: .degraded(.signedOut))

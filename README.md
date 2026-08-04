@@ -51,10 +51,11 @@
   keeps on disk — nothing to paste). Offline or signed-out, it falls back to local
   token snapshots (often a lower bound on Cursor 3.x) and the popover says so, so a $0
   Cursor figure is never mistaken for "I didn't use it". Usage that your plan covers —
-  the rows whose Cost column reads "-" on Cursor's own dashboard — is not added to the
-  total; the popover notes "counted as $0 because your plan covers it" instead. Events
-  whose cost field can't be read at all are flagged as unpriced rather than silently
-  counted as $0. If the reason is an expired
+  the rows whose Cost column reads "-" on Cursor's own dashboard — is billed at nothing,
+  so it is not added to the total. Events that carry no readable cost field are priced
+  from Cursor's published price table instead, the same way the local path is; a model
+  the table doesn't list stays at $0 rather than getting a made-up rate. If the reason
+  is an expired
   sign-in, the popover offers a button that brings Cursor to the front — you sign in there,
   in Cursor's own UI, and Tokfuel picks the new session up. Pricing for the fallback path is
   refreshed once a day from Cursor's published price table.

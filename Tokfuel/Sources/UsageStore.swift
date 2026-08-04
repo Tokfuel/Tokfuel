@@ -78,14 +78,6 @@ final class UsageStore: ObservableObject {
     /// ポップオーバーで書き分けるために持つ（金額そのものは driverDailyByID 側）。
     @Published var driverHealthByID: [String: CostSnapshot.Health] = [:]
 
-    /// driver.id → 使ったが請求されなかったぶん（プラン枠内・無課金）。金額は 0 が正しいので
-    /// 合算には入らないが、ヒーローの $0 を「使っていない」と誤読させないために持つ（#100）。
-    @Published var driverUnbilledByID: [String: CostSnapshot.UnbilledUsage] = [:]
-
-    /// driver.id → 金額を出せなかったぶん。こちらの 0 は「請求が無い」ではなく「不明」なので、
-    /// 注意書きも表示も `driverUnbilledByID` と書き分ける（#91）。
-    @Published var driverUnpricedByID: [String: CostSnapshot.UnbilledUsage] = [:]
-
     /// サインインボタンを押したあと、次にポップオーバーを開いたら 1 度だけ取り直す合図。
     /// 「劣化しているなら開くたび取り直す」にはしない——retok の再実行を伴うので、
     /// ユーザーが実際にサインインしに行った回だけに限る。
@@ -339,11 +331,6 @@ final class UsageStore: ObservableObject {
                 for (date, cost) in snapshot.daily { merged[date] = cost }
                 self.driverDailyByID[id] = merged
                 self.driverHealthByID[id] = snapshot.health
-                // 課金されなかったぶん・金額が出なかったぶんも health と同じ扱いにする
-                // （最後の取得が見たものに置き換える）。追従中は今日ぶんの窓なので、
-                // 注意書きも今日の状態を指す。
-                self.driverUnbilledByID[id] = snapshot.unbilled
-                self.driverUnpricedByID[id] = snapshot.unpriced
             }
         }
         rescanTranscripts()
@@ -484,8 +471,6 @@ final class UsageStore: ObservableObject {
                 for (date, cost) in snapshot.daily { merged[date] = cost }
                 self.driverDailyByID[id] = merged
                 self.driverHealthByID[id] = snapshot.health
-                self.driverUnbilledByID[id] = snapshot.unbilled
-                self.driverUnpricedByID[id] = snapshot.unpriced
             }
 
             // 稼働日数・日次平均は retok 専用の指標。budgetSpend と違い二次ソースの分が無いので、
@@ -592,8 +577,6 @@ extension UsageStore {
         driverDailyByID = snapshots.mapValues(\.daily)
         driverModelByID = snapshots.mapValues(\.byModel)
         driverHealthByID = snapshots.mapValues(\.health)
-        driverUnbilledByID = snapshots.mapValues(\.unbilled)
-        driverUnpricedByID = snapshots.mapValues(\.unpriced)
     }
 
     /// セッション別内訳を置き換える。applyDriverSnapshots と同じく、取得できなかった回は
@@ -626,19 +609,6 @@ extension UsageStore {
         return false
     }
 
-    /// 今日ぶんの金額が 0 で、しかも金額を出せなかったイベントがあるか。
-    /// プラン枠内の $0（`driverUnbilledByID`）は「本当に請求が無い」ので含めない——
-    /// そちらは注意書きだけで足り、金額を「—」に伏せる理由にはならない。
-    private func hasUnpricedUsageOnly(_ id: String, on day: String) -> Bool {
-        guard (driverDailyByID[id]?[day] ?? 0) <= 0 else { return false }
-        return driverUnpricedByID[id]?.includes(day: day) ?? false
-    }
-
-    /// 今日の金額として出せるものが無いソースか（取得が劣化している、または金額不明のみ）。
-    private func todayAmountUnknown(_ id: String) -> Bool {
-        isDegraded(id) || hasUnpricedUsageOnly(id, on: Self.dateString(Date()))
-    }
-
     /// 表示している金額が「取れなかった」だけで成り立っているか。
     /// 表示対象の二次ソースが全滅していると、ヒーローの 0 円は情報ではなく誤情報なので、
     /// 金額の代わりに「—」を出すために使う。Claude を含むモードでは扱わない
@@ -648,13 +618,12 @@ extension UsageStore {
         else { return false }
         let displayed = displayedDrivers
         guard !displayed.isEmpty else { return false }
-        return displayed.allSatisfy { todayAmountUnknown($0.id) }
+        return displayed.allSatisfy { isDegraded($0.id) }
     }
 
     /// 金額が取れなかった二次ソースの表示名。0 円として並べる代わりに「—」で出すために使う。
-    /// 取得の劣化（TF-0073）と、金額を出せないイベントしか無い日（#91）を同じ扱いにする。
     var unknownSourceNames: [String] {
-        displayedDrivers.filter { todayAmountUnknown($0.id) }.map(\.displayName)
+        degradedSourceWarnings.map(\.name)
     }
 
     /// 取得が劣化している二次ソースの注意書き。表示対象に入っているドライバのぶんだけ出す
@@ -668,46 +637,6 @@ extension UsageStore {
                 name: driver.displayName,
                 message: reason.message,
                 signInBundleID: reason.isRecoverableBySignIn ? driver.signInBundleID : nil)
-        }
-    }
-
-    /// 金額が付かなかった使用についての注意書き 1 件。劣化警告（`SourceWarning`）と違い、
-    /// ユーザーの操作で直るものではないので、サインインボタンは持たない。
-    struct SourceNotice: Identifiable, Equatable {
-        /// driver.id。
-        let id: String
-        let name: String
-        let message: String
-    }
-
-    /// 注意書きに並べるモデル名。多いときは先頭 2 件と残り件数に畳む（1 行に収める）。
-    nonisolated static func modelList(_ models: [String], limit: Int = 2) -> String {
-        guard models.count > limit else { return models.joined(separator: ", ") }
-        return models.prefix(limit).joined(separator: ", ") + " ほか \(models.count - limit) 件"
-    }
-
-    /// 金額を出せなかった使用がある表示中ソースの注意書き。金額が実態より小さいと分かって
-    /// いるので、劣化警告と同じ強さ（赤）で金額のすぐ下に出す。
-    var unpricedSourceNotices: [SourceNotice] {
-        displayedDrivers.compactMap { driver in
-            guard let unpriced = driverUnpricedByID[driver.id], !unpriced.isEmpty else { return nil }
-            return SourceNotice(
-                id: driver.id,
-                name: driver.displayName,
-                message: "\(Self.modelList(unpriced.models)) の利用を金額化できていません")
-        }
-    }
-
-    /// プラン枠内・無課金で $0 として数えた使用の注意書き。こちらは誤りではなく事実なので、
-    /// 警告色ではなく補足として出す（$0 を「使っていない」と読ませないためだけに要る）。
-    var unbilledSourceNotices: [SourceNotice] {
-        displayedDrivers.compactMap { driver in
-            guard let unbilled = driverUnbilledByID[driver.id], !unbilled.isEmpty else { return nil }
-            return SourceNotice(
-                id: driver.id,
-                name: driver.displayName,
-                message: "プラン枠内・無課金の利用は $0 として数えています"
-                    + "（\(Self.modelList(unbilled.models))）")
         }
     }
 
@@ -998,7 +927,6 @@ extension UsageStore {
             .values.reduce(0, +)
         return CursorAdvice.Input(
             modelCosts: driverModelByID["cursor"] ?? [:],
-            unpricedModels: driverUnpricedByID["cursor"]?.models ?? [],
             cursorTotal: cursorTotal,
             claudeTotal: report.totals.cost,
             isDegraded: cursorFetchDegraded)

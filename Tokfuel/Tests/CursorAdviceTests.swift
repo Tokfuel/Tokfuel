@@ -42,18 +42,9 @@ struct CursorAdviceTests {
             modelCosts: ["claude-4.5-sonnet": 8, "composer-1": 0, "auto": 0])
         #expect(hint?.key == CursorAdvice.Key.unpricedModels)
         #expect(hint?.severity == "high")
-        #expect(hint?.title == "2 件のモデルの金額が出ず、コストが実際より小さく出ています")
+        #expect(hint?.title == "2 件のモデルが価格表に無く、コストが実際より小さく出ています")
         // 対象は名前で挙げる（どのモデルを避ければよいかが分かる）。
         #expect(hint?.detail.contains("auto, composer-1") == true)
-    }
-
-    /// ダッシュボード経路では金額の出ないイベントが `modelCosts` に載らない（#91）。
-    @Test func 金額が出なかったモデルは内訳に無くても出す() {
-        let hint = CursorAdvice.unpricedModelsHint(
-            modelCosts: ["claude-4.5-sonnet": 8],
-            unpricedModels: ["composer-2.5-fast", "claude-4.5-sonnet"])
-        #expect(hint?.title == "1 件のモデルの金額が出ず、コストが実際より小さく出ています")
-        #expect(hint?.detail.contains("composer-2.5-fast") == true)
     }
 
     @Test func すべて値付けできていれば出さない() {
