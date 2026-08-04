@@ -1,12 +1,12 @@
 # Tokfuel Terms of Use
 
-*Last updated: 2026-07-30*
+*Last updated: 2026-08-04*
 
 These terms apply to the Tokfuel macOS app and its source code. They are written for Tokfuel users and for App Store review.
 
 ## License
 
-Tokfuel is open-source software released under the [MIT License](../LICENSE), © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000). The license text governs your rights to use, copy, modify, and redistribute the software.
+Tokfuel is open-source software released under the [MIT License](../LICENSE), © [Tokfuel](https://github.com/Tokfuel). The license text governs your rights to use, copy, modify, and redistribute the software.
 
 ## No warranty
 

@@ -7,7 +7,7 @@ struct Home: StaticPage {
 
     var downloadURL = "https://github.com/Tokfuel/Tokfuel/releases/latest/download/Tokfuel-latest.dmg"
     var sourceURL = "https://github.com/Tokfuel/Tokfuel"
-    var authorURL = "https://github.com/akidon0000"
+    var ownerURL = "https://github.com/Tokfuel"
 
     var body: some HTML {
         Section {
@@ -81,7 +81,7 @@ struct Home: StaticPage {
         Section {
             Text {
                 "MIT License · © "
-                Link("Dan Akiyama (@akidon0000)", target: authorURL)
+                Link("Tokfuel", target: ownerURL)
                     .linkStyle(.underline(.heavy))
             }
             .font(.small)
