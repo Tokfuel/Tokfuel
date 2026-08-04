@@ -1,9 +1,23 @@
 name: CI
 
+# アプリ本体を触った PR・push だけでユニットテストを回す。
+# 必須ステータスには載せない（パス不一致で未起動だと Expected のまま止まるため）。
 on:
   push:
     branches: [main]
+    paths:
+      - "Tokfuel/Sources/**"
+      - "Tokfuel/Tests/**"
+      - "Package.swift"
+      - "Package.resolved"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "Tokfuel/Sources/**"
+      - "Tokfuel/Tests/**"
+      - "Package.swift"
+      - "Package.resolved"
+      - ".github/workflows/ci.yml"
 
 concurrency:
   group: ci-${{ github.ref }}
