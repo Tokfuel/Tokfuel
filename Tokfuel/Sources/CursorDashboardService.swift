@@ -9,8 +9,22 @@ import SQLite3
 /// - **送るもの**: Authorization ヘッダと日付範囲だけ。プロンプト本文やローカル履歴は送らない。
 /// - **失敗時**: `nil` を返し、呼び出し側（`CursorCostDriver`）がローカル SQLite に落ちる。
 ///
-/// エンドポイントは非公式で変わり得る。パースは防御的に、金額は `chargedCents` 優先
-/// （無ければ `tokenUsage.totalCents`）。単位はセント → USD。
+/// エンドポイントは非公式で変わり得るので、パースは防御的に行う。
+///
+/// **金額の決め方**（実応答で確認した形。#91 / #100）: イベントは `kind` に課金区分を持ち、
+/// `USAGE_EVENT_KIND_USAGE_BASED` だけが実際に請求される。
+/// `..._INCLUDED_IN_BUSINESS` などのプラン枠内と `..._ERRORED_NOT_CHARGED` の無課金でも
+/// `chargedCents` と `tokenUsage.totalCents` には名目額が入るので、そこだけを見ると
+/// 請求されない利用まで積み上がる。区分は必ず先に見る。
+///
+/// 請求額そのものは `tokenUsage.totalCents` を使う。Cursor 自身がダッシュボードの Cost 列
+/// （CSV の `Cost`、応答では `usageBasedCosts`）に出すのはこの値で、`chargedCents` は
+/// そこへ `cursorTokenFee` を足した内部値——実応答では従量課金イベントで 20〜35% 高く出る。
+///
+/// 課金される（か、課金されるか分からない）のに金額欄がどれも読めないイベントは、
+/// ローカル走査と同じ `CursorPricing` でトークンから金額化する。単価は Cursor 公式の
+/// 価格表から取ったキャッシュだけを使うので、ここにハードコードした単価は無い。
+/// 価格表に無いモデルは 0 のまま——金額 0 のイベントは合算にも表示にも出さない。
 enum CursorDashboardService {
     /// 注入可能な HTTP 実行口。テストではスタブを渡す。
     typealias HTTPPerformer = @Sendable (URLRequest) async throws -> (Data, URLResponse)
@@ -181,6 +195,8 @@ enum CursorDashboardService {
 
             reportedTotal = events.totalCount
             for event in events.events {
+                // 請求の無いイベント（プラン枠内・無課金）と、価格表が無くて金額化できな
+                // かったイベントは 0 で落ちる。$0 の行を積んでも表示に出ないので数えない。
                 guard event.usd > 0 else { continue }
                 if let date = dayString(fromTimestampMillis: event.timestampMillis) {
                     daily[date, default: 0] += event.usd
@@ -210,10 +226,31 @@ enum CursorDashboardService {
 
     // MARK: - Parsing (testable)
 
+    /// イベント 1 件の課金区分。応答の `kind`（CSV の `Kind` 列に対応）から決める。
+    enum Charge: Equatable {
+        /// 請求される（USD）。金額が 0 になる `billed` は作らない——`notCharged` に寄せる。
+        case billed(Double)
+        /// 合算に入れない。プランの included 枠、エラーで無課金、そして課金され得るのに
+        /// 金額を出せなかった（価格表にモデルが無い）イベントもここに来る。
+        case notCharged
+
+        /// 合算に入れる金額。請求されないぶんは 0。
+        var usd: Double {
+            if case .billed(let usd) = self { return usd }
+            return 0
+        }
+
+        /// 0 以下を `notCharged` に丸める。金額 0 の請求は表示にも合算にも出さないので、
+        /// `billed(0)` という状態を作らない。
+        static func billing(_ usd: Double) -> Charge { usd > 0 ? .billed(usd) : .notCharged }
+    }
+
     struct ParsedEvent: Equatable {
         let timestampMillis: Double
+        /// 請求額 (USD)。`charge` が `.billed` 以外なら 0。
         let usd: Double
         let model: String?
+        let charge: Charge
     }
 
     struct ParsedPage: Equatable {
@@ -230,23 +267,81 @@ enum CursorDashboardService {
         let rows = root["usageEventsDisplay"] as? [[String: Any]] ?? []
         let events: [ParsedEvent] = rows.compactMap { row in
             guard let millis = doubleValue(row["timestamp"]) else { return nil }
-            let usd = centsToUSD(row)
+            let charge = charge(row)
             let model = (row["model"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-            return ParsedEvent(timestampMillis: millis, usd: usd, model: model)
+            return ParsedEvent(
+                timestampMillis: millis,
+                usd: charge.usd,
+                model: model,
+                charge: charge)
         }
         return ParsedPage(totalCount: total, events: events)
     }
 
-    /// `chargedCents` → なければ `tokenUsage.totalCents`。どちらも無ければ 0。
-    static func centsToUSD(_ event: [String: Any]) -> Double {
-        if let charged = doubleValue(event["chargedCents"]) {
-            return charged / 100
+    /// イベントの課金区分と、請求されるなら金額。
+    ///
+    /// `kind` を最優先する。included 枠内・無課金でも `chargedCents` / `totalCents` には
+    /// 名目額が入るので、金額欄から先に読むと請求されない利用まで積み上がる（#100）。
+    /// `kind` が無い（旧応答・形式変更）ときは Cost 列（`usageBasedCosts`）へ落ち、
+    /// そこも読めなければ金額欄だけで従来どおり判断する。
+    ///
+    /// 金額欄がどれも無いときは `estimatedUSD` でトークンから金額化する（#91）。
+    /// 価格表に無いモデルは 0 になり、`notCharged` として合算から外れる。
+    static func charge(_ event: [String: Any]) -> Charge {
+        let kind = (event["kind"] as? String)?.uppercased() ?? ""
+        if kind.contains("INCLUDED") || kind.contains("NOT_CHARGED") { return .notCharged }
+        if kind.contains("USAGE_BASED") {
+            return .billing(billedUSD(event) ?? estimatedUSD(event))
         }
+        // 区分が読めない場合の代替。Cost 列が "-"（課金なし）なら金額欄の名目額は使わない。
+        if let dollars = costColumnUSD(event) {
+            guard dollars > 0 else { return .notCharged }
+            return .billing(billedUSD(event) ?? dollars)
+        }
+        return .billing(billedUSD(event) ?? estimatedUSD(event))
+    }
+
+    /// 請求額 (USD)。`tokenUsage.totalCents` を正とし、無ければ Cost 列、
+    /// 最後に `chargedCents`（`cursorTokenFee` を含む内部値）へ落ちる。
+    static func billedUSD(_ event: [String: Any]) -> Double? {
         if let usage = event["tokenUsage"] as? [String: Any],
            let total = doubleValue(usage["totalCents"]) {
             return total / 100
         }
-        return 0
+        if let dollars = costColumnUSD(event) { return dollars }
+        if let charged = doubleValue(event["chargedCents"]) { return charged / 100 }
+        return nil
+    }
+
+    /// `usageBasedCosts`（ダッシュボードの Cost 列）を USD にする。
+    /// 課金なしを表す "-" は 0、欄が無い・読めない場合は nil。
+    static func costColumnUSD(_ event: [String: Any]) -> Double? {
+        guard let raw = event["usageBasedCosts"] as? String else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty || trimmed == "-" { return 0 }
+        return Double(trimmed
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: ""))
+    }
+
+    /// 金額欄がどれも無いイベントを、トークン数と公式価格表から金額化する (USD)。
+    ///
+    /// ローカル走査（`CursorUsageReader`）とまったく同じ `CursorPricing` を通すので、
+    /// 単価はここにも `CursorPricing` にもハードコードされていない——参照するのは
+    /// `CursorPricingService` が Cursor 公式の価格表から取ったキャッシュだけ。
+    /// キャッシュが空、またはモデルが表に無ければ 0（＝合算にも表示にも出さない）。
+    ///
+    /// キャッシュ系のトークンは足さない。公式表はキャッシュ読み書きに別単価を持つが、
+    /// `CursorPricing` は入出力の 2 本しか受けないので、入力単価で代用すると過大評価になる。
+    static func estimatedUSD(_ event: [String: Any]) -> Double {
+        guard let usage = event["tokenUsage"] as? [String: Any] else { return 0 }
+        let input = intValue(usage["inputTokens"]) ?? 0
+        let output = intValue(usage["outputTokens"]) ?? 0
+        guard input > 0 || output > 0 else { return 0 }
+        return CursorPricing.cost(
+            modelID: event["model"] as? String,
+            inputTokens: input,
+            outputTokens: output)
     }
 
     /// ローカル日付の [from, to] → API 用 epoch ミリ秒（その日の始端〜終端）。
