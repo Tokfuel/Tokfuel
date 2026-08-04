@@ -165,6 +165,13 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
                     <sub><b>ParkJong-Hun</b></sub>
                 </a>
             </td>
+            <td align="center">
+                <a href="https://github.com/ken-ty">
+                    <img src="https://avatars.githubusercontent.com/u/38717219?v=4&s=100" width="100;" alt="ken-ty"/>
+                    <br />
+                    <sub><b>ken-ty</b></sub>
+                </a>
+            </td>
 		</tr>
 	</tbody>
 </table>
