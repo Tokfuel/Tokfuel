@@ -131,6 +131,8 @@ enum ScreenshotRenderer {
     ///   （折り返しの下にある「高コストのセッション」を Claude + Cursor で写す）
     /// - `popover-advice`: 同じ合成を末尾までスクロールした状態（「節約のヒント」は
     ///   最初の 1 画面に入らないため、ここでしか見えない）
+    /// - `popover-advice-expanded`: ヒントを開いた状態。詳細と「プロンプトをコピー」は
+    ///   展開しないと出ないので、折り畳んだ `popover-advice` では絵に写らない
     /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
     ///   デバッグを開いた状態）
     /// - `about`: 「Tokfuel について」ウィンドウ
@@ -159,6 +161,9 @@ enum ScreenshotRenderer {
                 PopoverView(store: sessionsFixtureStore()),
                 probeSize: popoverSize, scrollsToBottom: true)),
             ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
+            ("popover-advice-expanded", try renderStandalone(
+                PopoverView(store: store, initiallyExpandsAdvice: true),
+                probeSize: popoverSize, scrollsToBottom: true)),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
