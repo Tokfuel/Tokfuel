@@ -105,7 +105,17 @@ jobs:
             BODY="${BODY}${SECTION}"
           done
 
-          git add -A
+          # ui-preview-images は orphan で .gitignore が無い。render 直後の作業ツリーには
+          # Firebase 導入後の巨大な .build/ が残るので、git add -A すると 100MB 超の pack まで
+          # stage され push が拒否されてコメントが投稿されない。PNG だけを明示的に載せる。
+          rm -rf .build .swiftpm
+          shopt -s nullglob
+          pngs=("pr-${PR_NUMBER}-${SHORT_SHA}-"*.png)
+          if [ ${#pngs[@]} -eq 0 ]; then
+            echo "no preview PNGs to publish" >&2
+            exit 1
+          fi
+          git add -- "${pngs[@]}"
           git commit -m "chore: ui preview for PR #${PR_NUMBER} (${SHORT_SHA})"
           git push origin "$BRANCH"
 
