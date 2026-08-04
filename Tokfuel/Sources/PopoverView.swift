@@ -13,19 +13,24 @@ struct PopoverView: View {
     @ObservedObject var updater: UpdateChecker
     var onOpenSettings: () -> Void = {}
     var onOpenAbout: () -> Void = {}
+    /// ui-preview / スクリーンショット用。節約のヒントを開いた状態で描き、
+    /// 展開時にしか出ないコピーボタンを絵に写す。
+    var initiallyExpandsAdvice = false
 
     init(
         store: UsageStore,
         settings: AppSettings = .shared,
         updater: UpdateChecker = .shared,
         onOpenSettings: @escaping () -> Void = {},
-        onOpenAbout: @escaping () -> Void = {}
+        onOpenAbout: @escaping () -> Void = {},
+        initiallyExpandsAdvice: Bool = false
     ) {
         self.store = store
         self.settings = settings
         self.updater = updater
         self.onOpenSettings = onOpenSettings
         self.onOpenAbout = onOpenAbout
+        self.initiallyExpandsAdvice = initiallyExpandsAdvice
     }
 
     var body: some View {
@@ -407,7 +412,8 @@ struct PopoverView: View {
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("節約のヒント")
                 ForEach(items) { item in
-                    AdviceRow(advice: item.advice, source: item.source)
+                    AdviceRow(advice: item.advice, source: item.source,
+                              initiallyExpanded: initiallyExpandsAdvice)
                 }
             }
         }
@@ -749,7 +755,17 @@ struct MeterBar: View {
 struct AdviceRow: View {
     let advice: RetokReport.Advice
     let source: String
-    @State private var isExpanded = false
+    @State private var isExpanded: Bool
+    /// コピー直後だけラベルを差し替えるためのフラグ。数秒で自分で戻る。
+    @State private var didCopy = false
+
+    /// `initiallyExpanded` は ui-preview / スクリーンショット用。展開時にしか出ない
+    /// コピーボタンを絵に写すために使う（`SettingsView.initiallyShowsAdvanced` と同じ役目）。
+    init(advice: RetokReport.Advice, source: String, initiallyExpanded: Bool = false) {
+        self.advice = advice
+        self.source = source
+        _isExpanded = State(initialValue: initiallyExpanded)
+    }
 
     private var color: Color {
         switch advice.severity {
@@ -761,37 +777,84 @@ struct AdviceRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Image(systemName: advice.severity == "high"
-                      ? "exclamationmark.triangle.fill" : "lightbulb")
-                    .font(.caption)
-                    .foregroundStyle(color)
-                Text(source)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(.quaternary, in: Capsule())
-                    .fixedSize()
-                Text(advice.title)
-                    .font(.caption)
-                    .lineLimit(isExpanded ? nil : 1)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+            // 開閉はタイトル行だけで受ける。詳細やコピーボタンまで受けると、ボタンを
+            // 押しただけで畳まれる。onTapGesture ではなく Button にするのは、
+            // キーボードフォーカスと押下のセマンティクスが要るため——タップでしか開けないと、
+            // キーボード利用者は展開の中にあるコピーボタンに到達できない。
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+            } label: {
+                header
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(advice.title)
+            .accessibilityHint(isExpanded ? "閉じる" : "詳細を開く")
             if isExpanded {
                 Text(advice.detail)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                copyButton
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+    }
+
+    private var header: some View {
+        HStack(spacing: 6) {
+            Image(systemName: advice.severity == "high"
+                  ? "exclamationmark.triangle.fill" : "lightbulb")
+                .font(.caption)
+                .foregroundStyle(color)
+            Text(source)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(.quaternary, in: Capsule())
+                .fixedSize()
+            Text(advice.title)
+                .font(.caption)
+                .lineLimit(isExpanded ? nil : 1)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+                .rotationEffect(.degrees(isExpanded ? 90 : 0))
+        }
+    }
+
+    /// ヒントを読んで自分で対策を組み立てる代わりに、そのまま Claude へ貼れる文面を渡す。
+    /// 生成は `AdvicePrompt`（純粋関数）が持ち、ここは載せて合図を出すだけ。
+    private var copyButton: some View {
+        HStack {
+            Spacer()
+            Button {
+                copyPrompt()
+            } label: {
+                // 「プロンプトをコピー」だとヒント本文の複製と読めるので、
+                // 何のためのプロンプトなのかをラベルで言い切る。
+                Label(didCopy ? "コピーしました" : "改善プロンプトをコピー",
+                      systemImage: didCopy ? "checkmark" : "doc.on.doc")
+                    .font(.caption2)
+            }
+            .buttonStyle(.plain)
+            // Color.accentColor はシステムの青を返し、ポップオーバー根の .tint(.orange) を
+            // 無視する。ShapeStyle の .tint なら他のボタンと同じ色で揃う。
+            .foregroundStyle(didCopy ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
+            .help("この指摘をどう直すかを Claude に相談するための文面をコピーします")
+            .accessibilityLabel("改善プロンプトをコピー")
+        }
+    }
+
+    private func copyPrompt() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(AdvicePrompt.text(for: advice, source: source), forType: .string)
+        withAnimation(.easeInOut(duration: 0.15)) { didCopy = true }
+        // 押したことが分かれば十分なので、少し置いて自分で元に戻す。
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation(.easeInOut(duration: 0.15)) { didCopy = false }
         }
     }
 }

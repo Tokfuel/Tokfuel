@@ -1,0 +1,26 @@
+name: Site CI
+
+# Site/ を触った PR・push だけでダウンロードページのビルドを検証する。
+# 必須ステータスには載せない（パス不一致で未起動だと Expected のまま止まるため）。
+# main への公開デプロイは pages.yml が別途担当する。
+on:
+  push:
+    branches: [main]
+    paths: ["Site/**", ".github/workflows/site-ci.yml"]
+  pull_request:
+    paths: ["Site/**", ".github/workflows/site-ci.yml"]
+
+concurrency:
+  group: site-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Build web page
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build
+        working-directory: Site
+        run: swift run

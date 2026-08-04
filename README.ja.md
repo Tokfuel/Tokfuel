@@ -37,7 +37,7 @@
 
 - 💵 **コストが一目で**
 
-  今日・期間のコスト、日別/累積グラフ（今日 / 今週 / 今月 / 今年の暦窓。週の始まりは設定で土・日・月を選択）。予算が暦月で表示が「今月」のときは上限の参照線、それ以外の暦月予算では月末着地の目安。モデル別内訳、高コストセッション、節約のヒント（retok の Claude 分析に加え、Cursor のモデル偏り・価格表に無いモデル・Cursor の比率をソース別のバッジ付きで）。
+  今日・期間のコスト、日別/累積グラフ（今日 / 今週 / 今月 / 今年の暦窓。週の始まりは設定で土・日・月を選択）。予算が暦月で表示が「今月」のときは上限の参照線、それ以外の暦月予算では月末着地の目安。モデル別内訳、高コストセッション、節約のヒント（retok の Claude 分析に加え、Cursor のモデル偏り・価格表に無いモデル・Cursor の比率をソース別のバッジ付きで）。ヒントを開くと、その指摘をどう直すかを Claude に相談するための文面をコピーできます。
 
 - 🖱️ **Cursor も**
 
@@ -159,6 +159,13 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
                     <img src="https://avatars.githubusercontent.com/u/81838716?v=4&s=100" width="100;" alt="ParkJong-Hun"/>
                     <br />
                     <sub><b>ParkJong-Hun</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/ken-ty">
+                    <img src="https://avatars.githubusercontent.com/u/38717219?v=4&s=100" width="100;" alt="ken-ty"/>
+                    <br />
+                    <sub><b>ken-ty</b></sub>
                 </a>
             </td>
 		</tr>

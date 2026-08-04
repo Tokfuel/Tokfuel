@@ -43,6 +43,7 @@
   estimate otherwise, per-model breakdown, top sessions, and saving tips — retok's
   Claude analysis plus Cursor-derived ones (model skew, models missing from the price
   table, Cursor's share of the period), each badged with the source it came from.
+  Expand a tip to copy a ready-to-paste prompt that asks Claude how to act on it.
 
 - 🖱️ **Cursor, too**
 
@@ -167,6 +168,13 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
                     <img src="https://avatars.githubusercontent.com/u/81838716?v=4&s=100" width="100;" alt="ParkJong-Hun"/>
                     <br />
                     <sub><b>ParkJong-Hun</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/ken-ty">
+                    <img src="https://avatars.githubusercontent.com/u/38717219?v=4&s=100" width="100;" alt="ken-ty"/>
+                    <br />
+                    <sub><b>ken-ty</b></sub>
                 </a>
             </td>
 		</tr>

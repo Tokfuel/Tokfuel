@@ -3,14 +3,17 @@ name: UI Preview
 # ui-preview 📸 ラベルを付けると、メニューバー・設定・About・予算アラート・初回
 # Analytics 同意ダイアログの全画面（下の ORDER にある一覧。同じ画面の別状態も含む）を
 # 実物の UI からレンダリングし、PR コメントに絵として貼る
-# （TF-0034）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
+# （TF-0034 / TF-0097）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
 # `allScreens()`（README 用スクリーンショットを撮る TF-0015 の `renderPNG` を土台にした拡張）に
 # 任せ、ここでは撮った PNG 群を publish するだけ。
 # PopoverView / SettingsView / AboutView / 新規の単独 View を足したら、
 # `ScreenshotRenderer.allScreens()` と下の ORDER / screen_title も同じ PR で更新する。
 #
+# コメント本文は 2 列の HTML サムネ格子にする（縦積みだと画面数が増えたとき見渡せない）。
+# 各セルは小さめ画像 + 「原寸を開く」リンクで、同じ raw.githubusercontent.com URL を指す。
+#
 # コメントに画像を直接添付する API は無いため、専用の orphan branch (ui-preview-images) に
-# PNG 群を push し、公開リポジトリの raw.githubusercontent.com URL を Markdown 画像として
+# PNG 群を push し、公開リポジトリの raw.githubusercontent.com URL を Markdown / HTML 画像として
 # 埋め込む。ファイル名にコミット SHA を含めるので、再ラベル付けのたびに新しい URL になり
 # CDN キャッシュを気にしなくていい。
 #
@@ -64,6 +67,7 @@ jobs:
               popover-cursor-signin) echo "メニューバー - Cursor のサインインが切れた状態" ;;
               popover-sessions) echo "メニューバー - 末尾までスクロールした状態（高コストのセッション）" ;;
               popover-advice) echo "メニューバー - 末尾までスクロールした状態（節約のヒント）" ;;
+              popover-advice-expanded) echo "メニューバー - 節約のヒントを開き、プロンプトをコピーできる状態" ;;
               settings) echo "設定" ;;
               settings-advanced) echo "設定 - 「詳細」を開いた状態" ;;
               settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
@@ -73,7 +77,7 @@ jobs:
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice settings settings-advanced settings-debug about budget-alert analytics-consent)
+          ORDER=(popover popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice popover-advice-expanded settings settings-advanced settings-debug about budget-alert analytics-consent)
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -89,22 +93,55 @@ jobs:
           # 同じ PR の古いプレビュー画像を消してから、今回分を追加する。
           rm -f "pr-${PR_NUMBER}"-*.png
 
-          # printf の書式は単一引用符（改行・バッククォートともに展開されない）に閉じ込め、
-          # YAML のインデントが本文へ混ざらないようにする（1 行に収める）。
-          BODY=$(printf '<!-- ui-preview-bot -->\n### 🖼 UI Preview\n\nRendered at `%s` by `scripts/ui-preview.sh`.' "$SHORT_SHA")
+          # セル HTML。printf の書式は単一引用符に閉じ込め、YAML インデントが本文へ混ざらない
+          # ようにする。% は %% でエスケープ（bash 3.2）。
+          cell_html() {
+            printf '<td width="50%%" valign="top"><p><strong>%s</strong></p><p><a href="%s"><img src="%s" alt="%s" width="400"></a></p><p><a href="%s">原寸を開く</a></p></td>' \
+              "$1" "$2" "$2" "$3" "$2"
+          }
 
+          TITLES=()
+          URLS=()
+          ALTS=()
           for screen in "${ORDER[@]}"; do
             SRC="/tmp/ui-preview/${screen}.png"
             [ -f "$SRC" ] || continue
             IMAGE_NAME="pr-${PR_NUMBER}-${SHORT_SHA}-${screen}.png"
             cp "$SRC" "$IMAGE_NAME"
             IMAGE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/${IMAGE_NAME}"
-            TITLE=$(screen_title "$screen")
-            SECTION=$(printf '\n\n#### %s\n\n![%s](%s)' "$TITLE" "$screen" "$IMAGE_URL")
-            BODY="${BODY}${SECTION}"
+            TITLES+=("$(screen_title "$screen")")
+            URLS+=("$IMAGE_URL")
+            ALTS+=("$screen")
           done
 
-          git add -A
+          BODY=$(printf '<!-- ui-preview-bot -->\n### 🖼 UI Preview\n\nRendered at `%s` by `scripts/ui-preview.sh`.\n\n<table>' "$SHORT_SHA")
+          i=0
+          count=${#URLS[@]}
+          while [ "$i" -lt "$count" ]; do
+            BODY="${BODY}"$'\n<tr>\n'
+            BODY="${BODY}$(cell_html "${TITLES[$i]}" "${URLS[$i]}" "${ALTS[$i]}")"
+            i=$((i + 1))
+            if [ "$i" -lt "$count" ]; then
+              BODY="${BODY}$(cell_html "${TITLES[$i]}" "${URLS[$i]}" "${ALTS[$i]}")"
+              i=$((i + 1))
+            else
+              BODY="${BODY}<td></td>"
+            fi
+            BODY="${BODY}"$'\n</tr>'
+          done
+          BODY="${BODY}"$'\n</table>'
+
+          # ui-preview-images は orphan で .gitignore が無い。render 直後の作業ツリーには
+          # Firebase 導入後の巨大な .build/ が残るので、git add -A すると 100MB 超の pack まで
+          # stage され push が拒否されてコメントが投稿されない。PNG だけを明示的に載せる。
+          rm -rf .build .swiftpm
+          shopt -s nullglob
+          pngs=("pr-${PR_NUMBER}-${SHORT_SHA}-"*.png)
+          if [ ${#pngs[@]} -eq 0 ]; then
+            echo "no preview PNGs to publish" >&2
+            exit 1
+          fi
+          git add -- "${pngs[@]}"
           git commit -m "chore: ui preview for PR #${PR_NUMBER} (${SHORT_SHA})"
           git push origin "$BRANCH"
 
