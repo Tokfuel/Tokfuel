@@ -59,8 +59,8 @@ swift test               # ユニットテスト（Tokfuel/Tests、Swift Testing
 swift build -c release   # scripts/build.sh がパッケージする構成
 ```
 
-CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、すべての PR でテストと
-リリースビルドを実行する。実行時に見える変更は、実アプリをインストールして観察する。
+CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、すべての PR でユニットテストを
+実行する。リリース構成のビルドは `scripts/build.sh` / 配布フロー側で確認する。実行時に見える変更は、実アプリをインストールして観察する。
 `bash scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
 動くと主張せず、組み込みの `verify` スキルで確かめる）。ヘッドレスで検証できるロジック
 （`BudgetMonitor` や `RetokReport` のデコードなど）は `Tokfuel/Tests` にあり、新しいロジックには

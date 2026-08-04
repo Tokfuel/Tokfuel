@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Test & release build
+  test:
+    name: Unit Test
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
@@ -21,8 +21,5 @@ jobs:
           swift --version
           xcodebuild -version
 
-      - name: Test
+      - name: Unit Test
         run: swift test
-
-      - name: Build
-        run: swift build -c release
