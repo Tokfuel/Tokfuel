@@ -116,11 +116,13 @@
 
 - 📤 **CSV export**
 
-  "Export CSV" in the popover's ⋯ menu saves the currently shown period as a CSV: one
-  row per day (date, cost, output tokens), plus period totals (prompts, API requests,
-  cache hit rate) and a per-model cost breakdown — everything already in the retok
-  report, no extra scanning. Useful for an admin collecting a team's spend by hand
-  (each member exports and shares the file); nothing is sent anywhere on its own.
+  The popover's ⋯ menu has two export entries — daily and monthly — for the currently
+  shown period. Daily writes one row per day (date, cost, output tokens); monthly
+  rolls the same numbers up to one row per calendar month. Both add period totals
+  (prompts, API requests, cache hit rate) and a per-model cost breakdown — everything
+  already in the retok report, no extra scanning. Useful for an admin collecting a
+  team's spend by hand (each member exports and shares the file); nothing is sent
+  anywhere on its own.
 
 - 🔒 **Local-first**
 

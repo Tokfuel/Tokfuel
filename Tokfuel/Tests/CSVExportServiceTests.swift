@@ -22,13 +22,14 @@ struct CSVExportServiceTests {
         calendar: Calendar(identifier: .gregorian), year: 2026, month: 8, day: 5
     ).date!
 
-    /// 期間ラベル・書き出し日時は固定し、通貨まわりだけを差し替えて呼べるようにする。
+    /// 期間ラベル・書き出し日時は固定し、粒度・通貨まわりだけを差し替えて呼べるようにする。
     private func csv(_ report: RetokReport, appVersion: String = "1.0",
                      currency: DisplayCurrency = .usd, rate: Double = 0,
-                     rateDate: String? = nil) -> String {
+                     rateDate: String? = nil,
+                     granularity: CSVExportService.Granularity = .daily) -> String {
         CSVExportService.csv(report: report, periodLabel: "今月", appVersion: appVersion,
                              currency: currency, rate: rate, rateDate: rateDate,
-                             exportDate: Self.exportDate)
+                             granularity: granularity, exportDate: Self.exportDate)
     }
 
     @Test func ヘッダーに期間_書き出し日時_アプリバージョンが入る() {
@@ -59,10 +60,41 @@ struct CSVExportServiceTests {
             ])
         let csv = csv(report)
 
+        #expect(csv.contains("Date,Cost (USD),Output Tokens"))
         #expect(csv.contains("\(dates[0]),5.0000,100"))
         #expect(csv.contains("\(dates[1]),0.0000,0"))   // 欠測日は 0 埋め
         #expect(csv.contains("\(dates[2]),0.0000,0"))
         #expect(!csv.contains("999.0000"))               // 窓外の日は出ない
+    }
+
+    @Test func 月別は日ごとの値をYYYY_MM単位で合算する() {
+        let exportDate = DateComponents(
+            calendar: Calendar(identifier: .gregorian), year: 2026, month: 8, day: 2
+        ).date!
+        let report = makeReport(periodDays: 5, daily: [
+            "2026-07-29": .init(cost: 1, output: 10),
+            "2026-07-30": .init(cost: 2, output: 20),
+            "2026-07-31": .init(cost: 3, output: 30),
+            "2026-08-01": .init(cost: 4, output: 40),
+            "2026-08-02": .init(cost: 5, output: 50)
+        ])
+        let monthly = CSVExportService.csv(
+            report: report, periodLabel: "今月", appVersion: "1.0",
+            currency: .usd, rate: 0, rateDate: nil, granularity: .monthly, exportDate: exportDate)
+
+        #expect(monthly.contains("Month,Cost (USD),Output Tokens"))
+        #expect(monthly.contains("2026-07,6.0000,60"))    // 07-29〜07-31 の合算
+        #expect(monthly.contains("2026-08,9.0000,90"))    // 08-01〜08-02 の合算
+        #expect(!monthly.contains("2026-07-29,"))         // 日別の個別日付の行は出ない
+    }
+
+    @Test func ファイル名は粒度を含む() {
+        #expect(CSVExportService.suggestedFilename(
+            windowStart: "2026-07-01", windowEnd: "2026-07-31", granularity: .daily)
+            == "Tokfuel_daily_2026-07-01_2026-07-31.csv")
+        #expect(CSVExportService.suggestedFilename(
+            windowStart: "2026-07-01", windowEnd: "2026-07-31", granularity: .monthly)
+            == "Tokfuel_monthly_2026-07-01_2026-07-31.csv")
     }
 
     @Test func モデル別内訳はコスト降順で出る() {

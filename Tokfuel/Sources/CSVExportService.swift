@@ -10,6 +10,15 @@ import UniformTypeIdentifiers
 /// 持たず、prompts・セッション数・モデル別の内訳は期間合計にしか無い。retok は無改変で
 /// 同梱する制約があるため、日別行はある値だけを載せ、無い値は期間合計セクションで補う。
 enum CSVExportService {
+    /// メインテーブルの行の粒度。日別はそのまま retok の `daily` を 1 行 1 日で出し、
+    /// 月別は同じ値を `YYYY-MM` 単位で合算する（新しい分析ではなく合算だけ）。
+    enum Granularity: String {
+        case daily, monthly
+
+        var columnLabel: String { self == .daily ? "Date" : "Month" }
+        var periodSuffix: String { self == .daily ? "日別" : "月別" }
+    }
+
     private static let newline = "\n"
     // ISO8601DateFormatter はスレッド安全（Apple ドキュメント）だが Sendable ではない
     // （UsageEventLog.swift・CursorCostDriver.swift と同じ理由でキャッシュする）。
@@ -26,6 +35,7 @@ enum CSVExportService {
         currency: DisplayCurrency,
         rate: Double,
         rateDate: String?,
+        granularity: Granularity,
         exportDate: Date = Date()
     ) -> String {
         let includesJPY = currency == .jpy && rate > 0
@@ -33,7 +43,8 @@ enum CSVExportService {
 
         var lines: [String] = []
         lines.append("# Tokfuel usage export")
-        lines.append("# Period: \(periodLabel) (\(from)〜\(to), \(report.periodDays)日)")
+        lines.append("# Period: \(periodLabel) (\(from)〜\(to), \(report.periodDays)日, "
+                     + "\(granularity.periodSuffix))")
         lines.append("# Exported: \(iso8601(exportDate))")
         lines.append("# App version: \(appVersion)")
         if includesJPY {
@@ -42,10 +53,10 @@ enum CSVExportService {
         }
         lines.append("")
 
-        lines.append(row(dailyHeader(includesJPY: includesJPY)))
-        for date in dates {
-            let day = report.daily[date]
-            lines.append(row(dailyRow(date: date, day: day, includesJPY: includesJPY, rate: rate)))
+        lines.append(row(mainHeader(granularity: granularity, includesJPY: includesJPY)))
+        for bucket in mainRows(dates: dates, daily: report.daily, granularity: granularity) {
+            lines.append(row(mainRow(label: bucket.label, cost: bucket.cost, output: bucket.output,
+                                     includesJPY: includesJPY, rate: rate)))
         }
         lines.append("")
 
@@ -64,16 +75,18 @@ enum CSVExportService {
         return lines.joined(separator: newline) + newline
     }
 
-    /// 書き出し先のデフォルトファイル名。窓の開始〜終了日を含め、複数回書き出しても
-    /// 上書きし合いにくくする。
-    static func suggestedFilename(windowStart: String, windowEnd: String) -> String {
-        "Tokfuel_\(windowStart)_\(windowEnd).csv"
+    /// 書き出し先のデフォルトファイル名。粒度と窓の開始〜終了日を含め、日別・月別を
+    /// 続けて書き出しても上書きし合わないようにする。
+    static func suggestedFilename(windowStart: String, windowEnd: String,
+                                  granularity: Granularity) -> String {
+        "Tokfuel_\(granularity.rawValue)_\(windowStart)_\(windowEnd).csv"
     }
 
-    /// ⋯ メニューの「CSV を書き出す」から呼ぶ。NSSavePanel は `SettingsView.choose()` の
-    /// `NSOpenPanel` と同じ、その場で `runModal()` するだけの素朴な流儀に合わせる。
+    /// ⋯ メニューの「CSV を書き出す（日別 / 月別）」から呼ぶ。NSSavePanel は
+    /// `SettingsView.choose()` の `NSOpenPanel` と同じ、その場で `runModal()` するだけの
+    /// 素朴な流儀に合わせる。
     @MainActor
-    static func presentSavePanel(report: RetokReport, periodLabel: String) {
+    static func presentSavePanel(report: RetokReport, periodLabel: String, granularity: Granularity) {
         let settings = AppSettings.shared
         let currency = settings.displayCurrency
         let rate = Money.currentRate()
@@ -82,12 +95,13 @@ enum CSVExportService {
             as? String ?? "dev"
 
         let content = csv(report: report, periodLabel: periodLabel, appVersion: appVersion,
-                          currency: currency, rate: rate, rateDate: rateDate)
+                          currency: currency, rate: rate, rateDate: rateDate, granularity: granularity)
         let (_, from, to) = windowBounds(days: report.periodDays, endingOn: Date())
 
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.commaSeparatedText]
-        panel.nameFieldStringValue = suggestedFilename(windowStart: from, windowEnd: to)
+        panel.nameFieldStringValue = suggestedFilename(windowStart: from, windowEnd: to,
+                                                        granularity: granularity)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
@@ -124,14 +138,46 @@ enum CSVExportService {
         includesJPY ? [formatUSD(usd), formatJPY(usd, rate: rate)] : [formatUSD(usd)]
     }
 
-    private static func dailyHeader(includesJPY: Bool) -> [String] {
-        ["Date"] + costHeaderColumns(includesJPY: includesJPY) + ["Output Tokens"]
+    private static func mainHeader(granularity: Granularity, includesJPY: Bool) -> [String] {
+        [granularity.columnLabel] + costHeaderColumns(includesJPY: includesJPY) + ["Output Tokens"]
     }
 
-    private static func dailyRow(date: String, day: RetokReport.DailyCost?,
-                                 includesJPY: Bool, rate: Double) -> [String] {
-        [date] + costColumns(day?.cost ?? 0, includesJPY: includesJPY, rate: rate)
-              + [String(day?.output ?? 0)]
+    private static func mainRow(label: String, cost: Double, output: Int,
+                                includesJPY: Bool, rate: Double) -> [String] {
+        [label] + costColumns(cost, includesJPY: includesJPY, rate: rate) + [String(output)]
+    }
+
+    private struct MainBucket {
+        let label: String
+        let cost: Double
+        let output: Int
+    }
+
+    /// 日別はそのまま 1 日 1 行。月別は同じ `dates` を `YYYY-MM` で束ね、その月に含まれる
+    /// 窓内の日ぶんだけ cost/output を合算する（窓外・欠測日は日別と同じく 0 扱い）。
+    private static func mainRows(dates: [String], daily: [String: RetokReport.DailyCost],
+                                 granularity: Granularity) -> [MainBucket] {
+        switch granularity {
+        case .daily:
+            return dates.map { date in
+                let day = daily[date]
+                return MainBucket(label: date, cost: day?.cost ?? 0, output: day?.output ?? 0)
+            }
+        case .monthly:
+            var order: [String] = []
+            var costByMonth: [String: Double] = [:]
+            var outputByMonth: [String: Int] = [:]
+            for date in dates {
+                let month = String(date.prefix(7))   // "YYYY-MM"
+                if costByMonth[month] == nil { order.append(month) }
+                let day = daily[date]
+                costByMonth[month, default: 0] += day?.cost ?? 0
+                outputByMonth[month, default: 0] += day?.output ?? 0
+            }
+            return order.map { month in
+                MainBucket(label: month, cost: costByMonth[month] ?? 0, output: outputByMonth[month] ?? 0)
+            }
+        }
     }
 
     private static func totalsHeader(includesJPY: Bool) -> [String] {
