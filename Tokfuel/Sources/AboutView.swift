@@ -62,7 +62,7 @@ struct AboutView: View {
             Divider()
                 .padding(.vertical, 8)
 
-            Text("MIT License © akidon0000")
+            Text("MIT License © Tokfuel")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

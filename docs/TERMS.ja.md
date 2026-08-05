@@ -1,12 +1,12 @@
 # Tokfuel 利用規約
 
-*最終更新: 2026-07-30*
+*最終更新: 2026-08-04*
 
 この規約は、macOS アプリ Tokfuel とそのソースコードに適用されます。Tokfuel の利用者と App Store 審査に向けた文書です。
 
 ## ライセンス
 
-Tokfuel は [MIT License](../LICENSE) で公開されているオープンソースソフトウェアです（© [Dan Akiyama (@akidon0000)](https://github.com/akidon0000)）。使用、複製、改変、再配布の権利はライセンス本文が定めます。
+Tokfuel は [MIT License](../LICENSE) で公開されているオープンソースソフトウェアです（© [Tokfuel](https://github.com/Tokfuel)）。使用、複製、改変、再配布の権利はライセンス本文が定めます。
 
 ## 無保証
 

@@ -199,4 +199,4 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE) © [Dan Akiyama (@akidon0000)](https://github.com/akidon0000).
+[MIT](LICENSE) © [Tokfuel](https://github.com/Tokfuel).
