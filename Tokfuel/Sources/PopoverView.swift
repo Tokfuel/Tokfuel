@@ -179,13 +179,13 @@ struct PopoverView: View {
     @ViewBuilder
     private var budgetSection: some View {
         if settings.dailyBudgetLimit > 0 {
-            BudgetRow(title: "予算 (今日)", spend: store.todayCost, limit: settings.dailyBudgetLimit,
+            BudgetRow(title: "予算 (今日)", spend: store.todayCost, limit: settings.dailyBudgetLimitUSD,
                       level: store.dailyBudgetLevel ?? .ok,
                       warnPercent: settings.budgetWarnPercent)
         }
         if settings.budgetLimit > 0 {
             BudgetRow(title: "予算 (\(settings.budgetPeriod == .calendarMonth ? "今月" : "30日"))",
-                      spend: store.budgetSpend, limit: settings.budgetLimit,
+                      spend: store.budgetSpend, limit: settings.budgetLimitUSD,
                       level: store.budgetLevel ?? .ok,
                       warnPercent: settings.budgetWarnPercent)
         }

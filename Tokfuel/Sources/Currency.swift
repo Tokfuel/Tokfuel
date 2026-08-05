@@ -64,6 +64,20 @@ enum Money {
         currency == .jpy && rate > 0 ? amount / rate : amount
     }
 
+    /// ある表示通貨のネイティブ単位から、別の表示通貨のネイティブ単位へ USD 経由で変換する。
+    /// 通貨が同じなら素通し。`rate <= 0`（未取得）のときは `usdAmount`/`displayAmount` の
+    /// ガードにより実質何もしない（値をそのまま返す）。
+    nonisolated static func convert(
+        _ amount: Double,
+        from: DisplayCurrency,
+        to: DisplayCurrency,
+        rate: Double
+    ) -> Double {
+        guard from != to else { return amount }
+        return displayAmount(forUSD: usdAmount(fromDisplayAmount: amount, currency: from, rate: rate),
+                             currency: to, rate: rate)
+    }
+
     nonisolated static func unitSymbol(currency: DisplayCurrency, rate: Double) -> String {
         currency == .jpy && rate > 0 ? "¥" : "$"
     }

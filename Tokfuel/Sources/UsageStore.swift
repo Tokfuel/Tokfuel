@@ -212,6 +212,10 @@ final class UsageStore: ObservableObject {
     /// メニューバー表示の組み立てに渡す入力。ステータス項目と設定のライブプレビューで共用する。
     /// 別の表現で試算したいときは、返り値の `representation` を差し替える。
     func menuBarInput(isFollowing: Bool = false) -> MenuBarInput {
+        // レートの UserDefaults 読み取りを含む変換なので、明滅ループ（最大 12Hz）で
+        // 呼ばれても 1 回の呼び出しにつき 1 回ずつで済むようここだけで評価する。
+        let dailyLimitUSD = settings.dailyBudgetLimitUSD
+        let monthlyLimitUSD = settings.budgetLimitUSD
         return MenuBarInput(
             metric: settings.menuBarMetric,
             representation: settings.menuBarRepresentation,
@@ -224,10 +228,10 @@ final class UsageStore: ObservableObject {
             gauge: MenuBarReadout.gauge(
                 basis: settings.menuBarPercentBasis,
                 todaySpend: todayCost, monthSpend: budgetSpend,
-                dailyLimit: settings.dailyBudgetLimit, monthlyLimit: settings.budgetLimit,
+                dailyLimit: dailyLimitUSD, monthlyLimit: monthlyLimitUSD,
                 dailyAverage: dailyAverage30, activeDays: activeDaysInPeriod),
-            dailyLimit: settings.dailyBudgetLimit,
-            monthlyLimit: settings.budgetLimit,
+            dailyLimit: dailyLimitUSD,
+            monthlyLimit: monthlyLimitUSD,
             cursorUnavailable: !degradedSourceWarnings.isEmpty,
             // 並べて表示は Claude と二次ソース合計の 2 列（この Issue では拡張しない）。
             todayClaude: todayCost(forSource: CostSourceMode.claudeSourceID),
@@ -260,14 +264,14 @@ final class UsageStore: ObservableObject {
     /// 月間予算のレベル（予算オフなら nil）。
     var budgetLevel: BudgetLevel? {
         guard settings.budgetLimit > 0 else { return nil }
-        return BudgetMonitor.level(spend: budgetSpend, limit: settings.budgetLimit,
+        return BudgetMonitor.level(spend: budgetSpend, limit: settings.budgetLimitUSD,
                                    warnPercent: settings.budgetWarnPercent)
     }
 
     /// 日次予算のレベル（予算オフなら nil）。今日のコストと比較する。
     var dailyBudgetLevel: BudgetLevel? {
         guard settings.dailyBudgetLimit > 0 else { return nil }
-        return BudgetMonitor.level(spend: todayCost, limit: settings.dailyBudgetLimit,
+        return BudgetMonitor.level(spend: todayCost, limit: settings.dailyBudgetLimitUSD,
                                    warnPercent: settings.budgetWarnPercent)
     }
 
@@ -798,7 +802,7 @@ extension UsageStore {
         case .calendarMonth:
             // 予算窓と表示窓が初めて一致する組 — 上限の参照線を引ける。
             if reportPeriod == .thisMonth {
-                return .referenceLine(limit: settings.budgetLimit)
+                return .referenceLine(limit: settings.budgetLimitUSD)
             }
             return Self.monthEndProjection(spend: budgetSpend)
                 .map { .monthEndProjection(amount: $0) }

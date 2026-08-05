@@ -166,8 +166,19 @@ final class AppSettings: ObservableObject {
     }
 
     /// 金額の表示通貨。日本円は Frankfurter API のレート（1 日 1 回取得）で換算する。
+    /// 切り替えた瞬間だけ、予算上限額（`budgetLimit`/`dailyBudgetLimit`）を新しい
+    /// 通貨のネイティブ単位へ 1 回だけ変換する（以後は時間経過だけでは変わらない）。
+    /// レート未取得（`rate <= 0`）のときは変換すると誤った値を確定保存しかねないため、
+    /// 何もせず据え置く（次に切り替えたときにレートが揃っていれば変換される）。
     @Published var displayCurrency: DisplayCurrency {
-        didSet { persist(displayCurrency.rawValue, forKey: Money.currencyKey) }
+        didSet {
+            persist(displayCurrency.rawValue, forKey: Money.currencyKey)
+            guard oldValue != displayCurrency else { return }
+            let rate = Money.currentRate(in: defaults)
+            guard rate > 0 else { return }
+            budgetLimit = Money.convert(budgetLimit, from: oldValue, to: displayCurrency, rate: rate)
+            dailyBudgetLimit = Money.convert(dailyBudgetLimit, from: oldValue, to: displayCurrency, rate: rate)
+        }
     }
 
     /// ポップオーバーとメニューバーでどのコストソースを金額に含めるか。
@@ -192,11 +203,14 @@ final class AppSettings: ObservableObject {
         didSet { persist(claudeDirectory, forKey: Keys.claudeDirectory) }
     }
 
-    /// 月間（budgetPeriod で定義する期間）のコスト上限 (USD)。0 なら月間予算オフ。
+    /// 月間（budgetPeriod で定義する期間）のコスト上限。`displayCurrency` の
+    /// ネイティブ単位（入力された値をそのまま）で保持する。0 なら月間予算オフ。
+    /// USD 値が必要な比較・通知には `budgetLimitUSD` を使う。
     @Published var budgetLimit: Double {
         didSet { persist(budgetLimit, forKey: Keys.budgetLimit) }
     }
-    /// 1 日あたりのコスト上限 (USD)。0 なら日次予算オフ。月間とは独立。
+    /// 1 日あたりのコスト上限。`budgetLimit` と同じくネイティブ単位。0 なら日次予算オフ。
+    /// 月間とは独立。USD 値が必要なら `dailyBudgetLimitUSD` を使う。
     @Published var dailyBudgetLimit: Double {
         didSet { persist(dailyBudgetLimit, forKey: Keys.dailyBudgetLimit) }
     }
@@ -261,6 +275,7 @@ final class AppSettings: ObservableObject {
         static let claudeDirectory = "claudeDirectory"
         static let budgetLimit = "budgetLimit"
         static let dailyBudgetLimit = "dailyBudgetLimit"
+        static let budgetLimitCurrencyMigrated = "budgetLimitCurrencyMigrated"
         static let budgetPeriod = "budgetPeriod"
         static let weekStart = "weekStart"
         static let budgetWarnPercent = "budgetWarnPercent"
@@ -283,6 +298,16 @@ final class AppSettings: ObservableObject {
     /// 月側の集計に実際に使う期間。予算オフでメニューバー表示のためだけに数える場合は暦月。
     var effectiveBudgetPeriod: BudgetPeriod {
         budgetLimit > 0 ? budgetPeriod : .calendarMonth
+    }
+
+    /// 月間上限の USD 換算値。USD 建ての消費額との比較・通知にはこちらを使う
+    /// （`budgetLimit` 自体は `displayCurrency` のネイティブ単位）。
+    var budgetLimitUSD: Double {
+        Money.convert(budgetLimit, from: displayCurrency, to: .usd, rate: Money.currentRate(in: defaults))
+    }
+    /// 日次上限の USD 換算値。`budgetLimitUSD` と同じ理由。
+    var dailyBudgetLimitUSD: Double {
+        Money.convert(dailyBudgetLimit, from: displayCurrency, to: .usd, rate: Money.currentRate(in: defaults))
     }
 
     /// メニューバーが日次平均（過去 30 日）を分母として要求しているか。
@@ -340,8 +365,31 @@ final class AppSettings: ObservableObject {
         costModelBreakdownMode = CostModelBreakdownMode(
             rawValue: defaults.string(forKey: Keys.costModelBreakdownMode) ?? "") ?? .combined
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
-        budgetLimit = defaults.double(forKey: Keys.budgetLimit)
-        dailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)
+        // 旧バージョンは budgetLimit/dailyBudgetLimit を常に USD で保存していた。USD 以外の
+        // 表示通貨のユーザーだけ、一度だけネイティブ単位へ変換する（TF-0116）。self のプロパティは
+        // 全部そろうまで読めない（2 段階初期化）ので、ここではローカル変数だけで完結させる。
+        var migratedBudgetLimit = defaults.double(forKey: Keys.budgetLimit)
+        var migratedDailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)
+        if !defaults.bool(forKey: Keys.budgetLimitCurrencyMigrated) {
+            let currency = DisplayCurrency(rawValue: defaults.string(forKey: Money.currencyKey) ?? "")
+                ?? .usd
+            if currency != .usd, migratedBudgetLimit > 0 || migratedDailyBudgetLimit > 0 {
+                let rate = Money.currentRate(in: defaults)
+                if rate > 0 {
+                    migratedBudgetLimit = Money.convert(migratedBudgetLimit, from: .usd, to: currency, rate: rate)
+                    migratedDailyBudgetLimit = Money.convert(
+                        migratedDailyBudgetLimit, from: .usd, to: currency, rate: rate)
+                    defaults.set(migratedBudgetLimit, forKey: Keys.budgetLimit)
+                    defaults.set(migratedDailyBudgetLimit, forKey: Keys.dailyBudgetLimit)
+                    defaults.set(true, forKey: Keys.budgetLimitCurrencyMigrated)
+                }
+                // rate <= 0（未取得）なら移行フラグを立てず、次回起動で再試行する。
+            } else {
+                defaults.set(true, forKey: Keys.budgetLimitCurrencyMigrated)
+            }
+        }
+        budgetLimit = migratedBudgetLimit
+        dailyBudgetLimit = migratedDailyBudgetLimit
         budgetPeriod = BudgetPeriod(rawValue: defaults.string(forKey: Keys.budgetPeriod) ?? "")
             ?? .calendarMonth
         weekStart = WeekStart(rawValue: defaults.string(forKey: Keys.weekStart) ?? "") ?? .monday
