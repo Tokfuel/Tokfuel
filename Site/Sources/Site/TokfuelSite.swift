@@ -11,4 +11,13 @@ struct TokfuelSite: Site {
 
     var homePage = Home()
     var layout = MainLayout()
+
+    @ElementBuilder<any StaticPage> var staticPages: [any StaticPage] {
+        UsageGuideEN()
+        ArchitectureEN()
+        PrivacyOverviewEN()
+        UsageGuideJA()
+        ArchitectureJA()
+        PrivacyOverviewJA()
+    }
 }

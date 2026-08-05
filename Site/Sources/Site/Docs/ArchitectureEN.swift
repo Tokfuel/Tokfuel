@@ -1,0 +1,117 @@
+import Ignite
+
+struct ArchitectureEN: StaticPage {
+    var path = "/docs/architecture"
+    var title = "Architecture — Tokfuel"
+    var description = "How Tokfuel is put together: UsageStore, BudgetMonitor, and the per-source services."
+    var layout: DocsLayout { DocsLayout() }
+
+    var body: some HTML {
+        VStack(spacing: 24) {
+            Text("Architecture").docsTitle()
+
+            Text("""
+            Tokfuel is a SwiftUI menu-bar app with no server component. Every number \
+            it shows comes from parsing files that Claude Code, Cursor, and Codex CLI \
+            already keep on your Mac.
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("UsageStore: the single source of truth").docsSubheading()
+
+            Text("""
+            UsageStore is the one @MainActor object every view reads from. It owns the \
+            current cost totals, charts, and per-model breakdown, and refreshes them \
+            on a timer — every 10 minutes when idle, stepping up to once a minute for \
+            5 minutes after cost moves. PopoverView and the rest of the UI stay pure \
+            display layers; settings live separately in AppSettings, backed by \
+            UserDefaults.
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("RetokService: reading Claude Code's own transcripts").docsSubheading()
+
+            Text {
+                "RetokService shells out to the bundled "
+                Link("retok", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Tokfuel/Sources/Resources/README-retok.md")
+                " script (© Daiki Matsudate, MIT, kept unmodified) to parse the "
+                Code("~/.claude/projects/")
+                " transcripts Claude Code writes on its own — no hooks, no extra "
+                "install, nothing to configure. python3 is an optional dependency; "
+                "without it, cost analysis degrades but the rest of the app keeps "
+                "working."
+            }
+            .foregroundStyle(.secondary)
+
+            Text("BudgetMonitor").docsSubheading()
+
+            Text("""
+            BudgetMonitor watches UsageStore's totals against the monthly and daily \
+            limits set in AppSettings, and fires a heads-up — notification, floating \
+            alert window, or both — exactly once each time a threshold is crossed.
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("Per-source services").docsSubheading()
+
+            List {
+                ListItem {
+                    Text {
+                        Code("CursorDashboardService")
+                        " — when Cursor is installed and signed in, calls Cursor's own "
+                        "dashboard usage API using the session token Cursor already "
+                        "keeps in its local state.vscdb. Falls back to a local SQLite "
+                        "token snapshot when signed out or offline."
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("CursorPricingService")
+                        " — fetches Cursor's own published price table once a day to "
+                        "price fallback-path usage. Never guesses a rate for an unpriced "
+                        "model; it's counted as $0 instead."
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("ExchangeRateService")
+                        " — fetches the USD→JPY rate from Frankfurter once a day, only "
+                        "when JPY display is enabled."
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("UpdateChecker")
+                        " — polls GitHub Releases for a newer version at launch and "
+                        "then hourly; downloads only when you click Update."
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("CSVExportService")
+                        " — turns the current period's data already in the retok "
+                        "report into daily or monthly CSV, entirely on-device."
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("AnalyticsService")
+                        " — the single surface for opt-in, distribution-build-only "
+                        "Firebase Analytics events; a no-op everywhere else."
+                    }
+                }
+            }
+
+            Text("""
+            Each source is kept independent and labeled — Cursor and Codex costs are \
+            never silently merged into the Claude total. See the full source layout \
+            in the repository under Tokfuel/Sources/.
+            """)
+            .foregroundStyle(.secondary)
+
+            Link("Browse the source on GitHub", target: "https://github.com/Tokfuel/Tokfuel/tree/main/Tokfuel/Sources")
+                .linkStyle(.underline(.heavy))
+        }
+        .frame(maxWidth: 720)
+    }
+}

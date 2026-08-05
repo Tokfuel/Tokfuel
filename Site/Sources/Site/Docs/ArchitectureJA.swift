@@ -1,0 +1,118 @@
+import Ignite
+
+struct ArchitectureJA: StaticPage {
+    var path = "/ja/docs/architecture"
+    var title = "アーキテクチャ — Tokfuel"
+    var description = "UsageStore・BudgetMonitor・各ソース別 Service など、Tokfuel の構成。"
+    var layout: DocsLayout { DocsLayout() }
+
+    var body: some HTML {
+        VStack(spacing: 24) {
+            Text("アーキテクチャ").docsTitle()
+
+            Text("""
+            Tokfuel はサーバーを持たない SwiftUI 製のメニューバーアプリ。表示する \
+            数字はすべて、Claude Code・Cursor・Codex CLI が Mac にすでに残している \
+            ファイルを読み取って作られる。
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("UsageStore：唯一の情報源").docsSubheading()
+
+            Text("""
+            UsageStore は全ビューが参照する唯一の @MainActor オブジェクト。現在の \
+            コスト合計・チャート・モデル別内訳を保持し、タイマーで更新する（待機中は \
+            10 分ごと、コストが動くと 5 分間だけ 1 分ごとに切り替わる）。 \
+            PopoverView など UI 側は純粋な表示層のままで、設定は AppSettings \
+            （UserDefaults ベース）に分離している。
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("RetokService：Claude Code 自身のトランスクリプトを読む").docsSubheading()
+
+            Text {
+                "RetokService は同梱の "
+                Link("retok", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Tokfuel/Sources/Resources/README-retok.md")
+                "（© Daiki Matsudate、MIT、無改変で同梱）を呼び出し、Claude Code が "
+                "自分で書き出す "
+                Code("~/.claude/projects/")
+                " のトランスクリプトを解析する。フックも追加インストールも設定も不要。"
+                "python3 は任意の依存で、無くてもコスト分析だけが縮退し、他の機能は"
+                "動き続ける。"
+            }
+            .foregroundStyle(.secondary)
+
+            Text("BudgetMonitor").docsSubheading()
+
+            Text("""
+            BudgetMonitor は UsageStore の合計値を AppSettings の月次・日次の上限と \
+            突き合わせ、しきい値を超えるたびに一度だけ通知・フローティングアラート \
+            ウィンドウ・両方のいずれかで知らせる。
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("ソース別の Service").docsSubheading()
+
+            List {
+                ListItem {
+                    Text {
+                        Code("CursorDashboardService")
+                        " — Cursor がインストール済みでサインインもされていれば、"
+                        "Cursor が state.vscdb に保持済みのセッショントークンを使って "
+                        "Cursor 自身のダッシュボード使用量 API を呼ぶ。サインアウトや "
+                        "オフライン時はローカル SQLite のトークンスナップショットへ "
+                        "フォールバックする。"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("CursorPricingService")
+                        " — Cursor 自身が公開する価格表を 1 日 1 回取得し、"
+                        "フォールバック経路の利用を補正する。価格を引けないモデルは "
+                        "当て推量のレートではなく $0 として計上する。"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("ExchangeRateService")
+                        " — JPY 表示を有効にしたときだけ、Frankfurter から USD→JPY "
+                        "レートを 1 日 1 回取得する。"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("UpdateChecker")
+                        " — 起動時と以後 1 時間ごとに GitHub Releases をポーリングし、"
+                        "新しいバージョンを検知する。リリースアセットのダウンロードは "
+                        "アップデートボタンを押したときだけ。"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("CSVExportService")
+                        " — retok レポートにすでにある当該期間のデータを、端末上だけで"
+                        "日次・月次 CSV に変換する。"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("AnalyticsService")
+                        " — オプトイン・配布ビルド限定の Firebase Analytics イベント"
+                        "送信を一元化する窓口。それ以外のビルドでは何もしない。"
+                    }
+                }
+            }
+
+            Text("""
+            各ソースは独立に扱い、ラベル付きで区別する。Cursor や Codex のコストが \
+            ラベルなしで Claude の合計に混ざることはない。詳細なファイル構成は \
+            リポジトリの Tokfuel/Sources/ を参照。
+            """)
+            .foregroundStyle(.secondary)
+
+            Link("GitHub でソースを見る", target: "https://github.com/Tokfuel/Tokfuel/tree/main/Tokfuel/Sources")
+                .linkStyle(.underline(.heavy))
+        }
+        .frame(maxWidth: 720)
+    }
+}

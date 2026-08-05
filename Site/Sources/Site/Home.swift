@@ -72,6 +72,13 @@ struct Home: StaticPage {
 
                 Link("View source and full details on GitHub", target: sourceURL)
                     .linkStyle(.underline(.heavy))
+
+                HStack(spacing: 16) {
+                    Link("Read the docs", target: "/docs/usage")
+                        .linkStyle(.underline(.heavy))
+                    Link("ドキュメント（日本語）", target: "/ja/docs/usage")
+                        .linkStyle(.underline(.heavy))
+                }
             }
             .padding(.vertical, 64)
             .horizontalAlignment(.center)
