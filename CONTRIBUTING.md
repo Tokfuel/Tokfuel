@@ -74,7 +74,7 @@ swift assets/make-icon.swift   # rewrites assets/AppIcon.iconset/ and assets/App
 
 - [ ] Builds cleanly: `swift build -c release`
 - [ ] Runs and behaves as expected on macOS 14+
-- [ ] UI changes include a screenshot or short GIF (maintainers can also add the `ui-preview 📸` label to a same-repo PR to have a bot render the popover — default and, with the footer's Update button showing, the update variant — settings — default/advanced/debug — and about screens — see `.github/workflows/ui-preview.yml`)
+- [ ] UI changes include a screenshot or short GIF (maintainers can also add the `0-ui-preview 📸` label to a same-repo PR to have a bot render the popover — default and, with the footer's Update button showing, the update variant — settings — default/advanced/debug — and about screens — see `.github/workflows/ui-preview.yml`)
 - [ ] README / README.ja.md updated if user-visible behavior changed
 - [ ] No new dependencies (or, if so, explained in the PR description)
 
@@ -156,7 +156,7 @@ swift assets/make-icon.swift   # assets/AppIcon.iconset/ と assets/AppIcon.icns
 
 - [ ] ビルドが通る: `swift build -c release`
 - [ ] macOS 14+ で意図どおりに動く
-- [ ] UI 変更はスクリーンショットか短い GIF を添付（同一リポジトリの PR なら `ui-preview 📸` ラベルを付けて、ポップオーバー（既定・フッターにアップデートボタンが出た状態）・設定（既定/詳細展開/デバッグ展開）・About をまとめてボットに撮らせてもよい。fork からの PR では GitHub の権限制約で動かない — `.github/workflows/ui-preview.yml` 参照）
+- [ ] UI 変更はスクリーンショットか短い GIF を添付（同一リポジトリの PR なら `0-ui-preview 📸` ラベルを付けて、ポップオーバー（既定・フッターにアップデートボタンが出た状態）・設定（既定/詳細展開/デバッグ展開）・About をまとめてボットに撮らせてもよい。fork からの PR では GitHub の権限制約で動かない — `.github/workflows/ui-preview.yml` 参照）
 - [ ] ユーザーから見える変更があれば README / README.ja.md も更新
 - [ ] 新規依存は追加しない（追加する場合は PR 本文で理由を説明）
 

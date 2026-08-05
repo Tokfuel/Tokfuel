@@ -1,6 +1,6 @@
 name: UI Preview
 
-# ui-preview 📸 ラベルを付けると、メニューバー・設定・About・予算アラート・初回
+# 0-ui-preview 📸 ラベルを付けると、メニューバー・設定・About・予算アラート・初回
 # Analytics 同意ダイアログの全画面（下の ORDER にある一覧。同じ画面の別状態も含む）を
 # 実物の UI からレンダリングし、PR コメントに絵として貼る
 # （TF-0034 / TF-0097）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
@@ -33,7 +33,7 @@ concurrency:
 jobs:
   preview:
     name: Render & publish preview
-    if: github.event.action == 'labeled' && github.event.label.name == 'ui-preview 📸'
+    if: github.event.action == 'labeled' && github.event.label.name == '0-ui-preview 📸'
     runs-on: macos-15
     permissions:
       contents: write
