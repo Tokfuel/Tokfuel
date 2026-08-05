@@ -114,6 +114,14 @@
   and shows an **Update** button next to the popover's ⋯ menu. One click downloads the
   release, verifies its code signature, swaps the app in place, and relaunches.
 
+- 📤 **CSV export**
+
+  "Export CSV" in the popover's ⋯ menu saves the currently shown period as a CSV: one
+  row per day (date, cost, output tokens), plus period totals (prompts, API requests,
+  cache hit rate) and a per-model cost breakdown — everything already in the retok
+  report, no extra scanning. Useful for an admin collecting a team's spend by hand
+  (each member exports and shares the file); nothing is sent anywhere on its own.
+
 - 🔒 **Local-first**
 
   Prompts and transcripts never leave your Mac. Network calls are: the opt-in
