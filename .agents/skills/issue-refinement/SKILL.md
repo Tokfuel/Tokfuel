@@ -2,8 +2,9 @@
 name: issue-refinement
 description: >-
   溜まったオープン Issue を棚卸しし、統合・研ぎ直し・クローズ・優先度と依存関係の再整理を
-  提案する。「issue を見直して」「issue を整理して」「issue-refinement」「バックログ棚卸し」
-  「重複 issue まとめて」「陳腐化した issue ないか確認して」等で使う。対話型で、提案した変更は
+  提案する。`/issue-refinement` で明示的に呼ばれたときだけ使う。「issue を見直して」
+  「issue を整理して」「バックログ棚卸し」のような自然文だけでは自動発動しない
+  ——確信が持てなければ、コマンドで呼び出すよう案内する。対話型で、提案した変更は
   ユーザーが個々に承認したものだけを `gh issue edit` / `gh issue close` / `gh issue comment` で
   反映する。無断で Issue を書き換えない。新規 Issue の起案は `ideation`、Issue の実装は
   `implementation`、次にやる 1 件を選ぶだけなら `task-select` を使う——このスキルは既存の
@@ -53,8 +54,19 @@ gh pr list --repo Tokfuel/Tokfuel --state open --limit 20 \
   変わったか、参照する後継 Issue や PR があれば番号）を添えて提案する。
 - **優先度・依存関係の再整理**：本文中の `#N` 参照や AGENTS.md のグラウンドルールとの
   相性から、ブロック関係やラベルの付け替え（例：スコープが膨らみすぎて `enhancement 🚀` の
-  粒度を超えている Issue に分割を提案するなど）を洗い出す。ラベルは `enhancement 🚀` /
+  粒度を超えている Issue に分割を提案するなど）を洗い出す。種別ラベルは `enhancement 🚀` /
   `bugs 🐞` / `docs ✍️` / `chore 🏠` の既存語彙を使う。
+- **優先度ラベルの付け替え**：緊急・ブロッカーになっている Issue には `high priority 🔥`、
+  後回しでよい・着手が長期間見送られている Issue には `low priority 🏕️` を提案する
+  （中間の優先度ラベルは無いので、どちらでもない Issue には付けない）。
+- **初回コントリビュート向けラベル**：スコープが小さく自己完結し、リポジトリの背景知識が
+  無くても着手できる Issue には `good first issue 🔰` を提案する。このラベルはまだリポジトリに
+  無いので、初めて付ける際は先に作成する。
+
+  ```bash
+  gh label create "good first issue 🔰" --repo Tokfuel/Tokfuel \
+    --description "Good for newcomers" --color "7057ff" 2>/dev/null
+  ```
 
 ### 3. まとめて提示する
 

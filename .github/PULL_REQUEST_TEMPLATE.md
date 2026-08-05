@@ -36,7 +36,7 @@
   未検証のもの（実行時のみの経路、UI 操作）は明示する。
   UI（PopoverView / SettingsView / AboutView / 単独の新規 View）を変えたら、
   ScreenshotRenderer.allScreens() と ui-preview.yml の ORDER / screen_title も
-  同じ PR で更新し、必要なら ui-preview 📸 ラベルを付ける。
+  同じ PR で更新し、必要なら 0-ui-preview 📸 ラベルを付ける。
 -->
 
 ```
