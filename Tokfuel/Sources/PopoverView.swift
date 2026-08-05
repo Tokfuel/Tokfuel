@@ -466,6 +466,23 @@ struct PopoverView: View {
             Menu {
                 Button("再読み込み") { store.reload() }
                 Divider()
+                Button("CSV を書き出す（日別）") {
+                    if let report = store.report {
+                        CSVExportService.presentSavePanel(report: report,
+                                                          periodLabel: store.reportPeriod.label,
+                                                          granularity: .daily)
+                    }
+                }
+                .disabled(store.report == nil)
+                Button("CSV を書き出す（月別）") {
+                    if let report = store.report {
+                        CSVExportService.presentSavePanel(report: report,
+                                                          periodLabel: store.reportPeriod.label,
+                                                          granularity: .monthly)
+                    }
+                }
+                .disabled(store.report == nil)
+                Divider()
                 Button("設定") { onOpenSettings() }
                 Button("Tokfuel について") { onOpenAbout() }
                 Divider()
