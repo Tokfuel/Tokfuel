@@ -168,7 +168,7 @@ struct SettingsView: View {
         } header: {
             Text("予算")
         } footer: {
-            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。アラートウィンドウは全画面の Space でも前面に出ます（どちらもレベルが上がったときの 1 回だけです）。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算し、内部では USD で保存します。")
+            Text("しきい値でアイコンがオレンジになり通知、超過で赤になります。アラートウィンドウは全画面の Space でも前面に出ます（どちらもレベルが上がったときの 1 回だけです）。円は Frankfurter API のレート（1 日 1 回取得、レート以外は送信しません）で換算します。設定した上限額は、為替が変わっても表示上そのままです。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -295,25 +295,13 @@ struct SettingsView: View {
         )
     }
 
-    /// 予算上限（内部保存は USD）を、選択中の通貨で入出力するバインディング。
-    /// 円のときは取得済みレートで換算し、整数円に丸めて見せる。
+    /// 予算上限（選択中の通貨のネイティブ単位で保存）への素通しバインディング。
+    /// 通貨の変換は `AppSettings.displayCurrency` の切り替え時に 1 回だけ行われるため、
+    /// ここでは変換しない（毎回変換すると為替レートの更新で表示額がドリフトする — TF-0116）。
     private func budgetField(_ keyPath: ReferenceWritableKeyPath<AppSettings, Double>) -> Binding<Double> {
         Binding(
-            get: {
-                let usd = settings[keyPath: keyPath]
-                return Money.displayAmount(
-                    forUSD: usd,
-                    currency: settings.displayCurrency,
-                    rate: Money.currentRate()
-                )
-            },
-            set: { value in
-                settings[keyPath: keyPath] = Money.usdAmount(
-                    fromDisplayAmount: value,
-                    currency: settings.displayCurrency,
-                    rate: Money.currentRate()
-                )
-            })
+            get: { settings[keyPath: keyPath] },
+            set: { settings[keyPath: keyPath] = $0 })
     }
 
     /// 表現 1 行ぶんの素材。

@@ -262,14 +262,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let level = usageStore.budgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .monthly, level: level, spend: usageStore.budgetSpend,
-                limit: settings.budgetLimit,
+                limit: settings.budgetLimitUSD,
                 periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod),
                 style: style, onOpenSettings: openSettings)
         }
         if let level = usageStore.dailyBudgetLevel {
             BudgetMonitor.notifyIfNeeded(
                 kind: .daily, level: level, spend: usageStore.todayCost,
-                limit: settings.dailyBudgetLimit,
+                limit: settings.dailyBudgetLimitUSD,
                 periodKey: BudgetMonitor.dailyPeriodKey(),
                 style: style, onOpenSettings: openSettings)
         }
