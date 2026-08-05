@@ -1,0 +1,128 @@
+name: Site Preview
+
+# site-preview 🌐 ラベルを付けると、Site/ をビルドして専用の orphan branch
+# (site-preview-pages) に PR 番号別のサブディレクトリとして push し、
+# raw.githack.com 経由でレンダリングした URL を PR コメントに貼る。
+#
+# GitHub Pages の公開デプロイ（pages.yml）は actions/deploy-pages を使っており、
+# 1 リポジトリにつき 1 つの公開先しか持てないため、同じ仕組みで PR ごとのプレビューを
+# 共存させることはできない。ui-preview.yml が画像を orphan branch + raw.githubusercontent.com
+# で配っているのと同じ発想で、HTML 一式は raw.githack.com（開発用途向けの公開 CDN。
+# raw.githubusercontent.com は Content-Type が text/plain でブラウザがレンダリングしない）
+# 経由で配る。使用状況データは一切載らない、ビルド成果物の配信のみ。
+#
+# fork からの pull_request では GITHUB_TOKEN が read-only になるため push/コメントは失敗する。
+# continue-on-error でジョブを赤くしないだけにとどめ、fork 対応は将来の課題とする。
+
+on:
+  pull_request:
+    types: [labeled, closed]
+
+concurrency:
+  group: site-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build & publish site preview
+    if: github.event.action == 'labeled' && github.event.label.name == 'site-preview 🌐'
+    runs-on: macos-15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Build site
+        working-directory: Site
+        run: swift run
+
+      - name: Publish preview and comment
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          BRANCH="site-preview-pages"
+          SHORT_SHA="${PR_SHA:0:7}"
+          DIR="pr-${PR_NUMBER}"
+
+          BUILD_OUT="$(mktemp -d)/Build"
+          cp -R Site/Build "$BUILD_OUT"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin "$BRANCH" 2>/dev/null || true
+          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+            git switch -C "$BRANCH" "origin/$BRANCH"
+          else
+            git switch --orphan "$BRANCH"
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
+
+          rm -rf "$DIR"
+          mkdir -p "$DIR"
+          cp -R "$BUILD_OUT"/. "$DIR"/
+
+          git add -- "$DIR"
+          git commit -m "chore: site preview for PR #${PR_NUMBER} (${SHORT_SHA})"
+          git push origin "$BRANCH"
+
+          PREVIEW_URL="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html"
+          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s の内容が更新されるたびに (再ラベル付けで) 上書きされる。' \
+            "$SHORT_SHA" "$PREVIEW_URL" "$DIR")
+
+          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '[.[] | select(.body | startswith("<!-- site-preview-bot -->"))][0].id // empty')
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${COMMENT_ID}" -f body="$BODY" > /dev/null
+          else
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
+          fi
+
+  cleanup:
+    name: Remove preview on close
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Remove this PR's preview directory
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          BRANCH="site-preview-pages"
+          DIR="pr-${PR_NUMBER}"
+
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+            echo "no $BRANCH branch, nothing to clean up"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$BRANCH"
+          git switch -C "$BRANCH" "origin/$BRANCH"
+
+          if [ ! -d "$DIR" ]; then
+            echo "no preview directory for PR #${PR_NUMBER}"
+            exit 0
+          fi
+          git rm -rf "$DIR"
+          git commit -m "chore: remove site preview for PR #${PR_NUMBER}"
+
+          if [ -z "$(git ls-tree -r HEAD --name-only)" ]; then
+            git push origin --delete "$BRANCH"
+          else
+            git push origin "$BRANCH"
+          fi
