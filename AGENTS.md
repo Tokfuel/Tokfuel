@@ -110,8 +110,8 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
   文書は `docs ✍️`）。詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
   [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md) を参照。
 - **GitHub PR（新規）**：タイトルは `日本語 / English`（Issue 実装 PR は先頭に `[TF-NNNN]`）。
-  本文は「なぜ」と「どう変わったか」を書く（背景 / 判断 / 変化 ＋ Background / Decisions /
-  Changes）。ファイルパスの列挙は diff に任せ、書かない。詳細は
+  本文は背景 / 変化 / 判断 / 懸念（あれば）＋ Background / Changes / Decisions / Concerns。
+  ファイルパスの列挙は diff に任せ、書かない。懸念が無ければその節は削除する。詳細は
   [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) を参照。
 - コミットメッセージも日本語で書く（形式は「規約」のとおり）。
 - README と SECURITY は例外として日英併記を続ける。ユーザーに見える変更では `README.md` と

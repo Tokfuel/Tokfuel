@@ -104,7 +104,7 @@ swift build -c release         # scripts/build.sh が使うリリース構成
 
 自分のブランチへ push する。ユーザーに求められない限り PR は開かない。PR のタイトルと本文は
 [PR テンプレート](../../../.github/PULL_REQUEST_TEMPLATE.md)に従う（タイトルは
-`[TF-NNNN] 日本語 / English`、本文は背景 / 判断 / 変化）。コミットは
+`[TF-NNNN] 日本語 / English`、本文は背景 / 変化 / 判断 / 懸念）。コミットは
 `feat(<scope>):` や `fix(<scope>):` の形式で、要約を日本語で書く。PR 本文に `Closes #<number>` を
 入れて、マージで Issue が自動クローズされるようにする。ラベルは種類に応じて付与する。
 
