@@ -100,21 +100,22 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
 
 このリポジトリの基本言語は日本語。
 
-- セッションでのやり取り、PR（タイトルと本文）、レビューコメント、AGENTS.md やスキルといった
-  作業文書は日本語で書く。文章は
-  [`japanese-tech-writing`](.agents/skills/japanese-tech-writing/SKILL.md) スキルの規範に従う
+- セッションでのやり取り、レビューコメント、AGENTS.md やスキルといった作業文書は日本語で書く。
+  文章は [`japanese-tech-writing`](.agents/skills/japanese-tech-writing/SKILL.md) スキルの規範に従う
   （Issue と PR の本文の日本語は敬体、作業規範の文書は常体）。
-- **GitHub Issue（新規）**：タイトルは `日本語 / English`。本文は日本語ブロック
-  （背景 / 要件 / タスク / 実現可否）のあとに英語ブロック（Background / Requirements /
-  Tasks / Feasibility）を置く。正本は日本語。実装方針や関連ファイル一覧は書かない。
-  ラベルは種類に応じて必ず自動付与する（機能は `enhancement 🚀`、バグは `bugs 🐞`）。
-  詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
-  [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md) を参照。
+- **GitHub Issue / PR（新規）**：タイトルは `日本語 / English`（Issue 実装 PR は先頭に
+  `[TF-NNNN]`）。本文は日本語ブロック（背景 / 要件 / タスク / 実現可否）のあとに英語ブロック
+  （Background / Requirements / Tasks / Feasibility）を置く。正本は日本語。
+  Issue 本文には実装方針や関連ファイル一覧を書かない。ラベルは種類に応じて必ず自動付与する
+  （機能は `enhancement 🚀`、バグは `bugs 🐞`、文書は `docs ✍️`）。
+  詳細は [`ideation`](.agents/skills/ideation/SKILL.md)、
+  [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md)、
+  [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) を参照。
 - コミットメッセージも日本語で書く（形式は「規約」のとおり）。
 - README と SECURITY は例外として日英併記を続ける。ユーザーに見える変更では `README.md` と
   `README.ja.md` の両方を更新する。
 - コード内のコメントは、周囲の既存コード（英語）に合わせる。
-- 英語のみ・旧形式のまま残っている古い Issue は、内容に手を入れる機会に新形式へ寄せれば足りる。
+- 英語のみ・旧形式のまま残っている古い Issue / PR は、内容に手を入れる機会に新形式へ寄せれば足りる。
   翻訳だけを目的にした一括の書き換えはしない。
 
 ## 規約
@@ -122,7 +123,7 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
 - ブランチは 1 トピックにつき 1 本（`claude/<short-topic>`）。PR は小さく焦点を絞る。
 - コミットの subject は 72 文字未満で変更を言い切り、body には理由（why）を書く。
   `feat(<scope>):` のような type プレフィックスは従来どおり使う。ロードマップの Issue を
-  実装する PR は、タイトル先頭に `[TF-NNNN]` を付ける。
+  実装する PR は、タイトル先頭に `[TF-NNNN]` を付け、続けて `日本語 / English` とする。
 - UI の状態は `@MainActor` に置く。`UsageStore` を唯一の情報源に保ち、`PopoverView` は
   純粋な表示層のまま。設定は `AppSettings`（UserDefaults ベース）に置く。
 - Git hooks は [`.githooks/`](.githooks/) で管理する。セッション開始時、クローン直後、または
