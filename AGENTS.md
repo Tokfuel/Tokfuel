@@ -109,7 +109,8 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
   ラベルは**種別**と、当てはまるなら**領域**を必ず自動付与する。
   種別は機能 `enhancement 🚀`、バグ `bugs 🐞`、文書 `docs ✍️`、雑務 `chore 🏠`。
   領域はアプリ `product 🍎`、サイト `web 🌐`、CI / Actions / 配布 `ci ⚙️`
-  （領域に当てはまらなければ種別のみ）。詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
+  （領域に当てはまらなければ種別のみ）。急ぐものだけ `high priority 🔥` を付ける
+  （低優先度ラベルは使わない）。詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
   [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md) を参照。
 - **GitHub PR（新規）**：タイトルは `日本語 / English`（Issue 実装 PR は先頭に `[TF-NNNN]`）。
   本文は背景 / 変化 / 判断 / 懸念（あれば）＋ Background / Changes / Decisions / Concerns。

@@ -81,6 +81,7 @@ gh issue list --repo Tokfuel/Tokfuel --state open --limit 50 \
   `gh issue create` / `gh issue edit` の `--label` で自動付与する。
   - 種別: 機能は `enhancement 🚀`、バグは `bugs 🐞`、文書は `docs ✍️`、雑務は `chore 🏠`
   - 領域: アプリは `product 🍎`、サイトは `web 🌐`、CI / Actions / 配布ワークフローは `ci ⚙️`
+  - 優先度: 急ぐものだけ `high priority 🔥` を付ける。低優先度ラベルは使わない
   - 領域に当てはまらない（作業規範だけなど）ときは種別のみでよい
 - 依存や関連の Issue は `#N` で相互リンクしてよい。古い Issue に追記するときはその Issue の
   言語・構成に合わせてよい。
