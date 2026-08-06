@@ -77,15 +77,18 @@ gh issue list --repo Tokfuel/Tokfuel --state open --limit 50 \
 - **実現可否**：`Yes` / `No`（または難しい）だけ。`No` や難しいときだけ理由を1行で書く。
   壁打ちで潰せるリスクは「リスク」欄に残さない。
 - **本文（バグ）**：症状 → 原因 → 修正方針 → `## タスク`。日英ブロックは enhancement に合わせる。
-- **ラベル**：必ず付ける。機能は `enhancement 🚀`、バグは `bugs 🐞`。ユーザーに聞かず
+- **ラベル**：必ず付ける。**種別**と、当てはまるなら**領域**を両方付ける。ユーザーに聞かず
   `gh issue create` / `gh issue edit` の `--label` で自動付与する。
+  - 種別: 機能は `enhancement 🚀`、バグは `bugs 🐞`、文書は `docs ✍️`、雑務は `chore 🏠`
+  - 領域: アプリは `product 🍎`、サイトは `web 🌐`、CI / Actions / 配布ワークフローは `ci ⚙️`
+  - 領域に当てはまらない（作業規範だけなど）ときは種別のみでよい
 - 依存や関連の Issue は `#N` で相互リンクしてよい。古い Issue に追記するときはその Issue の
   言語・構成に合わせてよい。
 
 ```bash
 gh issue create --repo Tokfuel/Tokfuel \
   --title "<日本語 / English>" \
-  --label "enhancement 🚀" \
+  --label "enhancement 🚀" --label "product 🍎" \
   --body "<本文>" 2>/dev/null
 ```
 

@@ -6,7 +6,7 @@ labels: "enhancement 🚀"
 assignees: ""
 ---
 
-<!-- タイトルは「日本語 / English」。ラベル enhancement 🚀 は自動付与。 -->
+<!-- タイトルは「日本語 / English」。ラベルは種別（enhancement 🚀）＋領域（product 🍎 / web 🌐 / ci ⚙️）。 -->
 
 ## 背景
 

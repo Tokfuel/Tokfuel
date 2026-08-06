@@ -106,7 +106,7 @@ swift build -c release         # scripts/build.sh が使うリリース構成
 [PR テンプレート](../../../.github/PULL_REQUEST_TEMPLATE.md)に従う（タイトルは
 `[TF-NNNN] 日本語 / English`、本文は背景 / 変化 / 判断 / 懸念）。コミットは
 `feat(<scope>):` や `fix(<scope>):` の形式で、要約を日本語で書く。PR 本文に `Closes #<number>` を
-入れて、マージで Issue が自動クローズされるようにする。ラベルは種類に応じて付与する。
+入れて、マージで Issue が自動クローズされるようにする。ラベルは種別＋領域（当てはまるとき）を付ける。
 
 ## 参照
 
