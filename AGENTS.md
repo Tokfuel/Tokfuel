@@ -103,13 +103,15 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
 - セッションでのやり取り、レビューコメント、AGENTS.md やスキルといった作業文書は日本語で書く。
   文章は [`japanese-tech-writing`](.agents/skills/japanese-tech-writing/SKILL.md) スキルの規範に従う
   （Issue と PR の本文の日本語は敬体、作業規範の文書は常体）。
-- **GitHub Issue / PR（新規）**：タイトルは `日本語 / English`（Issue 実装 PR は先頭に
-  `[TF-NNNN]`）。本文は日本語ブロック（背景 / 要件 / タスク / 実現可否）のあとに英語ブロック
-  （Background / Requirements / Tasks / Feasibility）を置く。正本は日本語。
-  Issue 本文には実装方針や関連ファイル一覧を書かない。ラベルは種類に応じて必ず自動付与する
-  （機能は `enhancement 🚀`、バグは `bugs 🐞`、文書は `docs ✍️`）。
-  詳細は [`ideation`](.agents/skills/ideation/SKILL.md)、
-  [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md)、
+- **GitHub Issue（新規）**：タイトルは `日本語 / English`。本文は日本語ブロック
+  （背景 / 要件 / タスク / 実現可否）のあとに英語ブロック（Background / Requirements /
+  Tasks / Feasibility）を置く。正本は日本語。実装方針や関連ファイル一覧は書かない。
+  ラベルは種類に応じて必ず自動付与する（機能は `enhancement 🚀`、バグは `bugs 🐞`、
+  文書は `docs ✍️`）。詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
+  [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md) を参照。
+- **GitHub PR（新規）**：タイトルは `日本語 / English`（Issue 実装 PR は先頭に `[TF-NNNN]`）。
+  本文は「なぜ変えたか」を書く（背景 / 判断 / 検証 ＋ Background / Decisions / Verification）。
+  「何を変えたか」の列挙は diff に任せ、書かない。詳細は
   [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) を参照。
 - コミットメッセージも日本語で書く（形式は「規約」のとおり）。
 - README と SECURITY は例外として日英併記を続ける。ユーザーに見える変更では `README.md` と
