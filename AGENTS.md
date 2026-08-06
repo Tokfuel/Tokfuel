@@ -100,15 +100,21 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
 
 このリポジトリの基本言語は日本語。
 
-- セッションでのやり取り、GitHub Issue（タイトルと本文）、PR（タイトルと本文）、レビュー
-  コメント、AGENTS.md やスキルといった作業文書は日本語で書く。文章は
+- セッションでのやり取り、PR（タイトルと本文）、レビューコメント、AGENTS.md やスキルといった
+  作業文書は日本語で書く。文章は
   [`japanese-tech-writing`](.agents/skills/japanese-tech-writing/SKILL.md) スキルの規範に従う
-  （Issue と PR の本文は敬体、作業規範の文書は常体）。
+  （Issue と PR の本文の日本語は敬体、作業規範の文書は常体）。
+- **GitHub Issue（新規）**：タイトルは `日本語 / English`。本文は日本語ブロック
+  （背景 / 要件 / タスク / 実現可否）のあとに英語ブロック（Background / Requirements /
+  Tasks / Feasibility）を置く。正本は日本語。実装方針や関連ファイル一覧は書かない。
+  ラベルは種類に応じて必ず自動付与する（機能は `enhancement 🚀`、バグは `bugs 🐞`）。
+  詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
+  [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md) を参照。
 - コミットメッセージも日本語で書く（形式は「規約」のとおり）。
 - README と SECURITY は例外として日英併記を続ける。ユーザーに見える変更では `README.md` と
   `README.ja.md` の両方を更新する。
 - コード内のコメントは、周囲の既存コード（英語）に合わせる。
-- 英語のまま残っている古い Issue や文書は、内容に手を入れる機会に日本語へ寄せれば足りる。
+- 英語のみ・旧形式のまま残っている古い Issue は、内容に手を入れる機会に新形式へ寄せれば足りる。
   翻訳だけを目的にした一括の書き換えはしない。
 
 ## 規約

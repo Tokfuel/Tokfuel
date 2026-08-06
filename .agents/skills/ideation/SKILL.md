@@ -55,7 +55,8 @@ gh issue list --repo Tokfuel/Tokfuel --state open --limit 50 \
 
 具体的で範囲の見えるアイデアを出し、スコープを研ぐ質問（誰のためか、観測できる成果は何か）を
 返す。近い既存 Issue は参照点として持ち込む（「これは #5 に近い。拡張するか、別物として
-立てるか」）。
+立てるか」）。リスクや曖昧さ（失敗時の振る舞い、対象外、可否の根拠）は Issue に残さず、
+この往復のうちに要件か対象外へ吸収する。
 
 ### 3. 生き残ったアイデアを分類し、判断と理由を伝える
 
@@ -67,20 +68,23 @@ gh issue list --repo Tokfuel/Tokfuel --state open --limit 50 \
 
 ユーザーが形に納得したら、Proposal テンプレートの形式で GitHub Issue を立てる。
 
-- **言語**：タイトルも本文も日本語で書く。文章は
-  [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) の規範に従い、本文は敬体にする。
-- **タイトル**：内容を言い切る短い句。番号などの接頭辞は付けない。
-- **本文（enhancement）**：導入の段落 → `## 詳細設計` → `## 進捗` チェックリスト。
-- **本文（バグ）**：症状の段落 → 原因 → 修正方針 → `**関連ファイル**：` のリスト →
-  `## 進捗` チェックリスト。
-- 関連するファイルやシンボルは本文中で参照する。依存や関連の Issue は `#N` で相互リンクする。
-- **ラベル**：機能は `enhancement 🚀`、バグは `bugs 🐞`。
-- 古い Issue には英語見出し（`## Detailed design` など）のものが残っている。既存 Issue に
-  追記するときはその Issue の言語に合わせてよいが、新規 Issue は日本語で書く。
+- **タイトル**：`日本語 / English`。どちらも短く内容を言い切る。番号などの接頭辞は付けない。
+- **本文**：日本語ブロックのあと英語ブロック。文章は
+  [`japanese-tech-writing`](../japanese-tech-writing/SKILL.md) の規範に従い、日本語は敬体。
+  正本は日本語側。実装方針・関連ファイル一覧は書かない。
+- **本文構成（enhancement）**：`## 背景` → `## 要件` → `## タスク` → `## 実現可否`、区切り線のあと
+  `## Background` → `## Requirements` → `## Tasks` → `## Feasibility`。
+- **実現可否**：`Yes` / `No`（または難しい）だけ。`No` や難しいときだけ理由を1行で書く。
+  壁打ちで潰せるリスクは「リスク」欄に残さない。
+- **本文（バグ）**：症状 → 原因 → 修正方針 → `## タスク`。日英ブロックは enhancement に合わせる。
+- **ラベル**：必ず付ける。機能は `enhancement 🚀`、バグは `bugs 🐞`。ユーザーに聞かず
+  `gh issue create` / `gh issue edit` の `--label` で自動付与する。
+- 依存や関連の Issue は `#N` で相互リンクしてよい。古い Issue に追記するときはその Issue の
+  言語・構成に合わせてよい。
 
 ```bash
 gh issue create --repo Tokfuel/Tokfuel \
-  --title "<タイトル>" \
+  --title "<日本語 / English>" \
   --label "enhancement 🚀" \
   --body "<本文>" 2>/dev/null
 ```
