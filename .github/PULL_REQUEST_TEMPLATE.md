@@ -1,48 +1,37 @@
 <!--
-  該当するセクションだけを埋め、残りは削除する。深さは差分に比例させる。
-  1 ファイルの修正なら「## 概要」と「## 検証」だけでよく、横断的な機能なら全部を書く。
-  本文は敬体で、この変更が「何であるか」を現在形の地の文で書く。
-
-  タイトルの形式：`[TF-NNNN] 変更を言い切る短い句`。`[TF-NNNN]` プレフィックスは番号付きの
-  GitHub Issue を実装する PR だけに付け、雑務の PR では省く。
+  タイトル：`[TF-NNNN] 日本語 / English`（Issue 実装 PR）。雑務は `[TF-NNNN]` なしで `日本語 / English`。
+  PR は「なぜ」「どう変わったか」「判断」を書く。ファイル列挙は diff に任せる。正本は日本語・敬体。
+  深さは差分に比例させる。小さい修正なら背景と変化だけでよい。懸念が無ければその節は削除する。
 -->
 
-## 概要
+## 背景
 
-<!--
-  必須。この PR が何をするのか、なぜ意味があるのか。キーとなる名詞は**太字**にする。
-  Issue を閉じるなら「Closes #N」と書く。
--->
+<!-- なぜこの変更が必要か。Closes #N を書く。 -->
 
-## 変更内容
+## 変化
 
-<!--
-  ファイルまたはコンポーネントごとに 1 行。**パス**を太字にし、全角コロンに続けて何をなぜ
-  変えたかを書く。新規ファイルには（新規）を付ける。概要で足りるなら削除する。
--->
+<!-- 振る舞い・文書・運用がどう変わったか。パスの列挙はしない。 -->
 
-- **`Tokfuel/Sources/…`**：…
+## 判断
 
-## スコープ外
+<!-- 採った方針と、やらなかったこと。自明なら削除してよい。 -->
 
-<!--
-  この PR に意図して入れていないもの。区切るものが無ければ削除する。
--->
+## 懸念
 
-## 検証
+<!-- 残る不安やフォローが必要な点。無ければこの節ごと削除する。 -->
 
-<!--
-  必須。通ったテストの出力を貼り、新しいテストが何を守るかを書く。
-  未検証のもの（実行時のみの経路、UI 操作）は明示する。
-  UI（PopoverView / SettingsView / AboutView / 単独の新規 View）を変えたら、
-  ScreenshotRenderer.allScreens() と ui-preview.yml の ORDER / screen_title も
-  同じ PR で更新し、必要なら ui-preview 📸 ラベルを付ける。
--->
+---
 
-```
-swift test
-```
+## Background
 
-<!--
-  🤖 Generated with Claude Code（PR 本文を自分で書いた場合はこの行を削除する）
--->
+<!-- Same content in English. Include Closes #N. -->
+
+## Changes
+
+<!-- How behavior, docs, or workflow changed. Do not list file paths. -->
+
+## Decisions
+
+## Concerns
+
+<!-- Leftover risks or follow-ups. Delete this section when none. -->
