@@ -1,4 +1,4 @@
-name: メニューバー通しテスト
+name: E2E メニューバー
 
 # TestDocs コアシナリオを、実際のメニューバー操作で通す（macos-15）。
 # 失敗時は証拠（画面・動画・正常フィクスチャ）を orphan ブランチへ載せ、PR コメントする。
@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   core6:
-    name: コアシナリオ
+    name: E2E メニューバー
     if: github.event.action != 'closed'
     runs-on: macos-15
     permissions:

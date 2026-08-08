@@ -1,4 +1,4 @@
-# メニューバー通しテスト（E2E）
+# E2E メニューバー
 
 アプリ（`App/Tokfuel`）を、実際のメニューバー操作で通すテストの置き場です。
 
@@ -13,7 +13,7 @@
 
 ## コアシナリオ（6 本）
 
-まずは次の 6 本を `App/E2E/run-core6.sh` がまとめて回します。CI 上の表示名は「メニューバー通しテスト / コアシナリオ」です。
+まずは次の 6 本を `App/E2E/run-core6.sh` がまとめて回します。CI 上の表示名は **E2E メニューバー** です。
 
 - `MenuBar-01-open-home`
 - `Cost-01-chart-style`
@@ -58,4 +58,4 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 
 ### CI
 
-[`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。GitHub 上のチェック名は **メニューバー通しテスト / コアシナリオ** です。
+[`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。GitHub 上のチェック名は **E2E メニューバー** です。
