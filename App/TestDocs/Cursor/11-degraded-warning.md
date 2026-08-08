@@ -4,7 +4,6 @@ title: Cursor 取得劣化時に警告が出る
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

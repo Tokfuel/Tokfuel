@@ -4,7 +4,6 @@ title: 警告しきい値を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

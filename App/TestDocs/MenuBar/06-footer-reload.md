@@ -4,7 +4,6 @@ title: 再読み込みで集計が更新される
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

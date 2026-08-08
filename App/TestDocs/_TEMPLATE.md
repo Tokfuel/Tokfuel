@@ -4,8 +4,9 @@ title: （短いシナリオ名）
 primary_domain: Cost
 platforms: [macOS]
 status: ideation
-issue: （任意。関連 GitHub Issue の URL または #NNNN）
 ---
+
+（関連 GitHub Issue があるときだけ front matter に `issue: <URL または #NNNN>` を足す。無いときは行ごと省略する。）
 
 ## シナリオ
 

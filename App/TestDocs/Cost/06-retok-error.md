@@ -4,7 +4,6 @@ title: retok 失敗時にエラー文が出る
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

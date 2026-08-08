@@ -4,7 +4,6 @@ title: 日別 CSV を書き出せる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

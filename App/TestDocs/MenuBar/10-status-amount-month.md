@@ -4,7 +4,6 @@ title: メニューバーに今月の金額が表示される
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

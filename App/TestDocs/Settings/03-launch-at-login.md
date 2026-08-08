@@ -4,7 +4,6 @@ title: ログイン時に自動起動を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

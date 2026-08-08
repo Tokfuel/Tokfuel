@@ -4,7 +4,6 @@ title: 並べて表示で Cursor 側だけダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

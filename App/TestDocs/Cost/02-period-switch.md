@@ -4,7 +4,6 @@ title: 推移の期間を切り替え、表示が期間に追従する
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

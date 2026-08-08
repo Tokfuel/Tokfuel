@@ -4,7 +4,6 @@ title: 高コストセッションに Cursor 行が混ざる
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

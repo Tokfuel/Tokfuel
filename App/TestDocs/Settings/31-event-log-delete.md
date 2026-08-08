@@ -4,7 +4,6 @@ title: 全イベントログを削除できる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: 1日の上限を設定できる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

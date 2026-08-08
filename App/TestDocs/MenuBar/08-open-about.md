@@ -4,7 +4,6 @@ title: メニューから Tokfuel についてを開ける
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

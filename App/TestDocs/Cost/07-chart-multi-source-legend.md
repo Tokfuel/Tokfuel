@@ -4,7 +4,6 @@ title: 複数ソース時に推移の凡例が出る
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

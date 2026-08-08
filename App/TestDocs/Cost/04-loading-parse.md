@@ -4,7 +4,6 @@ title: レポート未取得時に解析中表示が出る
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

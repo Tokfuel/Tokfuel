@@ -4,7 +4,6 @@ title: Claude のみのとき Cursor の行やヒントが隠れる
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

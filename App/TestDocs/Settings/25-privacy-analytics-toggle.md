@@ -4,7 +4,6 @@ title: 利用状況の送信許可を後から切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

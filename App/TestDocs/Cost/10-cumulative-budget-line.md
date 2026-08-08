@@ -4,7 +4,6 @@ title: 累積グラフに予算の参照線が出る
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

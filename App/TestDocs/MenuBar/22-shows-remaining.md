@@ -4,7 +4,6 @@ title: 予算までの残り表示に切り替えられる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

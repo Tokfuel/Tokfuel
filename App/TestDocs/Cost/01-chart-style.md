@@ -4,7 +4,6 @@ title: 推移グラフの表示形式を切り替えられる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

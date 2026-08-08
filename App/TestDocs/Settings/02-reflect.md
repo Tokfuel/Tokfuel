@@ -4,7 +4,6 @@ title: 設定の変更がポップオーバー／メニューバー表示に反�
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

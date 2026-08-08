@@ -4,7 +4,6 @@ title: コストのソースを Claude のみにできる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

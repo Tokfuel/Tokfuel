@@ -4,7 +4,6 @@ title: ゲージの形がタンクのとき給油機が下から塗られる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

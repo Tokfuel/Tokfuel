@@ -4,7 +4,6 @@ title: メニューバーアイコンの再操作でホームを閉じられる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

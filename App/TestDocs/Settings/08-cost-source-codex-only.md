@@ -4,7 +4,6 @@ title: Codex がある環境で Codex のみを選べる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

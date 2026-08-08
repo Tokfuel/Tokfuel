@@ -4,7 +4,6 @@ title: モデル別セクションにモデル行が表示される
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

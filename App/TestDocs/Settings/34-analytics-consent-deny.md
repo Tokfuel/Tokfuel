@@ -4,7 +4,6 @@ title: 同意ダイアログで許可しないを選べる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

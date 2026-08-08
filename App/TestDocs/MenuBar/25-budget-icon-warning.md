@@ -4,7 +4,6 @@ title: 予算しきい値到達でメニューバーアイコンが警告色に�
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

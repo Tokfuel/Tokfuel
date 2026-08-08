@@ -4,7 +4,6 @@ title: モデル別に Cursor モデル行が出る
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

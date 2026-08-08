@@ -4,7 +4,6 @@ title: 並べて表示のときメニューバーにソース内訳が出る
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

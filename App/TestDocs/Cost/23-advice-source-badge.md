@@ -4,7 +4,6 @@ title: 節約のヒントにソース表示が付く
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

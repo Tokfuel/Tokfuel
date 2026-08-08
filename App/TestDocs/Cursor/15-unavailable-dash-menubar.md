@@ -4,7 +4,6 @@ title: Cursor のみかつ劣化でメニューバーがダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

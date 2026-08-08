@@ -4,7 +4,6 @@ title: 超過時アラートが超過向けの見え方になる
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

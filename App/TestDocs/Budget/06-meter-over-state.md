@@ -4,7 +4,6 @@ title: 超過で予算メーターが超過状態になる
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

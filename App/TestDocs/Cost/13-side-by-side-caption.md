@@ -4,7 +4,6 @@ title: 並べて表示でヒーロー下にソース内訳キャプションが�
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

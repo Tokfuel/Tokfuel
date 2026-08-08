@@ -4,7 +4,6 @@ title: 節約のヒントを展開できる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

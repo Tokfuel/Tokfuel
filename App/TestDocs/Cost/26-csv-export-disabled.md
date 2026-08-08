@@ -4,7 +4,6 @@ title: レポート未取得時は CSV 書き出しが無効になる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

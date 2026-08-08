@@ -4,7 +4,6 @@ title: メニューバーがアイコンのみになる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

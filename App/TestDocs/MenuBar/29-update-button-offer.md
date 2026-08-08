@@ -4,7 +4,6 @@ title: 新バージョン検出時にアップデートボタンが出る
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

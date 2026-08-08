@@ -4,7 +4,6 @@ title: 使用中は更新を速めるを切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

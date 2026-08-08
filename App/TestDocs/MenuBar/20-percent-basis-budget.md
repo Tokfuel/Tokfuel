@@ -4,7 +4,6 @@ title: 割合の基準が予算上限のとき予算に対する率が表示さ�
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

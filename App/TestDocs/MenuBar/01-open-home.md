@@ -4,7 +4,6 @@ title: メニューバーからホーム（ポップオーバー）を表示で�
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

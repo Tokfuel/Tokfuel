@@ -4,7 +4,6 @@ title: 改善プロンプトをコピーできる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

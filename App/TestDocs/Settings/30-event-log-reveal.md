@@ -4,7 +4,6 @@ title: イベントログフォルダを表示できる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

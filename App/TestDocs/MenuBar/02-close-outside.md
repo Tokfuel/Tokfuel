@@ -4,7 +4,6 @@ title: ホーム外をクリックするとポップオーバーが閉じる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

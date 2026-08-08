@@ -4,7 +4,6 @@ title: 1日上限があるときホームに今日の予算行が出る
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

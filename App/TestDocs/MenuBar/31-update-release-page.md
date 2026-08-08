@@ -4,7 +4,6 @@ title: 差し替え不可環境ではリリースページを開くに変わる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

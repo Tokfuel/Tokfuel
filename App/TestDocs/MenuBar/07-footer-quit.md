@@ -4,7 +4,6 @@ title: メニューから Tokfuel を終了できる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

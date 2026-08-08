@@ -4,7 +4,6 @@ title: 更新失敗時に再試行できる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: コストのソースを並べて表示にできる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

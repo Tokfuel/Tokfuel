@@ -4,7 +4,6 @@ title: しきい値到達をアラートウィンドウで知らせる
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: Cursor のみでヒーローが Cursor 推定になる
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: 予算超過でメニューバーアイコンが超過色になる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

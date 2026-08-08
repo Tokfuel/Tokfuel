@@ -4,7 +4,6 @@ title: メニューバーの見る指標を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

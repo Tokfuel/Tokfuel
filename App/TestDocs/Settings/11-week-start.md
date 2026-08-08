@@ -4,7 +4,6 @@ title: 週の始まりの変更が推移の今週に効く
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: リング表示時にアイコンも並べられる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

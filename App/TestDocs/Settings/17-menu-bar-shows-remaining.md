@@ -4,7 +4,6 @@ title: 予算までの残りを表示を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

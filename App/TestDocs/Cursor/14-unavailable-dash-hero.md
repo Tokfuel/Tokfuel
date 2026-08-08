@@ -4,7 +4,6 @@ title: Cursor のみかつ劣化でヒーローがダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

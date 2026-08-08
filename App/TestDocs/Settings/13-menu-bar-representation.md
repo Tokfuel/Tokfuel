@@ -4,7 +4,6 @@ title: メニューバーの表現を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

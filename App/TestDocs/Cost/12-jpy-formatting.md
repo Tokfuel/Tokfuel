@@ -4,7 +4,6 @@ title: 円表示のときホームの金額が円表記になる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

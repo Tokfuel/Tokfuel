@@ -4,7 +4,6 @@ title: しきい値到達で予算メーターが警告状態になる
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: メニューバーアイコンのツールチップに指標説明が出�
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

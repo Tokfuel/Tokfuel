@@ -4,7 +4,6 @@ title: 再解析中も前回のグラフが残る
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

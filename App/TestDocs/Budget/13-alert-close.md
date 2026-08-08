@@ -4,7 +4,6 @@ title: アラートを閉じられる
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

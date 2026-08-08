@@ -4,7 +4,6 @@ title: ホームのヒーローに今日のコストが表示される
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

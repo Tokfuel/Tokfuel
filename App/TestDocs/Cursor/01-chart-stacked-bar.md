@@ -4,7 +4,6 @@ title: 合算の推移に Cursor 系列が載る
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

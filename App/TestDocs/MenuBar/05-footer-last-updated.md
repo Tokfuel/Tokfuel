@@ -4,7 +4,6 @@ title: フッターに最終更新時刻が表示される
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

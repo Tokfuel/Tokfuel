@@ -4,7 +4,6 @@ title: 円とレート取得後に予算入力の単位が円になる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

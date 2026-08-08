@@ -4,7 +4,6 @@ title: 高コストのセッション一覧が表示される
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

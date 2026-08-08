@@ -4,7 +4,6 @@ title: モデル別をまとめて表示できる
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

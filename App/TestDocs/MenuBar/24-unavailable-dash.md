@@ -4,7 +4,6 @@ title: 取得不能時メニューバーがダッシュになる
 primary_domain: MenuBar
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

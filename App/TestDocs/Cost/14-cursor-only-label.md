@@ -4,7 +4,6 @@ title: Cursor のみのときヒーローに Cursor 推定ラベルが出る
 primary_domain: Cost
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

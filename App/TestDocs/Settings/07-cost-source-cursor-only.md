@@ -4,7 +4,6 @@ title: コストのソースを Cursor のみにできる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

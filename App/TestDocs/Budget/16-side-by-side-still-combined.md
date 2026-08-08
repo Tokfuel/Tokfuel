@@ -4,7 +4,6 @@ title: 並べて表示でも予算の分母は合算のまま
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

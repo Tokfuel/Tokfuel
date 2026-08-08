@@ -4,7 +4,6 @@ title: Cursor の期間シェアヒントが出る
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

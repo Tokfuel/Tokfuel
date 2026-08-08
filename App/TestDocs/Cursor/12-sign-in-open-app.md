@@ -4,7 +4,6 @@ title: サインアウト劣化時に Cursor を開ける
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

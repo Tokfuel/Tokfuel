@@ -4,7 +4,6 @@ title: 割合の基準を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

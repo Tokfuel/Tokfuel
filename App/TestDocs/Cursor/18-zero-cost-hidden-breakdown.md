@@ -4,7 +4,6 @@ title: 0 円の Cursor は内訳キャプションに載らない
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

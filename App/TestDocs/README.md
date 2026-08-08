@@ -27,7 +27,7 @@ App/TestDocs/
 - パス: `App/TestDocs/{Domain}/{nn}-{slug}.md`
 - 観点 ID: `{Domain}-{nn}-{slug}`（例: `Cost-02-period-switch`）
 - 1 ファイル = 1 シナリオ（観点 ID）
-- front matter: `id` / `title` / `primary_domain` / `platforms` / `status` / `issue`（任意）
+- front matter: `id` / `title` / `primary_domain` / `platforms` / `status`。`issue` は関連 GitHub Issue があるときだけ（無いときは行ごと省略）
 - `platforms` は `[macOS]` 固定（本文に `## 対象` は書かない）
 - 節の順は **シナリオ → 完了条件 → 経路 → 対応済みPR**（[`_TEMPLATE.md`](_TEMPLATE.md)）
 - **完了条件**は手段ごとのステップ箇条書き。原則は **E2E**。UT&IT と VRT は補助

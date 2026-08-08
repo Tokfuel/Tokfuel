@@ -4,7 +4,6 @@ title: 通知とアラートウィンドウの両方で知らせる
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

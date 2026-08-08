@@ -4,7 +4,6 @@ title: 外観の切替が各ウィンドウに反映される
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

@@ -4,7 +4,6 @@ title: Cursor のモデル偏りヒントが出る
 primary_domain: Cursor
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

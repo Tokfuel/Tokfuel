@@ -4,7 +4,6 @@ title: 詳細を開くと高度な設定が見える
 primary_domain: Settings
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ

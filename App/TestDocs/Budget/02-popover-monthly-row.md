@@ -4,7 +4,6 @@ title: 月上限があるときホームに月の予算行が出る
 primary_domain: Budget
 platforms: [macOS]
 status: ready
-issue:
 ---
 
 ## シナリオ
