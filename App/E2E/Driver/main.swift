@@ -78,13 +78,14 @@ final class AXDriver {
     private let pollInterval: TimeInterval
     private var completedScenarios: [String] = []
     private var failedScenario: String?
+    // demo: Settings を先に回し、設定→設備の命名ドリフトを確実に踏ませる。
     private let scenarioOrder = [
         "MenuBar-01-open-home",
+        "Settings-01-open",
+        "Settings-02-reflect",
         "Cost-03-model-list",
         "Cost-01-chart-style",
-        "Cost-02-period-switch",
-        "Settings-01-open",
-        "Settings-02-reflect"
+        "Cost-02-period-switch"
     ]
 
     init(pid: pid_t, recordingPath: String?) throws {
