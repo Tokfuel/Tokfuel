@@ -1,6 +1,15 @@
 import SwiftUI
 import Combine
 import AppKit
+import TokfuelCore
+import TokfuelSettings
+import TokfuelClaude
+import TokfuelCursor
+import TokfuelCodex
+import TokfuelBudget
+import TokfuelAnalytics
+import TokfuelStore
+import TokfuelUI
 
 @main
 struct TokfuelApp: App {
@@ -21,8 +30,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var aboutWindow: NSWindow?
     /// 初回 Analytics 同意ダイアログ。答えるまで保持する。
     private var analyticsConsentWindow: NSWindow?
-    private let usageStore = UsageStore()
-    private let settings = AppSettings.shared
+    private let usageStore: UsageStore
+    private let settings: AppSettings
     private let updater = UpdateChecker.shared
     private var cancellables = Set<AnyCancellable>()
     private var refreshTimer: Timer?
@@ -37,6 +46,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 明滅アニメーションのタイマーと位相（0…1）。
     private var glowTimer: Timer?
     private var glowPhase: Double = 0
+
+    override init() {
+        AppSettings.bootstrap(codexInstalled: CodexCostDriver().isAvailable)
+        let settings = AppSettings.shared
+        UsageEventLog.analyticsTracker = { event, meta in
+            Task { @MainActor in
+                AnalyticsService.shared.track(event, meta: meta)
+            }
+        }
+        settings.onAnalyticsConsentChange = { consent in
+            AnalyticsService.shared.applyAnalyticsConsent(consent)
+        }
+        self.settings = settings
+        self.usageStore = UsageStore(
+            settings: settings,
+            costDrivers: [CursorCostDriver(), CodexCostDriver()]
+        )
+        super.init()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
@@ -256,22 +284,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 予算しきい値を越えたら通知する（月間・日次それぞれ。重複抑止は BudgetMonitor 側）。
     private func notifyBudgetIfNeeded() {
-        // 知らせ方（通知 / アラートウィンドウ）は設定から読んで引数で渡す。
         let style = settings.budgetAlertStyle
         let openSettings: () -> Void = { [weak self] in self?.openSettings() }
         if let level = usageStore.budgetLevel {
-            BudgetMonitor.notifyIfNeeded(
+            if let content = BudgetMonitor.notifyIfNeeded(
                 kind: .monthly, level: level, spend: usageStore.budgetSpend,
                 limit: settings.budgetLimitUSD,
                 periodKey: BudgetMonitor.periodKey(for: settings.budgetPeriod),
-                style: style, onOpenSettings: openSettings)
+                style: style) {
+                BudgetAlertWindow.shared.show(content, onOpenSettings: openSettings)
+            }
         }
         if let level = usageStore.dailyBudgetLevel {
-            BudgetMonitor.notifyIfNeeded(
+            if let content = BudgetMonitor.notifyIfNeeded(
                 kind: .daily, level: level, spend: usageStore.todayCost,
                 limit: settings.dailyBudgetLimitUSD,
                 periodKey: BudgetMonitor.dailyPeriodKey(),
-                style: style, onOpenSettings: openSettings)
+                style: style) {
+                BudgetAlertWindow.shared.show(content, onOpenSettings: openSettings)
+            }
         }
     }
 

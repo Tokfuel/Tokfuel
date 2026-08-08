@@ -1,0 +1,86 @@
+[
+  {
+    "path": "/",
+    "title": "Tokfuel — Home",
+    "description": "See what AI coding costs you, from the menu bar. Local-only SwiftUI app for macOS.",
+    "keywords": ["home", "download", "macos", "menu bar", "ホーム", "ダウンロード"]
+  },
+  {
+    "path": "/ja",
+    "title": "Tokfuel — ホーム",
+    "description": "AI コーディングのコストを、メニューバーから。ローカルオンリーの小さな SwiftUI macOS アプリ。",
+    "keywords": ["home", "download", "macos", "メニューバー", "ホーム", "ダウンロード", "日本語"]
+  },
+  {
+    "path": "/docs/usage",
+    "title": "Usage guide",
+    "description": "How to install Tokfuel and read what it shows you.",
+    "keywords": ["install", "dmg", "menu bar", "budget", "settings", "インストール", "使い方"]
+  },
+  {
+    "path": "/ja/docs/usage",
+    "title": "使い方ガイド",
+    "description": "Tokfuel のインストール方法と、表示される内容の読み方。",
+    "keywords": ["install", "dmg", "メニューバー", "予算", "設定", "インストール", "使い方"]
+  },
+  {
+    "path": "/docs/architecture",
+    "title": "Architecture",
+    "description": "SPM layers (UI → Store → sources), UsageStore, and the per-source services.",
+    "keywords": ["spm", "usagestore", "claude", "cursor", "codex", "layer", "アーキテクチャ"]
+  },
+  {
+    "path": "/ja/docs/architecture",
+    "title": "アーキテクチャ",
+    "description": "UI → Store → sources の SPM レイヤーと、UsageStore・各ソースの役割。",
+    "keywords": ["spm", "usagestore", "claude", "cursor", "codex", "レイヤー", "アーキテクチャ"]
+  },
+  {
+    "path": "/docs/adr",
+    "title": "ADR index",
+    "description": "Architecture decisions for the app tree and SPM module layout.",
+    "keywords": ["adr", "decision", "0001", "0002", "app tree", "modules", "意思決定"]
+  },
+  {
+    "path": "/ja/docs/adr",
+    "title": "ADR 一覧",
+    "description": "アプリツリーと SPM モジュール構成に関するアーキテクチャ決定。",
+    "keywords": ["adr", "意思決定", "0001", "0002", "アプリツリー", "モジュール"]
+  },
+  {
+    "path": "/docs/testing",
+    "title": "Tests & verification",
+    "description": "App/Tests layout, UnitTests coverage areas, CI, and UI-preview rules.",
+    "keywords": ["test", "unit", "ci", "ui-preview", "verification", "テスト", "検証"]
+  },
+  {
+    "path": "/ja/docs/testing",
+    "title": "テストと検証",
+    "description": "App/Tests の構成、UnitTests がカバーする領域、検証ゲート、CI、UI プレビュー。",
+    "keywords": ["test", "unit", "ci", "ui-preview", "テスト", "検証"]
+  },
+  {
+    "path": "/docs/privacy",
+    "title": "Privacy & network policy",
+    "description": "Local-only by default. The full list of the few network requests and why.",
+    "keywords": ["privacy", "network", "firebase", "analytics", "local", "プライバシー", "通信"]
+  },
+  {
+    "path": "/ja/docs/privacy",
+    "title": "プライバシー・通信ポリシー",
+    "description": "Tokfuel はローカルオンリー。数少ない通信の全リストとその理由。",
+    "keywords": ["privacy", "network", "firebase", "analytics", "ローカル", "プライバシー", "通信"]
+  },
+  {
+    "path": "/docs/roadmap",
+    "title": "Roadmap",
+    "description": "What Tokfuel is working on next. Snapshot of In progress and Todo from GitHub Issues.",
+    "keywords": ["roadmap", "issues", "todo", "in progress", "TF-", "ロードマップ", "予定"]
+  },
+  {
+    "path": "/ja/docs/roadmap",
+    "title": "ロードマップ",
+    "description": "Tokfuel が次に取り組む項目。進行中とこれからのスナップショット。",
+    "keywords": ["roadmap", "issues", "todo", "進行中", "ロードマップ", "予定", "Issue"]
+  }
+]

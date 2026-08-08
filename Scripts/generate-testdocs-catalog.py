@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Regenerate TestDocs catalog and coverage metrics from scenario Markdown files.
 
-Deterministic inputs: App/TestDocs/{Domain}/*.md front matter and sections.
+Deterministic inputs: App/Tests/TestDocs/{Domain}/*.md front matter and sections.
 Outputs:
-  - App/TestDocs/CATALOG.md
-  - App/TestDocs/coverage.json
-  - coverage block in App/TestDocs/README.md (between markers)
+  - App/Tests/TestDocs/CATALOG.md
+  - App/Tests/TestDocs/coverage.json
+  - coverage block in App/Tests/TestDocs/README.md (between markers)
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TESTDOCS = ROOT / "App" / "TestDocs"
+TESTDOCS = ROOT / "App" / "Tests" / "TestDocs"
 DOMAINS = ["MenuBar", "Cost", "Settings", "Budget", "Cursor"]
 STATUSES = ["ideation", "ready", "in-progress", "review", "done", "archived"]
 ACTIVE_STATUSES = ["ideation", "ready", "in-progress", "review", "done"]

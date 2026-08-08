@@ -1,0 +1,19 @@
+{
+  "asOf": "2026-08-08",
+  "source": "swift test --enable-code-coverage → llvm-cov export (App/ only)",
+  "unitTests": 367,
+  "suites": 63,
+  "appLines": { "covered": 2821, "total": 7800, "percent": 36.2 },
+  "modules": [
+    { "name": "TokfuelCursor", "covered": 695, "total": 753, "percent": 92.3 },
+    { "name": "TokfuelCore", "covered": 619, "total": 794, "percent": 78.0 },
+    { "name": "TokfuelSettings", "covered": 168, "total": 228, "percent": 73.7 },
+    { "name": "TokfuelBudget", "covered": 91, "total": 146, "percent": 62.3 },
+    { "name": "TokfuelStore", "covered": 448, "total": 910, "percent": 49.2 },
+    { "name": "TokfuelClaude", "covered": 132, "total": 284, "percent": 46.5 },
+    { "name": "TokfuelCodex", "covered": 15, "total": 35, "percent": 42.9 },
+    { "name": "TokfuelAnalytics", "covered": 17, "total": 59, "percent": 28.8 },
+    { "name": "TokfuelUI", "covered": 602, "total": 4021, "percent": 15.0 },
+    { "name": "Tokfuel (app)", "covered": 34, "total": 570, "percent": 6.0 }
+  ]
+}

@@ -1,8 +1,10 @@
 name: Site Preview
 
-# site-preview 🌐 ラベルを付けると、Site/ をビルドして専用の orphan branch
-# (site-preview-pages) に PR 番号別のサブディレクトリとして push し、
-# raw.githack.com 経由でレンダリングした URL を PR コメントに貼る。
+# 0-site-preview 🌐 ラベルがある PR で、ラベル付与時とコミット（synchronize）のたびに
+# 必ず Site/ を `swift run` でビルドしてから、orphan branch (site-preview-pages) に
+# PR 番号別サブディレクトリとして push し、raw.githack.com の URL を新規コメントする。
+# 以前の bot コメントは OUTDATED で隠す。パスフィルタは付けない（Site 以外の変更でも
+# ラベル付きなら毎回ビルドする）。コメントはビルド成功後にしか書かない。
 #
 # GitHub Pages の公開デプロイ（pages.yml）は actions/deploy-pages を使っており、
 # 1 リポジトリにつき 1 つの公開先しか持てないため、同じ仕組みで PR ごとのプレビューを
@@ -12,11 +14,13 @@ name: Site Preview
 # 経由で配る。使用状況データは一切載らない、ビルド成果物の配信のみ。
 #
 # fork からの pull_request では GITHUB_TOKEN が read-only になるため push/コメントは失敗する。
-# continue-on-error でジョブを赤くしないだけにとどめ、fork 対応は将来の課題とする。
+# その場合も Build site は必ず実行し、失敗はジョブを赤くする。push/コメントだけ
+# continue-on-error とする。
 
 on:
   pull_request:
-    types: [labeled, closed]
+    types: [labeled, synchronize, closed]
+    # 意図的に paths を付けない。ラベル付き PR の全コミットで Site をビルドする。
 
 concurrency:
   group: site-preview-${{ github.event.pull_request.number }}
@@ -25,7 +29,10 @@ concurrency:
 jobs:
   preview:
     name: Build & publish site preview
-    if: github.event.action == 'labeled' && github.event.label.name == 'site-preview 🌐'
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == '0-site-preview 🌐')
+      || (github.event.action == 'synchronize'
+          && contains(toJSON(github.event.pull_request.labels.*.name), '0-site-preview 🌐'))
     runs-on: macos-15
     permissions:
       contents: write
@@ -35,11 +42,22 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # コメント差し替えの前提。キャッシュ済み成果物の再利用はせず、毎回作り直す。
       - name: Build site
+        id: build
         working-directory: Site
-        run: swift run
+        env:
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          rm -rf Build
+          swift run
+          test -f Build/index.html
+          printf '%s\n' "$PR_SHA" > Build/.preview-sha
+          test "$(cat Build/.preview-sha)" = "$PR_SHA"
 
-      - name: Publish preview and comment
+      - name: Publish preview branch
+        id: publish
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -48,12 +66,53 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # ビルド成果が無い／別 SHA ならコメント前に落とす（順序逆転の防止）。
+          test -f Site/Build/index.html
+          test "$(cat Site/Build/.preview-sha)" = "$PR_SHA"
+
           BRANCH="site-preview-pages"
           SHORT_SHA="${PR_SHA:0:7}"
           DIR="pr-${PR_NUMBER}"
 
           BUILD_OUT="$(mktemp -d)/Build"
           cp -R Site/Build "$BUILD_OUT"
+
+          # Ignite emits production root-absolute paths (/Tokfuel/...). On
+          # raw.githack.com those resolve against the CDN origin and 404, so
+          # rewrite them to this preview directory before publishing.
+          PREVIEW_URL_BASE="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}"
+          PREVIEW_PATH_PREFIX="/${REPO}/${BRANCH}/${DIR}"
+          /usr/bin/python3 - "$BUILD_OUT" "$PREVIEW_PATH_PREFIX" "$PREVIEW_URL_BASE" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          path_prefix = sys.argv[2].rstrip("/")
+          url_base = sys.argv[3].rstrip("/")
+          suffixes = {".html", ".css", ".js", ".json", ".xml", ".txt", ".svg"}
+
+          def rewrite(text: str) -> str:
+              text = text.replace("https://tokfuel.github.io/Tokfuel", url_base)
+              text = text.replace('"/Tokfuel/', f'"{path_prefix}/')
+              text = text.replace("'/Tokfuel/", f"'{path_prefix}/")
+              text = text.replace("(/Tokfuel/", f"({path_prefix}/")
+              for folder in ("js", "css", "images", "fonts"):
+                  text = re.sub(
+                      rf'(["\'])/{folder}/',
+                      rf"\1{path_prefix}/{folder}/",
+                      text,
+                  )
+              return text
+
+          for path in root.rglob("*"):
+              if not path.is_file() or path.suffix.lower() not in suffixes:
+                  continue
+              original = path.read_text(encoding="utf-8")
+              updated = rewrite(original)
+              if updated != original:
+                  path.write_text(updated, encoding="utf-8")
+          PY
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -74,18 +133,43 @@ jobs:
           git commit -m "chore: site preview for PR #${PR_NUMBER} (${SHORT_SHA})"
           git push origin "$BRANCH"
 
-          PREVIEW_URL="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html"
-          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s の内容が更新されるたびに (再ラベル付けで) 上書きされる。' \
+          # Branch-tip URLs on raw.githack / raw.githubusercontent stay cached.
+          # Pin the comment link to this orphan commit so reviewers see the new HTML.
+          PREVIEW_COMMIT="$(git rev-parse HEAD)"
+          echo "preview_url=https://raw.githack.com/${REPO}/${PREVIEW_COMMIT}/${DIR}/index.html" >> "$GITHUB_OUTPUT"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      # ビルド成功かつプレビュー公開成功のときだけコメントする。
+      - name: Hide previous preview comments and post new
+        if: steps.build.outcome == 'success' && steps.publish.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          DIR: ${{ steps.publish.outputs.dir }}
+          SHORT_SHA: ${{ steps.publish.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$PREVIEW_URL"
+          test -n "$SHORT_SHA"
+
+          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`（このコミットでビルド済み）。\n\n%s\n\nこの URL は %s 向け（orphan コミット固定。ブランチ tip の raw.githack は CDN キャッシュで古いまま残ることがある）。コミットや再ラベルのたびに Site をビルドし直して差し替え、以前のプレビューコメントは非表示になる。' \
             "$SHORT_SHA" "$PREVIEW_URL" "$DIR")
 
-          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '[.[] | select(.body | startswith("<!-- site-preview-bot -->"))][0].id // empty')
+          while IFS= read -r NODE_ID; do
+            [ -n "$NODE_ID" ] || continue
+            gh api graphql -f query='
+              mutation($id: ID!) {
+                minimizeComment(input: { subjectId: $id, classifier: OUTDATED }) {
+                  minimizedComment { isMinimized }
+                }
+              }' -f id="$NODE_ID" > /dev/null
+          done < <(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- site-preview-bot -->")) | .node_id')
 
-          if [ -n "$COMMENT_ID" ]; then
-            gh api -X PATCH "repos/${REPO}/issues/comments/${COMMENT_ID}" -f body="$BODY" > /dev/null
-          else
-            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
-          fi
+          gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
 
   cleanup:
     name: Remove preview on close

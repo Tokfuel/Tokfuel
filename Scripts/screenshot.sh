@@ -4,7 +4,7 @@
 #   bash Scripts/screenshot.sh              # Assets/ と Site/Assets/ の両方へ書き出す
 #   bash Scripts/screenshot.sh <出力先>     # 指定パスだけへ書き出す（検証・デバッグ用）
 #
-# 絵の中身（フィクスチャ・レイアウト）は App/Tokfuel/ScreenshotRenderer.swift が持つ。
+# 絵の中身（フィクスチャ・レイアウト）は App/TokfuelUI/ScreenshotRenderer.swift が持つ。
 # ここで渡す起動引数には理由がある:
 #   -AppleAccentColor 1  グラフやメーターの色は生成機のシステムアクセントカラーに従い、
 #                        AppKit は起動時にそれを読む。ブランドのオレンジに固定して、

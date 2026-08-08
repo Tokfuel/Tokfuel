@@ -11,10 +11,12 @@
 フックも手動のトークン登録も要らず、これらのアプリがローカルに残しているデータを読むだけでよい。
 同じ Mac に Codex CLI（`~/.codex/sessions/`）や Cursor があれば、そのコストも推定する。ただし
 各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。アプリ関連は
-[`App/`](App/) 配下に置く（本体 [`App/Tokfuel/`](App/Tokfuel/)、UT / IT
-[`App/Tests/`](App/Tests/)、シナリオ設計 [`App/TestDocs/`](App/TestDocs/)、通しテスト
-[`App/E2E/`](App/E2E/)）。テスト観点の正本は [`App/TestDocs/`](App/TestDocs/) に置き、
-起票 → 実装 → ステータス更新の流れで進める（規範は同ディレクトリの `AGENTS.md`）。
+[`App/`](App/) 配下に置く（実行ファイル [`App/Tokfuel/`](App/Tokfuel/)、SPM レイヤー
+[`App/TokfuelCore/`](App/TokfuelCore/) など、検証は [`App/Tests/`](App/Tests/) —
+UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/IntegrationTests/)、
+シナリオ [`TestDocs/`](App/Tests/TestDocs/)、通し [`E2E/`](App/Tests/E2E/)）。テスト観点の正本は
+[`App/Tests/TestDocs/`](App/Tests/TestDocs/) に置き、起票 → 実装 → ステータス更新の流れで進める
+（規範は同ディレクトリの `AGENTS.md`）。
 
 ## グラウンドルール（違反禁止）
 
@@ -45,10 +47,10 @@
       匿名のアプリ UI イベントを送る（デフォルト OFF。送信面は `AnalyticsService` に集約）。
 2. **ゼロセットアップの維持**：アプリは Claude Code のトランスクリプトを直接読む。機能を
    動かすために、フック、外部ツールのインストール、Claude Code 側の設定を要求しない。
-3. **retok は無改変で同梱**：`App/Tokfuel/Resources/retok.py` と `locales/` は
-   © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
-   `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
-   [`README-retok.md`](App/Tokfuel/Resources/README-retok.md) にある。
+3. **retok は無改変で同梱**：`App/TokfuelClaude/Resources/retok.py` と `locales/` は
+ © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
+ `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
+ [`README-retok.md`](App/TokfuelClaude/Resources/README-retok.md) にある。
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
@@ -57,12 +59,12 @@
 ## 検証ゲート
 
 ```bash
-swift test               # ユニットテスト（App/Tests、Swift Testing）
+swift test               # ユニットテスト（App/Tests/UnitTests、Swift Testing）
 swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
 シナリオと担保手段（UT&IT / VRT / E2E）の優先は
-[`App/TestDocs/README.md`](App/TestDocs/README.md) の「担保手段」節を見る。
+[`App/Tests/TestDocs/README.md`](App/Tests/TestDocs/README.md) の「担保手段」節を見る。
 
 CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
 `App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（Docs / Site
@@ -70,9 +72,9 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 実行時に見える変更は、実アプリをインストールして観察する。
 `bash Scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
 動くと主張せず、組み込みの `verify` スキルで確かめる）。ヘッドレスで検証できるロジック
-（`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests` にあり、新しいロジックには
-そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
-書かない。
+（`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests/UnitTests` にあり、新しい
+ロジックにはそこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に
+触れるテストは書かない。
 
 `PopoverView`、`SettingsView`、`AboutView`、および単独で見せる新規 View（同意ダイアログや
 アラートなど）を追加または変更するときは、同じ PR で
@@ -100,6 +102,13 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 - **`ideation`**：アイデアを GitHub Issue に仕立てる（起案のみ）。
 - **`implementation`**：Issue 番号を起点に実装して出荷する（Issue 本文が仕様）。
 - **`task-select`**：オープンな Issue を見渡し、次に実装する項目を選ぶ。
+- **`write-adr`**：技術的意思決定を [`ADR/`](ADR/) に起草する（1 決定 = 1 ディレクトリ、
+  本文は `NNNN-slug(.ja).md`。型は [`ADR/TEMPLATE/`](ADR/TEMPLATE/)、一覧は
+  [`ADR/INDEX.ja.md`](ADR/INDEX.ja.md)）。
+
+アーキテクチャ上の決定は [`ADR/NNNN-slug/`](ADR/) に置く（`NNNN-slug.ja.md` と
+`NNNN-slug.md`）。ずれたときは日本語を正本とする。大きな方針は Issue（ラベル `ADR 🏯`）
+で議論し、合意を ADR に落とす。
 
 ## 作業言語
 
