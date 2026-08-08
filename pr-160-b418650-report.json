@@ -1,0 +1,181 @@
+{
+  "baselineIdentifiers" : [
+    "tokfuel.home",
+    "tokfuel.hero.today",
+    "tokfuel.section.trend",
+    "tokfuel.section.models",
+    "tokfuel.model-list",
+    "tokfuel.chart.style",
+    "tokfuel.chart.period",
+    "tokfuel.menu.more",
+    "tokfuel.settings"
+  ],
+  "completedScenarios" : [
+    "Settings-01-open",
+    "Settings-02-reflect",
+    "Settings-03-launch-at-login"
+  ],
+  "error" : "not found: control titled ライト",
+  "expectedScreens" : [
+    "popover"
+  ],
+  "explanation" : "Settings-04-appearance で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
+  "failedScenario" : "Settings-04-appearance",
+  "ok" : false,
+  "scenarios" : [
+    {
+      "elapsedMs" : 5288,
+      "id" : "Settings-01-open",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 3168,
+      "id" : "Settings-02-reflect",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 4359,
+      "id" : "Settings-03-launch-at-login",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 445,
+      "error" : "not found: control titled ライト",
+      "id" : "Settings-04-appearance",
+      "status" : "failed"
+    },
+    {
+      "id" : "Settings-05-cost-source-combined",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-06-cost-source-claude-only",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-07-cost-source-cursor-only",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-08-cost-source-codex-only",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-09-cost-source-side-by-side",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-10-model-breakdown-mode",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-11-week-start",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-12-menu-bar-metric",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-13-menu-bar-representation",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-14-menu-bar-gauge-shape",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-15-menu-bar-shows-icon",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-16-menu-bar-percent-basis",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-17-menu-bar-shows-remaining",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-18-adaptive-refresh",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-19-activity-animation",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-20-budget-monthly-limit",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-21-budget-daily-limit",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-22-budget-period",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-23-budget-warn-threshold",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-24-budget-alert-style",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-25-privacy-analytics-toggle",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-26-advanced-disclosure",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-27-report-language",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-28-claude-directory",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-29-event-log-toggle",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-30-event-log-reveal",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-31-event-log-delete",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-32-about-window",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-33-analytics-consent-first-run",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-34-analytics-consent-deny",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-35-menu-bar-preview-note",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-36-currency-jpy-budget-unit",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Settings-37-debug-disclosure",
+      "status" : "skipped"
+    }
+  ],
+  "updatedAt" : "2026-08-08T16:06:32Z"
+}
