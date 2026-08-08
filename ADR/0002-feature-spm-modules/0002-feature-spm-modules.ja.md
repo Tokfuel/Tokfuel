@@ -20,9 +20,9 @@ issue: "#109"
 `App/` 配下の単一 SPM target をやめ、**変更が寄りやすい軸（feature）で library target を縦割り**する。第一の目的は **無関係な Issue / PR 同士の衝突面を減らす**ことである。
 
 - 分割軸の例: Claude / Cursor / Codex / Budget / Settings。横断型だけ薄い `TokfuelCore`（名称は実装時に確定）に置く
-- 合算（Store）とシェル UI は共有面として残るが、**可能な限り feature 側へ寄せる**（ソース固有の表示・集計は feature target に置き、共有面は配線と薄い合算に留める）
+- `UsageStore`（各ソースの合算）と `PopoverView` など（メニューバー周りの枠）は、複数 feature が触る**共有部分**として残る。ただし Cursor 行の描画や Claude 固有の集計のような**ソース固有の中身は各 feature target に置き**、共有部分には「並べる・足す・枠を出す」だけを残す
 - Firebase・retok リソース・sqlite3 は、使う feature / Analytics target に閉じる
-- **レイヤー依存（UI → Store → drivers など）のコンパイル強制は、本決定では採らない**。合算とシェル UI という共有面が残る以上、feature 縦割りによる衝突低減と、レイヤー target による依存強制を同じ SPM 構成で両立できなかった。層の向きは AGENTS.md と AI コーディング（スキル・レビュー）で担保する
+- **レイヤー依存（UI → Store → drivers など）のコンパイル強制は、本決定では採らない**。上記の共有部分（合算と枠 UI）が残る以上、feature 縦割りによる衝突低減と、レイヤー target による依存強制を同じ SPM 構成で両立できなかった。層の向きは AGENTS.md と AI コーディング（スキル・レビュー）で担保する
 - 挙動とグラウンドルール（ローカルオンリー、ゼロセットアップ、retok 無改変、python3 任意、新規パッケージ禁止）は変えない
 
 配置の親は ADR-0001 のとおり `App/` のままとする。本決定は **target / モジュール境界** の話であり、ディレクトリ親の再配置ではない。
@@ -58,16 +58,16 @@ flowchart TB
 ```mermaid
 flowchart TB
   App["TokfuelApp<br/>executable・組み立て"]
-  Shell["薄い共有シェル<br/>Store 合算 / シェル UI"]
+  Shared["共有部分<br/>UsageStore の合算<br/>Popover など枠 UI"]
   Settings["TokfuelSettings"]
-  Claude["TokfuelClaude"]
-  Cursor["TokfuelCursor"]
+  Claude["TokfuelClaude<br/>Claude 固有の表示・集計"]
+  Cursor["TokfuelCursor<br/>Cursor 固有の表示・集計"]
   Codex["TokfuelCodex"]
   Budget["TokfuelBudget"]
   Analytics["TokfuelAnalytics"]
-  Core["TokfuelCore<br/>薄い横断型のみ"]
+  Core["TokfuelCore<br/>横断型のみ"]
 
-  App --> Shell
+  App --> Shared
   App --> Settings
   App --> Claude
   App --> Cursor
@@ -76,12 +76,12 @@ flowchart TB
   App --> Analytics
   App --> Core
 
-  Shell --> Settings
-  Shell --> Claude
-  Shell --> Cursor
-  Shell --> Codex
-  Shell --> Budget
-  Shell --> Core
+  Shared --> Settings
+  Shared --> Claude
+  Shared --> Cursor
+  Shared --> Codex
+  Shared --> Budget
+  Shared --> Core
 
   Claude --> Core
   Cursor --> Core
@@ -104,9 +104,9 @@ flowchart LR
     Co[Codex]
     B[Budget]
   end
-  subgraph residual["残る共有面 → できるだけ薄くする"]
-    S[Store 合算]
-    U[シェル UI]
+  subgraph residual["残る共有部分<br/>中身は並べる・足す・枠だけにする"]
+    S[UsageStore 合算]
+    U[Popover など枠]
   end
   C --> S
   Cu --> S
@@ -115,11 +115,11 @@ flowchart LR
   S --> U
 ```
 
-名称（`Tokfuel*`）は実装時に確定してよい。図の意図は「feature を縦に割って衝突を減らし、共有シェルは薄く保つ」こと。レイヤーの正しさは図の target 線では表さない。
+名称（`Tokfuel*`）は実装時に確定してよい。図の意図は「feature を縦に割って衝突を減らし、共有部分にはソース固有の中身を置かない」こと。レイヤーの正しさは図の target 線では表さない。
 
 ### 比較・検討内容の要約
 
-衝突低減（feature 縦割り）と依存強制（レイヤー target）の両方を同じアーキテクチャで満たそうとすると、合算・シェル UI という共有面が残り、ハイブリッドでも衝突第一の効果が頭打ちになる。両立できなかったため、**並行 PR の衝突低減を採り、レイヤーは規約 + AI に残す**。レイヤーのみは衝突面が Store / UI に集まりやすい。極細多数レイヤーはこの規模では過大。
+衝突低減（feature 縦割り）と依存強制（レイヤー target）の両方を同じアーキテクチャで満たそうとすると、`UsageStore` の合算と `PopoverView` などの枠という共有部分が残り、ハイブリッドでも衝突第一の効果が頭打ちになる。両立できなかったため、**並行 PR の衝突低減を採り、レイヤーは規約 + AI に残す**。レイヤーのみは衝突面が Store / UI に集まりやすい。極細多数レイヤーはこの規模では過大。
 
 ## Context（経緯・背景情報）
 
@@ -137,16 +137,16 @@ OSS として複数の Issue / PR が並ぶと、無関係な変更が同じ巨�
    - フラットな単一 target だと、Cursor 修正と予算修正のような無関係な作業も同じ木で交差しやすい。
 2. **変更範囲が切りにくい**
    - 新機能やソース追加のとき、触るべきファイル集合がディレクトリ名から読み取りにくい。
-3. **共有シェルが太いままだと、feature 分割の効果が削がれる**
-   - 合算と画面に変更が集まり続けると、縦割りの利点が薄れる。
+3. **共有部分にソース固有の中身が残ると、feature 分割の効果が削がれる**
+   - Cursor の行追加なのに `PopoverView` や巨大な `UsageStore` ばかり触る状態が続くと、縦割りの利点が薄れる。
 4. **衝突低減とレイヤー強制を同じ SPM 構成で両立できない**
-   - 合算とシェル UI は製品上の共有面として残る。ここにレイヤー target を足しても、無関係 PR の交差は同程度残り、feature 縦割り以上の衝突低減にはならない。
+   - 合算と枠 UI は製品上の共有部分として残る。ここにレイヤー target を足しても、無関係 PR の交差は同程度残り、feature 縦割り以上の衝突低減にはならない。
 
 ### 目的
 
 - 無関係な Issue 同士の衝突面を小さくする（両立できなかった二目標のうち採る側）
 - コントリビュータが変更範囲を切りやすくする
-- 共有シェル（Store / シェル UI）を薄くし、feature 側へ寄せる
+- ソース固有の表示・集計を feature に移し、共有部分は並べる・足す・枠だけにする
 - 採らなかった側（レイヤー強制）は AGENTS + AI コーディングで補う
 - `swift test` / `swift build -c release` を各段階で緑に保つ
 
@@ -170,7 +170,7 @@ OSS として複数の Issue / PR が並ぶと、無関係な変更が同じ巨�
 
 | 評価項目 | 案1 現状維持 | 案2 レイヤーのみ | 案3 feature 縦割り | 案4 極細多数 | 案5 ハイブリッド |
 |----------|--------------|------------------|--------------------|--------------|------------------|
-| 並行 PR の衝突低減（第一） | × ホットスポットが大きい | △ Store / UI に集まりやすい | ◎ 無関係 Issue が分かれやすい | ○ 分かれるが運用が重い | ◎ 案3と同程度。共有シェルは同様に残る |
+| 並行 PR の衝突低減（第一） | × ホットスポットが大きい | △ Store / UI に集まりやすい | ◎ 無関係 Issue が分かれやすい | ○ 分かれるが運用が重い | ◎ 案3と同程度。合算・枠 UI の共有は同様に残る |
 | 変更範囲の切りやすさ | × 入口が一つ | △ 「何層か」は分かるが機能軸が弱い | ◎ 「どのソースか」で切れる | △ target 数が多すぎる | ◎ 機能軸は同じ。層の箱が増える |
 | レイヤー担保 | △ 規約 + AI | ◎ コンパイルで向きを固定 | △ 規約 + AI（採らなかった側の補完） | ◎ さらに細かい | ◎ 層は強制できるが、共有面の衝突は案3と同程度 |
 | 移行コスト | ◎ 変更不要 | ○ 中程度 | ○ 中程度 | × この規模では過大 | △ 案3より重い（層 target の追加分） |
@@ -194,18 +194,18 @@ OSS として複数の Issue / PR が並ぶと、無関係な変更が同じ巨�
 
 1. Cursor 修正と Budget 修正のような無関係な PR が、別 target / ディレクトリに分かれやすくなる
 2. 「この Issue は `TokfuelCursor` を見ればよい」のように、変更範囲を説明しやすくなる
-3. ソース固有 UI / 集計を feature に寄せるほど、共有シェル上の衝突も減らせる
+3. ソース固有 UI / 集計を feature に寄せるほど、`UsageStore` / `PopoverView` 上の衝突も減らせる
 
 ### 技術的リスクと対策
 
 | リスク | 内容 | 対策 |
 |--------|------|------|
-| Store / シェル UI のホットスポット | 合算と画面は共有のまま残りやすい | ソース固有の表示・集計を feature へ移す。共有面は配線と薄い合算に限定する |
-| レイヤー逆流 | 両立できなかった側。SPM では止めないため UI が driver を直接見ることがありうる | AGENTS.md を維持。AI 実装・レビューで検知。共有面を薄くしたあとなお必要なら別 ADR で層 target を検討する |
+| 合算・枠 UI のホットスポット | `UsageStore` と `PopoverView` は共有のまま残りやすい | Cursor 行などは `TokfuelCursor` 側の View / 集計に移す。共有側は合計と枠の組み立てだけにする |
+| レイヤー逆流 | 両立できなかった側。SPM では止めないため UI が driver を直接見ることがありうる | AGENTS.md を維持。AI 実装・レビューで検知。共有部分を減らしたあとなお必要なら別 ADR で層 target を検討する |
 | target 数の増加 | `Package.swift` と import が重くなる | Core を薄く保つ。極細レイヤー（案4）やハイブリッド（案5）にはしない |
 | 逆依存の残留 | `BudgetMonitor`→UI、`AppSettings`→driver などが分割を阻む | target を切る前に callback / プロトコル化でほどく |
 | リソース移設 | retok の `Bundle.module` や Firebase plist の場所がずれる | Claude / Analytics 側へ移し、`swift test` と実機相当で確認 |
-| 移行の巨大化 | 一気にやるとレビューが重い | Core → Settings → sources → 共有シェル薄化 → App の順。必要なら PR を段階分割する |
+| 移行の巨大化 | 一気にやるとレビューが重い | Core → Settings → sources → 共有部分の中身移設 → App の順。必要なら PR を段階分割する |
 
 ## References（参照）
 

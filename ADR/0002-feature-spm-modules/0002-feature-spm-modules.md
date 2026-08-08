@@ -20,9 +20,9 @@ issue: "#109"
 Stop using a single SPM target under `App/`. Split library targets **vertically by feature** (axes where changes cluster). The primary goal is to **shrink the merge-conflict surface between unrelated Issues / PRs**.
 
 - Example axes: Claude / Cursor / Codex / Budget / Settings. Put only truly shared types in a thin `TokfuelCore` (exact names fixed at implementation time)
-- Aggregation (Store) and shell UI remain shared, but **push as much as possible into feature targets** (source-specific UI and totals live with the feature; the shared shell stays wiring plus thin aggregation)
+- `UsageStore` (cross-source totals) and `PopoverView` (menu-bar chrome) remain **shared** because multiple features touch them. Still put **source-specific content in each feature target** (for example Cursor rows or Claude-only totals); leave the shared side to “lay out, sum, and host the frame”
 - Keep Firebase, retok resources, and sqlite3 inside the targets that use them
-- **Do not buy compile-time layer edges (UI → Store → drivers) in this decision.** With aggregation and shell UI remaining as shared surfaces, the same SPM shape could not both maximize feature-split collision reduction and enforce layers via targets. Keep layer direction via AGENTS.md and AI coding (skills / review)
+- **Do not buy compile-time layer edges (UI → Store → drivers) in this decision.** With that shared aggregation and frame UI remaining, the same SPM shape could not both maximize feature-split collision reduction and enforce layers via targets. Keep layer direction via AGENTS.md and AI coding (skills / review)
 - Do not change product behavior or the ground rules (local-only data, zero setup, unmodified retok, optional python3, no new packages)
 
 The parent layout stays under `App/` per ADR-0001. This decision is about **target / module boundaries**, not about rehoming the top-level tree again.
@@ -58,16 +58,16 @@ Adopted feature split (arrows are App wiring; layers stay convention):
 ```mermaid
 flowchart TB
   App["TokfuelApp<br/>executable + wiring"]
-  Shell["Thin shared shell<br/>Store aggregation / shell UI"]
+  Shared["Shared parts<br/>UsageStore totals<br/>Popover frame UI"]
   Settings["TokfuelSettings"]
-  Claude["TokfuelClaude"]
-  Cursor["TokfuelCursor"]
+  Claude["TokfuelClaude<br/>Claude-specific UI / totals"]
+  Cursor["TokfuelCursor<br/>Cursor-specific UI / totals"]
   Codex["TokfuelCodex"]
   Budget["TokfuelBudget"]
   Analytics["TokfuelAnalytics"]
-  Core["TokfuelCore<br/>thin shared types only"]
+  Core["TokfuelCore<br/>shared types only"]
 
-  App --> Shell
+  App --> Shared
   App --> Settings
   App --> Claude
   App --> Cursor
@@ -76,12 +76,12 @@ flowchart TB
   App --> Analytics
   App --> Core
 
-  Shell --> Settings
-  Shell --> Claude
-  Shell --> Cursor
-  Shell --> Codex
-  Shell --> Budget
-  Shell --> Core
+  Shared --> Settings
+  Shared --> Claude
+  Shared --> Cursor
+  Shared --> Codex
+  Shared --> Budget
+  Shared --> Core
 
   Claude --> Core
   Cursor --> Core
@@ -104,9 +104,9 @@ flowchart LR
     Co[Codex]
     B[Budget]
   end
-  subgraph residual["Residual shared surface → keep thin"]
-    S[Store aggregation]
-    U[Shell UI]
+  subgraph residual["Shared parts that remain<br/>layout / sum / frame only"]
+    S[UsageStore totals]
+    U[Popover frame]
   end
   C --> S
   Cu --> S
@@ -115,11 +115,11 @@ flowchart LR
   S --> U
 ```
 
-`Tokfuel*` names may be finalized at implementation time. The diagrams mean: split by feature to cut collisions, and keep the shared shell thin. Layer correctness is not drawn as SPM edges.
+`Tokfuel*` names may be finalized at implementation time. The diagrams mean: split by feature to cut collisions, and keep source-specific content out of the shared parts. Layer correctness is not drawn as SPM edges.
 
 ### Summary of alternatives
 
-Trying to get both collision reduction (feature splits) and dependency enforcement (layer targets) in one architecture still leaves aggregation and shell UI shared, so a hybrid does not deliver both. Because they could not be reconciled, **prefer parallel-PR collision reduction and leave layers to convention + AI**. Layers-only still funnels work into Store / UI. Extreme fine layering is too heavy at this size.
+Trying to get both collision reduction (feature splits) and dependency enforcement (layer targets) in one architecture still leaves `UsageStore` totals and `PopoverView` frame UI shared, so a hybrid does not deliver both. Because they could not be reconciled, **prefer parallel-PR collision reduction and leave layers to convention + AI**. Layers-only still funnels work into Store / UI. Extreme fine layering is too heavy at this size.
 
 ## Context
 
@@ -137,16 +137,16 @@ As an OSS repo with concurrent Issues / PRs, unrelated work collides in the same
    - A single flat target makes unrelated work (for example Cursor vs budget) intersect in the same tree.
 2. **Hard to scope a change**
    - The set of files for a feature or source is not obvious from directory names.
-3. **A fat shared shell undercuts feature splits**
-   - If aggregation and screens keep collecting every change, vertical splits help less.
+3. **Source-specific content left in shared files undercuts feature splits**
+   - If adding a Cursor row still means editing a huge `PopoverView` / `UsageStore`, vertical splits help less.
 4. **Collision reduction and layer enforcement cannot both be satisfied in one SPM shape**
-   - Aggregation and shell UI remain product-level shared surfaces. Adding layer targets there does not cut unrelated-PR overlap beyond a feature split.
+   - Totals and frame UI remain product-level shared parts. Adding layer targets there does not cut unrelated-PR overlap beyond a feature split.
 
 ### Goals
 
 - Shrink conflict surface between unrelated Issues (the side we take of the two irreconcilable goals)
 - Make change scope easier to explain to contributors
-- Thin the shared shell (Store / shell UI) and push work into features
+- Move source-specific UI / totals into features; leave shared parts to layout, sum, and frame
 - Cover the side we did not take (layer enforcement) with AGENTS + AI coding
 - Keep `swift test` / `swift build -c release` green at each step
 
@@ -170,7 +170,7 @@ Primary criterion: reduce parallel-PR collisions.
 
 | Criterion | 1 Status quo | 2 Layers only | 3 Feature split | 4 Fine layers | 5 Hybrid |
 |-----------|--------------|---------------|-----------------|---------------|----------|
-| Reduce parallel-PR collisions (primary) | × Large hotspots | △ Work still piles into Store / UI | ◎ Unrelated Issues diverge | ○ Diverges but heavy to run | ◎ Same order as 3; shared shell remains |
+| Reduce parallel-PR collisions (primary) | × Large hotspots | △ Work still piles into Store / UI | ◎ Unrelated Issues diverge | ○ Diverges but heavy to run | ◎ Same order as 3; totals / frame UI stay shared |
 | Scope a change | × One entry point | △ Layers clear; feature axis weak | ◎ “Which source?” is clear | △ Too many targets | ◎ Same feature axis; more layer boxes |
 | Layer guarantees | △ Docs + AI | ◎ Compile-time direction | △ Docs + AI (covers the side we did not take) | ◎ Even finer | ◎ Layers can be enforced, but shared-surface collisions stay like 3 |
 | Migration cost | ◎ No change | ○ Medium | ○ Medium | × Too large here | △ Heavier than 3 (extra layer targets) |
@@ -194,18 +194,18 @@ Primary criterion: reduce parallel-PR collisions.
 
 1. Unrelated PRs (for example Cursor vs Budget) are more likely to touch different targets / directories
 2. Change scope is easier to explain (“look at `TokfuelCursor`”)
-3. Pushing source-specific UI / totals into features also shrinks collisions on the shared shell
+3. Moving source-specific UI / totals into features also shrinks collisions on `UsageStore` / `PopoverView`
 
 ### Risks and mitigations
 
 | Risk | Detail | Mitigation |
 |------|--------|------------|
-| Store / shell UI hotspots | Aggregation and screens can still collide | Move source-specific UI and totals into features; keep the shell as wiring plus thin aggregation |
-| Layer leaks | The side we could not take in SPM; UI may still see drivers | Keep AGENTS.md; catch in AI implementation / review; after thinning the shared shell, open another ADR for layer targets if still needed |
+| Totals / frame UI hotspots | `UsageStore` and `PopoverView` stay shared | Put Cursor rows (and similar) in `TokfuelCursor` views / totals; shared side only sums and assembles the frame |
+| Layer leaks | The side we could not take in SPM; UI may still see drivers | Keep AGENTS.md; catch in AI implementation / review; after shrinking shared parts, open another ADR for layer targets if still needed |
 | More targets | Heavier `Package.swift` and imports | Keep Core thin; do not adopt options 4 or 5 |
 | Remaining inverted deps | For example BudgetMonitor → UI, AppSettings → drivers | Untangle with callbacks / protocols before cutting targets |
 | Resource moves | `Bundle.module` for retok or Firebase plist can break | Move with Claude / Analytics targets; verify with `swift test` and runtime checks |
-| Huge migration | One big change is hard to review | Order: Core → Settings → sources → thin shared shell → App; split PRs if needed |
+| Huge migration | One big change is hard to review | Order: Core → Settings → sources → move content out of shared parts → App; split PRs if needed |
 
 ## References
 
