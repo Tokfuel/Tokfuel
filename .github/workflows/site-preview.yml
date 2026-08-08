@@ -133,7 +133,10 @@ jobs:
           git commit -m "chore: site preview for PR #${PR_NUMBER} (${SHORT_SHA})"
           git push origin "$BRANCH"
 
-          echo "preview_url=${PREVIEW_URL_BASE}/index.html" >> "$GITHUB_OUTPUT"
+          # Branch-tip URLs on raw.githack / raw.githubusercontent stay cached.
+          # Pin the comment link to this orphan commit so reviewers see the new HTML.
+          PREVIEW_COMMIT="$(git rev-parse HEAD)"
+          echo "preview_url=https://raw.githack.com/${REPO}/${PREVIEW_COMMIT}/${DIR}/index.html" >> "$GITHUB_OUTPUT"
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
 
@@ -152,7 +155,7 @@ jobs:
           test -n "$PREVIEW_URL"
           test -n "$SHORT_SHA"
 
-          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`（このコミットでビルド済み）。\n\n%s\n\nこの URL は %s 向け。コミットや再ラベルのたびに Site をビルドし直して差し替え、以前のプレビューコメントは非表示になる。' \
+          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`（このコミットでビルド済み）。\n\n%s\n\nこの URL は %s 向け（orphan コミット固定。ブランチ tip の raw.githack は CDN キャッシュで古いまま残ることがある）。コミットや再ラベルのたびに Site をビルドし直して差し替え、以前のプレビューコメントは非表示になる。' \
             "$SHORT_SHA" "$PREVIEW_URL" "$DIR")
 
           while IFS= read -r NODE_ID; do
