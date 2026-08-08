@@ -1,10 +1,10 @@
 name: Site Preview
 
 # 0-site-preview 🌐 ラベルがある PR で、ラベル付与時とコミット（synchronize）のたびに
-# Site/ をビルドして専用の orphan branch (site-preview-pages) に PR 番号別の
-# サブディレクトリとして push し、raw.githack.com 経由でレンダリングした URL を
-# PR コメントに貼る。実行のたびに新規コメントを足し、以前の bot コメントは
-# OUTDATED で隠す。
+# 必ず Site/ を `swift run` でビルドしてから、orphan branch (site-preview-pages) に
+# PR 番号別サブディレクトリとして push し、raw.githack.com の URL を新規コメントする。
+# 以前の bot コメントは OUTDATED で隠す。パスフィルタは付けない（Site 以外の変更でも
+# ラベル付きなら毎回ビルドする）。コメントはビルド成功後にしか書かない。
 #
 # GitHub Pages の公開デプロイ（pages.yml）は actions/deploy-pages を使っており、
 # 1 リポジトリにつき 1 つの公開先しか持てないため、同じ仕組みで PR ごとのプレビューを
@@ -14,11 +14,13 @@ name: Site Preview
 # 経由で配る。使用状況データは一切載らない、ビルド成果物の配信のみ。
 #
 # fork からの pull_request では GITHUB_TOKEN が read-only になるため push/コメントは失敗する。
-# continue-on-error でジョブを赤くしないだけにとどめ、fork 対応は将来の課題とする。
+# その場合も Build site は必ず実行し、失敗はジョブを赤くする。push/コメントだけ
+# continue-on-error とする。
 
 on:
   pull_request:
     types: [labeled, synchronize, closed]
+    # 意図的に paths を付けない。ラベル付き PR の全コミットで Site をビルドする。
 
 concurrency:
   group: site-preview-${{ github.event.pull_request.number }}
@@ -40,11 +42,22 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # コメント差し替えの前提。キャッシュ済み成果物の再利用はせず、毎回作り直す。
       - name: Build site
+        id: build
         working-directory: Site
-        run: swift run
+        env:
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          rm -rf Build
+          swift run
+          test -f Build/index.html
+          printf '%s\n' "$PR_SHA" > Build/.preview-sha
+          test "$(cat Build/.preview-sha)" = "$PR_SHA"
 
-      - name: Publish preview and comment
+      - name: Publish preview branch
+        id: publish
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -53,6 +66,10 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          # ビルド成果が無い／別 SHA ならコメント前に落とす（順序逆転の防止）。
+          test -f Site/Build/index.html
+          test "$(cat Site/Build/.preview-sha)" = "$PR_SHA"
+
           BRANCH="site-preview-pages"
           SHORT_SHA="${PR_SHA:0:7}"
           DIR="pr-${PR_NUMBER}"
@@ -79,11 +96,28 @@ jobs:
           git commit -m "chore: site preview for PR #${PR_NUMBER} (${SHORT_SHA})"
           git push origin "$BRANCH"
 
-          PREVIEW_URL="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html"
-          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s 向け。コミットや再ラベルのたびに差し替わり、以前のプレビューコメントは非表示になる。' \
+          echo "preview_url=https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html" >> "$GITHUB_OUTPUT"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      # ビルド成功かつプレビュー公開成功のときだけコメントする。
+      - name: Hide previous preview comments and post new
+        if: steps.build.outcome == 'success' && steps.publish.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          PREVIEW_URL: ${{ steps.publish.outputs.preview_url }}
+          DIR: ${{ steps.publish.outputs.dir }}
+          SHORT_SHA: ${{ steps.publish.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$PREVIEW_URL"
+          test -n "$SHORT_SHA"
+
+          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`（このコミットでビルド済み）。\n\n%s\n\nこの URL は %s 向け。コミットや再ラベルのたびに Site をビルドし直して差し替え、以前のプレビューコメントは非表示になる。' \
             "$SHORT_SHA" "$PREVIEW_URL" "$DIR")
 
-          # 既存の bot コメントは隠してから、毎回新規コメントを足す。
           while IFS= read -r NODE_ID; do
             [ -n "$NODE_ID" ] || continue
             gh api graphql -f query='
