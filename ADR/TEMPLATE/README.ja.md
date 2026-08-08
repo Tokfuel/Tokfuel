@@ -9,7 +9,7 @@ issue:
 
 # Title（意思決定の概要を示す簡潔な表現）
 
-[English](./NNNN-slug.md)
+[English](./README.md)
 
 ## Decision（決定事項）
 

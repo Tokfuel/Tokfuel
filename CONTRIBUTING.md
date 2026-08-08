@@ -14,7 +14,7 @@ Thanks for your interest! This is a small, personal-use macOS menu-bar app, but 
 
 - **Be kind.** This project follows the spirit of the [Contributor Covenant](https://www.contributor-covenant.org/). Be respectful in issues, PRs, and reviews.
 - **One topic per PR.** Smaller, focused PRs get merged faster than sprawling ones.
-- **Discuss before big changes.** For features that change UX or architecture, open an issue first so we can align before you spend time coding. Settled architecture decisions live in [ADR/](ADR/) as a Japanese/English pair (see [ADR/TEMPLATE.ja.md](ADR/TEMPLATE.ja.md) / [ADR/TEMPLATE.md](ADR/TEMPLATE.md)).
+- **Discuss before big changes.** For features that change UX or architecture, open an issue first so we can align before you spend time coding. Settled architecture decisions live under [ADR/](ADR/) (one directory per decision, Japanese/English `README` pair; see [ADR/TEMPLATE/](ADR/TEMPLATE/) and [ADR/INDEX.md](ADR/INDEX.md)).
 
 ### Dev setup
 
@@ -105,7 +105,7 @@ self-contained Proposal if you're looking for something to build.
 
 - **やさしく。** [Contributor Covenant](https://www.contributor-covenant.org/) の精神に沿って、Issue / PR / レビューで敬意を持って接してください。
 - **1 PR 1 トピック。** 小さく焦点が絞られた PR の方が早くマージできます。
-- **大きな変更は先に相談。** UX やアーキテクチャを変えるような機能は、コードを書く前に Issue を立てて方向性を合わせましょう。決まった方針は [ADR/](ADR/) に日英対で残します（型は [ADR/TEMPLATE.ja.md](ADR/TEMPLATE.ja.md) / [ADR/TEMPLATE.md](ADR/TEMPLATE.md)）。
+- **大きな変更は先に相談。** UX やアーキテクチャを変えるような機能は、コードを書く前に Issue を立てて方向性を合わせましょう。決まった方針は [ADR/](ADR/) に残します（1 決定 = 1 ディレクトリ、日英 README。型は [ADR/TEMPLATE/](ADR/TEMPLATE/)、一覧は [ADR/INDEX.ja.md](ADR/INDEX.ja.md)）。
 
 ### 開発環境のセットアップ
 

@@ -9,26 +9,32 @@
 5セクションとする。置き場は git 上のこのディレクトリとする（OSS とエージェントが
 同じ正本を読むため）。
 
-## 日英分割
+全体の一覧は [`INDEX.ja.md`](INDEX.ja.md)（[English](INDEX.md)）を見る。
 
-README / SECURITY と同じく、**英語ファイルと日本語ファイルを対で置く**。
+## ディレクトリ構成
+
+1 件の決定 = 1 ディレクトリ。その中に日英の本文を置く。
+
+```text
+ADR/
+  README.md / README.ja.md     # この説明
+  INDEX.md / INDEX.ja.md       # 全体像（一覧）
+  TEMPLATE/                    # 新規 ADR の雛形
+    README.md / README.ja.md
+  NNNN-slug/                   # 個別の決定
+    README.md / README.ja.md
+```
 
 | パス | 言語 |
 |------|------|
-| `NNNN-slug.md` | 英語 |
-| `NNNN-slug.ja.md` | 日本語 |
+| `NNNN-slug/README.md` | 英語 |
+| `NNNN-slug/README.ja.md` | 日本語 |
 
-両方が必須。内容がずれたときは **日本語（`.ja.md`）を正本**とし、英語側を合わせる。
+両方が必須。内容がずれたときは **日本語（`README.ja.md`）を正本**とし、英語側を合わせる。
 front matter の `status` / `proposed` / `accepted` / `issue` は両ファイルで同じ値にする。
 
-## 置き方
-
-| パス | 役割 |
-|------|------|
-| [`TEMPLATE.md`](TEMPLATE.md) / [`TEMPLATE.ja.md`](TEMPLATE.ja.md) | 新規 ADR の雛形（日英） |
-| `NNNN-slug.md` / `NNNN-slug.ja.md` | 個別の決定（4桁ゼロ埋め + kebab-case） |
-
-番号は既存の最大 + 1。連番を飛ばさない。同じ番号の日英が揃っていなければ未完成とみなす。
+番号は既存の最大 + 1（ゼロ埋め4桁）。連番を飛ばさない。同じ番号のディレクトリに日英が
+揃っていなければ未完成とみなす。
 
 ## 状態（`status`）
 
@@ -43,12 +49,12 @@ front matter の `status` / `proposed` / `accepted` / `issue` は両ファイル
 
 ## 書き方
 
-1. [`TEMPLATE.ja.md`](TEMPLATE.ja.md) と [`TEMPLATE.md`](TEMPLATE.md) をコピーして
-   `NNNN-slug.ja.md` / `NNNN-slug.md` を作る
+1. [`TEMPLATE/`](TEMPLATE/) を `NNNN-slug/` にコピーする
 2. タイトルは動詞終わりの意思決定文にする（日本語は「〜する」、英語は concise verb phrase）
 3. Decision → Context → Consideration → Consequences → References の順で書く
 4. Consideration には **現状維持** を必ず含める
 5. 作業文書なので日本語は常体、英語は plain technical prose
-6. 起案をエージェントに任せるときは [`write-adr`](../.agents/skills/write-adr/SKILL.md) スキルを使う
+6. [`INDEX.ja.md`](INDEX.ja.md) / [`INDEX.md`](INDEX.md) に 1 行追加する
+7. 起案をエージェントに任せるときは [`write-adr`](../.agents/skills/write-adr/SKILL.md) スキルを使う
 
 大きな方針変更は、先に GitHub Issue（ラベル `ADR 🏯`）で議論し、合意した内容を ADR に落とす。

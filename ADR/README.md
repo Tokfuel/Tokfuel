@@ -9,28 +9,33 @@ Each ADR uses five sections: Decision, Context, Consideration, Consequences, and
 References. ADRs live in this directory as git Markdown so OSS contributors and agents
 share one source of truth.
 
-## Japanese and English pair
-
-Same convention as README / SECURITY: **ship English and Japanese as a pair**.
-
-| Path | Language |
-|------|----------|
-| `NNNN-slug.md` | English |
-| `NNNN-slug.ja.md` | Japanese |
-
-Both are required. If they drift, **the Japanese (`.ja.md`) file is canonical**; update
-the English file to match. Keep `status` / `proposed` / `accepted` / `issue` identical
-in both front matters.
+For the full picture, see [`INDEX.md`](INDEX.md) ([日本語](INDEX.ja.md)).
 
 ## Layout
 
-| Path | Role |
-|------|------|
-| [`TEMPLATE.md`](TEMPLATE.md) / [`TEMPLATE.ja.md`](TEMPLATE.ja.md) | New-ADR scaffolds |
-| `NNNN-slug.md` / `NNNN-slug.ja.md` | One decision (zero-padded 4-digit id + kebab-case) |
+One decision = one directory. Japanese and English bodies live inside it.
 
-Numbers increment by one from the highest existing id. A decision is incomplete until both
-language files exist for that number.
+```text
+ADR/
+  README.md / README.ja.md     # this guide
+  INDEX.md / INDEX.ja.md       # catalog / overview
+  TEMPLATE/                    # scaffold for a new ADR
+    README.md / README.ja.md
+  NNNN-slug/                   # one decision
+    README.md / README.ja.md
+```
+
+| Path | Language |
+|------|----------|
+| `NNNN-slug/README.md` | English |
+| `NNNN-slug/README.ja.md` | Japanese |
+
+Both are required. If they drift, **the Japanese `README.ja.md` is canonical**; update the
+English file to match. Keep `status` / `proposed` / `accepted` / `issue` identical in both
+front matters.
+
+Numbers increment by one from the highest existing id (zero-padded to 4 digits). A decision
+is incomplete until both language files exist in that directory.
 
 ## Status (`status`)
 
@@ -45,13 +50,13 @@ language files exist for that number.
 
 ## Writing
 
-1. Copy [`TEMPLATE.md`](TEMPLATE.md) and [`TEMPLATE.ja.md`](TEMPLATE.ja.md) to
-   `NNNN-slug.md` / `NNNN-slug.ja.md`
+1. Copy [`TEMPLATE/`](TEMPLATE/) to `NNNN-slug/`
 2. Title is a short decision sentence (verb-led)
 3. Write Decision → Context → Consideration → Consequences → References
 4. Consideration must include a **status-quo** option
 5. Japanese body uses 常体 (plain form); English uses plain technical prose
-6. For agent-assisted drafts, use the [`write-adr`](../.agents/skills/write-adr/SKILL.md) skill
+6. Add a row to [`INDEX.md`](INDEX.md) / [`INDEX.ja.md`](INDEX.ja.md)
+7. For agent-assisted drafts, use the [`write-adr`](../.agents/skills/write-adr/SKILL.md) skill
 
 For large direction changes, discuss in a GitHub Issue (label `ADR 🏯`) first, then record
 the agreement here.
