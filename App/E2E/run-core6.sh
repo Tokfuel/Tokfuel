@@ -49,10 +49,15 @@ echo "Launching Tokfuel --e2e-fixture… (settle=${SETTLE}s, recording=${RECORDI
 APP_PID=$!
 
 VIDEO_PID=""
+FRAME_PID=""
 cleanup() {
-  if [[ -n "${VIDEO_PID}" ]] && kill -0 "$VIDEO_PID" 2>/dev/null; then
+  if [[ -n "${VIDEO_PID:-}" ]] && kill -0 "$VIDEO_PID" 2>/dev/null; then
     kill "$VIDEO_PID" 2>/dev/null || true
     wait "$VIDEO_PID" 2>/dev/null || true
+  fi
+  if [[ -n "${FRAME_PID:-}" ]] && kill -0 "$FRAME_PID" 2>/dev/null; then
+    kill "$FRAME_PID" 2>/dev/null || true
+    wait "$FRAME_PID" 2>/dev/null || true
   fi
   kill "$APP_PID" 2>/dev/null || true
   wait "$APP_PID" 2>/dev/null || true
@@ -67,14 +72,30 @@ for _ in $(seq 1 40); do
 done
 sleep "$SETTLE"
 
-# 失敗時に「そのときの様子」を残すため、ドライバ実行中は画面録画する（最大 45 秒）。
+# 失敗時に「そのときの様子」を残す。
+# 1) screencapture の短尺動画（Screen Recording 許可が必要）
+# 2) 併せて 1 秒ごとのフレーム（動画が取れない runner 向け）
 VIDEO_OUT="$OUT_DIR/failure.mov"
+FRAMES_DIR="$OUT_DIR/frames"
 rm -f "$VIDEO_OUT"
+rm -rf "$FRAMES_DIR"
+mkdir -p "$FRAMES_DIR"
+FRAME_PID=""
 if [[ "${TOKFUEL_E2E_RECORD_VIDEO:-1}" == "1" ]]; then
-  /usr/sbin/screencapture -x -v -V 45 "$VIDEO_OUT" &
+  /usr/sbin/screencapture -x -v -V 45 "$VIDEO_OUT" >/dev/null 2>&1 &
   VIDEO_PID=$!
   echo "screen recording pid=${VIDEO_PID} → ${VIDEO_OUT}"
 fi
+(
+  i=0
+  while kill -0 "$APP_PID" 2>/dev/null; do
+    /usr/sbin/screencapture -x "$FRAMES_DIR/frame-$(printf '%02d' "$i").png" 2>/dev/null || true
+    i=$((i + 1))
+    [[ "$i" -ge 40 ]] && break
+    sleep 1
+  done
+) &
+FRAME_PID=$!
 
 echo "Running TokfuelE2E against pid=${APP_PID}..."
 set +e
@@ -85,21 +106,40 @@ set +e
 DRIVER_STATUS=$?
 set -e
 
-# 録画を止める（成功時はファイルを捨てる）。
+# 録画・フレーム取得を止める（成功時は証拠を捨てる）。
 if [[ -n "${VIDEO_PID}" ]]; then
   kill "$VIDEO_PID" 2>/dev/null || true
   wait "$VIDEO_PID" 2>/dev/null || true
   VIDEO_PID=""
 fi
+if [[ -n "${FRAME_PID}" ]]; then
+  kill "$FRAME_PID" 2>/dev/null || true
+  wait "$FRAME_PID" 2>/dev/null || true
+  FRAME_PID=""
+fi
 
 if [[ "$DRIVER_STATUS" -eq 0 ]]; then
   rm -f "$VIDEO_OUT"
+  rm -rf "$FRAMES_DIR"
   echo "core6 E2E OK"
   exit 0
 fi
 
 echo "core6 E2E FAILED (status=${DRIVER_STATUS}); capturing evidence…"
 /usr/sbin/screencapture -x "$OUT_DIR/failure.png" || true
+# 動画が空／未作成なら、フレーム列の末尾を failure の補助にする。
+if [[ ! -s "$VIDEO_OUT" ]]; then
+  rm -f "$VIDEO_OUT"
+  # 先頭・中盤・末尾を timeline として残す。
+  shopt -s nullglob
+  frames=("$FRAMES_DIR"/frame-*.png)
+  if [[ ${#frames[@]} -gt 0 ]]; then
+    cp "${frames[0]}" "$OUT_DIR/timeline-start.png"
+    mid=$(( ${#frames[@]} / 2 ))
+    cp "${frames[$mid]}" "$OUT_DIR/timeline-mid.png"
+    cp "${frames[$(( ${#frames[@]} - 1 ))]}" "$OUT_DIR/timeline-end.png"
+  fi
+fi
 
 # 正常時の参照画面（フィクスチャ描画）。失敗シナリオに応じて popover / settings を残す。
 EXPECTED_DIR="$OUT_DIR/expected"

@@ -59,6 +59,9 @@ PREFIX="pr-${PR_NUMBER}-${SHORT_SHA}"
 cp "$REPORT" "$STAGE/${PREFIX}-report.json"
 [[ -f "$OUT_DIR/failure.png" ]] && cp "$OUT_DIR/failure.png" "$STAGE/${PREFIX}-failure.png"
 [[ -f "$OUT_DIR/failure.mov" ]] && cp "$OUT_DIR/failure.mov" "$STAGE/${PREFIX}-failure.mov"
+for t in start mid end; do
+  [[ -f "$OUT_DIR/timeline-${t}.png" ]] && cp "$OUT_DIR/timeline-${t}.png" "$STAGE/${PREFIX}-timeline-${t}.png"
+done
 for screen in $EXPECTED_SCREENS; do
   src="$OUT_DIR/expected/${screen}.png"
   if [[ -f "$src" ]]; then
@@ -132,12 +135,28 @@ else
   BODY="${BODY}"$'\n'"_失敗時スクリーンショットを取得できませんでした。_"$'\n'
 fi
 
-BODY="${BODY}"$'\n'"#### 失敗時の動画"$'\n'
+BODY="${BODY}"$'\n'"#### 失敗時の動画 / 経過"$'\n'
 if [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
   URL="$(raw "$FAILURE_MOV")"
   BODY="${BODY}"$'\n'"- [failure.mov を開く](${URL})"$'\n'
 else
-  BODY="${BODY}"$'\n'"_画面録画を取得できませんでした（Screen Recording 許可や runner 制限の可能性）。_"$'\n'
+  BODY="${BODY}"$'\n'"_連続録画 (mov) は取得できませんでした。1 秒ごとの経過フレームを載せます。_"$'\n'
+  BODY="${BODY}"$'\n'"<table><tr>"$'\n'
+  for t in start mid end; do
+    name="${PREFIX}-timeline-${t}.png"
+    if [[ -f "$name" ]]; then
+      URL="$(raw "$name")"
+      label="$t"
+      case "$t" in
+        start) label="開始付近" ;;
+        mid) label="中盤" ;;
+        end) label="終了付近" ;;
+      esac
+      BODY="${BODY}<td valign=\"top\"><p><strong>${label}</strong></p>"
+      BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${t}\" width=\"280\"></a></p></td>"
+    fi
+  done
+  BODY="${BODY}"$'\n'"</tr></table>"$'\n'
 fi
 
 BODY="${BODY}"$'\n'"#### 正常な画面（フィクスチャ描画）"$'\n'$'\n'"<table><tr>"$'\n'
