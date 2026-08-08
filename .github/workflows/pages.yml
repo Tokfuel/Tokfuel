@@ -3,10 +3,14 @@ name: Pages
 # main への push で、ダウンロードページ（Site/）を再生成して GitHub Pages に公開する。
 # ダウンロードボタンは releases/latest を指す固定URLなので、ここではページ自体の
 # 再生成だけを行う（リリースそのものは release.yml が別途担当する）。
+# Demo/（#155）も同じ成果物の /demo/ に載せる。
 on:
   push:
     branches: [main]
-    paths: ["Site/**", ".github/workflows/pages.yml"]
+    paths:
+      - "Site/**"
+      - "Demo/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +32,23 @@ jobs:
       - name: Build download page
         working-directory: Site
         run: swift run
+
+      - name: Attach browsable demo
+        run: |
+          set -euo pipefail
+          mkdir -p Site/Build/demo
+          cp Demo/compare.html Site/Build/demo/index.html
+          cp Demo/fixtures.json Site/Build/demo/fixtures.json
+          cp -R Demo/html Site/Build/demo/html
+          if [[ -d Demo/wasm/hosted && -f Demo/wasm/hosted/TokfuelDemo.wasm ]]; then
+            cp -R Demo/wasm/hosted Site/Build/demo/wasm
+            echo "Attached SwiftWasm hosted demo"
+          else
+            mkdir -p Site/Build/demo/wasm
+            cp Demo/wasm/www/index.html Site/Build/demo/wasm/index.html
+            cp Demo/html/styles.css Site/Build/demo/wasm/styles.css
+            echo "SwiftWasm hosted artifacts missing; shipped host page only" >&2
+          fi
 
       - uses: actions/upload-pages-artifact@v5
         with:

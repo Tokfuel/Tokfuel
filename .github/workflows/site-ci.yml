@@ -6,9 +6,9 @@ name: Site CI
 on:
   push:
     branches: [main]
-    paths: ["Site/**", ".github/workflows/site-ci.yml"]
+    paths: ["Site/**", "Demo/**", ".github/workflows/site-ci.yml"]
   pull_request:
-    paths: ["Site/**", ".github/workflows/site-ci.yml"]
+    paths: ["Site/**", "Demo/**", ".github/workflows/site-ci.yml"]
 
 concurrency:
   group: site-ci-${{ github.ref }}
@@ -24,3 +24,20 @@ jobs:
       - name: Build
         working-directory: Site
         run: swift run
+
+      - name: Attach browsable demo
+        run: |
+          set -euo pipefail
+          mkdir -p Site/Build/demo
+          cp Demo/compare.html Site/Build/demo/index.html
+          cp Demo/fixtures.json Site/Build/demo/fixtures.json
+          cp -R Demo/html Site/Build/demo/html
+          if [[ -d Demo/wasm/hosted && -f Demo/wasm/hosted/TokfuelDemo.wasm ]]; then
+            cp -R Demo/wasm/hosted Site/Build/demo/wasm
+          else
+            mkdir -p Site/Build/demo/wasm
+            cp Demo/wasm/www/index.html Site/Build/demo/wasm/index.html
+            cp Demo/html/styles.css Site/Build/demo/wasm/styles.css
+          fi
+          test -f Site/Build/demo/index.html
+          test -f Site/Build/demo/html/index.html
