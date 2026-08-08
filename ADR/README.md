@@ -3,8 +3,9 @@
 技術的な意思決定の記録を、Issue や会話に散らさずリポジトリに残す。
 「なぜその形にしたか」をあとから追えるようにする。
 
-スタイルは Sansan Mobile ADR の5セクション構成に合わせ、置き場は git 上の
-このディレクトリとする（OSS とエージェントが同じ正本を読むため）。
+本文は Decision / Context / Consideration / Consequences / References の
+5セクションとする。置き場は git 上のこのディレクトリとする（OSS とエージェントが
+同じ正本を読むため）。
 
 ## 置き方
 

@@ -13,8 +13,8 @@ description: >-
 
 技術的意思決定を [`ADR/`](../../../ADR/) 配下の Markdown として起草する。
 置き場と番号規則は [`ADR/README.md`](../../../ADR/README.md)、本文の型は
-[`ADR/TEMPLATE.md`](../../../ADR/TEMPLATE.md) が正本。構成は Sansan Mobile ADR に合わせ、
-Notion ではなく git に置く。
+[`ADR/TEMPLATE.md`](../../../ADR/TEMPLATE.md) が正本。Notion など外部ツールではなく
+git 上の Markdown に置く。
 
 会話は日本語。作業文書なので本文は常体（Issue / PR の敬体とは分ける）。
 
