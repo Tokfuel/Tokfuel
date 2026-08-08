@@ -1,5 +1,14 @@
 import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// retok --json 出力の縮小サンプル。実際のキー名（snake_case）と一致させている。

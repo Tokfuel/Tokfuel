@@ -1,4 +1,14 @@
+import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// コピーされる文面の検査。貼った先で意味が通らないと、ボタンがあっても使われない。

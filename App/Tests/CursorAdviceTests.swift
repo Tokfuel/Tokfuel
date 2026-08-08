@@ -1,5 +1,14 @@
 import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// Cursor 由来の「節約のヒント」の判定（TF-0078）。しきい値の境目と、

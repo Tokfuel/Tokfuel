@@ -1,5 +1,14 @@
 import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// 固定日時（ローカルタイムゾーン）を作る。BudgetMonitor は Calendar.current の

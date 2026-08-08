@@ -1,5 +1,14 @@
 import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// 日別コストのフィクスチャ。
@@ -82,7 +91,7 @@ struct UsageStoreTodayCostTests {
     }
 
     @Test func driverBreakdownは今日ぶんの内訳を返す() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store()
         let today = Self.dateString(Date())
         store.driverDailyByID = ["cursor": [today: 3.1]]
         #expect(store.driverBreakdown.count == 1)
@@ -142,7 +151,7 @@ struct UsageStoreTodayCostTests {
 @MainActor
 struct UsageStoreDegradedSourceTests {
     @Test func 劣化したソースは表示名と説明を返す() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store(costDrivers: [CursorCostDriver()])
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:],
                                    health: .degraded(.remoteUnavailable))
@@ -157,7 +166,7 @@ struct UsageStoreDegradedSourceTests {
     }
 
     @Test func 認証拒否ならサインイン先を添える() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store(costDrivers: [CursorCostDriver()])
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:],
                                    health: .degraded(.credentialsRejected))
@@ -169,7 +178,7 @@ struct UsageStoreDegradedSourceTests {
     }
 
     @Test func 未サインインもサインイン先を添える() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store(costDrivers: [CursorCostDriver()])
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:], health: .degraded(.signedOut))
         ])
@@ -187,7 +196,7 @@ struct UsageStoreDegradedSourceTests {
     }
 
     @Test func 取得できたソースは注意書きを出さない() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store(costDrivers: [CursorCostDriver()])
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:])
         ])
@@ -197,7 +206,7 @@ struct UsageStoreDegradedSourceTests {
     @Test func Claudeのみのモードでは出さない() {
         let settings = AppSettings(defaults: UserDefaults(suiteName: "degraded-\(UUID())")!)
         settings.costSourceMode = .claudeOnly
-        let store = UsageStore(settings: settings)
+        let store = UsageStoreTestFixtures.store(settings: settings, costDrivers: [CursorCostDriver()])
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:],
                                    health: .degraded(.remoteUnavailable))
@@ -218,7 +227,7 @@ struct UsageStoreDegradedSourceTests {
     @Test func Cursorのみのモードで劣化したら金額を出さない() {
         let settings = AppSettings(defaults: UserDefaults(suiteName: "unavailable-\(UUID())")!)
         settings.costSourceMode = .cursorOnly
-        let store = UsageStore(settings: settings)
+        let store = UsageStoreTestFixtures.store(settings: settings, costDrivers: [CursorCostDriver()])
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:],
                                    health: .degraded(.credentialsRejected))
@@ -260,7 +269,7 @@ struct UsageStoreTopSessionTests {
     private func store(mode: CostSourceMode) -> UsageStore {
         let settings = AppSettings(defaults: UserDefaults(suiteName: "top-sessions-\(UUID())")!)
         settings.costSourceMode = mode
-        return UsageStore(settings: settings)
+        return UsageStoreTestFixtures.store(settings: settings)
     }
 
     @Test func コスト降順にマージして上位3件だけ出す() {

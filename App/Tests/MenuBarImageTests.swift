@@ -1,5 +1,15 @@
 import AppKit
+import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// 画像に乗ったインクの総量（アルファの合計）。トラックが円周を覆うので
@@ -46,15 +56,15 @@ private func content(shape: MenuBarGaugeShape = .ring, showsIcon: Bool = true,
 /// 配色。リングは段階を常に示すので平常時も色を持ち、アイコン単体は平常時を無彩色に保つ。
 struct MenuBarPaletteTests {
     @Test func ゲージは段階で青オレンジ赤に変わる() {
-        #expect(BudgetLevel.ok.menuBarRingColor == .systemBlue)
-        #expect(BudgetLevel.warning.menuBarRingColor == .systemOrange)
-        #expect(BudgetLevel.over.menuBarRingColor == .systemRed)
+        #expect(menuBarRingColor(for: .ok) == .systemBlue)
+        #expect(menuBarRingColor(for: .warning) == .systemOrange)
+        #expect(menuBarRingColor(for: .over) == .systemRed)
     }
 
     @Test func アイコン単体は平常時に色を持たない() {
-        #expect(BudgetLevel.ok.menuBarAlertColor == nil)
-        #expect(BudgetLevel.warning.menuBarAlertColor == .systemOrange)
-        #expect(BudgetLevel.over.menuBarAlertColor == .systemRed)
+        #expect(menuBarAlertColor(for: .ok) == nil)
+        #expect(menuBarAlertColor(for: .warning) == .systemOrange)
+        #expect(menuBarAlertColor(for: .over) == .systemRed)
     }
 }
 

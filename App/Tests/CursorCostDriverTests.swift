@@ -1,6 +1,15 @@
-import Foundation
 import SQLite3
+import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 /// テスト用のエポックミリ秒 → "YYYY-MM-DD"。実装側と同じ UsageStore.dateString を使う。

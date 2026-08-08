@@ -1,5 +1,14 @@
 import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
 
 @Suite struct CostDisplayModeTests {
@@ -170,7 +179,7 @@ struct CostSourceModeUsageStoreTests {
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = AppSettings(defaults: defaults, codexInstalled: true)
-        let store = UsageStore(settings: settings)
+        let store = UsageStoreTestFixtures.store(settings: settings)
         let today = Self.dateString(Date())
         store.applyDriverSnapshots([
             "cursor": CostSnapshot(daily: [:], byModel: [:],
@@ -195,7 +204,7 @@ struct CostSourceModeUsageStoreTests {
     }
 
     @Test func chartRowsはCodexのみでCodex系列だけ出す() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store()
         let today = Self.dateString(Date())
         store.report = report(daily: [today: 4])
         store.driverDailyByID = ["cursor": [today: 2], "codex": [today: 1]]
@@ -220,7 +229,7 @@ struct CostSourceModeUsageStoreTests {
     }
 
     @Test func chartRowsはソースモードで系列を絞る() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store()
         let today = Self.dateString(Date())
         store.report = report(daily: [today: 4])
         store.driverDailyByID = ["cursor": [today: 2]]
@@ -258,7 +267,7 @@ struct CostSourceModeUsageStoreTests {
     }
 
     @Test func chartRowsは二次ソースをdriverごとに別系列にする() {
-        let store = UsageStore()
+        let store = UsageStoreTestFixtures.store()
         let today = Self.dateString(Date())
         store.report = report(daily: [today: 4])
         store.driverDailyByID = ["cursor": [today: 2], "codex": [today: 1]]

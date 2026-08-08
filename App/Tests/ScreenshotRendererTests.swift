@@ -1,7 +1,17 @@
-#if DEBUG
 import Foundation
 import Testing
+@testable import TokfuelCore
+@testable import TokfuelSettings
+@testable import TokfuelClaude
+@testable import TokfuelCursor
+@testable import TokfuelCodex
+@testable import TokfuelBudget
+@testable import TokfuelAnalytics
+@testable import TokfuelStore
+@testable import TokfuelUI
 @testable import Tokfuel
+
+#if DEBUG
 
 /// スクリーンショット生成（TF-0015）の引数解釈。README の絵は CI が撮るので、
 /// 出力先の取り違えは気づきにくい。
