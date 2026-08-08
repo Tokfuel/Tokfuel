@@ -5,6 +5,10 @@ import Testing
 
 /// `ScreenshotRenderer.screenNames` 全画面のピクセル回帰。
 /// E2E は操作・反映、こちらは見た目。`AppSettings.shared` を共有するので直列。
+///
+/// TestDocs の VRT 完了条件（設定フラグごとの画面パターン）を担保する。
+/// 対応シナリオ例: Settings-04/05/06/09/26/36/37、Cost-01/02/12、MenuBar-01/29、
+/// Cursor-11/12、Budget-10 など（`App/Tests/TestDocs`）。
 @Suite(.serialized)
 struct UISnapshotTests {
     @Suite

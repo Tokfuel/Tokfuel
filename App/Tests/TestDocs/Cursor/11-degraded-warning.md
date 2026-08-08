@@ -3,7 +3,7 @@ id: Cursor-11-degraded-warning
 title: Cursor 取得劣化時に警告が出る
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -27,4 +27,4 @@ Cursor の取得が劣化しているとき、ヒーロー下に警告文と警�
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）
