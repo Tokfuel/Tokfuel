@@ -155,8 +155,7 @@ if [[ "$HAS_COMPARE" -eq 1 ]]; then
   BODY="${BODY}<td width=\"50%\" valign=\"top\"><p><strong><font color=\"#1a7f37\">🟢 成功（期待）</font></strong></p></td>"
   BODY="${BODY}<td width=\"50%\" valign=\"top\"><p><strong><font color=\"#c41e3a\">🔴 失敗（実際）</font></strong></p></td>"
   BODY="${BODY}</tr></table>"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"compare expected vs failure\" width=\"720\"></a></p>"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\">比較画像（原寸）</a></p>"$'\n'
+  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"compare expected vs failure\" width=\"720\"></a></p>"$'\n'
 else
   BODY="${BODY}"$'\n'"_比較画像を生成できませんでした。個別の画面を下に載せます。_"$'\n'
 fi
@@ -169,7 +168,6 @@ exp_name="${PREFIX}-expected-${PRIMARY_EXPECTED}.png"
 if [[ -f "$exp_name" ]]; then
   URL="$(raw "$exp_name")"
   BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"expected\" width=\"360\"></a></p>"
-  BODY="${BODY}<p><a href=\"${URL}\">${PRIMARY_TITLE}（正常）を開く</a></p>"
 else
   BODY="${BODY}<p>_期待画面なし_</p>"
 fi
@@ -180,7 +178,6 @@ BODY="${BODY}<p><strong><font color=\"#c41e3a\">🔴 失敗（実際）</font></
 if [[ "$HAS_FAIL_IMG" -eq 1 ]]; then
   URL="$(raw "$FAILURE_IMG")"
   BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure\" width=\"360\"></a></p>"
-  BODY="${BODY}<p><a href=\"${URL}\">失敗時スクリーンショット（原寸）</a></p>"
 else
   BODY="${BODY}<p>_失敗時スクリーンショットなし_</p>"
 fi
