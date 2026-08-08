@@ -70,7 +70,7 @@ python3 Scripts/generate-testdocs-catalog.py
 
 ## シナリオ索引
 
-全件の一覧と面ごとの確認チェックは [`CATALOG.md`](CATALOG.md) を見てください（網羅確認用）。
+全件の一覧とカバレッジは [`CATALOG.md`](CATALOG.md) を見てください。
 
 シナリオを追加・変更したら、次で索引を再生成します。
 
