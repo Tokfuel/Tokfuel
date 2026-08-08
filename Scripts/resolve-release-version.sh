@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# プラットフォーム別バージョンファイルを正本に、次版を決める。
+# ルートの VERSION を正本に、次版を決める。
 # 使い方:
 #   bash Scripts/resolve-release-version.sh <platform> <patch|minor|major|custom> [version]
 #   version は bump=custom のとき必須。先頭の v はあってもなくてもよい。
 #
-# 正本の置き場は Versions/<platform>（いまは macos のみ。windows などを後から足す）。
+# 版の正本はリポジトリ直下の VERSION（単一ファイル）。いま有効な platform は macos のみ。
 # タグ名:
 #   macos   → vX.Y.Z          （UpdateChecker の releases/latest 互換）
 #   windows → windows-vX.Y.Z  （将来。macOS の latest を押しのけない）
@@ -17,7 +17,7 @@ BUMP="${2:?usage: resolve-release-version.sh <platform> <patch|minor|major|custo
 RAW_VERSION="${3:-}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION_FILE="$ROOT/Versions/$PLATFORM"
+VERSION_FILE="$ROOT/VERSION"
 
 # 出荷対象として認められるプラットフォーム。新しい OS を足すときはここに追記する。
 known_platform() {
@@ -62,7 +62,7 @@ if ! known_platform "$PLATFORM"; then
 fi
 
 if [ ! -f "$VERSION_FILE" ]; then
-  echo "version file not found: Versions/$PLATFORM" >&2
+  echo "version file not found: VERSION" >&2
   exit 1
 fi
 
@@ -95,7 +95,7 @@ case "$BUMP" in
     fi
     NEXT="$(normalize_bare "$RAW_VERSION")"
     if [ "$NEXT" = "$CURRENT" ]; then
-      echo "custom version equals current Versions/$PLATFORM ($CURRENT)" >&2
+      echo "custom version equals current VERSION ($CURRENT)" >&2
       exit 1
     fi
     ;;
@@ -116,7 +116,7 @@ summary() {
   echo "## Version bump"
   echo ""
   echo "- Platform: \`$PLATFORM\`"
-  echo "- Current: \`$CURRENT\` (from \`Versions/$PLATFORM\`)"
+  echo "- Current: \`$CURRENT\` (from \`VERSION\`)"
   echo "- Bump: \`$BUMP\`"
   if [ "$BUMP" = "custom" ] && [ -n "$RAW_VERSION" ]; then
     echo "- Input: \`$RAW_VERSION\`"
@@ -135,12 +135,12 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "version=$NEXT"
     echo "tag=$TAG"
     echo "current=$CURRENT"
-    echo "version_file=Versions/$PLATFORM"
+    echo "version_file=VERSION"
   } >>"$GITHUB_OUTPUT"
 else
   echo "platform=$PLATFORM"
   echo "version=$NEXT"
   echo "tag=$TAG"
   echo "current=$CURRENT"
-  echo "version_file=Versions/$PLATFORM"
+  echo "version_file=VERSION"
 fi

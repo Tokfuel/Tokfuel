@@ -1,16 +1,16 @@
 name: Release
 
 # 手動起動はしない（bump は bump-version.yml）。起動は次の 2 通り:
-# - main への push で Versions/macos が変わったとき（bump PR のマージ。推奨フロー）
+# - main への push で VERSION が変わったとき（bump PR のマージ。推奨フロー）
 # - v* タグを手で push したとき（従来互換・macOS）
-# Versions/macos 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
+# VERSION 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
 #
-# 版の正本はプラットフォーム別（Versions/<platform>）。いま出荷ジョブがあるのは
-# macOS のみ。windows などを足すときは Versions/windows の paths と専用ジョブを追加する。
+# 版の正本はリポジトリ直下の VERSION。いま出荷ジョブがあるのは macOS のみ。
+# windows などを足すときは paths と専用ジョブを追加し、版ファイルの分割は別途決める。
 on:
   push:
     branches: [main]
-    paths: [Versions/macos]
+    paths: [VERSION]
     tags: ["v*"]
 
 permissions:
@@ -44,10 +44,10 @@ jobs:
             esac
             SKIP=false
           elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
-            BARE="$(tr -d '[:space:]' < Versions/macos)"
+            BARE="$(tr -d '[:space:]' < VERSION)"
             case "$BARE" in
               [0-9]*.[0-9]*.[0-9]*) ;;
-              *) echo "Versions/macos must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
+              *) echo "VERSION must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
             esac
             VERSION="v${BARE}"
             if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
@@ -74,7 +74,7 @@ jobs:
             echo "- Skip: \`${SKIP}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Versions/macos 起点のときだけ、いまの main 先頭にタグを打つ。
+      # VERSION 起点のときだけ、いまの main 先頭にタグを打つ。
       # （GITHUB_TOKEN によるタグ push は他のワークフローを起動しないので二重実行にならない）
       - name: Tag main
         if: steps.version.outputs.skip != 'true' && github.ref == 'refs/heads/main'

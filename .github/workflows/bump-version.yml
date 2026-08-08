@@ -1,19 +1,20 @@
 name: Bump version
 
 # Actions の「Run workflow」から platform と bump を選ぶ（または custom で v なし指定）と、
-# Versions/<platform> を上げた PR を main 向けに開く。
+# VERSION を上げた PR を main 向けに開く。
 # タグ打ちや GitHub Release は行わない。マージ後に release.yml が出荷する。
 #
-# いま有効な platform は macos のみ。windows などを足すときは:
-#   1. Versions/<platform> を作る
-#   2. この inputs.platform.options に追加する
-#   3. Scripts/resolve-release-version.sh の known_platform / tag_for を解放する
-#   4. release.yml にその platform 用ジョブを足す
+# 版の正本はリポジトリ直下の VERSION。いま有効な platform は macos のみ。
+# windows などを足すときは:
+#   1. この inputs.platform.options に追加する
+#   2. Scripts/resolve-release-version.sh の known_platform / tag_for を解放する
+#   3. release.yml にその platform 用ジョブを足す
+#   4. 必要なら版ファイルの分割を別途決める
 on:
   workflow_dispatch:
     inputs:
       platform:
-        description: "対象プラットフォーム（版は Versions/<platform> が正本）"
+        description: "対象プラットフォーム（版の正本はルートの VERSION）"
         type: choice
         options:
           - macos
