@@ -3,7 +3,7 @@ id: Budget-13-alert-close
 title: アラートを閉じられる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

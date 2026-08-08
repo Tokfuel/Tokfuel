@@ -3,7 +3,7 @@ id: Settings-32-about-window
 title: About にバージョンとクレジットが見える
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

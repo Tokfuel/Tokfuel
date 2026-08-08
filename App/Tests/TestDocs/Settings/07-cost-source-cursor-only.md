@@ -3,7 +3,7 @@ id: Settings-07-cost-source-cursor-only
 title: コストのソースを Cursor のみにできる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

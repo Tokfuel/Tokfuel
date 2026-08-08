@@ -25,6 +25,9 @@ public struct BudgetAlertView: View {
         }
         .padding(20)
         .frame(width: 360)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tokfuel.budget.alert")
+        .accessibilityLabel(content.message.title)
     }
 
     private var header: some View {

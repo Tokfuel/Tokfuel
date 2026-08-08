@@ -3,7 +3,7 @@ id: Cost-19-session-estimated-badge
 title: 二次ソースのセッションに推定表示が付く
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

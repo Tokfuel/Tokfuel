@@ -3,7 +3,7 @@ id: Cursor-06-session-estimated-label
 title: Cursor セッション行に推定表示が付く
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

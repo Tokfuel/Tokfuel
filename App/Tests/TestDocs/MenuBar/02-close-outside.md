@@ -3,7 +3,7 @@ id: MenuBar-02-close-outside
 title: ホーム外をクリックするとポップオーバーが閉じる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

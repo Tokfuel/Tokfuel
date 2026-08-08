@@ -3,7 +3,7 @@ id: MenuBar-20-percent-basis-budget
 title: 割合の基準が予算上限のとき予算に対する率が表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

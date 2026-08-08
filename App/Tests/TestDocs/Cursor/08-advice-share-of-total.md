@@ -3,7 +3,7 @@ id: Cursor-08-advice-share-of-total
 title: Cursor の期間シェアヒントが出る
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

@@ -3,7 +3,7 @@ id: MenuBar-11-status-amount-both
 title: メニューバーに今日と今月の金額が表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

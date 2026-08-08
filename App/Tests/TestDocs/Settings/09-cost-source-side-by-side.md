@@ -3,7 +3,7 @@ id: Settings-09-cost-source-side-by-side
 title: コストのソースを並べて表示にできる
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

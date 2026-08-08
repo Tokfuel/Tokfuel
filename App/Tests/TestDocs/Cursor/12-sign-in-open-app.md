@@ -3,7 +3,7 @@ id: Cursor-12-sign-in-open-app
 title: サインアウト劣化時に Cursor を開ける
 primary_domain: Cursor
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

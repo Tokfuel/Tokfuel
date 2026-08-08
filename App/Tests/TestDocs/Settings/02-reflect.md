@@ -3,7 +3,7 @@ id: Settings-02-reflect
 title: 設定の変更がポップオーバー／メニューバー表示に反映される
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

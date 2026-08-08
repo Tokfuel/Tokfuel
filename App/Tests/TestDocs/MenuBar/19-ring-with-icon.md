@@ -3,7 +3,7 @@ id: MenuBar-19-ring-with-icon
 title: リング表示時にアイコンも並べられる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

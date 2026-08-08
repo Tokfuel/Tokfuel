@@ -3,7 +3,7 @@ id: Settings-08-cost-source-codex-only
 title: Codex がある環境で Codex のみを選べる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

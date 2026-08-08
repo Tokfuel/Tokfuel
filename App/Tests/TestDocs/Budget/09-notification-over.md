@@ -3,7 +3,7 @@ id: Budget-09-notification-over
 title: 上限超過を通知で知らせる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

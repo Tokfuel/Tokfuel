@@ -3,7 +3,7 @@ id: Settings-14-menu-bar-gauge-shape
 title: ゲージの形をリングとタンクから選べる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

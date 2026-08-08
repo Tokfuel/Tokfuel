@@ -1,0 +1,71 @@
+{
+  "launchSettleSeconds": 0.7356,
+  "pollIntervalSeconds": 0.08,
+  "requiredIdentifiers": [
+    "tokfuel.home",
+    "tokfuel.hero.today",
+    "tokfuel.section.trend",
+    "tokfuel.section.models",
+    "tokfuel.model-list",
+    "tokfuel.chart.style",
+    "tokfuel.chart.period",
+    "tokfuel.menu.more",
+    "tokfuel.settings"
+  ],
+  "scenarios": [
+    {
+      "elapsedMs": 1357,
+      "id": "MenuBar-01-open-home",
+      "identifiers": [
+        "tokfuel.home",
+        "tokfuel.hero.today",
+        "tokfuel.section.trend",
+        "tokfuel.section.models"
+      ]
+    },
+    {
+      "elapsedMs": 30,
+      "id": "Cost-03-model-list",
+      "identifiers": [
+        "tokfuel.home",
+        "tokfuel.model-list"
+      ]
+    },
+    {
+      "elapsedMs": 654,
+      "id": "Cost-01-chart-style",
+      "identifiers": [
+        "tokfuel.home",
+        "tokfuel.chart.style"
+      ]
+    },
+    {
+      "elapsedMs": 644,
+      "id": "Cost-02-period-switch",
+      "identifiers": [
+        "tokfuel.home",
+        "tokfuel.chart.period"
+      ]
+    },
+    {
+      "elapsedMs": 1226,
+      "id": "Settings-01-open",
+      "identifiers": [
+        "tokfuel.home",
+        "tokfuel.menu.more",
+        "tokfuel.settings"
+      ]
+    },
+    {
+      "elapsedMs": 1839,
+      "id": "Settings-02-reflect",
+      "identifiers": [
+        "tokfuel.settings",
+        "tokfuel.home"
+      ]
+    }
+  ],
+  "timeoutScale": 0.45,
+  "updatedAt": "2026-08-08T10:01:28Z",
+  "version": 1
+}

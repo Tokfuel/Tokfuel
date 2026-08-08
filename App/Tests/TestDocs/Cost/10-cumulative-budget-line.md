@@ -3,7 +3,7 @@ id: Cost-10-cumulative-budget-line
 title: 累積グラフに予算の参照線が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

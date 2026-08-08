@@ -3,7 +3,7 @@ id: Settings-24-budget-alert-style
 title: 予算の知らせ方を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

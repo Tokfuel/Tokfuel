@@ -3,7 +3,7 @@ id: MenuBar-28-adaptive-glow
 title: 追従中の明滅がメニューバーアイコンに出る
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

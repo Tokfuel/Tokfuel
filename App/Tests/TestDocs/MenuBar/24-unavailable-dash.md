@@ -3,7 +3,7 @@ id: MenuBar-24-unavailable-dash
 title: 取得不能時メニューバーがダッシュになる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

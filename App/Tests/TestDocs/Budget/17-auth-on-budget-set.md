@@ -3,7 +3,7 @@ id: Budget-17-auth-on-budget-set
 title: 予算を初めて設定すると通知許可が求められる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

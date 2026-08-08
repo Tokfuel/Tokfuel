@@ -3,7 +3,7 @@ id: Budget-12-alert-open-settings
 title: アラートから予算設定を開ける
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

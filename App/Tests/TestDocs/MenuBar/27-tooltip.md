@@ -3,7 +3,7 @@ id: MenuBar-27-tooltip
 title: メニューバーアイコンのツールチップに指標説明が出る
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

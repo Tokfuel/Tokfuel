@@ -3,7 +3,7 @@ id: Budget-18-period-reset-notify
 title: 日付や月が替わると同じレベルでも再通知できる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

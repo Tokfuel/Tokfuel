@@ -3,7 +3,7 @@ id: MenuBar-16-status-icon-only
 title: メニューバーがアイコンのみになる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

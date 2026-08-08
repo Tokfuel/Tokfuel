@@ -3,7 +3,7 @@ id: Settings-16-menu-bar-percent-basis
 title: 割合の基準を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

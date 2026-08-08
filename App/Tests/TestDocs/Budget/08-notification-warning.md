@@ -3,7 +3,7 @@ id: Budget-08-notification-warning
 title: しきい値到達を通知で知らせる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

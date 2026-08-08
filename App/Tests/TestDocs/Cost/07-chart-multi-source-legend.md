@@ -3,7 +3,7 @@ id: Cost-07-chart-multi-source-legend
 title: 複数ソース時に推移の凡例が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

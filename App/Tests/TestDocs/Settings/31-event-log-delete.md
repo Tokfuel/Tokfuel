@@ -3,7 +3,7 @@ id: Settings-31-event-log-delete
 title: 全イベントログを削除できる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

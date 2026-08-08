@@ -3,7 +3,7 @@ id: Cost-25-csv-export-monthly
 title: 月別 CSV を書き出せる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

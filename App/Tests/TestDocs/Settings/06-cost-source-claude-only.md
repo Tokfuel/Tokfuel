@@ -3,7 +3,7 @@ id: Settings-06-cost-source-claude-only
 title: コストのソースを Claude のみにできる
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

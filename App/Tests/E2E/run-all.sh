@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# E2E メニューバー（全 132 シナリオ、または SUITE で絞った 1 ドメイン）:
+# usage: bash App/Tests/E2E/run-all.sh
+#        SUITE=Budget bash App/Tests/E2E/run-all.sh
+#        SUITE=Cost   bash App/Tests/E2E/run-all.sh
+# SUITE は core6 | all | Budget | Cost | Cursor | MenuBar | Settings（既定 all）。
+# run-core6.sh との違いは --suite を渡すことと、recordings/all.json を使うことだけ。
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$ROOT"
+
+SUITE="${SUITE:-all}"
+RECORDING="${TOKFUEL_E2E_RECORDING:-$ROOT/App/Tests/E2E/recordings/all.json}"
+WRITE_RECORDING="${TOKFUEL_E2E_WRITE_RECORDING:-$ROOT/.build/e2e/all-last.json}"
+REPORT="${TOKFUEL_E2E_REPORT:-$ROOT/.build/e2e/report.json}"
+OUT_DIR="$ROOT/.build/e2e"
+mkdir -p "$OUT_DIR"
+
+launch_settle() {
+  if [[ -f "$RECORDING" ]] && command -v python3 >/dev/null; then
+    python3 - "$RECORDING" <<'PY'
+import json, sys
+try:
+    data = json.load(open(sys.argv[1]))
+    print(float(data.get("launchSettleSeconds", 2.0)))
+except Exception:
+    print(2.0)
+PY
+  else
+    echo 2.0
+  fi
+}
+
+echo "Building Tokfuel + TokfuelE2E…"
+swift build --product Tokfuel
+swift build --product TokfuelE2E
+
+BIN_DIR="$ROOT/.build/debug"
+APP="$BIN_DIR/Tokfuel"
+DRIVER="$BIN_DIR/TokfuelE2E"
+
+if [[ "${TOKFUEL_E2E_GRANT_TCC:-}" == "1" ]]; then
+  bash "$ROOT/App/Tests/E2E/grant-tcc.sh" \
+    "$DRIVER" "$APP" /usr/bin/osascript /bin/bash /usr/sbin/screencapture
+fi
+
+pkill -x Tokfuel 2>/dev/null || true
+sleep 0.3
+
+SETTLE="$(launch_settle)"
+echo "Launching Tokfuel --e2e-fixture… (settle=${SETTLE}s, suite=${SUITE}, recording=${RECORDING})"
+"$APP" --e2e-fixture -AppleAccentColor 1 &
+APP_PID=$!
+
+FRAME_PID=""
+DISMISS_PID=""
+cleanup() {
+  if [[ -n "${DISMISS_PID:-}" ]] && kill -0 "$DISMISS_PID" 2>/dev/null; then
+    kill "$DISMISS_PID" 2>/dev/null || true
+    wait "$DISMISS_PID" 2>/dev/null || true
+  fi
+  if [[ -n "${FRAME_PID:-}" ]] && kill -0 "$FRAME_PID" 2>/dev/null; then
+    kill "$FRAME_PID" 2>/dev/null || true
+    wait "$FRAME_PID" 2>/dev/null || true
+  fi
+  kill "$APP_PID" 2>/dev/null || true
+  wait "$APP_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+for _ in $(seq 1 40); do
+  if kill -0 "$APP_PID" 2>/dev/null; then
+    break
+  fi
+  sleep 0.1
+done
+sleep "$SETTLE"
+
+# 失敗時に「そのときの様子」を残す。
+# screencapture -v は使わず、0.1 秒ごとの PNG を ffmpeg で failure.mov / .gif にする。
+# 静止画でも Screen Recording の Allow が出ることがあるので、dismiss を並行起動する。
+VIDEO_OUT="$OUT_DIR/failure.mov"
+GIF_OUT="$OUT_DIR/failure.gif"
+FRAMES_DIR="$OUT_DIR/frames"
+BASELINE_DIR="$OUT_DIR/baseline"
+FRAME_INTERVAL="0.1"
+FRAME_FPS="10"
+FRAME_MAX="600"
+rm -f "$VIDEO_OUT" "$GIF_OUT"
+rm -rf "$FRAMES_DIR" "$BASELINE_DIR"
+mkdir -p "$FRAMES_DIR"
+
+# Allow が出るのは最初の数キャプチャが多い。長く回すと System Events が E2E と競合する。
+bash "$ROOT/App/Tests/E2E/dismiss-tcc-prompt.sh" 12 &
+DISMISS_PID=$!
+echo "tcc dismiss pid=${DISMISS_PID} (first 12s)"
+
+(
+  i=0
+  while kill -0 "$APP_PID" 2>/dev/null; do
+    /usr/sbin/screencapture -x "$FRAMES_DIR/frame-$(printf '%03d' "$i").png" 2>/dev/null || true
+    i=$((i + 1))
+    [[ "$i" -ge "$FRAME_MAX" ]] && break
+    sleep "$FRAME_INTERVAL"
+  done
+) &
+FRAME_PID=$!
+echo "frame capture pid=${FRAME_PID} → ${FRAMES_DIR} (every ${FRAME_INTERVAL}s)"
+
+echo "Running TokfuelE2E (suite=${SUITE}) against pid=${APP_PID}..."
+set +e
+"$DRIVER" --pid "$APP_PID" \
+  --suite "$SUITE" \
+  --recording "$RECORDING" \
+  --write-recording "$WRITE_RECORDING" \
+  --report "$REPORT"
+DRIVER_STATUS=$?
+set -e
+
+# フレーム取得 / Allow 監視を止める（成功時は証拠を捨てる）。
+if [[ -n "${DISMISS_PID}" ]]; then
+  kill "$DISMISS_PID" 2>/dev/null || true
+  wait "$DISMISS_PID" 2>/dev/null || true
+  DISMISS_PID=""
+fi
+if [[ -n "${FRAME_PID}" ]]; then
+  kill "$FRAME_PID" 2>/dev/null || true
+  wait "$FRAME_PID" 2>/dev/null || true
+  FRAME_PID=""
+fi
+
+if [[ "$DRIVER_STATUS" -eq 0 ]]; then
+  rm -f "$VIDEO_OUT" "$GIF_OUT"
+  rm -rf "$FRAMES_DIR"
+  # 前回成功比較用に、実アプリのホーム / 設定を撮って残す。
+  mkdir -p "$BASELINE_DIR"
+  if "$DRIVER" --pid "$APP_PID" --capture-baselines "$BASELINE_DIR"; then
+    echo "baselines captured under ${BASELINE_DIR}"
+  else
+    echo "warning: failed to capture success baselines" >&2
+  fi
+  echo "E2E メニューバー OK (suite=${SUITE})"
+  exit 0
+fi
+
+echo "E2E メニューバー FAILED (suite=${SUITE}, status=${DRIVER_STATUS}); capturing evidence…"
+/usr/sbin/screencapture -x "$OUT_DIR/failure.png" || true
+
+shopt -s nullglob
+frames=("$FRAMES_DIR"/frame-*.png)
+if [[ ${#frames[@]} -gt 0 ]]; then
+  cp "${frames[0]}" "$OUT_DIR/timeline-start.png"
+  mid=$(( ${#frames[@]} / 2 ))
+  cp "${frames[$mid]}" "$OUT_DIR/timeline-mid.png"
+  cp "${frames[$(( ${#frames[@]} - 1 ))]}" "$OUT_DIR/timeline-end.png"
+
+  # PNG 連番から動画 / GIF を合成（撮影・再生とも 0.1 秒/コマ = 10 fps）。
+  if command -v ffmpeg >/dev/null 2>&1; then
+    ffmpeg -y -hide_banner -loglevel error \
+      -framerate "$FRAME_FPS" \
+      -pattern_type glob -i "$FRAMES_DIR/frame-*.png" \
+      -c:v libx264 -pix_fmt yuv420p -movflags +faststart \
+      "$VIDEO_OUT" \
+      && echo "synthesized failure.mov from ${#frames[@]} frames @ ${FRAME_FPS}fps" \
+      || echo "warning: ffmpeg failed to synthesize failure.mov" >&2
+    # 入力 framerate と出力 delay を揃え、再生速度を変えない。
+    ffmpeg -y -hide_banner -loglevel error \
+      -framerate "$FRAME_FPS" \
+      -pattern_type glob -i "$FRAMES_DIR/frame-*.png" \
+      -vf "scale=720:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
+      -loop 0 \
+      "$GIF_OUT" \
+      && echo "synthesized failure.gif from ${#frames[@]} frames @ ${FRAME_FPS}fps (0.1s/frame)" \
+      || echo "warning: ffmpeg failed to synthesize failure.gif" >&2
+  else
+    echo "warning: ffmpeg not found; skip failure.mov / failure.gif" >&2
+  fi
+fi
+
+# レポートが無い場合の最低限フォールバック。
+# 比較用の成功画像は ui-preview ではなく e2e-baselines（前回成功の実画面）を使う。
+if [[ ! -f "$REPORT" ]]; then
+  cat > "$REPORT" <<EOF
+{"ok":false,"failedScenario":null,"error":"driver exited ${DRIVER_STATUS}","explanation":"ドライバが非ゼロで終了しました。","completedScenarios":[],"scenarios":[],"baselineIdentifiers":[],"expectedScreens":["popover"],"updatedAt":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+EOF
+fi
+
+exit "$DRIVER_STATUS"

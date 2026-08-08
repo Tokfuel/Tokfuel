@@ -3,7 +3,7 @@ id: Budget-02-popover-monthly-row
 title: 月上限があるときホームに月の予算行が出る
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

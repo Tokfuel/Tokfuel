@@ -3,7 +3,7 @@ id: Cursor-16-unavailable-side-by-side
 title: 並べて表示で Cursor 側だけダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

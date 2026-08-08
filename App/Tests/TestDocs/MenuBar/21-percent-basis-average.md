@@ -3,7 +3,7 @@ id: MenuBar-21-percent-basis-average
 title: 割合の基準が日次平均のときペース比が表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

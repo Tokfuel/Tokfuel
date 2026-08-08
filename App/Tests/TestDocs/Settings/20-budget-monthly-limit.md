@@ -3,7 +3,7 @@ id: Settings-20-budget-monthly-limit
 title: 月の上限を設定できる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

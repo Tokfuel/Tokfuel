@@ -3,7 +3,7 @@ id: Cost-04-loading-parse
 title: レポート未取得時に解析中表示が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

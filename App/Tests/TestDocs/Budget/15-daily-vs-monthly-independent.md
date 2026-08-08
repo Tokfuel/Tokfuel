@@ -3,7 +3,7 @@ id: Budget-15-daily-vs-monthly-independent
 title: 日次と月次の予算が独立に判定される
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

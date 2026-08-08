@@ -3,7 +3,7 @@ id: Cursor-18-zero-cost-hidden-breakdown
 title: 0 円の Cursor は内訳キャプションに載らない
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

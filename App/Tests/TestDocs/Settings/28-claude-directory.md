@@ -3,7 +3,7 @@ id: Settings-28-claude-directory
 title: Claude ディレクトリを変更しデフォルトに戻せる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

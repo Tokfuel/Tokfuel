@@ -3,7 +3,7 @@ id: Budget-05-meter-warning-state
 title: しきい値到達で予算メーターが警告状態になる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

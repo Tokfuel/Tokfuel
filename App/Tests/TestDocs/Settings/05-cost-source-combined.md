@@ -3,7 +3,7 @@ id: Settings-05-cost-source-combined
 title: コストのソースを合算にできる
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

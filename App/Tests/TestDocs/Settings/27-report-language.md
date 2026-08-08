@@ -3,7 +3,7 @@ id: Settings-27-report-language
 title: レポート言語を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

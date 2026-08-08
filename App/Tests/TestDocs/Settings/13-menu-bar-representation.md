@@ -3,7 +3,7 @@ id: Settings-13-menu-bar-representation
 title: メニューバーの表現を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

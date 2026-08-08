@@ -3,7 +3,7 @@ id: Cost-24-csv-export-daily
 title: 日別 CSV を書き出せる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

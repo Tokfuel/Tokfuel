@@ -3,7 +3,7 @@ id: Settings-34-analytics-consent-deny
 title: 同意ダイアログで許可しないを選べる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

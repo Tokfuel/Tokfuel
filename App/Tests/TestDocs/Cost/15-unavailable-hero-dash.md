@@ -3,7 +3,7 @@ id: Cost-15-unavailable-hero-dash
 title: 取得不能時ヒーロー金額がダッシュになる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

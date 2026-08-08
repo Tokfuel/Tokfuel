@@ -3,7 +3,7 @@ id: Cursor-13-recheck-after-sign-in
 title: サインイン後にホームを開き直すと再取得する
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

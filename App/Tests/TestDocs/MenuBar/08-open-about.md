@@ -3,7 +3,7 @@ id: MenuBar-08-open-about
 title: メニューから Tokfuel についてを開ける
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

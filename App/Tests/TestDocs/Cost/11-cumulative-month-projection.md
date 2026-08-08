@@ -3,7 +3,7 @@ id: Cost-11-cumulative-month-projection
 title: 累積キャプションに月末の着地予測が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

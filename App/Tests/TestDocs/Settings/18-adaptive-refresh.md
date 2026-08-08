@@ -3,7 +3,7 @@ id: Settings-18-adaptive-refresh
 title: 使用中は更新を速めるを切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

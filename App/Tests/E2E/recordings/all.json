@@ -1,0 +1,19 @@
+{
+  "launchSettleSeconds": 2.0,
+  "pollIntervalSeconds": 0.15,
+  "requiredIdentifiers": [
+    "tokfuel.home",
+    "tokfuel.hero.today",
+    "tokfuel.section.trend",
+    "tokfuel.section.models",
+    "tokfuel.model-list",
+    "tokfuel.chart.style",
+    "tokfuel.chart.period",
+    "tokfuel.menu.more",
+    "tokfuel.settings"
+  ],
+  "scenarios": [],
+  "timeoutScale": 1.0,
+  "updatedAt": "2026-08-08T00:00:00Z",
+  "version": 1
+}

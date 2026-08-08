@@ -3,7 +3,7 @@ id: MenuBar-15-status-ring-and-value
 title: メニューバーにリングとパーセントが並ぶ
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

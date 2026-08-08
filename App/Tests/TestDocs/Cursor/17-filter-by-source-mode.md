@@ -3,7 +3,7 @@ id: Cursor-17-filter-by-source-mode
 title: Claude のみのとき Cursor の行やヒントが隠れる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

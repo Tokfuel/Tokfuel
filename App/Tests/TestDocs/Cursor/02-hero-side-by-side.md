@@ -3,7 +3,7 @@ id: Cursor-02-hero-side-by-side
 title: 並べて表示でヒーロー下に Cursor 金額が並ぶ
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

@@ -3,7 +3,7 @@ id: Cost-16-model-breakdown-combined
 title: モデル別をまとめて表示できる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

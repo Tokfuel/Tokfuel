@@ -3,7 +3,7 @@ id: MenuBar-32-update-retry
 title: 更新失敗時に再試行できる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

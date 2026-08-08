@@ -3,7 +3,7 @@ id: Settings-10-model-breakdown-mode
 title: モデル別の出し方を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

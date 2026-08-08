@@ -3,7 +3,7 @@ id: Settings-15-menu-bar-shows-icon
 title: リング表示時にアイコンも並べるを切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

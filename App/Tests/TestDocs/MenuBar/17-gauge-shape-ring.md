@@ -3,7 +3,7 @@ id: MenuBar-17-gauge-shape-ring
 title: ゲージの形がリングのとき円形インジケーターになる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

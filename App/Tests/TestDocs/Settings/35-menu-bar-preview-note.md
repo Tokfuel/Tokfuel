@@ -3,7 +3,7 @@ id: Settings-35-menu-bar-preview-note
 title: 選べない表現のとき説明文が出る
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

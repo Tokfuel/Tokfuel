@@ -3,7 +3,7 @@ id: MenuBar-13-status-percent
 title: メニューバーにパーセント表示が出る
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

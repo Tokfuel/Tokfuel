@@ -3,7 +3,7 @@ id: Settings-01-open
 title: ポップオーバーから設定を開ける
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

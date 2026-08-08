@@ -3,7 +3,7 @@ id: Budget-10-alert-window-warning
 title: しきい値到達をアラートウィンドウで知らせる
 primary_domain: Budget
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

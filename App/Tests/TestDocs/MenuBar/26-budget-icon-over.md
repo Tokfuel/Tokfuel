@@ -3,7 +3,7 @@ id: MenuBar-26-budget-icon-over
 title: 予算超過でメニューバーアイコンが超過色になる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

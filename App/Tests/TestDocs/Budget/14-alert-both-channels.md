@@ -3,7 +3,7 @@ id: Budget-14-alert-both-channels
 title: 通知とアラートウィンドウの両方で知らせる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

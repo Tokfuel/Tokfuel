@@ -3,7 +3,7 @@ id: Budget-07-meter-warn-marker
 title: 予算メーターに警告しきい値の目盛りが出る
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

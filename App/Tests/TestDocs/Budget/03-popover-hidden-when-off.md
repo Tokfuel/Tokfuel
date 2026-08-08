@@ -3,7 +3,7 @@ id: Budget-03-popover-hidden-when-off
 title: 上限未設定のとき予算セクションが隠れている
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

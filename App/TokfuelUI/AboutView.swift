@@ -77,5 +77,7 @@ public struct AboutView: View {
         }
         .padding(24)
         .frame(width: 320)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tokfuel.about")
     }
 }

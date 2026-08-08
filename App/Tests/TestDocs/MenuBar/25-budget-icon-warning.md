@@ -3,7 +3,7 @@ id: MenuBar-25-budget-icon-warning
 title: 予算しきい値到達でメニューバーアイコンが警告色になる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

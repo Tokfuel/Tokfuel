@@ -3,7 +3,7 @@ id: MenuBar-33-open-on-launch-reload
 title: ホームを開いたときに集計が走って数字が新しくなる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

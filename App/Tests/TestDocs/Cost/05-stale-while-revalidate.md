@@ -3,7 +3,7 @@ id: Cost-05-stale-while-revalidate
 title: 再解析中も前回のグラフが残る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

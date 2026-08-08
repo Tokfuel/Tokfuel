@@ -3,7 +3,7 @@ id: Cursor-10-advice-hidden-when-degraded
 title: Cursor 取得劣化時は Cursor ヒントが出ない
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

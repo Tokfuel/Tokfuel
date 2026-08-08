@@ -3,7 +3,7 @@ id: Cost-08-chart-caption-total
 title: 推移キャプションに期間合計が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

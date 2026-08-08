@@ -3,7 +3,7 @@ id: Settings-22-budget-period
 title: 月予算の集計期間を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

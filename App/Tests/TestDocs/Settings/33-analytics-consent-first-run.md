@@ -3,7 +3,7 @@ id: Settings-33-analytics-consent-first-run
 title: 初回に利用状況送信の同意ダイアログが出る
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

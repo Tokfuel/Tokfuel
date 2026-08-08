@@ -3,7 +3,7 @@ id: Cursor-09-advice-unpriced-models
 title: 価格表に無い Cursor モデルのヒントが出る
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

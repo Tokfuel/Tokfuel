@@ -3,7 +3,7 @@ id: Settings-17-menu-bar-shows-remaining
 title: 予算までの残りを表示を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

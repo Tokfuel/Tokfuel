@@ -3,7 +3,7 @@ id: Cost-09-chart-caption-prompt-unit
 title: 推移キャプションにプロンプト単価が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

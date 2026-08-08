@@ -3,7 +3,7 @@ id: Settings-36-currency-jpy-budget-unit
 title: 円とレート取得後に予算入力の単位が円になる
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

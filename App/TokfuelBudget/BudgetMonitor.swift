@@ -130,6 +130,7 @@ public enum BudgetMonitor {
         else { return nil }
 
         if delivery.notification {
+            E2EProbe.recordNotification(title: message.title, body: message.body)
             post(kind: kind, level: level, message: message)
         }
         if delivery.alertWindow {

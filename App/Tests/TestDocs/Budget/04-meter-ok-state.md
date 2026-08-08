@@ -3,7 +3,7 @@ id: Budget-04-meter-ok-state
 title: 平常時の予算メーターに消費と上限が見える
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

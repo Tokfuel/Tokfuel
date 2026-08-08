@@ -3,7 +3,7 @@ id: Cursor-03-hero-cursor-only
 title: Cursor のみでヒーローが Cursor 推定になる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

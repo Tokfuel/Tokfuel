@@ -3,7 +3,7 @@ id: Cost-21-advice-expand
 title: 節約のヒントを展開できる
 primary_domain: Cost
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

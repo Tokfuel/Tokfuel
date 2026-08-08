@@ -3,7 +3,7 @@ id: Settings-37-debug-disclosure
 title: デバッグを開くと診断用の設定が見える
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

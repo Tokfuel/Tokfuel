@@ -3,7 +3,7 @@ id: Cost-26-csv-export-disabled
 title: レポート未取得時は CSV 書き出しが無効になる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

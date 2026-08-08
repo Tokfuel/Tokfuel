@@ -3,7 +3,7 @@ id: MenuBar-30-update-skip-version
 title: 提示中のバージョンをスキップできる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

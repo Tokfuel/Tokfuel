@@ -3,7 +3,7 @@ id: Settings-04-appearance
 title: 外観の切替が各ウィンドウに反映される
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

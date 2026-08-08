@@ -3,7 +3,7 @@ id: Cost-22-advice-copy-prompt
 title: 改善プロンプトをコピーできる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

@@ -3,7 +3,7 @@ id: MenuBar-14-status-ring
 title: メニューバーにリングゲージだけが表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

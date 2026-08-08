@@ -3,7 +3,7 @@ id: Cost-12-jpy-formatting
 title: 円表示のときホームの金額が円表記になる
 primary_domain: Cost
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

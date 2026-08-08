@@ -3,7 +3,7 @@ id: MenuBar-04-hero-today-cost
 title: ホームのヒーローに今日のコストが表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

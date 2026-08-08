@@ -3,7 +3,7 @@ id: Cost-20-advice-section
 title: 節約のヒントセクションが表示される
 primary_domain: Cost
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ

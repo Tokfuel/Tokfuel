@@ -3,7 +3,7 @@ id: Cursor-04-model-rows
 title: モデル別に Cursor モデル行が出る
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ

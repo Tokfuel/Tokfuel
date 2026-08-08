@@ -3,7 +3,7 @@ id: MenuBar-12-status-prompts
 title: メニューバーにプロンプト数が表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
