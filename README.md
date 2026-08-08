@@ -156,6 +156,54 @@ cd Tokfuel
 bash Scripts/build.sh
 ```
 
+## Architecture
+
+App code lives under [`App/`](App/). SPM targets follow **UI → Store → sources**; the executable wires them ([ADR-0002](ADR/0002-layer-spm-modules/0002-layer-spm-modules.md)). Arrows are import direction.
+
+```mermaid
+flowchart TB
+  App["Tokfuel<br/>executable + DI"]
+  UI["TokfuelUI"]
+  Store["TokfuelStore"]
+  Settings["TokfuelSettings"]
+  Claude["TokfuelClaude"]
+  Cursor["TokfuelCursor"]
+  Codex["TokfuelCodex"]
+  Budget["TokfuelBudget"]
+  Analytics["TokfuelAnalytics"]
+  Core["TokfuelCore"]
+
+  App --> UI
+  App --> Store
+  App --> Settings
+  App --> Claude
+  App --> Cursor
+  App --> Codex
+  App --> Budget
+  App --> Analytics
+  App --> Core
+
+  UI --> Store
+  UI --> Settings
+  UI --> Core
+
+  Store --> Settings
+  Store --> Claude
+  Store --> Cursor
+  Store --> Codex
+  Store --> Budget
+  Store --> Core
+
+  Claude --> Core
+  Cursor --> Core
+  Codex --> Core
+  Budget --> Core
+  Settings --> Core
+  Analytics --> Core
+```
+
+Data flows **fetch (sources) → shape / aggregate (Store) → present (UI)**. Verification lives under [`App/Tests/`](App/Tests/) (`UnitTests` is what `swift test` runs; TestDocs / E2E are docs or a separate runner). Decisions are recorded in [`ADR/`](ADR/INDEX.md).
+
 ## Contributing
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
