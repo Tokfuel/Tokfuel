@@ -118,6 +118,6 @@ As an OSS repo with concurrent Issues / PRs, unrelated work tends to collide in 
 > Related links
 
 - Issue: [#109](https://github.com/Tokfuel/Tokfuel/issues/109)
-- PR: (proposal PR for this ADR)
+- PR: https://github.com/Tokfuel/Tokfuel/pull/148
 - Related ADR: [0001-app-tree](../0001-app-tree/0001-app-tree.md) (`App/` layout; prerequisite)
 - External: (none)

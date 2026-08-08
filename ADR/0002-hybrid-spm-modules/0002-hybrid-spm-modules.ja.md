@@ -118,6 +118,6 @@ OSS として複数の Issue / PR が並ぶと、無関係な変更が同じ巨�
 > 関連リンク
 
 - Issue: [#109](https://github.com/Tokfuel/Tokfuel/issues/109)
-- PR: （本 ADR の提案 PR）
+- PR: https://github.com/Tokfuel/Tokfuel/pull/148
 - 関連 ADR: [0001-app-tree](../0001-app-tree/0001-app-tree.ja.md)（`App/` への集約。本決定の前提）
 - 外部: （なし）
