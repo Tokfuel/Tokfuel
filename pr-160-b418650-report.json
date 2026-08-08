@@ -11,171 +11,95 @@
     "tokfuel.settings"
   ],
   "completedScenarios" : [
-    "Settings-01-open",
-    "Settings-02-reflect",
-    "Settings-03-launch-at-login"
+    "Budget-01-popover-daily-row",
+    "Budget-02-popover-monthly-row",
+    "Budget-03-popover-hidden-when-off"
   ],
-  "error" : "not found: control titled ライト",
+  "error" : "assert failed: 平常状態の「消費 \/ 上限」表示が見当たらない",
   "expectedScreens" : [
     "popover"
   ],
-  "explanation" : "Settings-04-appearance で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
-  "failedScenario" : "Settings-04-appearance",
+  "explanation" : "Budget-04-meter-ok-state の完了条件（Then）を満たしませんでした。表示内容か選択状態が期待と異なります。",
+  "failedScenario" : "Budget-04-meter-ok-state",
   "ok" : false,
   "scenarios" : [
     {
-      "elapsedMs" : 5288,
-      "id" : "Settings-01-open",
+      "elapsedMs" : 3693,
+      "id" : "Budget-01-popover-daily-row",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 3168,
-      "id" : "Settings-02-reflect",
+      "elapsedMs" : 65,
+      "id" : "Budget-02-popover-monthly-row",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 4359,
-      "id" : "Settings-03-launch-at-login",
+      "elapsedMs" : 60,
+      "id" : "Budget-03-popover-hidden-when-off",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 445,
-      "error" : "not found: control titled ライト",
-      "id" : "Settings-04-appearance",
+      "elapsedMs" : 76,
+      "error" : "assert failed: 平常状態の「消費 \/ 上限」表示が見当たらない",
+      "id" : "Budget-04-meter-ok-state",
       "status" : "failed"
     },
     {
-      "id" : "Settings-05-cost-source-combined",
+      "id" : "Budget-05-meter-warning-state",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-06-cost-source-claude-only",
+      "id" : "Budget-06-meter-over-state",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-07-cost-source-cursor-only",
+      "id" : "Budget-07-meter-warn-marker",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-08-cost-source-codex-only",
+      "id" : "Budget-08-notification-warning",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-09-cost-source-side-by-side",
+      "id" : "Budget-09-notification-over",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-10-model-breakdown-mode",
+      "id" : "Budget-10-alert-window-warning",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-11-week-start",
+      "id" : "Budget-11-alert-window-over",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-12-menu-bar-metric",
+      "id" : "Budget-12-alert-open-settings",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-13-menu-bar-representation",
+      "id" : "Budget-13-alert-close",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-14-menu-bar-gauge-shape",
+      "id" : "Budget-14-alert-both-channels",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-15-menu-bar-shows-icon",
+      "id" : "Budget-15-daily-vs-monthly-independent",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-16-menu-bar-percent-basis",
+      "id" : "Budget-16-side-by-side-still-combined",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-17-menu-bar-shows-remaining",
+      "id" : "Budget-17-auth-on-budget-set",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-18-adaptive-refresh",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-19-activity-animation",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-20-budget-monthly-limit",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-21-budget-daily-limit",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-22-budget-period",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-23-budget-warn-threshold",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-24-budget-alert-style",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-25-privacy-analytics-toggle",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-26-advanced-disclosure",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-27-report-language",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-28-claude-directory",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-29-event-log-toggle",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-30-event-log-reveal",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-31-event-log-delete",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-32-about-window",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-33-analytics-consent-first-run",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-34-analytics-consent-deny",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-35-menu-bar-preview-note",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-36-currency-jpy-budget-unit",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-37-debug-disclosure",
+      "id" : "Budget-18-period-reset-notify",
       "status" : "skipped"
     }
   ],
-  "updatedAt" : "2026-08-08T16:06:32Z"
+  "updatedAt" : "2026-08-08T16:10:34Z"
 }
