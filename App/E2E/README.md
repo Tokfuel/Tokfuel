@@ -58,4 +58,4 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 
 ### CI
 
-[`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。
+[`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。GitHub 上のチェック名は **メニューバー通しテスト / コアシナリオ** です。
