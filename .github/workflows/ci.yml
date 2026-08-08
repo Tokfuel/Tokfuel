@@ -24,7 +24,8 @@ on:
         default: false
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # workflow_dispatch の VRT 録音は PR の CI とぶつからないように分ける。
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}-${{ inputs.record_vrt || 'test' }}
   cancel-in-progress: true
 
 jobs:
