@@ -60,15 +60,25 @@ public enum ScreenshotRenderer {
     public static let popoverSize = CGSize(width: 360, height: 520)
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     public static let previewUpdateVersion = "0.1.0"
+    /// スクリーンショット / VRT 用の固定「いま」。壁時計に依存させるとピクセルが日々ずれる。
+    public static let fixtureNow: Date = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        return calendar.date(from: DateComponents(
+            year: 2026, month: 8, day: 8, hour: 12, minute: 10
+        ))!
+    }()
 
     public enum RenderError: LocalizedError {
         case usage
         case renderFailed
+        case unknownScreen(String)
 
         public var errorDescription: String? {
             switch self {
             case .usage: return "usage: Tokfuel --screenshot <output.png> | --ui-preview <output-dir>"
             case .renderFailed: return "画面のレンダリングに失敗しました"
+            case .unknownScreen(let name): return "unknown screenshot screen: \(name)"
             }
         }
     }
@@ -192,6 +202,21 @@ public enum ScreenshotRenderer {
         ]
     }
 
+    /// VRT / 単体テスト用。`allScreens()` と同じ描画経路で 1 画面だけ PNG にする。
+    public static func pngData(named name: String) throws -> Data {
+        prepareDefaults()
+        let store = fixtureStore()
+        let settingsSize = CGSize(width: 460, height: 620)
+        switch name {
+        case "popover":
+            return try renderPNG(store: store)
+        case "settings":
+            return try renderStandalone(SettingsView(store: store), probeSize: settingsSize)
+        default:
+            throw RenderError.unknownScreen(name)
+        }
+    }
+
     /// フィクスチャを積んだポップオーバーを @2x で PNG にする。`updater` の既定は `.shared`
     /// （`available` は nil のまま）なので、ボタンを出したい画面だけ `.preview(version:)` を渡す。
     ///
@@ -203,7 +228,7 @@ public enum ScreenshotRenderer {
     /// 折り返しの下にあるセクション（節約のヒント）は、そうしないと絵に写らない。
     private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared,
                                   scrollsToBottom: Bool = false) throws -> Data {
-        let view = NSHostingView(rootView: composition(store: store, updater: updater, now: Date()))
+        let view = NSHostingView(rootView: composition(store: store, updater: updater, now: fixtureNow))
         view.frame = CGRect(origin: .zero, size: canvas)
         return try capture(view, size: canvas, scrollsToBottom: scrollsToBottom)
     }
@@ -420,7 +445,7 @@ public enum ScreenshotRenderer {
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
         // モデル別内訳は「節約のヒント」の Cursor 由来（TF-0078）の入力でもある。
         store.driverModelByID = ["cursor": cursorModelCosts]
-        store.lastUpdated = Date()
+        store.lastUpdated = fixtureNow
         return store
     }
 
@@ -519,8 +544,9 @@ public enum ScreenshotRenderer {
     }
 
     /// 集計キーの日付文字列。書式は `UsageStore` に合わせる（ずれるとヒーローが「–」になる）。
+    /// 基準は壁時計ではなく `fixtureNow`（VRT / ui-preview のピクセルを日々ずらさない）。
     public static func dateString(daysAgo: Int) -> String {
-        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
+        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: fixtureNow) ?? fixtureNow
         return UsageStore.dateString(date)
     }
 }

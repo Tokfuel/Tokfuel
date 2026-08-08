@@ -99,11 +99,13 @@ App/Tests/TestDocs/
 
 見た目の回帰を止めます。
 
-- 当面の土台: `ScreenshotRenderer` と `ui-preview`（人間レビュー用の絵出し）
-- ピクセル比較の自動 VRT は後続 Issue で足してよい。完了条件の VRT は「対象画面がフィクスチャとして固定されている」ことを指す
+- 土台: `ScreenshotRenderer` のフィクスチャ描画と、Point-Free `swift-snapshot-testing`（`App/Tests/UnitTests`、参考画像は `__Snapshots__`）
+- `ui-preview` は人間レビュー用の絵出しとして残す
+- 完了条件の VRT は「対象画面がフィクスチャとして固定されている」ことを指す
 - **設定フラグごとの画面パターン**（通貨、コストソース、外観、詳細／デバッグ開示、推移期間など）は、フラグが効いたあとの見え方をフィクスチャとして固定する。操作の通しは E2E、見た目は VRT に分ける
-- 新規パッケージや外部 VRT SaaS は、オーナー承認なしでは入れない
-- UI を変える PR では、既存どおり `ScreenshotRenderer.allScreens()` と `ui-preview.yml` を同じ差分で更新する
+- 同じ期待を E2E と VRT で二重にしない
+- 新規パッケージや外部 VRT SaaS は、オーナー承認なしでは入れない（`swift-snapshot-testing` はオーナー承認済みの例外）
+- UI を変える PR では、`ScreenshotRenderer.allScreens()` / `ui-preview.yml` / 参考画像を同じ差分で更新する
 
 ### 対象外
 
