@@ -7,7 +7,7 @@ struct PrivacyOverviewJA: StaticPage {
     var layout: DocsLayout { DocsLayout(page: .privacy, language: .ja) }
 
     var body: some HTML {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             Text("プライバシー・通信ポリシー").docsTitle()
 
             Text("""
@@ -50,7 +50,7 @@ struct PrivacyOverviewJA: StaticPage {
                 ListItem {
                     Text {
                         Code("UpdateChecker")
-                        " — 起動時と以後 1 時間ごとに、公開の GitHub Releases API を"
+                        " — 起動時と以後 24 時間ごとに、公開の GitHub Releases API を"
                         "ポーリングして新しいバージョンを検知する。リリースアセットの"
                         "ダウンロードはアップデートボタンを押したときだけ。これらの"
                         "リクエストに利用状況データ・トランスクリプト・識別子は載らない。"

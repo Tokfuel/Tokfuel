@@ -23,11 +23,18 @@ struct TokfuelSite: Site {
     var darkTheme: (any Theme)? { TokfuelTheme(colorScheme: .dark) }
 
     @ElementBuilder<any StaticPage> var staticPages: [any StaticPage] {
+        HomeJA()
         UsageGuideEN()
         ArchitectureEN()
+        ADRIndexEN()
+        TestingEN()
         PrivacyOverviewEN()
+        RoadmapEN()
         UsageGuideJA()
         ArchitectureJA()
+        ADRIndexJA()
+        TestingJA()
         PrivacyOverviewJA()
+        RoadmapJA()
     }
 }

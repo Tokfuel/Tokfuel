@@ -7,7 +7,7 @@ struct PrivacyOverviewEN: StaticPage {
     var layout: DocsLayout { DocsLayout(page: .privacy, language: .en) }
 
     var body: some HTML {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             Text("Privacy & network policy").docsTitle()
 
             Text("""
@@ -49,7 +49,7 @@ struct PrivacyOverviewEN: StaticPage {
                 ListItem {
                     Text {
                         Code("UpdateChecker")
-                        " — polls the public GitHub Releases API at launch and hourly "
+                        " — polls the public GitHub Releases API at launch and every 24 hours "
                         "to detect a new version. The release asset itself only "
                         "downloads when you click Update in the popover. No usage data, "
                         "transcripts, or identifiers in these requests."

@@ -7,7 +7,7 @@ struct UsageGuideJA: StaticPage {
     var layout: DocsLayout { DocsLayout(page: .usage, language: .ja) }
 
     var body: some HTML {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             Text("使い方ガイド").docsTitle()
 
             Text("インストール").docsSubheading()
@@ -80,8 +80,45 @@ struct UsageGuideJA: StaticPage {
             """)
             .foregroundStyle(.secondary)
 
-            Link("GitHub で機能一覧の全文を見る", target: "https://github.com/Tokfuel/Tokfuel#-features")
-                .linkStyle(.underline(.heavy))
+            Text("設定でよく触る項目").docsSubheading()
+
+            List {
+                ListItem {
+                    Text("メニューバー表示 — 今日／今月の金額、パーセント、リングゲージ。")
+                }
+                ListItem {
+                    Text("予算 — 月次・日次の上限と、通知／フローティングアラートの出し方。")
+                }
+                ListItem {
+                    Text("ソース表示 — 合算 / Claude のみ / Cursor のみ / Codex のみ / 並列。")
+                }
+                ListItem {
+                    Text("JPY 表示 — 有効時のみ為替レートを 1 日 1 回取得（利用データは送らない）。")
+                }
+                ListItem {
+                    Text("Analytics — 配布ビルドのみ。同意するまで OFF。送信面は AnalyticsService に集約。")
+                }
+            }
+
+            Text("アップデート").docsSubheading()
+
+            Text("""
+            新しいバージョンがあると、ポップオーバーのフッターにアップデートボタンが \
+            出る。検知は起動時と以後 24 時間ごとの GitHub Releases ポーリング。 \
+            アセットのダウンロードはボタンを押したときだけ。
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("もっと読む").docsSubheading()
+
+            HStack(spacing: 16) {
+                Link("アーキテクチャ", target: "\(sitePath)/ja/docs/architecture")
+                    .linkStyle(.underline(.heavy))
+                Link("プライバシー", target: "\(sitePath)/ja/docs/privacy")
+                    .linkStyle(.underline(.heavy))
+                Link("機能一覧（GitHub）", target: "https://github.com/Tokfuel/Tokfuel#-features")
+                    .linkStyle(.underline(.heavy))
+            }
         }
         .frame(maxWidth: 720)
     }

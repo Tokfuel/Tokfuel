@@ -7,7 +7,7 @@ struct ArchitectureJA: StaticPage {
     var layout: DocsLayout { DocsLayout(page: .architecture, language: .ja) }
 
     var body: some HTML {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             Text("アーキテクチャ").docsTitle()
 
             Text("""
@@ -24,6 +24,12 @@ struct ArchitectureJA: StaticPage {
             UI → Store → sources。executable（Tokfuel）が具象を組み立てる。
             """)
             .foregroundStyle(.secondary)
+
+            Section {
+                Include("architecture.svg")
+            }
+            .class("tf-arch-diagram")
+            .attribute("aria-label", "Tokfuel の SPM レイヤー図")
 
             List {
                 ListItem {
@@ -163,8 +169,48 @@ struct ArchitectureJA: StaticPage {
             """)
             .foregroundStyle(.secondary)
 
-            Link("GitHub で App/ を見る", target: "https://github.com/Tokfuel/Tokfuel/tree/main/App")
-                .linkStyle(.underline(.heavy))
+            Text("App/ の木").docsSubheading()
+
+            Text("""
+            ADR-0001 により、アプリ関連は App/ 配下に集約する。Site・Docs・Scripts は \
+            対象外。検証物は App/Tests/ にまとめ、本体の SPM レイヤー（App/Tokfuel*）と \
+            並べる。
+            """)
+            .foregroundStyle(.secondary)
+
+            List {
+                ListItem {
+                    Text {
+                        Code("App/Tokfuel*")
+                        " — executable と各 library（UI / Store / sources）"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("App/Tests/UnitTests")
+                        " — "
+                        Code("swift test")
+                        " の対象"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("App/Tests/{IntegrationTests,E2E,TestDocs}")
+                        " — 結合・通し・シナリオ設計（役割はテストページを参照）"
+                    }
+                }
+            }
+
+            Text("関連ドキュメント").docsSubheading()
+
+            HStack(spacing: 16) {
+                Link("ADR 一覧", target: "\(sitePath)/ja/docs/adr")
+                    .linkStyle(.underline(.heavy))
+                Link("テストと検証", target: "\(sitePath)/ja/docs/testing")
+                    .linkStyle(.underline(.heavy))
+                Link("GitHub で App/ を見る", target: "https://github.com/Tokfuel/Tokfuel/tree/main/App")
+                    .linkStyle(.underline(.heavy))
+            }
         }
         .frame(maxWidth: 720)
     }

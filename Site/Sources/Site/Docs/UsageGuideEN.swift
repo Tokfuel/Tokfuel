@@ -7,7 +7,7 @@ struct UsageGuideEN: StaticPage {
     var layout: DocsLayout { DocsLayout(page: .usage, language: .en) }
 
     var body: some HTML {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             Text("Usage guide").docsTitle()
 
             Text("Install").docsSubheading()
@@ -81,8 +81,45 @@ struct UsageGuideEN: StaticPage {
             """)
             .foregroundStyle(.secondary)
 
-            Link("See the full feature list on GitHub", target: "https://github.com/Tokfuel/Tokfuel#-features")
-                .linkStyle(.underline(.heavy))
+            Text("Settings you’ll touch most").docsSubheading()
+
+            List {
+                ListItem {
+                    Text("Menu bar — today’s / this month’s amount, a percent, or a ring gauge.")
+                }
+                ListItem {
+                    Text("Budgets — monthly and daily caps, plus notification / floating alert style.")
+                }
+                ListItem {
+                    Text("Sources — combined / Claude only / Cursor only / Codex only / side-by-side.")
+                }
+                ListItem {
+                    Text("JPY display — fetches FX once a day when enabled (no usage data on the wire).")
+                }
+                ListItem {
+                    Text("Analytics — distribution builds only; off until you consent. Events go through AnalyticsService.")
+                }
+            }
+
+            Text("Updates").docsSubheading()
+
+            Text("""
+            When a newer version exists, an Update button appears in the popover \
+            footer. Detection polls GitHub Releases at launch and every 24 hours \
+            after; the asset downloads only when you click the button.
+            """)
+            .foregroundStyle(.secondary)
+
+            Text("Read more").docsSubheading()
+
+            HStack(spacing: 16) {
+                Link("Architecture", target: "\(sitePath)/docs/architecture")
+                    .linkStyle(.underline(.heavy))
+                Link("Privacy", target: "\(sitePath)/docs/privacy")
+                    .linkStyle(.underline(.heavy))
+                Link("Feature list on GitHub", target: "https://github.com/Tokfuel/Tokfuel#-features")
+                    .linkStyle(.underline(.heavy))
+            }
         }
         .frame(maxWidth: 720)
     }

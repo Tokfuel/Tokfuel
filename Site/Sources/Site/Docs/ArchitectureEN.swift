@@ -7,7 +7,7 @@ struct ArchitectureEN: StaticPage {
     var layout: DocsLayout { DocsLayout(page: .architecture, language: .en) }
 
     var body: some HTML {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             Text("Architecture").docsTitle()
 
             Text("""
@@ -24,6 +24,11 @@ struct ArchitectureEN: StaticPage {
             UI → Store → sources; the Tokfuel executable wires the concrete types.
             """)
             .foregroundStyle(.secondary)
+
+            Section {
+                Include("architecture.svg")
+            }
+            .class("tf-arch-diagram")
 
             List {
                 ListItem {
@@ -163,8 +168,48 @@ struct ArchitectureEN: StaticPage {
             """)
             .foregroundStyle(.secondary)
 
-            Link("Browse App/ on GitHub", target: "https://github.com/Tokfuel/Tokfuel/tree/main/App")
-                .linkStyle(.underline(.heavy))
+            Text("The App/ tree").docsSubheading()
+
+            Text("""
+            Per ADR-0001, app-related trees live under App/. Site, Docs, and Scripts \
+            stay outside. Verification artifacts sit in App/Tests/ beside the SPM \
+            layer packages (App/Tokfuel*).
+            """)
+            .foregroundStyle(.secondary)
+
+            List {
+                ListItem {
+                    Text {
+                        Code("App/Tokfuel*")
+                        " — executable and libraries (UI / Store / sources)"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("App/Tests/UnitTests")
+                        " — what "
+                        Code("swift test")
+                        " runs"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("App/Tests/{IntegrationTests,E2E,TestDocs}")
+                        " — integration, end-to-end, and scenario docs (see Testing)"
+                    }
+                }
+            }
+
+            Text("Related docs").docsSubheading()
+
+            HStack(spacing: 16) {
+                Link("ADR index", target: "\(sitePath)/docs/adr")
+                    .linkStyle(.underline(.heavy))
+                Link("Tests & verification", target: "\(sitePath)/docs/testing")
+                    .linkStyle(.underline(.heavy))
+                Link("Browse App/ on GitHub", target: "https://github.com/Tokfuel/Tokfuel/tree/main/App")
+                    .linkStyle(.underline(.heavy))
+            }
         }
         .frame(maxWidth: 720)
     }

@@ -1,20 +1,24 @@
 import Ignite
 
-struct Home: StaticPage {
-    var path = "/"
-    var title = "Tokfuel — See what AI coding costs you"
-    var description = "See what AI coding costs you, from the menu bar. A tiny, local-only SwiftUI app for macOS."
+struct HomeJA: StaticPage {
+    var path = "/ja"
+    var title = "Tokfuel — AI コーディングのコストをメニューバーで"
+    var description = "AI コーディングのコストを、メニューバーから。ローカルオンリーの小さな SwiftUI macOS アプリ。"
 
     var downloadURL = "https://github.com/Tokfuel/Tokfuel/releases/latest/download/Tokfuel-latest.dmg"
     var sourceURL = "https://github.com/Tokfuel/Tokfuel"
     var ownerURL = "https://github.com/Tokfuel"
 
     var body: some HTML {
-        SiteChrome(language: .en, topic: nil)
+        SiteChrome(language: .ja, topic: nil)
+
+        Script(file: "\(sitePath)/js/budoux-ja.min.js")
+        Script(file: "\(sitePath)/js/budoux-apply.js")
+        Script(code: "(function(){var s=document.createElement('style');s.textContent='[data-budoux-root=\"true\"]{word-break:keep-all;overflow-wrap:anywhere;}';document.head.appendChild(s);}());")
 
         Section {
             VStack(alignment: .leading, spacing: 28) {
-                Image("/images/app-icon.png", description: "Tokfuel app icon")
+                Image("/images/app-icon.png", description: "Tokfuel のアプリアイコン")
                     .resizable()
                     .frame(width: 120, height: 120)
                     .cornerRadius(26)
@@ -24,29 +28,30 @@ struct Home: StaticPage {
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
 
-                Text("See what AI coding costs you — from the menu bar.")
+                Text("AI コーディングのコストを、メニューバーから。")
                     .font(.lead)
                     .foregroundStyle(Color(hex: "#A1A1A6"))
                     .frame(maxWidth: 560)
 
-                Link("Download for macOS", target: downloadURL)
+                Link("macOS 版をダウンロード", target: downloadURL)
                     .linkStyle(.button)
                     .role(.primary)
 
-                Text("macOS 14 or later. Free and open source.")
+                Text("macOS 14 以降。無料のオープンソース。")
                     .font(.small)
                     .foregroundStyle(Color(hex: "#86868B"))
             }
             .padding(.vertical, 96)
             .padding(.horizontal, 32)
             .frame(maxWidth: 980)
+            .attribute("data-budoux-root", "true")
         }
         .class("tf-hero")
         .foregroundStyle(.white)
         .horizontalAlignment(.leading)
 
         Section {
-            Image("/images/screenshot.png", description: "Tokfuel's menu-bar popover showing cost, budgets, and per-model breakdown")
+            Image("/images/screenshot.png", description: "コスト・予算・モデル別内訳を示す Tokfuel のメニューバーポップオーバー")
                 .resizable()
                 .cornerRadius(12)
                 .frame(maxWidth: 720)
@@ -58,42 +63,42 @@ struct Home: StaticPage {
 
         Section {
             VStack(alignment: .leading, spacing: 20) {
-                Text("How it works")
+                Text("仕組み")
                     .font(.title2)
                     .fontWeight(.bold)
 
                 Text("""
-                Tokfuel reads what Claude Code, Codex CLI, and Cursor already \
-                leave on your Mac (~/.claude/projects/, ~/.codex/sessions/, and \
-                Cursor's local data) — no hooks, no setup. Each source stays \
-                labeled; nothing is mixed into a silent Claude total. Usage data \
-                and prompts never leave your Mac. The few network calls \
-                (optional FX rate, Cursor pricing / dashboard when present, \
-                update checks, and — in distribution builds — Crashlytics plus \
-                opt-in Analytics) are listed on the privacy page.
+                Tokfuel は Claude Code・Codex CLI・Cursor が Mac 上に残すデータ \
+                （~/.claude/projects/、~/.codex/sessions/、Cursor のローカルデータ）を \
+                読むだけです。フックも追加セットアップも不要です。ソースは混ぜず、 \
+                ラベル付きで扱います。利用データもプロンプトも Mac の外に出しません。 \
+                数少ない通信（任意の為替レート、Cursor があるときの公開価格表・ \
+                ダッシュボード API、アップデート確認、配布ビルドの Crashlytics と \
+                同意時のみの Analytics）はプライバシーのページに列挙しています。
                 """)
                 .frame(maxWidth: 640)
                 .foregroundStyle(.secondary)
 
-                Link("View source and full details on GitHub", target: sourceURL)
+                Link("ソースと詳細は GitHub で", target: sourceURL)
                     .linkStyle(.underline(.heavy))
 
                 HStack(alignment: .center, spacing: 20) {
-                    Link("Read the docs", target: "\(sitePath)/docs/usage")
+                    Link("ドキュメントを読む", target: "\(sitePath)/ja/docs/usage")
                         .linkStyle(.underline(.heavy))
-                    Link("Roadmap", target: "\(sitePath)/docs/roadmap")
+                    Link("ロードマップ", target: "\(sitePath)/ja/docs/roadmap")
                         .linkStyle(.underline(.heavy))
-                    Link("Privacy", target: "\(sitePath)/docs/privacy")
+                    Link("プライバシー", target: "\(sitePath)/ja/docs/privacy")
                         .linkStyle(.underline(.heavy))
-                    Link("ADR index", target: "\(sitePath)/docs/adr")
+                    Link("ADR 一覧", target: "\(sitePath)/ja/docs/adr")
                         .linkStyle(.underline(.heavy))
-                    Link("Tests", target: "\(sitePath)/docs/testing")
+                    Link("テストと検証", target: "\(sitePath)/ja/docs/testing")
                         .linkStyle(.underline(.heavy))
                 }
             }
             .padding(.vertical, 72)
             .padding(.horizontal, 32)
             .frame(maxWidth: 980)
+            .attribute("data-budoux-root", "true")
         }
         .horizontalAlignment(.leading)
 
