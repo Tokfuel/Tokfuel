@@ -1,7 +1,7 @@
 # シナリオ一覧（網羅確認用）
 
 TestDocs の全シナリオをドメイン別に並べた索引です。網羅の抜け漏れ確認に使います。
-個別シナリオの正本は各 MD、運用規約は [`AGENTS.md`](AGENTS.md)、手段の優先は [`coverage-strategy.md`](coverage-strategy.md) です。
+個別シナリオの正本は各 MD、運用規約は [`AGENTS.md`](AGENTS.md)、手段の優先は [`README.md`](README.md) の「担保手段」節です。
 
 このファイルと [`coverage.json`](coverage.json) はシナリオ MD から生成します。シナリオを足したら同じ手順で更新してください。
 

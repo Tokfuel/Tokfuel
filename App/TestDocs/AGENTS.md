@@ -17,7 +17,7 @@
 
 ## 担保手段の優先
 
-詳細は [`coverage-strategy.md`](coverage-strategy.md)。
+詳細は [`README.md`](README.md) の「担保手段」節。
 
 - 完了条件: **E2E** を主とする。UT&IT と VRT は補助
 - 同じ観測を手段のあいだで二重にテストしない
