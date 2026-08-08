@@ -77,10 +77,6 @@ issue:
 |------|--------|------------|
 | … | … | … |
 
-### Migration plan
-
-<!-- Optional. Only when the change rolls out in stages. -->
-
 ## References
 
 > Related links
