@@ -153,14 +153,38 @@ public enum ScreenshotRenderer {
     ///   最初の 1 画面に入らないため、ここでしか見えない）
     /// - `popover-advice-expanded`: ヒントを開いた状態。詳細と「プロンプトをコピー」は
     ///   展開しないと出ないので、折り畳んだ `popover-advice` では絵に写らない
-    /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
-    ///   デバッグを開いた状態）。一般の「外観」Picker は `prepareDefaults` でダーク固定
+    /// - `popover-scrolled` / `popover-more-menu`: ホーム末尾スクロール、⋯ メニュー展開
+    /// - `popover-period-*`: 集計期間（今日 / 今週 / 今月 / 今年）
+    /// - `popover-jpy` / `popover-claude-only` / `popover-combined` / `popover-cumulative`:
+    ///   設定切替がホームの表示形式に効いた状態
+    /// - `settings` / `settings-jpy` / `settings-claude-only` / `settings-advanced` /
+    ///   `settings-debug`: 設定ウィンドウ（既定・通貨円・Claude のみ・詳細・デバッグ）
     /// - `about`: 「Tokfuel について」ウィンドウ
     /// - `budget-alert`: 予算アラートのウィンドウ（TF #81。ライブな `UsageStore` は通さず、
     ///   `budgetAlertContent` のフィクスチャだけを描く）
     /// - `analytics-consent`: 初回 Analytics 同意ダイアログ（#22）
     public static func allScreens() throws -> [(name: String, data: Data)] {
-        let store = fixtureStore()
+        try screenNames.map { ($0, try pngData(named: $0)) }
+    }
+
+    /// ui-preview / VRT が扱う画面名。追加したら `pngData(named:)` と
+    /// `UISnapshotTests` / `ui-preview.yml` も同じ PR で更新する。
+    public static let screenNames: [String] = [
+        "popover", "popover-light", "popover-update",
+        "popover-cursor-degraded", "popover-cursor-signin",
+        "popover-sessions", "popover-advice", "popover-advice-expanded",
+        "popover-scrolled", "popover-more-menu",
+        "popover-period-today", "popover-period-week",
+        "popover-period-month", "popover-period-year",
+        "popover-jpy", "popover-claude-only", "popover-combined", "popover-cumulative",
+        "settings", "settings-jpy", "settings-claude-only",
+        "settings-advanced", "settings-debug",
+        "about", "budget-alert", "analytics-consent"
+    ]
+
+    /// VRT / 単体テスト用。`allScreens()` と同じ描画経路で 1 画面だけ PNG にする。
+    public static func pngData(named name: String) throws -> Data {
+        prepareDefaults()
         // 設定は自身が .frame(width: 460, height: 620) を持つ（SettingsView.swift）ので
         // probeSize がそのまま最終サイズになる。About は幅 320 だけを持つので、
         // 高さは余裕を持った probeSize から実際の fittingSize へ縮める。
@@ -170,51 +194,109 @@ public enum ScreenshotRenderer {
         let alertProbeSize = CGSize(width: 360, height: 400)
         // 同意ダイアログは幅固定・高さは中身任せ。余裕のある probe から fittingSize へ縮める。
         let consentProbeSize = CGSize(width: 460, height: 400)
-        return [
-            ("popover", try renderPNG(store: store)),
-            ("popover-light", try renderStandalone(
-                PopoverView(store: store),
-                probeSize: popoverSize, colorScheme: .light)),
-            ("popover-update", try renderPNG(store: store,
-                                             updater: .preview(version: previewUpdateVersion))),
-            ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
-            ("popover-cursor-signin", try renderPNG(
-                store: degradedCursorStore(reason: .credentialsRejected))),
-            ("popover-sessions", try renderStandalone(
-                PopoverView(store: sessionsFixtureStore()),
-                probeSize: popoverSize, scrollsToBottom: true)),
-            ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
-            ("popover-advice-expanded", try renderStandalone(
-                PopoverView(store: store, initiallyExpandsAdvice: true),
-                probeSize: popoverSize, scrollsToBottom: true)),
-            ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
-            ("settings-advanced", try renderStandalone(
-                SettingsView(store: store, initiallyShowsAdvanced: true),
-                probeSize: settingsSize, scrollsToBottom: true)),
-            ("settings-debug", try renderStandalone(
-                SettingsView(store: store, initiallyShowsAdvanced: true, initiallyShowsDebug: true),
-                probeSize: settingsSize, scrollsToBottom: true)),
-            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize)),
-            ("budget-alert", try renderStandalone(BudgetAlertView(content: budgetAlertContent),
-                                                  probeSize: alertProbeSize)),
-            ("analytics-consent", try renderStandalone(
-                AnalyticsConsentView(), probeSize: consentProbeSize))
-        ]
-    }
-
-    /// VRT / 単体テスト用。`allScreens()` と同じ描画経路で 1 画面だけ PNG にする。
-    public static func pngData(named name: String) throws -> Data {
-        prepareDefaults()
-        let store = fixtureStore()
-        let settingsSize = CGSize(width: 460, height: 620)
         switch name {
         case "popover":
-            return try renderPNG(store: store)
+            return try renderPNG(store: fixtureStore())
+        case "popover-light":
+            return try renderStandalone(
+                PopoverView(store: fixtureStore()),
+                probeSize: popoverSize, colorScheme: .light)
+        case "popover-update":
+            return try renderPNG(
+                store: fixtureStore(),
+                updater: .preview(version: previewUpdateVersion))
+        case "popover-cursor-degraded":
+            return try renderPNG(store: degradedCursorStore())
+        case "popover-cursor-signin":
+            return try renderPNG(store: degradedCursorStore(reason: .credentialsRejected))
+        case "popover-sessions":
+            return try renderStandalone(
+                PopoverView(store: sessionsFixtureStore()),
+                probeSize: popoverSize, scrollsToBottom: true)
+        case "popover-advice":
+            return try renderPNG(store: fixtureStore(), scrollsToBottom: true)
+        case "popover-advice-expanded":
+            return try renderStandalone(
+                PopoverView(store: fixtureStore(), initiallyExpandsAdvice: true),
+                probeSize: popoverSize, scrollsToBottom: true)
+        case "popover-scrolled":
+            return try renderPNG(store: fixtureStore(), scrollsToBottom: true)
+        case "popover-more-menu":
+            return try renderPNG(store: fixtureStore(), initiallyShowsMoreMenu: true)
+        case "popover-period-today":
+            return try renderPNG(store: makeStore(period: .today))
+        case "popover-period-week":
+            return try renderPNG(store: makeStore(period: .thisWeek))
+        case "popover-period-month":
+            return try renderPNG(store: makeStore(period: .thisMonth))
+        case "popover-period-year":
+            return try renderPNG(store: makeStore(period: .thisYear))
+        case "popover-jpy":
+            return try renderPNG(store: makeStore(currency: .jpy))
+        case "popover-claude-only":
+            return try renderPNG(store: makeStore(costSource: .claudeOnly))
+        case "popover-combined":
+            return try renderPNG(store: makeStore(costSource: .combined))
+        case "popover-cumulative":
+            return try renderPNG(store: makeStore(chartStyle: .cumulative))
         case "settings":
-            return try renderStandalone(SettingsView(store: store), probeSize: settingsSize)
+            return try renderStandalone(
+                SettingsView(store: makeStore()), probeSize: settingsSize)
+        case "settings-jpy":
+            return try renderStandalone(
+                SettingsView(store: makeStore(currency: .jpy)), probeSize: settingsSize)
+        case "settings-claude-only":
+            return try renderStandalone(
+                SettingsView(store: makeStore(costSource: .claudeOnly)), probeSize: settingsSize)
+        case "settings-advanced":
+            return try renderStandalone(
+                SettingsView(store: makeStore(), initiallyShowsAdvanced: true),
+                probeSize: settingsSize, scrollsToBottom: true)
+        case "settings-debug":
+            return try renderStandalone(
+                SettingsView(
+                    store: makeStore(),
+                    initiallyShowsAdvanced: true,
+                    initiallyShowsDebug: true
+                ),
+                probeSize: settingsSize, scrollsToBottom: true)
+        case "about":
+            return try renderStandalone(AboutView(), probeSize: aboutProbeSize)
+        case "budget-alert":
+            return try renderStandalone(
+                BudgetAlertView(content: budgetAlertContent), probeSize: alertProbeSize)
+        case "analytics-consent":
+            return try renderStandalone(AnalyticsConsentView(), probeSize: consentProbeSize)
         default:
             throw RenderError.unknownScreen(name)
         }
+    }
+
+    /// 期間・通貨・ソース・チャート形式を変えたフィクスチャ Store を作る。
+    /// `reportPeriod` は init 前に UserDefaults へ書き、あとから代入して `reloadReport` で
+    /// フィクスチャが消えないようにする。
+    private static func makeStore(
+        period: ReportPeriod = reportPeriod,
+        chartStyle: CostChartStyle = .daily,
+        currency: DisplayCurrency = .usd,
+        costSource: CostSourceMode = .sideBySide
+    ) -> UsageStore {
+        prepareDefaults()
+        let defaults = UserDefaults.standard
+        defaults.set(period.rawValue, forKey: UsageStore.reportPeriodKey)
+        defaults.set(chartStyle.rawValue, forKey: UsageStore.costChartStyleKey)
+        defaults.set(currency.rawValue, forKey: Money.currencyKey)
+        if currency == .jpy {
+            defaults.set(150.0, forKey: Money.rateKey)
+            defaults.set(dateString(daysAgo: 0), forKey: Money.rateDateKey)
+        } else {
+            defaults.removeObject(forKey: Money.rateKey)
+            defaults.removeObject(forKey: Money.rateDateKey)
+        }
+        let settings = AppSettings.shared
+        settings.displayCurrency = currency
+        settings.costSourceMode = costSource
+        return fixtureStore()
     }
 
     /// フィクスチャを積んだポップオーバーを @2x で PNG にする。`updater` の既定は `.shared`
@@ -226,9 +308,18 @@ public enum ScreenshotRenderer {
     ///
     /// `scrollsToBottom` はポップオーバーの `ScrollView` を末尾まで送ってから撮る。
     /// 折り返しの下にあるセクション（節約のヒント）は、そうしないと絵に写らない。
-    private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared,
-                                  scrollsToBottom: Bool = false) throws -> Data {
-        let view = NSHostingView(rootView: composition(store: store, updater: updater, now: fixtureNow))
+    private static func renderPNG(
+        store: UsageStore,
+        updater: UpdateChecker = .shared,
+        scrollsToBottom: Bool = false,
+        initiallyShowsMoreMenu: Bool = false
+    ) throws -> Data {
+        let view = NSHostingView(rootView: composition(
+            store: store,
+            updater: updater,
+            now: fixtureNow,
+            initiallyShowsMoreMenu: initiallyShowsMoreMenu
+        ))
         view.frame = CGRect(origin: .zero, size: canvas)
         return try capture(view, size: canvas, scrollsToBottom: scrollsToBottom)
     }
@@ -346,6 +437,8 @@ public enum ScreenshotRenderer {
         defaults.set(false, forKey: "analyticsConsent")
         defaults.set(true, forKey: "analyticsConsentAnswered")
         defaults.set(DisplayCurrency.usd.rawValue, forKey: Money.currencyKey)
+        defaults.removeObject(forKey: Money.rateKey)
+        defaults.removeObject(forKey: Money.rateDateKey)
         // UsageStore は集計期間とチャート形式を UserDefaults から復元する。プロパティ経由で
         // 変えると retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。
         defaults.set(reportPeriod.rawValue, forKey: UsageStore.reportPeriodKey)
@@ -359,6 +452,8 @@ public enum ScreenshotRenderer {
         settings.budgetAlertStyle = .notification
         // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
         settings.costSourceMode = .sideBySide
+        // 通貨も毎回戻す（JPY 画面のあとで $ / ¥ が混ざるのを防ぐ）。
+        settings.displayCurrency = .usd
         // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
         settings.adaptiveRefreshEnabled = true
         settings.activityAnimationEnabled = true
@@ -370,10 +465,19 @@ public enum ScreenshotRenderer {
 
     /// メニューバー帯とポップオーバーをデスクトップ風の背景に合成した 1 枚。
     /// ポップオーバー本体は実物の `PopoverView` そのままで、枠だけがこのファイルの飾り。
-    private static func composition(store: UsageStore, updater: UpdateChecker, now: Date) -> some View {
+    private static func composition(
+        store: UsageStore,
+        updater: UpdateChecker,
+        now: Date,
+        initiallyShowsMoreMenu: Bool = false
+    ) -> some View {
         VStack(spacing: 0) {
             menuBar(now: now)
-            popoverCard(store: store, updater: updater)
+            popoverCard(
+                store: store,
+                updater: updater,
+                initiallyShowsMoreMenu: initiallyShowsMoreMenu
+            )
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 8)
                 .padding(.trailing, 24)
@@ -424,9 +528,17 @@ public enum ScreenshotRenderer {
     }
 
     /// ポップオーバーの器（角丸・縁・影）。NSPopover の見た目を絵の上で再現する。
-    private static func popoverCard(store: UsageStore, updater: UpdateChecker) -> some View {
+    private static func popoverCard(
+        store: UsageStore,
+        updater: UpdateChecker,
+        initiallyShowsMoreMenu: Bool = false
+    ) -> some View {
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        return PopoverView(store: store, updater: updater)
+        return PopoverView(
+            store: store,
+            updater: updater,
+            initiallyShowsMoreMenu: initiallyShowsMoreMenu
+        )
             .background(Color(nsColor: .windowBackgroundColor))
             .clipShape(shape)
             .overlay(shape.strokeBorder(.white.opacity(0.12)))

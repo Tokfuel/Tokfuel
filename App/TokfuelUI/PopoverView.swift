@@ -23,6 +23,9 @@ public struct PopoverView: View {
     /// ui-preview / スクリーンショット用。節約のヒントを開いた状態で描き、
     /// 展開時にしか出ないコピーボタンを絵に写す。
     public var initiallyExpandsAdvice = false
+    /// VRT / ui-preview 用。⋯ メニューを開いた状態の見た目を絵に写す
+    /// （本物の `Menu` は別ウィンドウになるので、同じ項目のパネルを重ねる）。
+    public var initiallyShowsMoreMenu = false
 
     public init(
         store: UsageStore,
@@ -30,7 +33,8 @@ public struct PopoverView: View {
         updater: UpdateChecker = .shared,
         onOpenSettings: @escaping () -> Void = {},
         onOpenAbout: @escaping () -> Void = {},
-        initiallyExpandsAdvice: Bool = false
+        initiallyExpandsAdvice: Bool = false,
+        initiallyShowsMoreMenu: Bool = false
     ) {
         self.store = store
         self.settings = settings
@@ -38,6 +42,7 @@ public struct PopoverView: View {
         self.onOpenSettings = onOpenSettings
         self.onOpenAbout = onOpenAbout
         self.initiallyExpandsAdvice = initiallyExpandsAdvice
+        self.initiallyShowsMoreMenu = initiallyShowsMoreMenu
     }
 
     public var body: some View {
@@ -65,6 +70,13 @@ public struct PopoverView: View {
             footerBar
         }
         .frame(width: 360, height: 520)
+        .overlay(alignment: .bottomTrailing) {
+            if initiallyShowsMoreMenu {
+                moreMenuSnapshotPanel
+                    .padding(.trailing, 10)
+                    .padding(.bottom, 44)
+            }
+        }
         .onAppear {
             UsageEventLog.shared.log(.tabOpen, meta: ["tab": "cost"])
             // サインインしに行ったあとの初回だけ、10 分の定期更新を待たずに拾い直す。
@@ -509,6 +521,36 @@ public struct PopoverView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    /// VRT / ui-preview 用。⋯ と同じ項目をパネルとして重ねる（本物の Menu は別ウィンドウ）。
+    private var moreMenuSnapshotPanel: some View {
+        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+        return VStack(alignment: .leading, spacing: 0) {
+            moreMenuRow("再読み込み")
+            Divider().padding(.vertical, 2)
+            moreMenuRow("CSV を書き出す（日別）")
+            moreMenuRow("CSV を書き出す（月別）")
+            Divider().padding(.vertical, 2)
+            moreMenuRow("設定")
+            moreMenuRow("Tokfuel について")
+            Divider().padding(.vertical, 2)
+            moreMenuRow("Tokfuel を終了")
+        }
+        .font(.system(size: 13))
+        .padding(.vertical, 6)
+        .frame(width: 210, alignment: .leading)
+        .background(.regularMaterial, in: shape)
+        .overlay(shape.strokeBorder(.white.opacity(0.12)))
+        .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
+        .accessibilityIdentifier("tokfuel.menu.more.preview")
+    }
+
+    private func moreMenuRow(_ title: String) -> some View {
+        Text(title)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
     }
 
     /// アップデートがあるときだけ「⋯」の左に出す常設ボタン（TF #29）。縦のスペースを
