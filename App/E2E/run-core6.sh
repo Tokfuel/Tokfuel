@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Core 6 AX E2E: MenuBar-01, Cost-01/02/03, Settings-01/02
+# メニューバー通しテスト（コアシナリオ 6 本）:
+# MenuBar-01, Cost-01/02/03, Settings-01/02
 # usage: bash App/E2E/run-core6.sh
 set -euo pipefail
 
@@ -121,11 +122,11 @@ fi
 if [[ "$DRIVER_STATUS" -eq 0 ]]; then
   rm -f "$VIDEO_OUT"
   rm -rf "$FRAMES_DIR"
-  echo "core6 E2E OK"
+  echo "メニューバー通しテスト OK"
   exit 0
 fi
 
-echo "core6 E2E FAILED (status=${DRIVER_STATUS}); capturing evidence…"
+echo "メニューバー通しテスト FAILED (status=${DRIVER_STATUS}); capturing evidence…"
 /usr/sbin/screencapture -x "$OUT_DIR/failure.png" || true
 # 動画が空／未作成なら、フレーム列の末尾を failure の補助にする。
 if [[ ! -s "$VIDEO_OUT" ]]; then

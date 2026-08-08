@@ -1,19 +1,19 @@
-# E2E
+# メニューバー通しテスト（E2E）
 
-アプリ（`App/Tokfuel`）向けの通しテスト実装を置く場所です。
+アプリ（`App/Tokfuel`）を、実際のメニューバー操作で通すテストの置き場です。
 
 シナリオ設計の正本は [`../TestDocs`](../TestDocs/) です。UT / IT は [`../Tests`](../Tests/) に置きます。
 
 ## 方針
 
 - Maestro / Appium / 別リポジトリは持ち込まない
-- 見た目の固定は E2E ではなく VRT（`ScreenshotRenderer` / `ui-preview`）に置く
-- 操作は macOS Accessibility（AX）で行う
+- 見た目の固定はこの通しテストではなく VRT（`ScreenshotRenderer` / `ui-preview`）に置く
+- 操作は macOS のアクセシビリティ API で行う（実装詳細。チェック名には出さない）
 - 詳細な優先順位は [`../TestDocs/README.md`](../TestDocs/README.md) の「担保手段」節
 
-## コア 6
+## コアシナリオ（6 本）
 
-次のシナリオを `App/E2E/run-core6.sh` がまとめて回します。
+まずは次の 6 本を `App/E2E/run-core6.sh` がまとめて回します。CI 上の表示名は「メニューバー通しテスト / コアシナリオ」です。
 
 - `MenuBar-01-open-home`
 - `Cost-01-chart-style`
@@ -26,7 +26,7 @@
 bash App/E2E/run-core6.sh
 ```
 
-デバッグビルドの Tokfuel を `--e2e-fixture` で起動し、`TokfuelE2E` ドライバがメニューバーを AX 操作します。実ユーザーの `~/Library/Application Support/Tokfuel` は触りません。
+デバッグビルドの Tokfuel を `--e2e-fixture` で起動し、`TokfuelE2E` ドライバがメニューバーを操作します。実ユーザーの `~/Library/Application Support/Tokfuel` は触りません。
 
 `--e2e-fixture` では NSPopover が AX ツリーに載らないため、ステータス項目のクリックで同じホーム UI を `NSPanel` に出します（本番の見た目経路は従来どおり NSPopover）。
 

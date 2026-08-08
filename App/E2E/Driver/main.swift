@@ -2,7 +2,7 @@ import ApplicationServices
 import AppKit
 import Foundation
 
-/// Tokfuel コア 6 シナリオを AX で駆動するドライバ（Maestro / Appium なし）。
+/// メニューバー通しテスト用ドライバ（コアシナリオを Accessibility 操作で通す）。
 /// 使い方: TokfuelE2E --pid <TokfuelのPID> [--recording <path>] [--write-recording <path>]
 @main
 struct TokfuelE2EMain {
@@ -41,7 +41,7 @@ struct TokfuelE2EMain {
                 try driver.persistRecording(to: E2ERecording.defaultPath)
             }
             try driver.writeReport(ok: true, error: nil, to: reportPath)
-            print("TokfuelE2E core6 OK")
+            print("メニューバー通しテスト OK")
             exit(0)
         } catch {
             try? driver.writeReport(ok: false, error: "\(error)", to: reportPath)

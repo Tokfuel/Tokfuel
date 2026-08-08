@@ -1,6 +1,6 @@
-name: E2E
+name: メニューバー通しテスト
 
-# コアシナリオの AX E2E（macos-15 + Accessibility / Screen Recording TCC）。
+# TestDocs コアシナリオを、実際のメニューバー操作で通す（macos-15）。
 # 失敗時は証拠（画面・動画・正常フィクスチャ）を orphan ブランチへ載せ、PR コメントする。
 on:
   push:
@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   core6:
-    name: Core6 AX E2E
+    name: コアシナリオ
     if: github.event.action != 'closed'
     runs-on: macos-15
     permissions:
