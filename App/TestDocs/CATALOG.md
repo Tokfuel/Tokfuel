@@ -25,7 +25,7 @@ python3 Scripts/generate-testdocs-catalog.py
 | 着手カバレッジ | 4.6% | `6/131` | status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く） |
 | 起票完了率 | 100.0% | `131/131` | status が ideation 以外の現行シナリオ数 / 現行シナリオ数（archived を除く） |
 | E2E 完了条件の記載率 | 100.0% | `131/131` | 完了条件に E2E がある現行シナリオ数 / 現行シナリオ数（archived を除く） |
-| 対応済み PR 紐付け率 | 0.0% | `0/131` | 対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く） |
+| 対応済み PR 紐付け率 | 4.6% | `6/131` | 対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く） |
 
 ### ドメイン別の実装カバレッジ
 

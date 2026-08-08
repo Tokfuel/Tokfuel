@@ -49,4 +49,4 @@ status: done
 
 ## 対応済みPR
 
-- （本 PR で実装）
+- https://github.com/Tokfuel/Tokfuel/pull/149

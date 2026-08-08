@@ -119,10 +119,10 @@
     "pr_link_rate": {
       "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
-      "fraction": "0/131",
+      "fraction": "6/131",
       "label": "対応済み PR 紐付け率",
-      "numerator": 0,
-      "percent": "0.0%"
+      "numerator": 6,
+      "percent": "4.6%"
     },
     "started_coverage": {
       "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
