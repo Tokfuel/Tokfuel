@@ -15,7 +15,7 @@ package_tokfuel_app() {
   cp "$project_dir/Assets/AppIcon.icns" "$app_dir/Contents/Resources/AppIcon.icns"
   # Firebase は Bundle.main（Contents/Resources）から GoogleService-Info.plist を探す。
   # SPM のリソースバンドル内だけでは見つからないため、アプリバンドル直下にも置く。
-  cp "$project_dir/App/Tokfuel/Resources/GoogleService-Info.plist" \
+  cp "$project_dir/App/TokfuelAnalytics/Resources/GoogleService-Info.plist" \
     "$app_dir/Contents/Resources/GoogleService-Info.plist"
 }
 
