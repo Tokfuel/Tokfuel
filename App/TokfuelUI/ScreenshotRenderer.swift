@@ -354,6 +354,9 @@ public enum ScreenshotRenderer {
         var size = hosting.fittingSize
         if size.width <= 0 { size.width = probeSize.width }
         if size.height <= 0 { size.height = probeSize.height }
+        // CI とローカルで fittingSize が 0.5pt ずれると SnapshotTesting がサイズ不一致で落ちる。
+        size.width = ceil(size.width)
+        size.height = ceil(size.height)
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.layoutSubtreeIfNeeded()
 

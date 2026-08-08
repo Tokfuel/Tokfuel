@@ -16,6 +16,12 @@ on:
       - "Package.swift"
       - "Package.resolved"
       - ".github/workflows/ci.yml"
+  workflow_dispatch:
+    inputs:
+      record_vrt:
+        description: "macos-15 上で VRT 参考画像を録音し artifact にする"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -33,5 +39,35 @@ jobs:
           swift --version
           xcodebuild -version
 
+      - name: Record VRT on CI runner
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.record_vrt }}
+        run: |
+          # 録音モードは「新規に書いた」扱いで非 0 終了するので、ここでは許容する。
+          SNAPSHOT_TESTING_RECORD=all swift test --filter MatchesReference || true
+
+      - name: Upload CI-recorded VRT snapshots
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.record_vrt }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-snapshots-ci
+          path: App/Tests/UnitTests/__Snapshots__/UISnapshotTests/
+
       - name: Unit Test
-        run: swift test
+        run: SNAPSHOT_TESTING_RECORD=never swift test
+
+      - name: Upload failed VRT diffs
+        if: failure()
+        run: |
+          mkdir -p vrt-out
+          # SnapshotTesting は失敗画像を TMPDIR 配下に書く。
+          find "${TMPDIR:-/tmp}" -type d -name 'UISnapshotTests' 2>/dev/null \
+            | while read -r dir; do cp -R "$dir" vrt-out/; done || true
+          ls -laR vrt-out || true
+
+      - name: Publish failed VRT diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-failures
+          path: vrt-out
+          if-no-files-found: ignore
