@@ -27,6 +27,99 @@ Stop using a single SPM target under `App/`. Adopt a **hybrid** split: **feature
 
 The parent layout stays under `App/` per ADR-0001. This decision is about **target / module boundaries**, not about rehoming the top-level tree again.
 
+### Diagrams
+
+Today (single target, flat tree):
+
+```mermaid
+flowchart TB
+  subgraph AppTokfuel["App/Tokfuel (single executable)"]
+    UI["PopoverView / SettingsView / …"]
+    Store["UsageStore"]
+    Claude["Claude / retok"]
+    Cursor["Cursor drivers / services"]
+    Codex["Codex drivers"]
+    Budget["BudgetMonitor"]
+    Settings["AppSettings"]
+    Coreish["LocalDay / Money / CostDriver …"]
+  end
+  UI --- Store
+  Store --- Claude
+  Store --- Cursor
+  Store --- Codex
+  Store --- Budget
+  Store --- Settings
+  UI --- Coreish
+  Store --- Coreish
+```
+
+Adopted hybrid (dependencies flow downward only; arrows are import direction):
+
+```mermaid
+flowchart TB
+  App["TokfuelApp<br/>executable + DI wiring"]
+  UI["TokfuelUI"]
+  Store["TokfuelStore<br/>aggregation + state"]
+  Settings["TokfuelSettings"]
+  Claude["TokfuelClaude"]
+  Cursor["TokfuelCursor"]
+  Codex["TokfuelCodex"]
+  Budget["TokfuelBudget"]
+  Analytics["TokfuelAnalytics<br/>Firebase, etc."]
+  Core["TokfuelCore<br/>thin shared"]
+
+  App --> UI
+  App --> Store
+  App --> Settings
+  App --> Claude
+  App --> Cursor
+  App --> Codex
+  App --> Budget
+  App --> Analytics
+  App --> Core
+
+  UI --> Store
+  UI --> Settings
+  UI --> Core
+
+  Store --> Settings
+  Store --> Claude
+  Store --> Cursor
+  Store --> Codex
+  Store --> Budget
+  Store --> Core
+
+  Claude --> Core
+  Cursor --> Core
+  Codex --> Core
+  Budget --> Core
+  Settings --> Core
+  Analytics --> Core
+```
+
+Conflict surface (shared hotspots remain):
+
+```mermaid
+flowchart LR
+  subgraph features["Easier to split via feature targets"]
+    Claude2[Claude]
+    Cursor2[Cursor]
+    Codex2[Codex]
+    Budget2[Budget]
+  end
+  subgraph hot["Still easy to collide"]
+    Store2[Store aggregation]
+    UI2[UI screens]
+  end
+  Claude2 --> Store2
+  Cursor2 --> Store2
+  Codex2 --> Store2
+  Budget2 --> Store2
+  Store2 --> UI2
+```
+
+`Tokfuel*` names may be finalized at implementation time. The diagrams mean: split vertically by feature, and fix dependency direction by layer.
+
 ### Summary of alternatives
 
 Status quo cannot enforce Store / UI boundaries and keeps unrelated PRs colliding in one flat tree. Layers-only cleans dependency direction but leaves hotspots. Features-only reduces collisions but cannot stop upward leaks. A hybrid addresses both. Extreme fine-grained layering (SDK / huge-app style) costs too much at this size.

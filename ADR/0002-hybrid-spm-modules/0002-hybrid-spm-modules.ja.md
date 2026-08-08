@@ -27,6 +27,99 @@ issue: "#109"
 
 配置の親は ADR-0001 のとおり `App/` のままとする。本決定は **target / モジュール境界** の話であり、ディレクトリ親の再配置ではない。
 
+### 構成図
+
+現状（単一 target・フラット）:
+
+```mermaid
+flowchart TB
+  subgraph AppTokfuel["App/Tokfuel（単一 executable）"]
+    UI["PopoverView / SettingsView / …"]
+    Store["UsageStore"]
+    Claude["Claude / retok"]
+    Cursor["Cursor drivers / services"]
+    Codex["Codex drivers"]
+    Budget["BudgetMonitor"]
+    Settings["AppSettings"]
+    Coreish["LocalDay / Money / CostDriver …"]
+  end
+  UI --- Store
+  Store --- Claude
+  Store --- Cursor
+  Store --- Codex
+  Store --- Budget
+  Store --- Settings
+  UI --- Coreish
+  Store --- Coreish
+```
+
+採用するハイブリッド（依存は上から下のみ。矢印は import 方向）:
+
+```mermaid
+flowchart TB
+  App["TokfuelApp<br/>executable・DI 組み立て"]
+  UI["TokfuelUI"]
+  Store["TokfuelStore<br/>合算・状態"]
+  Settings["TokfuelSettings"]
+  Claude["TokfuelClaude"]
+  Cursor["TokfuelCursor"]
+  Codex["TokfuelCodex"]
+  Budget["TokfuelBudget"]
+  Analytics["TokfuelAnalytics<br/>Firebase など"]
+  Core["TokfuelCore<br/>薄い横断"]
+
+  App --> UI
+  App --> Store
+  App --> Settings
+  App --> Claude
+  App --> Cursor
+  App --> Codex
+  App --> Budget
+  App --> Analytics
+  App --> Core
+
+  UI --> Store
+  UI --> Settings
+  UI --> Core
+
+  Store --> Settings
+  Store --> Claude
+  Store --> Cursor
+  Store --> Codex
+  Store --> Budget
+  Store --> Core
+
+  Claude --> Core
+  Cursor --> Core
+  Codex --> Core
+  Budget --> Core
+  Settings --> Core
+  Analytics --> Core
+```
+
+衝突面のイメージ（灰色が共有ホットスポット）:
+
+```mermaid
+flowchart LR
+  subgraph features["feature 縦割りで分かれやすい"]
+    Claude2[Claude]
+    Cursor2[Cursor]
+    Codex2[Codex]
+    Budget2[Budget]
+  end
+  subgraph hot["依然として交差しやすい"]
+    Store2[Store 合算]
+    UI2[UI 画面]
+  end
+  Claude2 --> Store2
+  Cursor2 --> Store2
+  Codex2 --> Store2
+  Budget2 --> Store2
+  Store2 --> UI2
+```
+
+名称（`Tokfuel*`）は実装時に確定してよい。図の意図は「feature を縦に割り、依存の向きをレイヤーで固定する」こと。
+
 ### 比較・検討内容の要約
 
 現状維持では規約だけで Store / UI の境界を守れず、無関係な PR も同じフラット階層で衝突しやすい。レイヤーのみは依存方向はきれいだがホットスポットが残る。feature のみは衝突は減るが逆流を止めにくい。ハイブリッドなら両方に効くため採用する。極細の多数レイヤー（インフラライブラリ型）はこの規模では移行コストに見合わない。
