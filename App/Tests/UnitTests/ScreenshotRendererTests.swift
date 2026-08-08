@@ -81,6 +81,26 @@ struct ScreenshotFixtureTests {
                 + ScreenshotRenderer.cursorTodayCost)
     }
 
+    @Test func 期間フィクスチャの日別は暦窓に合う() {
+        let today = ScreenshotRenderer.fixtureReport(period: .today)
+        #expect(today.periodDays == 1)
+        #expect(today.daily.count == 1)
+        #expect(today.daily[ScreenshotRenderer.dateString(daysAgo: 0)] != nil)
+
+        let month = ScreenshotRenderer.fixtureReport(period: .thisMonth)
+        #expect(month.periodDays == month.daily.count)
+        #expect(month.periodDays > 1)
+        #expect(month.daily[ScreenshotRenderer.dateString(daysAgo: 0)] != nil)
+
+        let year = ScreenshotRenderer.fixtureReport(period: .thisYear)
+        #expect(year.periodDays > 30)
+        // 年初の月初が入っていないと軸が全部「8月」になる。
+        #expect(year.daily.keys.contains { $0.hasSuffix("-01-01") })
+        let shorts = year.daily.keys.sorted().map { String($0.suffix(5)).replacingOccurrences(of: "-", with: "/") }
+        let labels = Set(shorts.map { PopoverView.xAxisLabel($0, period: .thisYear) })
+        #expect(labels.count > 1)
+    }
+
     @Test func Cursorのモデル別内訳は今日のコストに一致する() {
         let sum = ScreenshotRenderer.cursorModelCosts.values.reduce(0, +)
         #expect(abs(sum - ScreenshotRenderer.cursorTodayCost) < 0.0001)

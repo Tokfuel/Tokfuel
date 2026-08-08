@@ -274,7 +274,8 @@ public enum ScreenshotRenderer {
 
     /// 期間・通貨・ソース・チャート形式を変えたフィクスチャ Store を作る。
     /// `reportPeriod` は init 前に UserDefaults へ書き、あとから代入して `reloadReport` で
-    /// フィクスチャが消えないようにする。
+    /// フィクスチャが消えないようにする。チャートの日別は選んだ期間の暦窓に合わせる
+    /// （ピッカーだけ「今月」で棒が直近 7 日のまま、といった表記崩れを防ぐ）。
     private static func makeStore(
         period: ReportPeriod = reportPeriod,
         chartStyle: CostChartStyle = .daily,
@@ -296,7 +297,7 @@ public enum ScreenshotRenderer {
         let settings = AppSettings.shared
         settings.displayCurrency = currency
         settings.costSourceMode = costSource
-        return fixtureStore()
+        return fixtureStore(period: period)
     }
 
     /// フィクスチャを積んだポップオーバーを @2x で PNG にする。`updater` の既定は `.shared`
@@ -549,9 +550,12 @@ public enum ScreenshotRenderer {
 
     /// 実データを読まずに描くための固定データ。日付だけは「今日」を基準にずらすので、
     /// ヒーローの金額（今日のコスト）が常に埋まる。
-    public static func fixtureStore() -> UsageStore {
+    ///
+    /// `period` を渡すと日別・`periodDays` をその暦窓に合わせる（期間切替の VRT 用）。
+    /// 省略時は README 用の直近 7 日（`reportDays`）のまま。
+    public static func fixtureStore(period: ReportPeriod? = nil) -> UsageStore {
         let store = UsageStore(costDrivers: [CursorCostDriver(), CodexCostDriver()])
-        store.report = fixtureReport()
+        store.report = fixtureReport(period: period)
         store.budgetSpend = budgetSpend
         // Cursor（二次ソース、TF-0032）。ヒーロー合計と内訳キャプションに出る今日ぶんだけ積む。
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
@@ -626,17 +630,30 @@ public enum ScreenshotRenderer {
     ]
 
     public static func fixtureReport(
+        period: ReportPeriod? = nil,
         topSessions: [RetokReport.TopSession] = [],
         advice: [RetokReport.Advice] = fixtureAdvice
     ) -> RetokReport {
-        var daily: [String: RetokReport.DailyCost] = [:]
-        for (offset, cost) in dailyCosts.reversed().enumerated() {
-            daily[dateString(daysAgo: offset)] = RetokReport.DailyCost(cost: cost,
-                                                                      output: Int(cost * 780))
+        let dailyCostsByDate: [String: Double]
+        let periodDays: Int
+        if let period {
+            let built = periodFixtureDaily(period)
+            dailyCostsByDate = built.daily
+            periodDays = built.days
+        } else {
+            var rolling: [String: Double] = [:]
+            for (offset, cost) in dailyCosts.reversed().enumerated() {
+                rolling[dateString(daysAgo: offset)] = cost
+            }
+            dailyCostsByDate = rolling
+            periodDays = reportDays
         }
-        let total = dailyCosts.reduce(0, +)
+        let daily = dailyCostsByDate.mapValues { cost in
+            RetokReport.DailyCost(cost: cost, output: Int(cost * 780))
+        }
+        let total = dailyCostsByDate.values.reduce(0, +)
         return RetokReport(
-            periodDays: reportDays,
+            periodDays: periodDays,
             filesScanned: 214,
             totals: RetokReport.Totals(cost: total, input: 1_284_000, output: 96_400,
                                        cacheRead: 18_900_000, cacheWrite: 2_150_000,
@@ -655,10 +672,66 @@ public enum ScreenshotRenderer {
         )
     }
 
+    /// 期間ピッカー用の日別フィクスチャ。`fixtureNow` 基準の暦窓に合わせ、
+    /// 今年は月初だけ・今日は 1 本、のように軸ラベルが期間の意味を持つようにする。
+    private static func periodFixtureDaily(
+        _ period: ReportPeriod
+    ) -> (daily: [String: Double], days: Int) {
+        let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+        let window = UsageStore.reportWindow(
+            period: period, weekStart: .monday, endingOn: fixtureNow, timeZone: tokyo)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = tokyo
+        let todayCost = dailyCosts.last ?? 12.34
+
+        switch period {
+        case .today:
+            return ([dateString(daysAgo: 0): todayCost], window.days)
+
+        case .thisWeek:
+            // 暦の今週。棒の本数は曜日で変わるが、金額パターンは `dailyCosts` の末尾から充てる。
+            var daily: [String: Double] = [:]
+            for offset in 0..<window.days {
+                let cost = dailyCosts[dailyCosts.count - 1 - offset]
+                daily[dateString(daysAgo: offset)] = cost
+            }
+            return (daily, window.days)
+
+        case .thisMonth:
+            // 月初〜今日。10 本以下なら軸は全日ラベル（`xAxisShortDates`）。
+            var daily: [String: Double] = [:]
+            for offset in 0..<window.days {
+                let pattern = dailyCosts[offset % dailyCosts.count]
+                daily[dateString(daysAgo: offset)] = offset == 0 ? todayCost : pattern
+            }
+            return (daily, window.days)
+
+        case .thisYear:
+            // 月初だけにコストを置き、「1月」「2月」…と軸が分かれて見えるようにする。
+            // 日別を足すと棒が密集してラベルが潰れるので、年表示では月初に限定する。
+            // ただしヒーローは今日キーを見るので、今日ぶんは必ず残す。
+            var daily: [String: Double] = [:]
+            let year = calendar.component(.year, from: fixtureNow)
+            let monthCosts: [Int: Double] = [
+                1: 42, 2: 55, 3: 48, 4: 71, 5: 63, 6: 88, 7: 95, 8: 110
+            ]
+            for (month, cost) in monthCosts {
+                let components = DateComponents(year: year, month: month, day: 1)
+                guard let date = calendar.date(from: components) else { continue }
+                guard date <= fixtureNow else { continue }
+                daily[UsageStore.dateString(date)] = cost
+            }
+            daily[dateString(daysAgo: 0)] = todayCost
+            return (daily, window.days)
+        }
+    }
+
     /// 集計キーの日付文字列。書式は `UsageStore` に合わせる（ずれるとヒーローが「–」になる）。
     /// 基準は壁時計ではなく `fixtureNow`（VRT / ui-preview のピクセルを日々ずらさない）。
     public static func dateString(daysAgo: Int) -> String {
-        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: fixtureNow) ?? fixtureNow
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let date = calendar.date(byAdding: .day, value: -daysAgo, to: fixtureNow) ?? fixtureNow
         return UsageStore.dateString(date)
     }
 }
