@@ -4,20 +4,32 @@ on:
   pull_request:
     types: [opened, ready_for_review]
 
-permissions:
-  pull-requests: write
+# Team reviewer requests need org team visibility. The default GITHUB_TOKEN
+# cannot resolve closed org teams (HTTP 422), so this job uses a PAT/App
+# token stored as REVIEW_REQUEST_TOKEN (repo or org secret) with at least:
+#   - pull requests: write
+#   - organization members: read  (classic: repo + read:org)
+permissions: {}
 
 jobs:
   request-review:
     runs-on: ubuntu-latest
     # Draft PRs shouldn't page reviewers yet; ready_for_review re-fires this
-    # once the author actually wants eyes on it.
-    if: github.event.pull_request.draft == false
+    # once the author actually wants eyes on it. Fork PRs never see repo
+    # secrets, so skip them rather than failing red.
+    if: >
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Request review from @Tokfuel/core-maintainers
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.REVIEW_REQUEST_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::REVIEW_REQUEST_TOKEN is not set. Add a PAT (or GitHub App token) with pull-requests:write and organization members:read, then re-run this job."
+            exit 1
+          fi
           gh api \
-            "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers" \
+            "repos/${{ github.repository }}/pulls/${PR_NUMBER}/requested_reviewers" \
             -f "team_reviewers[]=core-maintainers"
