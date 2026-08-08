@@ -17,16 +17,18 @@ issue: "#134"
 
 ### 決定事項
 
-アプリ本体・UT/IT・テスト設計・通しテストの置き場を、次の木に固定する。
+アプリ本体・検証物の置き場を、次の木に固定する。
 
-- `App/Tokfuel/` … アプリ本体（旧 `Tokfuel/Sources`）
-- `App/Tests/` … UT / IT（旧 `Tokfuel/Tests`）
-- `App/TestDocs/` … シナリオ設計
-- `App/E2E/` … 通しテスト
+- `App/Tokfuel/` … アプリ本体（旧 `Tokfuel/Sources`）。SPM レイヤー分割後は executable と各 library が `App/Tokfuel*` に並ぶ
+- `App/Tests/` … 検証の親（旧 `Tokfuel/Tests` と TestDocs / E2E の置き場）
+  - `UnitTests/` … ユニットテスト（`swift test` の対象）
+  - `IntegrationTests/` … 結合テスト（後続）
+  - `TestDocs/` … シナリオ設計（実行しない）
+  - `E2E/` … 通しテスト実装（`swift test` 対象外）
 
-Site や SPM モジュール分割（#109）は対象外とする。挙動は変えず、配置と参照の更新だけとする。
+Site は対象外とする。挙動は変えず、配置と参照の更新だけとする。
 
-単に移すだけでなくディレクトリ名も変える。`Sources` / `Tests` のままだと「リポジトリ全体のソース」にも読め、スコープが曖昧になる。アプリ本体だと分かる名前（`App/Tokfuel`）に寄せ、TestDocs / E2E を同じ親の下に置くことで、製品コードの木と Site / Docs / Scripts などの運営物を分ける。
+単に移すだけでなくディレクトリ名も変える。`Sources` / `Tests` のままだと「リポジトリ全体のソース」にも読め、スコープが曖昧になる。アプリ本体だと分かる名前（`App/Tokfuel`）に寄せ、検証物を `App/Tests/` 配下にまとめることで、製品コードの木と Site / Docs / Scripts などの運営物を分ける。
 
 ### 比較・検討内容の要約
 
@@ -65,7 +67,7 @@ Site や SPM モジュール分割（#109）は対象外とする。挙動は変
 |----|----------------|------|
 | 案1 | **現状維持** | `Tokfuel/Sources` + `Tokfuel/Tests` のまま。TestDocs / E2E は都度別場所 |
 | 案2 | **トップレベルに並べる** | ルートに `Tokfuel/`（または `Sources/`）・`Tests/`・`TestDocs/`・`E2E/` を兄弟として置く |
-| 案3 | **`App/` 配下に集約** | `App/Tokfuel` / `App/Tests` / `App/TestDocs` / `App/E2E` |
+| 案3 | **`App/` 配下に集約** | `App/Tokfuel*` と `App/Tests/{UnitTests,IntegrationTests,TestDocs,E2E}` |
 
 ### 比較表
 

@@ -17,16 +17,18 @@ issue: "#134"
 
 ### Decision
 
-Fix the home for the app, unit/integration tests, scenario design, and end-to-end tests as follows:
+Fix the home for the app and verification artifacts as follows:
 
-- `App/Tokfuel/` — app code (formerly `Tokfuel/Sources`)
-- `App/Tests/` — unit / integration tests (formerly `Tokfuel/Tests`)
-- `App/TestDocs/` — scenario design
-- `App/E2E/` — end-to-end tests
+- `App/Tokfuel/` — app code (formerly `Tokfuel/Sources`). After the SPM layer split, the executable and libraries sit under `App/Tokfuel*`
+- `App/Tests/` — parent for verification (formerly `Tokfuel/Tests`, plus TestDocs / E2E)
+  - `UnitTests/` — unit tests (`swift test` target)
+  - `IntegrationTests/` — integration tests (later)
+  - `TestDocs/` — scenario design (not executed)
+  - `E2E/` — end-to-end implementations (not under `swift test`)
 
-Site and SPM module splits (#109) are out of scope. Behavior does not change; only layout and path references change.
+Site is out of scope. Behavior does not change; only layout and path references change.
 
-The directories are renamed, not only moved. Leaving names like `Sources` / `Tests` reads as “the whole repository’s sources,” which blurs scope. Prefer a product-shaped name (`App/Tokfuel`) and keep TestDocs / E2E under the same parent so the product tree stays separate from Site / Docs / Scripts.
+The directories are renamed, not only moved. Leaving names like `Sources` / `Tests` reads as “the whole repository’s sources,” which blurs scope. Prefer a product-shaped name (`App/Tokfuel`) and keep verification under `App/Tests/` so the product tree stays separate from Site / Docs / Scripts.
 
 ### Summary of alternatives
 
@@ -65,7 +67,7 @@ App code lived in `Tokfuel/Sources` and tests in `Tokfuel/Tests`, referenced fro
 |--------|----------|----------|
 | 1 | **Status quo** | Keep `Tokfuel/Sources` + `Tokfuel/Tests`; add TestDocs / E2E elsewhere later |
 | 2 | **Top-level siblings** | Place `Tokfuel/` (or `Sources/`), `Tests/`, `TestDocs/`, and `E2E/` as siblings at the repo root |
-| 3 | **Gather under `App/`** | `App/Tokfuel` / `App/Tests` / `App/TestDocs` / `App/E2E` |
+| 3 | **Gather under `App/`** | `App/Tokfuel*` and `App/Tests/{UnitTests,IntegrationTests,TestDocs,E2E}` |
 
 ### Comparison
 

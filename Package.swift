@@ -112,7 +112,7 @@ let package = Package(
                 "TokfuelStore",
                 "TokfuelUI",
             ],
-            path: "App/Tests",
+            path: "App/Tests/UnitTests",
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
     ]

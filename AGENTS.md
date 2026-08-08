@@ -12,9 +12,9 @@
 同じ Mac に Codex CLI（`~/.codex/sessions/`）や Cursor があれば、そのコストも推定する。ただし
 各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。アプリ関連は
 [`App/`](App/) 配下に置く（実行ファイル [`App/Tokfuel/`](App/Tokfuel/)、SPM レイヤー
-[`App/TokfuelCore/`](App/TokfuelCore/) など、UT / IT
-[`App/Tests/`](App/Tests/)、シナリオ設計 [`App/TestDocs/`](App/TestDocs/)、通しテスト
-[`App/E2E/`](App/E2E/)）。
+[`App/TokfuelCore/`](App/TokfuelCore/) など、検証は [`App/Tests/`](App/Tests/) —
+UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/IntegrationTests/)、
+シナリオ [`TestDocs/`](App/Tests/TestDocs/)、通し [`E2E/`](App/Tests/E2E/)）。
 
 ## グラウンドルール（違反禁止）
 
@@ -57,7 +57,7 @@
 ## 検証ゲート
 
 ```bash
-swift test               # ユニットテスト（App/Tests、Swift Testing）
+swift test               # ユニットテスト（App/Tests/UnitTests、Swift Testing）
 swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
@@ -67,9 +67,9 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 実行時に見える変更は、実アプリをインストールして観察する。
 `bash Scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
 動くと主張せず、組み込みの `verify` スキルで確かめる）。ヘッドレスで検証できるロジック
-（`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests` にあり、新しいロジックには
-そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
-書かない。
+（`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests/UnitTests` にあり、新しい
+ロジックにはそこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に
+触れるテストは書かない。
 
 `PopoverView`、`SettingsView`、`AboutView`、および単独で見せる新規 View（同意ダイアログや
 アラートなど）を追加または変更するときは、同じ PR で
