@@ -10,7 +10,7 @@ Update this table in the same PR when you add an ADR or change its status.
 | ID | Title | Status | Summary | Links |
 |----|-------|--------|---------|-------|
 | 0001 | Keep app-related trees under App/ | Accepted | Fix app, Tests, TestDocs, and E2E under `App/` | [0001-app-tree.md](0001-app-tree/0001-app-tree.md) |
-| 0002 | Split SPM targets by feature with layer dependency rules | Proposed | Leave the single target; cut collision surface and enforce deps | [0002-hybrid-spm-modules.md](0002-hybrid-spm-modules/0002-hybrid-spm-modules.md) |
+| 0002 | Split SPM targets by feature to shrink parallel-PR collisions | Proposed | Leave the single target; split by feature; layers via AI / docs | [0002-feature-spm-modules.md](0002-feature-spm-modules/0002-feature-spm-modules.md) |
 
 ## Status guide
 
