@@ -36,21 +36,22 @@ struct Home: StaticPage {
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 96)
-            .horizontalAlignment(.center)
+            .padding(.horizontal, 32)
+            .horizontalAlignment(.leading)
         }
         .background(Brand.heroGradient)
         .foregroundStyle(.white)
-        .horizontalAlignment(.center)
+        .horizontalAlignment(.leading)
 
         Section {
             Image("images/screenshot.png", description: "Tokfuel's menu-bar popover showing cost, budgets, and per-model breakdown")
                 .resizable()
                 .cornerRadius(16)
                 .frame(maxWidth: 720)
-                .class("d-block", "mx-auto")
         }
         .padding(.vertical, 64)
-        .horizontalAlignment(.center)
+        .padding(.horizontal, 32)
+        .horizontalAlignment(.leading)
 
         Section {
             VStack(spacing: 16) {
@@ -68,7 +69,7 @@ struct Home: StaticPage {
                 """)
                 .frame(maxWidth: 640)
                 .foregroundStyle(.secondary)
-                .horizontalAlignment(.center)
+                .horizontalAlignment(.leading)
 
                 Link("View source and full details on GitHub", target: sourceURL)
                     .linkStyle(.underline(.heavy))
@@ -81,9 +82,10 @@ struct Home: StaticPage {
                 }
             }
             .padding(.vertical, 64)
-            .horizontalAlignment(.center)
+            .padding(.horizontal, 32)
+            .horizontalAlignment(.leading)
         }
-        .horizontalAlignment(.center)
+        .horizontalAlignment(.leading)
 
         Section {
             Text {
@@ -95,6 +97,7 @@ struct Home: StaticPage {
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 32)
-        .horizontalAlignment(.center)
+        .padding(.horizontal, 32)
+        .horizontalAlignment(.leading)
     }
 }

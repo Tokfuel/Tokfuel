@@ -104,16 +104,18 @@ struct DocsLayout: Layout {
 
                     HStack(alignment: .top, spacing: 48) {
                         DocsSidebar(current: page, language: language)
-                            .frame(maxWidth: 220)
+                            .frame(width: 220)
 
                         VStack {
                             content
                         }
                         .frame(maxWidth: 720)
+                        .horizontalAlignment(.leading)
                     }
                 }
                 .padding(.vertical, 24)
-                .horizontalAlignment(.center)
+                .padding(.horizontal, 32)
+                .horizontalAlignment(.leading)
             }
         }
     }
