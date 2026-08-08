@@ -9,7 +9,7 @@ issue: "#134"
 
 # アプリ関連を App/ 配下に集約する
 
-[English](./README.md)
+[English](./0001-app-tree.md)
 
 ## Decision（決定事項）
 

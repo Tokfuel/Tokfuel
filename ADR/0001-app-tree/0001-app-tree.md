@@ -9,7 +9,7 @@ issue: "#134"
 
 # Keep app-related trees under App/
 
-[日本語](./README.ja.md)
+[日本語](./0001-app-tree.ja.md)
 
 ## Decision
 

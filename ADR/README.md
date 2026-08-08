@@ -13,29 +13,32 @@ For the full picture, see [`INDEX.md`](INDEX.md) ([日本語](INDEX.ja.md)).
 
 ## Layout
 
-One decision = one directory. Japanese and English bodies live inside it.
+One decision = one directory. Body filenames match the **directory name (ID-slug)**.
 
 ```text
 ADR/
-  README.md / README.ja.md     # this guide
-  INDEX.md / INDEX.ja.md       # catalog / overview
-  TEMPLATE/                    # scaffold for a new ADR
-    README.md / README.ja.md
-  NNNN-slug/                   # one decision
-    README.md / README.ja.md
+  README.md / README.ja.md           # this guide
+  INDEX.md / INDEX.ja.md             # catalog / overview
+  TEMPLATE/                          # scaffold for a new ADR
+    NNNN-slug.md / NNNN-slug.ja.md
+  NNNN-slug/                         # one decision
+    NNNN-slug.md / NNNN-slug.ja.md
 ```
+
+Example: `ADR/0001-app-tree/0001-app-tree.md` and `0001-app-tree.ja.md`
 
 | Path | Language |
 |------|----------|
-| `NNNN-slug/README.md` | English |
-| `NNNN-slug/README.ja.md` | Japanese |
+| `NNNN-slug/NNNN-slug.md` | English |
+| `NNNN-slug/NNNN-slug.ja.md` | Japanese |
 
-Both are required. If they drift, **the Japanese `README.ja.md` is canonical**; update the
+Both are required. If they drift, **the Japanese `.ja.md` is canonical**; update the
 English file to match. Keep `status` / `proposed` / `accepted` / `issue` identical in both
 front matters.
 
-Numbers increment by one from the highest existing id (zero-padded to 4 digits). A decision
-is incomplete until both language files exist in that directory.
+Numbers increment by one from the highest existing id (zero-padded to 4 digits). Do not
+count `TEMPLATE/`. A decision is incomplete until both language files exist in that
+directory.
 
 ## Status (`status`)
 
@@ -50,7 +53,7 @@ is incomplete until both language files exist in that directory.
 
 ## Writing
 
-1. Copy [`TEMPLATE/`](TEMPLATE/) to `NNNN-slug/`
+1. Copy [`TEMPLATE/`](TEMPLATE/) to `NNNN-slug/`, then rename the scaffold `NNNN-slug.*` files
 2. Title is a short decision sentence (verb-led)
 3. Write Decision → Context → Consideration → Consequences → References
 4. Consideration must include a **status-quo** option

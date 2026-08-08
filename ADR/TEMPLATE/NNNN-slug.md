@@ -9,7 +9,7 @@ issue:
 
 # Title (short verb-led decision)
 
-[日本語](./README.ja.md)
+[日本語](./NNNN-slug.ja.md)
 
 ## Decision
 
