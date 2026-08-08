@@ -6,7 +6,7 @@ on:
 
 # Team reviewer requests need org team visibility. The default GITHUB_TOKEN
 # cannot resolve closed org teams (HTTP 422), so this job uses a PAT/App
-# token stored as REVIEW_REQUEST_TOKEN (repo or org secret) with at least:
+# token stored as TOKFUEL_CORE_MAINTEINERS_PAT (repo or org secret) with at least:
 #   - pull requests: write
 #   - organization members: read  (classic: repo + read:org)
 permissions: {}
@@ -23,11 +23,11 @@ jobs:
     steps:
       - name: Request review from @Tokfuel/core-maintainers
         env:
-          GH_TOKEN: ${{ secrets.REVIEW_REQUEST_TOKEN }}
+          GH_TOKEN: ${{ secrets.TOKFUEL_CORE_MAINTEINERS_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "::error::REVIEW_REQUEST_TOKEN is not set. Add a PAT (or GitHub App token) with pull-requests:write and organization members:read, then re-run this job."
+            echo "::error::TOKFUEL_CORE_MAINTEINERS_PAT is not set. Add a PAT (or GitHub App token) with pull-requests:write and organization members:read, then re-run this job."
             exit 1
           fi
           gh api \
