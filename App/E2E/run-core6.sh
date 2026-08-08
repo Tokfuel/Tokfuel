@@ -74,15 +74,15 @@ done
 sleep "$SETTLE"
 
 # 失敗時に「そのときの様子」を残す。
-# screencapture -v は使わず、0.2 秒ごとの PNG を ffmpeg で failure.mov / .gif にする。
+# screencapture -v は使わず、0.1 秒ごとの PNG を ffmpeg で failure.mov / .gif にする。
 # 静止画でも Screen Recording の Allow が出ることがあるので、dismiss を並行起動する。
 VIDEO_OUT="$OUT_DIR/failure.mov"
 GIF_OUT="$OUT_DIR/failure.gif"
 COMPARE_OUT="$OUT_DIR/compare.png"
 FRAMES_DIR="$OUT_DIR/frames"
-FRAME_INTERVAL="0.2"
-FRAME_FPS="5"
-FRAME_MAX="150"
+FRAME_INTERVAL="0.1"
+FRAME_FPS="10"
+FRAME_MAX="300"
 rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
 rm -rf "$FRAMES_DIR"
 mkdir -p "$FRAMES_DIR"
@@ -143,7 +143,7 @@ if [[ ${#frames[@]} -gt 0 ]]; then
   cp "${frames[$mid]}" "$OUT_DIR/timeline-mid.png"
   cp "${frames[$(( ${#frames[@]} - 1 ))]}" "$OUT_DIR/timeline-end.png"
 
-  # PNG 連番から動画 / GIF を合成（再生も 0.2 秒/コマ = 5 fps）。
+  # PNG 連番から動画 / GIF を合成（撮影・再生とも 0.1 秒/コマ = 10 fps）。
   if command -v ffmpeg >/dev/null 2>&1; then
     ffmpeg -y -hide_banner -loglevel error \
       -framerate "$FRAME_FPS" \
@@ -152,13 +152,14 @@ if [[ ${#frames[@]} -gt 0 ]]; then
       "$VIDEO_OUT" \
       && echo "synthesized failure.mov from ${#frames[@]} frames @ ${FRAME_FPS}fps" \
       || echo "warning: ffmpeg failed to synthesize failure.mov" >&2
+    # 入力 framerate と出力 delay を揃え、再生速度を変えない。
     ffmpeg -y -hide_banner -loglevel error \
       -framerate "$FRAME_FPS" \
       -pattern_type glob -i "$FRAMES_DIR/frame-*.png" \
-      -vf "scale=720:-1:flags=lanczos,fps=${FRAME_FPS},split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
+      -vf "scale=720:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
       -loop 0 \
       "$GIF_OUT" \
-      && echo "synthesized failure.gif from ${#frames[@]} frames @ ${FRAME_FPS}fps" \
+      && echo "synthesized failure.gif from ${#frames[@]} frames @ ${FRAME_FPS}fps (0.1s/frame)" \
       || echo "warning: ffmpeg failed to synthesize failure.gif" >&2
   else
     echo "warning: ffmpeg not found; skip failure.mov / failure.gif" >&2

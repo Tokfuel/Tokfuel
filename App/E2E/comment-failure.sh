@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E2E 失敗時に証拠（スクショ・動画・正常画面）を orphan ブランチへ載せ、PR コメントする。
+# E2E 失敗時に証拠（スクショ・挙動 GIF・正常画面）を orphan ブランチへ載せ、PR コメントする。
 # ui-preview.yml と同じ手法（raw.githubusercontent.com 埋め込み）。
 #
 # usage: bash App/E2E/comment-failure.sh
@@ -96,15 +96,6 @@ coverage = (
     f"- 未検証 **{skip_pct}%**（{skipped}/{total or 0}）"
 )
 emit("COVERAGE", coverage)
-
-rows = []
-for s in scenarios:
-    sid = s.get("id") or "unknown"
-    mark = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(s.get("status"), "•")
-    rows.append(f"{mark} {linked_id(sid)} ({s.get('status')})")
-if not rows:
-    rows = [f"❌ {linked_id(failed) if failed != '（不明）' else '`unknown`'}"]
-emit("SCENARIO_LIST", "\n".join(rows))
 PY
 )"
 
@@ -157,15 +148,12 @@ raw() {
 FAILURE_IMG="${PREFIX}-failure.png"
 FAILURE_MOV="${PREFIX}-failure.mov"
 FAILURE_GIF="${PREFIX}-failure.gif"
-COMPARE_IMG="${PREFIX}-compare.png"
 HAS_FAIL_IMG=0
 HAS_FAIL_MOV=0
 HAS_FAIL_GIF=0
-HAS_COMPARE=0
 [[ -f "$FAILURE_IMG" ]] && HAS_FAIL_IMG=1
 [[ -f "$FAILURE_MOV" ]] && HAS_FAIL_MOV=1
 [[ -f "$FAILURE_GIF" ]] && HAS_FAIL_GIF=1
-[[ -f "$COMPARE_IMG" ]] && HAS_COMPARE=1
 
 PRIMARY_TITLE="$PRIMARY_EXPECTED"
 case "$PRIMARY_EXPECTED" in
@@ -199,26 +187,9 @@ BODY=$(printf '%s\n' \
   "" \
   "\`${BASELINE}\`" \
   "" \
-  "#### シナリオ結果" \
-  "" \
-  "${SCENARIO_LIST}" \
-  "" \
   "#### 失敗 vs 成功（比較）" \
-  "" \
-  "左が <strong><font color=\"#1a7f37\">成功（期待・フィクスチャ）</font></strong>、右が <strong><font color=\"#c41e3a\">失敗（実際の画面）</font></strong> です。" \
   ""
 )
-
-if [[ "$HAS_COMPARE" -eq 1 ]]; then
-  URL="$(raw "$COMPARE_IMG")"
-  BODY="${BODY}"$'\n'"<table><tr>"
-  BODY="${BODY}<td width=\"50%\" valign=\"top\"><p><strong><font color=\"#1a7f37\">🟢 成功（期待）</font></strong></p></td>"
-  BODY="${BODY}<td width=\"50%\" valign=\"top\"><p><strong><font color=\"#c41e3a\">🔴 失敗（実際）</font></strong></p></td>"
-  BODY="${BODY}</tr></table>"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"compare expected vs failure\" width=\"720\"></a></p>"$'\n'
-else
-  BODY="${BODY}"$'\n'"_比較画像を生成できませんでした。個別の画面を下に載せます。_"$'\n'
-fi
 
 BODY="${BODY}"$'\n'"<table><tr>"$'\n'
 # 成功列
@@ -244,15 +215,15 @@ fi
 BODY="${BODY}</td>"
 BODY="${BODY}"$'\n'"</tr></table>"$'\n'
 
-BODY="${BODY}"$'\n'"#### 失敗時の動画"$'\n'
+BODY="${BODY}"$'\n'"#### 失敗時の挙動GIF"$'\n'
 if [[ "$HAS_FAIL_GIF" -eq 1 ]]; then
   URL="$(raw "$FAILURE_GIF")"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure animation\" width=\"720\"></a></p>"$'\n'
+  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure behavior GIF\" width=\"720\"></a></p>"$'\n'
 elif [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
   URL="$(raw "$FAILURE_MOV")"
   BODY="${BODY}"$'\n'"<video src=\"${URL}\" width=\"720\" controls muted playsinline></video>"$'\n'
 else
-  BODY="${BODY}"$'\n'"_動画を取得できませんでした。_"$'\n'
+  BODY="${BODY}"$'\n'"_挙動 GIF を取得できませんでした。_"$'\n'
 fi
 
 if [[ -n "$RUN_URL" ]]; then

@@ -47,14 +47,14 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 
 - どのシナリオで落ちたか
 - なぜ落ちたか（エラーと日本語の説明）
-- 失敗時のスクリーンショットと画面録画（`.mov`）
+- 失敗時のスクリーンショットと挙動 GIF（0.1 秒/コマ）
 - 正常な画面（`ScreenshotRenderer` / `--ui-preview` のフィクスチャ）
 
-画像・動画は `e2e-failure-images` orphan ブランチ経由で `raw.githubusercontent.com` に載せます（ui-preview と同じ方式）。
+画像・GIF は `e2e-failure-images` orphan ブランチ経由で `raw.githubusercontent.com` に載せます（ui-preview と同じ方式）。
 
 ### ローカルの Accessibility 許可
 
-初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与し、Screen Recording の Allow は `dismiss-tcc-prompt.sh` が押します。失敗時は 0.2 秒ごとの PNG を `ffmpeg` で `failure.mov` / `failure.gif` にし、PR コメントには GIF をインライン表示します（`.mov` はリンク）。あわせて期待画面と失敗画面の赤／緑比較画像も載せます。
+初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与し、Screen Recording の Allow は `dismiss-tcc-prompt.sh` が押します。失敗時は 0.1 秒ごとの PNG を `ffmpeg` で `failure.mov` / `failure.gif` にし（再生も 0.1 秒/コマのまま）、PR コメントには挙動 GIF をインライン表示します。あわせて期待画面と失敗画面の並び比較も載せます。
 
 ### CI
 

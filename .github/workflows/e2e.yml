@@ -1,7 +1,7 @@
 name: E2E メニューバー
 
 # TestDocs コアシナリオを、実際のメニューバー操作で通す（macos-15）。
-# 失敗時は証拠（画面・動画・正常フィクスチャ）を orphan ブランチへ載せ、PR コメントする。
+# 失敗時は証拠（画面・挙動 GIF・正常フィクスチャ）を orphan ブランチへ載せ、PR コメントする。
 # `e2e 🧪` ラベルを付けると再実行する（ui-preview 📸 と同型。起動後にラベルは外す）。
 on:
   push:
@@ -110,7 +110,7 @@ jobs:
           swift build --product Tokfuel
           swift build --product TokfuelE2E
 
-      # 失敗時の動画は取得済み PNG フレームを ffmpeg でつなぐ。
+      # 失敗時の挙動 GIF は 0.1 秒ごとの PNG を ffmpeg でつなぐ（再生も 0.1 秒/コマ）。
       - name: Install ffmpeg
         run: brew install ffmpeg
 
