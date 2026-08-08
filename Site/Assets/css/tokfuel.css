@@ -1,0 +1,564 @@
+/* Tokfuel site — see Site/DESIGN.ja.md / DESIGN.md */
+
+:root {
+  --tf-blue: #0071e3;
+  --tf-blue-hover: #0077ed;
+  --tf-ink: #1d1d1f;
+  --tf-secondary: #6e6e73;
+  --tf-hairline: #d2d2d7;
+  --tf-page: #ffffff;
+  --tf-section: #f5f5f7;
+  --tf-nav: #000000;
+  --tf-measure: 720px;
+  --tf-measure-wide: 980px;
+  --tf-pad: 32px;
+}
+
+/* Ignite themes use tokfuel-light / tokfuel-dark, not Bootstrap's "dark". */
+[data-bs-theme="tokfuel-light"] {
+  --tf-blue: #0071e3;
+  --tf-blue-hover: #0077ed;
+  --tf-ink: #1d1d1f;
+  --tf-secondary: #6e6e73;
+  --tf-hairline: #d2d2d7;
+  --tf-page: #ffffff;
+  --tf-section: #f5f5f7;
+  color-scheme: light;
+}
+
+[data-bs-theme="tokfuel-dark"] {
+  --tf-blue: #2997ff;
+  --tf-blue-hover: #64b5ff;
+  --tf-ink: #f5f5f7;
+  --tf-secondary: #a1a1a6;
+  --tf-hairline: #424245;
+  --tf-page: #010101;
+  --tf-section: #1d1d1f;
+  /* Ignite skips pure black as Color.default — force body surface here too. */
+  --bs-body-bg: #010101 !important;
+  --bs-body-color: #f5f5f7 !important;
+  --bs-secondary-bg: #1d1d1f !important;
+  --bs-border-color: #424245 !important;
+  color-scheme: dark;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--bs-body-color, var(--tf-ink));
+  background-color: var(--bs-body-bg, var(--tf-page));
+  letter-spacing: -0.01em;
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6,
+.display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+  letter-spacing: -0.022em;
+  font-weight: 700;
+  color: var(--bs-body-color, var(--tf-ink));
+}
+
+p, li {
+  line-height: 1.47;
+}
+
+.text-body-secondary {
+  color: var(--tf-secondary) !important;
+}
+
+a {
+  color: var(--tf-blue);
+}
+
+a:hover {
+  color: var(--tf-blue-hover);
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--tf-blue);
+  --bs-btn-border-color: var(--tf-blue);
+  --bs-btn-hover-bg: var(--tf-blue-hover);
+  --bs-btn-hover-border-color: var(--tf-blue-hover);
+  --bs-btn-active-bg: var(--tf-blue-hover);
+  --bs-btn-active-border-color: var(--tf-blue-hover);
+  border-radius: 12px;
+  font-weight: 500;
+  padding: 0.65rem 1.25rem;
+  box-shadow: none;
+}
+
+/* Sticky Bootstrap navbar (docs-site default). */
+.tf-chrome.navbar,
+.navbar.tf-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 0;
+  background-color: var(--tf-nav) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tf-chrome .navbar-brand,
+.tf-chrome .nav-link,
+.tf-chrome a {
+  color: #f5f5f7 !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tf-chrome .nav-link:hover,
+.tf-chrome .navbar-brand:hover,
+.tf-chrome a:hover {
+  color: #ffffff !important;
+  opacity: 0.85;
+}
+
+.tf-chrome .nav-link.active {
+  color: #ffffff !important;
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.tf-chrome .tf-star-icon {
+  margin-left: 0.45rem;
+  margin-right: 0.15rem;
+  opacity: 0.85;
+}
+
+/* GitHub: label on top, stars + forks underneath (Material-style source facts). */
+.tf-chrome a[href*="github.com/Tokfuel/Tokfuel"] {
+  display: inline-flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.15;
+  white-space: normal !important;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+}
+
+.tf-chrome .tf-github-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.tf-chrome .tf-github-facts {
+  display: flex;
+  flex-direction: row;
+  gap: 0.55rem;
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.tf-chrome .tf-github-fact {
+  white-space: nowrap;
+}
+
+.tf-chrome .tf-star-count,
+.tf-chrome .tf-fork-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.tf-chrome .tf-nav-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.5rem;
+  line-height: 1;
+}
+
+.tf-chrome .tf-nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: block;
+}
+
+/* Inline search field in the sticky navbar. */
+.tf-chrome .tf-nav-search,
+.tf-chrome form.d-flex {
+  align-items: center;
+  margin: 0 0.25rem;
+}
+
+.tf-chrome .tf-nav-search .form-control,
+.tf-chrome form .form-control {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f5f5f7;
+  min-width: 9.5rem;
+  max-width: 14rem;
+  height: 2rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.tf-chrome .tf-nav-search .form-control::placeholder,
+.tf-chrome form .form-control::placeholder {
+  color: #a1a1a6;
+}
+
+.tf-chrome .tf-nav-search .form-control:focus,
+.tf-chrome form .form-control:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.tf-chrome .container-fluid {
+  padding-left: var(--tf-pad);
+  padding-right: var(--tf-pad);
+  max-width: none;
+}
+
+/* Dropdown results for the nav search field. */
+.tf-search-panel {
+  position: fixed;
+  z-index: 1040;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--bs-body-bg, var(--tf-page));
+  color: var(--bs-body-color, var(--tf-ink));
+  border: 1px solid var(--bs-border-color, var(--tf-hairline));
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  max-height: min(70vh, 28rem);
+  overflow: auto;
+}
+
+.tf-search-panel[hidden] {
+  display: none !important;
+}
+
+.tf-search-empty {
+  margin: 0.35rem 0;
+  font-size: 0.875rem;
+  color: var(--tf-secondary);
+}
+
+.tf-search-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tf-search-list li + li {
+  border-top: 1px solid var(--bs-border-color, var(--tf-hairline));
+}
+
+.tf-search-list a {
+  display: block;
+  padding: 0.65rem 0.15rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tf-search-list a:hover {
+  color: var(--tf-blue);
+}
+
+.tf-search-title {
+  display: block;
+  font-weight: 600;
+}
+
+.tf-search-desc {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.875rem;
+  color: var(--tf-secondary);
+}
+
+/* Legacy navbar hooks (if any page still emits Bootstrap nav). */
+header,
+.navbar {
+  background-color: var(--tf-nav) !important;
+  width: 100%;
+}
+
+header {
+  margin: 0;
+  padding: 0;
+}
+
+/* Docs: keep article column left-aligned */
+.ig-main-content,
+.ig-main-content .vstack,
+[data-budoux-root] {
+  align-items: flex-start !important;
+  text-align: start !important;
+}
+
+.ig-main-content > *,
+[data-budoux-root] > *,
+[data-budoux-root] .vstack > * {
+  align-self: flex-start !important;
+  text-align: start !important;
+  max-width: 100%;
+}
+
+pre, code {
+  font-family: "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  background: var(--bs-secondary-bg, var(--tf-section));
+  border: 1px solid var(--bs-border-color, var(--tf-hairline));
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  width: 100%;
+  max-width: var(--tf-measure);
+  color: var(--bs-body-color, var(--tf-ink));
+}
+
+.tf-hero {
+  background: #010101;
+  color: #f5f5f7;
+}
+
+.tf-hero a,
+.tf-hero .btn-primary {
+  color: #fff;
+}
+
+.tf-section-muted {
+  background: var(--bs-secondary-bg, var(--tf-section));
+}
+
+.tf-docs-shell {
+  max-width: 1100px;
+  width: 100%;
+  margin-inline: 0; /* left-aligned, not centered */
+}
+
+.tf-measure {
+  max-width: var(--tf-measure);
+}
+
+.tf-measure-wide {
+  max-width: var(--tf-measure-wide);
+}
+
+/* Sidebar TOC: fixed metrics so tapping a page doesn't shift the list. */
+.tf-docs-sidebar {
+  position: sticky;
+  /* Clear the sticky top chrome (~52px) plus a little air. */
+  top: 72px;
+  align-self: flex-start;
+  flex: 0 0 220px;
+  width: 220px;
+  max-width: 220px;
+}
+
+.tf-docs-sidebar ul,
+.tf-docs-sidebar ol,
+.tf-docs-nav {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.tf-docs-sidebar li,
+.tf-docs-nav .list-group-item {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0.4rem 0 !important;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.tf-docs-sidebar a,
+.tf-docs-nav a {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-decoration: none;
+  /* Same weight for current and peers so glyph metrics (and TOC position) stay put. */
+  font-weight: 600;
+  color: var(--tf-blue);
+}
+
+.tf-docs-sidebar a:hover,
+.tf-docs-nav a:hover {
+  text-decoration: underline;
+}
+
+.tf-docs-sidebar a.is-current,
+.tf-docs-nav a.is-current {
+  color: var(--tf-ink) !important;
+  text-decoration: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.tf-docs-sidebar p {
+  margin: 0;
+}
+
+/* Coverage chart on Testing pages. */
+.tf-cov {
+  width: 100%;
+  max-width: var(--tf-measure);
+  margin: 0.5rem 0 1.5rem;
+}
+
+.tf-cov-summary {
+  margin: 0.75rem 0 1rem;
+}
+
+.tf-cov-chart {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.tf-cov-row {
+  width: 100%;
+}
+
+.tf-cov-name {
+  min-width: 9.5rem;
+}
+
+.tf-cov-meta {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tf-cov-track {
+  width: 100%;
+  height: 8px;
+  margin-top: 0.3rem;
+  background: var(--bs-secondary-bg, var(--tf-section));
+  border: 1px solid var(--bs-border-color, var(--tf-hairline));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tf-cov-fill {
+  height: 100%;
+  background: var(--tf-blue);
+  border-radius: 999px;
+}
+
+/* ADR accordion toggles — flush, left-aligned, no heavy cards. */
+.tf-adr .tf-adr-status {
+  margin-top: -0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.tf-adr .tf-adr-accordion.accordion,
+.tf-adr .accordion {
+  width: 100%;
+  max-width: var(--tf-measure);
+  --bs-accordion-btn-padding-x: 0;
+  --bs-accordion-btn-padding-y: 0.75rem;
+  --bs-accordion-body-padding-x: 0;
+  --bs-accordion-body-padding-y: 0.75rem;
+  --bs-accordion-border-color: var(--bs-border-color, var(--tf-hairline));
+  --bs-accordion-btn-color: var(--bs-body-color, var(--tf-ink));
+  --bs-accordion-active-color: var(--bs-body-color, var(--tf-ink));
+  --bs-accordion-btn-bg: transparent;
+  --bs-accordion-active-bg: transparent;
+  --bs-accordion-bg: transparent;
+}
+
+.tf-adr .accordion-button {
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  box-shadow: none !important;
+}
+
+.tf-adr .accordion-button:not(.collapsed) {
+  box-shadow: none !important;
+}
+
+.tf-adr .accordion-item {
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+}
+
+.tf-adr .accordion-body {
+  text-align: start;
+}
+
+.tf-adr .accordion-body .vstack,
+.tf-adr .accordion-body {
+  align-items: flex-start !important;
+}
+
+/* Architecture diagram — inline SVG; light surface for dark theme. */
+.tf-arch-diagram {
+  display: block;
+  width: 100%;
+  max-width: var(--tf-measure);
+  margin: 0.5rem 0 1.25rem;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid var(--bs-border-color, var(--tf-hairline));
+  border-radius: 12px;
+  overflow: auto;
+}
+
+.tf-arch-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 720px;
+}
+
+[data-bs-theme="tokfuel-dark"] .tf-arch-diagram {
+  border-color: #424245;
+}
+
+/* Home: compact docs index under How it works. */
+.tf-home-docs {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  max-width: 420px;
+}
+
+.tf-home-docs li,
+.tf-home-docs .list-group-item {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0.35rem 0 !important;
+  margin: 0;
+}
+
+.tf-home-docs a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tf-home-docs a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 576px) {
+  :root {
+    --tf-pad: 20px;
+  }
+}
