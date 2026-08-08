@@ -1,16 +1,16 @@
 name: Release
 
 # 手動起動はしない（bump は bump-version.yml）。起動は次の 2 通り:
-# - main への push で VERSION が変わったとき（bump PR のマージ。推奨フロー）
+# - main への push で Info.plist が変わったとき（bump PR のマージ。推奨フロー）
 # - v* タグを手で push したとき（従来互換・macOS）
-# VERSION 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
+# Info.plist 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
 #
-# 版の正本はリポジトリ直下の VERSION。いま出荷ジョブがあるのは macOS のみ。
-# windows などを足すときは paths と専用ジョブを追加し、版ファイルの分割は別途決める。
+# macOS の版の正本は Info.plist の CFBundleShortVersionString。
+# GitHub Release / タグは出荷の結果。いま出荷ジョブがあるのは macOS のみ。
 on:
   push:
     branches: [main]
-    paths: [VERSION]
+    paths: [Info.plist]
     tags: ["v*"]
 
 permissions:
@@ -44,10 +44,16 @@ jobs:
             esac
             SKIP=false
           elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
-            BARE="$(tr -d '[:space:]' < VERSION)"
+            BARE="$(python3 - <<'PY'
+import plistlib
+with open("Info.plist", "rb") as f:
+    data = plistlib.load(f)
+print(data["CFBundleShortVersionString"])
+PY
+)"
             case "$BARE" in
               [0-9]*.[0-9]*.[0-9]*) ;;
-              *) echo "VERSION must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
+              *) echo "Info.plist CFBundleShortVersionString must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
             esac
             VERSION="v${BARE}"
             if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
@@ -74,7 +80,7 @@ jobs:
             echo "- Skip: \`${SKIP}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # VERSION 起点のときだけ、いまの main 先頭にタグを打つ。
+      # Info.plist 起点のときだけ、いまの main 先頭にタグを打つ。
       # （GITHUB_TOKEN によるタグ push は他のワークフローを起動しないので二重実行にならない）
       - name: Tag main
         if: steps.version.outputs.skip != 'true' && github.ref == 'refs/heads/main'

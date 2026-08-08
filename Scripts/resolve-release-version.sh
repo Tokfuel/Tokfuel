@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# ルートの VERSION を正本に、次版を決める。
+# プラットフォーム別の版正本（macOS は Info.plist）から次版を決める。
 # 使い方:
 #   bash Scripts/resolve-release-version.sh <platform> <patch|minor|major|custom> [version]
 #   version は bump=custom のとき必須。先頭の v はあってもなくてもよい。
 #
-# 版の正本はリポジトリ直下の VERSION（単一ファイル）。いま有効な platform は macos のみ。
+# 版の正本:
+#   macos → Info.plist の CFBundleShortVersionString
+# GitHub Release / タグは出荷の結果であり、版の正本にはしない。
+#
 # タグ名:
 #   macos   → vX.Y.Z          （UpdateChecker の releases/latest 互換）
 #   windows → windows-vX.Y.Z  （将来。macOS の latest を押しのけない）
@@ -17,7 +20,6 @@ BUMP="${2:?usage: resolve-release-version.sh <platform> <patch|minor|major|custo
 RAW_VERSION="${3:-}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION_FILE="$ROOT/VERSION"
 
 # 出荷対象として認められるプラットフォーム。新しい OS を足すときはここに追記する。
 known_platform() {
@@ -25,6 +27,37 @@ known_platform() {
     macos) return 0 ;;
     # windows) return 0 ;;
     *) return 1 ;;
+  esac
+}
+
+version_file_for() {
+  case "$1" in
+    macos) echo "Info.plist" ;;
+    *)
+      echo "no version file for platform: $1" >&2
+      exit 1
+      ;;
+  esac
+}
+
+read_current() {
+  local platform="$1" file="$2"
+  case "$platform" in
+    macos)
+      python3 - "$ROOT/$file" <<'PY'
+import plistlib
+import sys
+
+path = sys.argv[1]
+with open(path, "rb") as f:
+    data = plistlib.load(f)
+print(data["CFBundleShortVersionString"])
+PY
+      ;;
+    *)
+      echo "cannot read version for platform: $platform" >&2
+      exit 1
+      ;;
   esac
 }
 
@@ -61,12 +94,13 @@ if ! known_platform "$PLATFORM"; then
   exit 1
 fi
 
-if [ ! -f "$VERSION_FILE" ]; then
-  echo "version file not found: VERSION" >&2
+VERSION_FILE="$(version_file_for "$PLATFORM")"
+if [ ! -f "$ROOT/$VERSION_FILE" ]; then
+  echo "version file not found: $VERSION_FILE" >&2
   exit 1
 fi
 
-CURRENT="$(normalize_bare "$(tr -d '[:space:]' <"$VERSION_FILE")")"
+CURRENT="$(normalize_bare "$(read_current "$PLATFORM" "$VERSION_FILE")")"
 NEXT=""
 
 case "$BUMP" in
@@ -95,7 +129,7 @@ case "$BUMP" in
     fi
     NEXT="$(normalize_bare "$RAW_VERSION")"
     if [ "$NEXT" = "$CURRENT" ]; then
-      echo "custom version equals current VERSION ($CURRENT)" >&2
+      echo "custom version equals current $VERSION_FILE ($CURRENT)" >&2
       exit 1
     fi
     ;;
@@ -116,7 +150,7 @@ summary() {
   echo "## Version bump"
   echo ""
   echo "- Platform: \`$PLATFORM\`"
-  echo "- Current: \`$CURRENT\` (from \`VERSION\`)"
+  echo "- Current: \`$CURRENT\` (from \`$VERSION_FILE\`)"
   echo "- Bump: \`$BUMP\`"
   if [ "$BUMP" = "custom" ] && [ -n "$RAW_VERSION" ]; then
     echo "- Input: \`$RAW_VERSION\`"
@@ -135,12 +169,12 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "version=$NEXT"
     echo "tag=$TAG"
     echo "current=$CURRENT"
-    echo "version_file=VERSION"
+    echo "version_file=$VERSION_FILE"
   } >>"$GITHUB_OUTPUT"
 else
   echo "platform=$PLATFORM"
   echo "version=$NEXT"
   echo "tag=$TAG"
   echo "current=$CURRENT"
-  echo "version_file=VERSION"
+  echo "version_file=$VERSION_FILE"
 fi
