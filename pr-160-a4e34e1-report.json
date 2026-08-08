@@ -11,153 +11,151 @@
     "tokfuel.settings"
   ],
   "completedScenarios" : [
-    "MenuBar-01-open-home",
-    "MenuBar-02-close-outside"
+    "Cost-01-chart-style",
+    "Cost-02-period-switch",
+    "Cost-03-model-list",
+    "Cost-04-loading-parse",
+    "Cost-05-stale-while-revalidate",
+    "Cost-06-retok-error",
+    "Cost-07-chart-multi-source-legend",
+    "Cost-08-chart-caption-total",
+    "Cost-09-chart-caption-prompt-unit",
+    "Cost-10-cumulative-budget-line",
+    "Cost-11-cumulative-month-projection",
+    "Cost-12-jpy-formatting",
+    "Cost-13-side-by-side-caption",
+    "Cost-14-cursor-only-label",
+    "Cost-15-unavailable-hero-dash"
   ],
-  "error" : "timed out: tokfuel.home (present in last successful recording; UI may have changed)",
+  "error" : "not found: picker モデル別の出し方",
   "expectedScreens" : [
     "popover"
   ],
-  "explanation" : "MenuBar-03-toggle-reopen で、前回成功時に存在した accessibilityIdentifier が見つかりませんでした。 対象コントロールの identifier \/ ラベルが変わったか、ホーム UI が開いていない可能性があります。",
-  "failedScenario" : "MenuBar-03-toggle-reopen",
+  "explanation" : "Cost-16-model-breakdown-combined で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
+  "failedScenario" : "Cost-16-model-breakdown-combined",
   "ok" : false,
   "scenarios" : [
     {
-      "elapsedMs" : 1876,
-      "id" : "MenuBar-01-open-home",
+      "elapsedMs" : 2901,
+      "id" : "Cost-01-chart-style",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 982,
-      "id" : "MenuBar-02-close-outside",
+      "elapsedMs" : 809,
+      "id" : "Cost-02-period-switch",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 11793,
-      "error" : "timed out: tokfuel.home (present in last successful recording; UI may have changed)",
-      "id" : "MenuBar-03-toggle-reopen",
+      "elapsedMs" : 27,
+      "id" : "Cost-03-model-list",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 40,
+      "id" : "Cost-04-loading-parse",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 47,
+      "id" : "Cost-05-stale-while-revalidate",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 36,
+      "id" : "Cost-06-retok-error",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 610,
+      "id" : "Cost-07-chart-multi-source-legend",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 50,
+      "id" : "Cost-08-chart-caption-total",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 60,
+      "id" : "Cost-09-chart-caption-prompt-unit",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1790,
+      "id" : "Cost-10-cumulative-budget-line",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1996,
+      "id" : "Cost-11-cumulative-month-projection",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 10530,
+      "id" : "Cost-12-jpy-formatting",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2701,
+      "id" : "Cost-13-side-by-side-caption",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 7558,
+      "id" : "Cost-14-cursor-only-label",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1327,
+      "id" : "Cost-15-unavailable-hero-dash",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2004,
+      "error" : "not found: picker モデル別の出し方",
+      "id" : "Cost-16-model-breakdown-combined",
       "status" : "failed"
     },
     {
-      "id" : "MenuBar-04-hero-today-cost",
+      "id" : "Cost-17-model-breakdown-separated",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-05-footer-last-updated",
+      "id" : "Cost-18-top-sessions",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-06-footer-reload",
+      "id" : "Cost-19-session-estimated-badge",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-07-footer-quit",
+      "id" : "Cost-20-advice-section",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-08-open-about",
+      "id" : "Cost-21-advice-expand",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-09-status-amount-today",
+      "id" : "Cost-22-advice-copy-prompt",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-10-status-amount-month",
+      "id" : "Cost-23-advice-source-badge",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-11-status-amount-both",
+      "id" : "Cost-24-csv-export-daily",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-12-status-prompts",
+      "id" : "Cost-25-csv-export-monthly",
       "status" : "skipped"
     },
     {
-      "id" : "MenuBar-13-status-percent",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-14-status-ring",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-15-status-ring-and-value",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-16-status-icon-only",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-17-gauge-shape-ring",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-18-gauge-shape-tank",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-19-ring-with-icon",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-20-percent-basis-budget",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-21-percent-basis-average",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-22-shows-remaining",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-23-side-by-side-title",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-24-unavailable-dash",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-25-budget-icon-warning",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-26-budget-icon-over",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-27-tooltip",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-28-adaptive-glow",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-29-update-button-offer",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-30-update-skip-version",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-31-update-release-page",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-32-update-retry",
-      "status" : "skipped"
-    },
-    {
-      "id" : "MenuBar-33-open-on-launch-reload",
+      "id" : "Cost-26-csv-export-disabled",
       "status" : "skipped"
     }
   ],
-  "updatedAt" : "2026-08-08T15:49:21Z"
+  "updatedAt" : "2026-08-08T15:50:14Z"
 }
