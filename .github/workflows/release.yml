@@ -44,13 +44,9 @@ jobs:
             esac
             SKIP=false
           elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
-            BARE="$(python3 - <<'PY'
-import plistlib
-with open("Info.plist", "rb") as f:
-    data = plistlib.load(f)
-print(data["CFBundleShortVersionString"])
-PY
-)"
+            # Keep this as a one-liner: a <<'PY' heredoc at column 0 breaks the
+            # surrounding YAML block scalar and the workflow never starts jobs.
+            BARE="$(python3 -c 'import plistlib; print(plistlib.load(open("Info.plist", "rb"))["CFBundleShortVersionString"])')"
             case "$BARE" in
               [0-9]*.[0-9]*.[0-9]*) ;;
               *) echo "Info.plist CFBundleShortVersionString must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
