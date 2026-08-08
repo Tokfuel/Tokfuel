@@ -1,9 +1,10 @@
 name: Site Preview
 
-# 0-site-preview 🌐 ラベルを付けると、Site/ をビルドして専用の orphan branch
-# (site-preview-pages) に PR 番号別のサブディレクトリとして push し、
-# raw.githack.com 経由でレンダリングした URL を PR コメントに貼る。
-# 再ラベルのたびに新規コメントを足し、以前の bot コメントは OUTDATED で隠す。
+# 0-site-preview 🌐 ラベルがある PR で、ラベル付与時とコミット（synchronize）のたびに
+# Site/ をビルドして専用の orphan branch (site-preview-pages) に PR 番号別の
+# サブディレクトリとして push し、raw.githack.com 経由でレンダリングした URL を
+# PR コメントに貼る。実行のたびに新規コメントを足し、以前の bot コメントは
+# OUTDATED で隠す。
 #
 # GitHub Pages の公開デプロイ（pages.yml）は actions/deploy-pages を使っており、
 # 1 リポジトリにつき 1 つの公開先しか持てないため、同じ仕組みで PR ごとのプレビューを
@@ -17,7 +18,7 @@ name: Site Preview
 
 on:
   pull_request:
-    types: [labeled, closed]
+    types: [labeled, synchronize, closed]
 
 concurrency:
   group: site-preview-${{ github.event.pull_request.number }}
@@ -26,7 +27,10 @@ concurrency:
 jobs:
   preview:
     name: Build & publish site preview
-    if: github.event.action == 'labeled' && github.event.label.name == '0-site-preview 🌐'
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == '0-site-preview 🌐')
+      || (github.event.action == 'synchronize'
+          && contains(toJSON(github.event.pull_request.labels.*.name), '0-site-preview 🌐'))
     runs-on: macos-15
     permissions:
       contents: write
@@ -76,7 +80,7 @@ jobs:
           git push origin "$BRANCH"
 
           PREVIEW_URL="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html"
-          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s の内容が更新されるたびに (再ラベル付けで) 差し替わる。以前のプレビューコメントは非表示になる。' \
+          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s 向け。コミットや再ラベルのたびに差し替わり、以前のプレビューコメントは非表示になる。' \
             "$SHORT_SHA" "$PREVIEW_URL" "$DIR")
 
           # 既存の bot コメントは隠してから、毎回新規コメントを足す。
