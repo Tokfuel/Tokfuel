@@ -54,7 +54,7 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 
 ### ローカルの Accessibility 許可
 
-初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティ（と、動画を残すなら画面収録）で、ターミナル（または `TokfuelE2E` / `screencapture`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与します。
+初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティ（と、動画を残すなら画面収録）で、ターミナル（または `TokfuelE2E` / `screencapture`）を許可してください。CI では `App/E2E/grant-tcc.sh` が TCC を書き込み、`dismiss-tcc-prompt.sh` が「許可 / Allow」ダイアログを自動で押します。
 
 ### CI
 

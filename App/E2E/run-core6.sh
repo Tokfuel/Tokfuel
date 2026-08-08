@@ -51,7 +51,12 @@ APP_PID=$!
 
 VIDEO_PID=""
 FRAME_PID=""
+DISMISS_PID=""
 cleanup() {
+  if [[ -n "${DISMISS_PID:-}" ]] && kill -0 "$DISMISS_PID" 2>/dev/null; then
+    kill "$DISMISS_PID" 2>/dev/null || true
+    wait "$DISMISS_PID" 2>/dev/null || true
+  fi
   if [[ -n "${VIDEO_PID:-}" ]] && kill -0 "$VIDEO_PID" 2>/dev/null; then
     kill "$VIDEO_PID" 2>/dev/null || true
     wait "$VIDEO_PID" 2>/dev/null || true
@@ -76,6 +81,7 @@ sleep "$SETTLE"
 # 失敗時に「そのときの様子」を残す。
 # 1) screencapture の短尺動画（Screen Recording 許可が必要）
 # 2) 併せて 1 秒ごとのフレーム（動画が取れない runner 向け）
+# Allow / 許可 ダイアログが出ても自動で押す。
 VIDEO_OUT="$OUT_DIR/failure.mov"
 FRAMES_DIR="$OUT_DIR/frames"
 rm -f "$VIDEO_OUT"
@@ -83,6 +89,14 @@ rm -rf "$FRAMES_DIR"
 mkdir -p "$FRAMES_DIR"
 FRAME_PID=""
 if [[ "${TOKFUEL_E2E_RECORD_VIDEO:-1}" == "1" ]]; then
+  bash "$ROOT/App/E2E/dismiss-tcc-prompt.sh" 50 &
+  DISMISS_PID=$!
+  # 先に短尺で許可ダイアログを一度出して通し、本録画へ進む。
+  PREFLIGHT="$OUT_DIR/preflight.mov"
+  rm -f "$PREFLIGHT"
+  /usr/sbin/screencapture -x -v -V 2 "$PREFLIGHT" >/dev/null 2>&1 || true
+  sleep 1.5
+  rm -f "$PREFLIGHT"
   /usr/sbin/screencapture -x -v -V 45 "$VIDEO_OUT" >/dev/null 2>&1 &
   VIDEO_PID=$!
   echo "screen recording pid=${VIDEO_PID} → ${VIDEO_OUT}"
@@ -108,6 +122,11 @@ DRIVER_STATUS=$?
 set -e
 
 # 録画・フレーム取得を止める（成功時は証拠を捨てる）。
+if [[ -n "${DISMISS_PID}" ]]; then
+  kill "$DISMISS_PID" 2>/dev/null || true
+  wait "$DISMISS_PID" 2>/dev/null || true
+  DISMISS_PID=""
+fi
 if [[ -n "${VIDEO_PID}" ]]; then
   kill "$VIDEO_PID" 2>/dev/null || true
   wait "$VIDEO_PID" 2>/dev/null || true

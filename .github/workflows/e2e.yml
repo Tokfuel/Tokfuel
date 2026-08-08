@@ -77,7 +77,17 @@ jobs:
             "$PWD/.build/debug/Tokfuel" \
             /usr/bin/osascript \
             /bin/bash \
+            /bin/zsh \
             /usr/sbin/screencapture
+          # 許可ダイアログ監視を先に起動し、短尺録画で Screen Recording を一度通す。
+          bash App/E2E/dismiss-tcc-prompt.sh 20 &
+          DISMISS_PID=$!
+          /usr/sbin/screencapture -x -v -V 3 /tmp/tokfuel-e2e-preflight.mov >/dev/null 2>&1 || true
+          sleep 2
+          kill "$DISMISS_PID" 2>/dev/null || true
+          wait "$DISMISS_PID" 2>/dev/null || true
+          rm -f /tmp/tokfuel-e2e-preflight.mov
+          ls -la /tmp/tokfuel-e2e-preflight.mov 2>/dev/null || echo "preflight recording cleaned"
 
       - name: Run core6 E2E
         id: e2e
