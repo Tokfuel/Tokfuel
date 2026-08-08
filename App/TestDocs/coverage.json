@@ -1,0 +1,119 @@
+{
+  "by_domain": {
+    "Budget": {
+      "by_status": {
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 0,
+        "ready": 18,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/18",
+      "total": 18
+    },
+    "Cost": {
+      "by_status": {
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 0,
+        "ready": 26,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/26",
+      "total": 26
+    },
+    "Cursor": {
+      "by_status": {
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 0,
+        "ready": 18,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/18",
+      "total": 18
+    },
+    "MenuBar": {
+      "by_status": {
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 0,
+        "ready": 33,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/33",
+      "total": 33
+    },
+    "Settings": {
+      "by_status": {
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 0,
+        "ready": 36,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/36",
+      "total": 36
+    }
+  },
+  "by_status": {
+    "done": 0,
+    "ideation": 0,
+    "in-progress": 0,
+    "ready": 131,
+    "review": 0
+  },
+  "rates": {
+    "e2e_completion_spec_rate": {
+      "definition": "完了条件に E2E があるシナリオ数 / 全シナリオ数",
+      "denominator": 131,
+      "fraction": "131/131",
+      "label": "E2E 完了条件の記載率",
+      "numerator": 131,
+      "percent": "100.0%"
+    },
+    "filed_coverage": {
+      "definition": "status が ideation 以外のシナリオ数 / 全シナリオ数",
+      "denominator": 131,
+      "fraction": "131/131",
+      "label": "起票完了率",
+      "numerator": 131,
+      "percent": "100.0%"
+    },
+    "implementation_coverage": {
+      "definition": "status が done のシナリオ数 / 全シナリオ数",
+      "denominator": 131,
+      "fraction": "0/131",
+      "label": "実装カバレッジ",
+      "numerator": 0,
+      "percent": "0.0%"
+    },
+    "pr_link_rate": {
+      "definition": "対応済みPR に pull リンクまたは #NNNN があるシナリオ数 / 全シナリオ数",
+      "denominator": 131,
+      "fraction": "0/131",
+      "label": "対応済み PR 紐付け率",
+      "numerator": 0,
+      "percent": "0.0%"
+    },
+    "started_coverage": {
+      "definition": "status が in-progress / review / done のシナリオ数 / 全シナリオ数",
+      "denominator": 131,
+      "fraction": "0/131",
+      "label": "着手カバレッジ",
+      "numerator": 0,
+      "percent": "0.0%"
+    }
+  },
+  "total": 131
+}

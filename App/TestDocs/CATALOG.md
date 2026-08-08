@@ -3,11 +3,49 @@
 TestDocs の全シナリオをドメイン別に並べた索引です。網羅の抜け漏れ確認に使います。
 個別シナリオの正本は各 MD、運用規約は [`AGENTS.md`](AGENTS.md)、手段の優先は [`coverage-strategy.md`](coverage-strategy.md) です。
 
-このファイルはシナリオ MD から生成します。シナリオを足したら同じ手順で更新してください。
+このファイルと [`coverage.json`](coverage.json) はシナリオ MD から生成します。シナリオを足したら同じ手順で更新してください。
 
 ```bash
 python3 Scripts/generate-testdocs-catalog.py
 ```
+
+## カバレッジ
+
+シナリオ MD の front matter と節から、スクリプトが決定的に集計します。主指標は **実装カバレッジ**（`status: done` / 全件）です。
+
+- 生成: `python3 Scripts/generate-testdocs-catalog.py`
+- 機械可読: [`coverage.json`](coverage.json)
+
+### 全体
+
+| 指標 | 率 | 件数 | 定義 |
+| --- | ---: | ---: | --- |
+| 実装カバレッジ | 0.0% | `0/131` | status が done のシナリオ数 / 全シナリオ数 |
+| 着手カバレッジ | 0.0% | `0/131` | status が in-progress / review / done のシナリオ数 / 全シナリオ数 |
+| 起票完了率 | 100.0% | `131/131` | status が ideation 以外のシナリオ数 / 全シナリオ数 |
+| E2E 完了条件の記載率 | 100.0% | `131/131` | 完了条件に E2E があるシナリオ数 / 全シナリオ数 |
+| 対応済み PR 紐付け率 | 0.0% | `0/131` | 対応済みPR に pull リンクまたは #NNNN があるシナリオ数 / 全シナリオ数 |
+
+### ドメイン別の実装カバレッジ
+
+| Domain | 実装カバレッジ | done / 全件 |
+| --- | ---: | ---: |
+| MenuBar | 0.0% | `0/33` |
+| Cost | 0.0% | `0/26` |
+| Settings | 0.0% | `0/36` |
+| Budget | 0.0% | `0/18` |
+| Cursor | 0.0% | `0/18` |
+
+### status 内訳
+
+| status | 件数 |
+| --- | ---: |
+| `ideation` | 0 |
+| `ready` | 131 |
+| `in-progress` | 0 |
+| `review` | 0 |
+| `done` | 0 |
+| **合計** | **131** |
 
 ## 件数
 

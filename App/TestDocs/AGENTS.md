@@ -36,6 +36,7 @@
 - Domain は `primary_domain` と一致（`MenuBar` / `Cost` / `Settings` / `Budget` / `Cursor`）
 - `nn` はドメイン内 2 桁連番。`slug` は英小文字ハイフンでファイル名末尾と一致
 - 雛形: [`_TEMPLATE.md`](_TEMPLATE.md) / 入口: [`README.md`](README.md) / 網羅確認: [`CATALOG.md`](CATALOG.md)
+- カバレッジ: `python3 Scripts/generate-testdocs-catalog.py` が [`CATALOG.md`](CATALOG.md) / [`coverage.json`](coverage.json) / README のカバレッジ節を更新する。主指標は実装カバレッジ（`status: done` / 全件）
 - 節順: **シナリオ → 完了条件 → 経路（テスト単位 GWT）→ 対応済みPR**
 - `platforms` は front matter。本文に `## 対象` / 「前提条件」節は書かない
 - 経路見出しは振る舞いのみ（クラス名禁止）

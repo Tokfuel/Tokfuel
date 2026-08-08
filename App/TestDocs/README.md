@@ -55,6 +55,19 @@ App/TestDocs/
 | `review` | PR レビュー中（任意） |
 | `done` | 実装完了。テスト通過後、マージ前の実装 PR で更新してよい |
 
+<!-- testdocs-coverage:start -->
+## カバレッジ
+
+主指標の **実装カバレッジ** はいま **0.0%**（`0/131`）です。着手カバレッジは 0.0%（`0/131`）、起票完了率は 100.0%（`131/131`）、E2E 完了条件の記載率は 100.0%（`131/131`）です。
+
+定義とドメイン別内訳は [`CATALOG.md`](CATALOG.md) の「カバレッジ」節、機械可読な値は [`coverage.json`](coverage.json) を見てください。
+
+```bash
+python3 Scripts/generate-testdocs-catalog.py
+```
+
+<!-- testdocs-coverage:end -->
+
 ## シナリオ索引
 
 全件の一覧と面ごとの確認チェックは [`CATALOG.md`](CATALOG.md) を見てください（網羅確認用）。
