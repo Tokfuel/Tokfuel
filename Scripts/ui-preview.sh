@@ -1,9 +1,9 @@
 #!/bin/bash
 # PR の ui-preview 📸 ラベル用に、メニューバー・設定・About の全画面を実物の UI から
-# 1 ディレクトリへ書き出す（TF-0034）。使い方: bash scripts/ui-preview.sh [出力先ディレクトリ]
+# 1 ディレクトリへ書き出す（TF-0034）。使い方: bash Scripts/ui-preview.sh [出力先ディレクトリ]
 #
 # 絵の中身（フィクスチャ・撮る画面の一覧）は App/Tokfuel/ScreenshotRenderer.swift が持つ。
-# README 用の scripts/screenshot.sh と同じく -AppleAccentColor 1 でアクセントカラーを固定し、
+# README 用の Scripts/screenshot.sh と同じく -AppleAccentColor 1 でアクセントカラーを固定し、
 # --ui-preview も #if DEBUG のため debug ビルドのバイナリで実行する。
 set -euo pipefail
 
@@ -16,7 +16,7 @@ swift build
 
 # ウィンドウサーバに繋がらない環境では中身が空の画像ができてしまう。それを見逃さないよう、
 # 各ファイルの寸法と容量で描画できたことを確かめる（About はポップオーバーより小さいので
-# scripts/screenshot.sh より緩いしきい値にする）。
+# Scripts/screenshot.sh より緩いしきい値にする）。
 shopt -s nullglob
 files=("$OUT_DIR"/*.png)
 if [ ${#files[@]} -eq 0 ]; then

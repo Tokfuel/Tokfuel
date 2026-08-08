@@ -3,7 +3,7 @@ name: UI Preview
 # ui-preview 📸 ラベルを付けると、メニューバー・設定・About・予算アラート・初回
 # Analytics 同意ダイアログの全画面（下の ORDER にある一覧。同じ画面の別状態も含む）を
 # 実物の UI からレンダリングし、PR コメントに絵として貼る
-# （TF-0034 / TF-0097）。render は scripts/ui-preview.sh + ScreenshotRenderer.swift の
+# （TF-0034 / TF-0097）。render は Scripts/ui-preview.sh + ScreenshotRenderer.swift の
 # `allScreens()`（README 用スクリーンショットを撮る TF-0015 の `renderPNG` を土台にした拡張）に
 # 任せ、ここでは撮った PNG 群を publish するだけ。
 # PopoverView / SettingsView / AboutView / 新規の単独 View を足したら、
@@ -44,7 +44,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Render screens
-        run: bash scripts/ui-preview.sh /tmp/ui-preview
+        run: bash Scripts/ui-preview.sh /tmp/ui-preview
 
       - name: Publish preview images and comment
         continue-on-error: true
@@ -115,7 +115,7 @@ jobs:
             ALTS+=("$screen")
           done
 
-          BODY=$(printf '<!-- ui-preview-bot -->\n### 🖼 UI Preview\n\nRendered at `%s` by `scripts/ui-preview.sh`.\n\n<table>' "$SHORT_SHA")
+          BODY=$(printf '<!-- ui-preview-bot -->\n### 🖼 UI Preview\n\nRendered at `%s` by `Scripts/ui-preview.sh`.\n\n<table>' "$SHORT_SHA")
           i=0
           count=${#URLS[@]}
           while [ "$i" -lt "$count" ]; do

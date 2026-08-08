@@ -1,8 +1,8 @@
 #!/bin/bash
 # README / Site 用スクリーンショットを実物の UI から生成する（TF-0015 / #62）。
 # 使い方:
-#   bash scripts/screenshot.sh              # assets/ と Site/Assets/ の両方へ書き出す
-#   bash scripts/screenshot.sh <出力先>     # 指定パスだけへ書き出す（検証・デバッグ用）
+#   bash Scripts/screenshot.sh              # Assets/ と Site/Assets/ の両方へ書き出す
+#   bash Scripts/screenshot.sh <出力先>     # 指定パスだけへ書き出す（検証・デバッグ用）
 #
 # 絵の中身（フィクスチャ・レイアウト）は App/Tokfuel/ScreenshotRenderer.swift が持つ。
 # ここで渡す起動引数には理由がある:
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-README_OUT="$PROJECT_DIR/assets/screenshot.png"
+README_OUT="$PROJECT_DIR/Assets/screenshot.png"
 SITE_OUT="$PROJECT_DIR/Site/Assets/images/screenshot.png"
 
 if [ "${1:-}" != "" ]; then

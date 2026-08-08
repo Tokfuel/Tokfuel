@@ -7,7 +7,7 @@ import Combine
 ///
 /// このファイルは DEBUG ビルドにしか存在しない（`#if DEBUG` でまるごと囲っている）。
 /// 配布するリリースビルドにはデバッグ UI もこの型も含まれない。確認したいときは
-/// `bash scripts/build.sh --debug` で debug 構成の Tokfuel.app を入れる。
+/// `bash Scripts/build.sh --debug` で debug 構成の Tokfuel.app を入れる。
 ///
 /// 上書き値は永続化しない。偽の数値を抱えたまま常駐し続けないよう、再起動で必ず素に戻る。
 @MainActor

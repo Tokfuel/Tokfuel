@@ -8,8 +8,8 @@ import Testing
 struct ScreenshotArgumentTests {
     @Test func フラグの次の引数を出力先にする() {
         #expect(ScreenshotRenderer.outputPath(
-            arguments: ["Tokfuel", "--screenshot", "assets/screenshot.png"])
-                == "assets/screenshot.png")
+            arguments: ["Tokfuel", "--screenshot", "Assets/screenshot.png"])
+                == "Assets/screenshot.png")
     }
 
     @Test func フラグが無ければ通常起動() {

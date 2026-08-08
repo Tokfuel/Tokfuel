@@ -5,7 +5,7 @@ APP_NAME="Tokfuel"
 BUNDLE_NAME="Tokfuel"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_DIR="/Applications/${APP_NAME}.app"
-source "$PROJECT_DIR/scripts/package-app.sh"
+source "$PROJECT_DIR/Scripts/package-app.sh"
 
 # 既定は配布と同じ release 構成。--debug は開発者向けのデバッグセクション
 # （設定の一番下）を含む debug 構成を入れる。配布物には使わない。

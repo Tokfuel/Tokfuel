@@ -37,7 +37,7 @@
       ごとにポーリングして新しいバージョンを検知する。リリースアセットのダウンロードは、
       ユーザーがポップオーバーのフッターで「アップデート」ボタンを押したときだけ GitHub から
       行う。これらのリクエストに使用状況データ、トランスクリプト、識別子は載らない。
-   5. **配布ビルドのみ**（`scripts/release.sh` の `-DTOKFUEL_DISTRIBUTION`）、
+   5. **配布ビルドのみ**（`Scripts/release.sh` の `-DTOKFUEL_DISTRIBUTION`）、
       Firebase Crashlytics へクラッシュレポートを送る（同意プロンプトなし。プロンプトや
       コストは載せない）。開発用ビルドでは `FirebaseApp.configure()` を呼ばない。
    6. **配布ビルドかつ**ユーザーが Analytics に同意したときだけ、Firebase Analytics へ
@@ -57,14 +57,14 @@
 
 ```bash
 swift test               # ユニットテスト（App/Tests、Swift Testing）
-swift build -c release   # scripts/build.sh がパッケージする構成
+swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
 CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
 `App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
-のみの変更では走らない）。リリース構成のビルドは `scripts/build.sh` / 配布フロー側で確認する。
+のみの変更では走らない）。リリース構成のビルドは `Scripts/build.sh` / 配布フロー側で確認する。
 実行時に見える変更は、実アプリをインストールして観察する。
-`bash scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
+`bash Scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
 動くと主張せず、組み込みの `verify` スキルで確かめる）。ヘッドレスで検証できるロジック
 （`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests` にあり、新しいロジックには
 そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
@@ -137,5 +137,5 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
   `.githooks/` に更新があったときは、次で取り込む。
 
   ```bash
-  bash scripts/setup.sh
+  bash Scripts/setup.sh
   ```

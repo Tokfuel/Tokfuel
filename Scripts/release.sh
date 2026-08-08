@@ -1,8 +1,8 @@
 #!/bin/bash
 # 配布用の Tokfuel.app を dist/ に作り、GitHub Release に添付できる
 # drag-to-Applications DMG を出力する。
-# 使い方: bash scripts/release.sh [バージョン]
-#   バージョン省略時は versions/macos、無ければ Info.plist の
+# 使い方: bash Scripts/release.sh [バージョン]
+#   バージョン省略時は Versions/macos、無ければ Info.plist の
 #   CFBundleShortVersionString を使う。
 #   Apple Silicon / Intel 両対応のユニバーサルバイナリでビルドする。
 #   CODESIGN_IDENTITY を設定すると Developer ID 署名（hardened runtime 有効）になる。
@@ -13,11 +13,11 @@ APP_NAME="Tokfuel"
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="$PROJECT_DIR/dist"
 APP_DIR="$DIST_DIR/${APP_NAME}.app"
-source "$PROJECT_DIR/scripts/package-app.sh"
+source "$PROJECT_DIR/Scripts/package-app.sh"
 
 default_version() {
-  if [ -f "$PROJECT_DIR/versions/macos" ]; then
-    tr -d '[:space:]' <"$PROJECT_DIR/versions/macos"
+  if [ -f "$PROJECT_DIR/Versions/macos" ]; then
+    tr -d '[:space:]' <"$PROJECT_DIR/Versions/macos"
   else
     /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROJECT_DIR/Info.plist"
   fi
@@ -29,7 +29,7 @@ VERSION="${VERSION#v}"   # タグ名 v1.2.3 でも 1.2.3 でも受け付ける
 echo "Building $APP_NAME $VERSION (universal, TOKFUEL_DISTRIBUTION)..."
 cd "$PROJECT_DIR"
 # -DTOKFUEL_DISTRIBUTION が付いたビルドだけ Crashlytics / Analytics を有効化する（#22）。
-# 手元の swift build / scripts/build.sh には付けない。
+# 手元の swift build / Scripts/build.sh には付けない。
 swift build -c release --arch arm64 --arch x86_64 \
   -Xswiftc -DTOKFUEL_DISTRIBUTION
 

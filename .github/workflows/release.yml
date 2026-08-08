@@ -1,16 +1,16 @@
 name: Release
 
 # 手動起動はしない（bump は bump-version.yml）。起動は次の 2 通り:
-# - main への push で versions/macos が変わったとき（bump PR のマージ。推奨フロー）
+# - main への push で Versions/macos が変わったとき（bump PR のマージ。推奨フロー）
 # - v* タグを手で push したとき（従来互換・macOS）
-# versions/macos 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
+# Versions/macos 起点で、すでに同名タグがある場合は二重リリースせず成功終了する。
 #
-# 版の正本はプラットフォーム別（versions/<platform>）。いま出荷ジョブがあるのは
-# macOS のみ。windows などを足すときは versions/windows の paths と専用ジョブを追加する。
+# 版の正本はプラットフォーム別（Versions/<platform>）。いま出荷ジョブがあるのは
+# macOS のみ。windows などを足すときは Versions/windows の paths と専用ジョブを追加する。
 on:
   push:
     branches: [main]
-    paths: [versions/macos]
+    paths: [Versions/macos]
     tags: ["v*"]
 
 permissions:
@@ -44,10 +44,10 @@ jobs:
             esac
             SKIP=false
           elif [[ "${GITHUB_REF}" == refs/heads/main ]]; then
-            BARE="$(tr -d '[:space:]' < versions/macos)"
+            BARE="$(tr -d '[:space:]' < Versions/macos)"
             case "$BARE" in
               [0-9]*.[0-9]*.[0-9]*) ;;
-              *) echo "versions/macos must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
+              *) echo "Versions/macos must look like 0.0.4, got: $BARE" >&2; exit 1 ;;
             esac
             VERSION="v${BARE}"
             if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
@@ -74,7 +74,7 @@ jobs:
             echo "- Skip: \`${SKIP}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # versions/macos 起点のときだけ、いまの main 先頭にタグを打つ。
+      # Versions/macos 起点のときだけ、いまの main 先頭にタグを打つ。
       # （GITHUB_TOKEN によるタグ push は他のワークフローを起動しないので二重実行にならない）
       - name: Tag main
         if: steps.version.outputs.skip != 'true' && github.ref == 'refs/heads/main'
@@ -123,7 +123,7 @@ jobs:
 
       - name: Build & package
         if: steps.version.outputs.skip != 'true'
-        run: bash scripts/release.sh "${{ steps.version.outputs.version }}"
+        run: bash Scripts/release.sh "${{ steps.version.outputs.version }}"
 
       # 公証は Developer ID 署名済みのときのみ行う（ad-hoc 署名は notarytool が reject する）。
       - name: Notarize & staple
@@ -136,7 +136,7 @@ jobs:
           APP_STORE_CONNECT_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
           echo "$APP_STORE_CONNECT_KEY" | base64 --decode > "$APP_STORE_CONNECT_KEY_PATH"
           export APP_STORE_CONNECT_KEY_PATH
-          bash scripts/notarize.sh "${{ steps.version.outputs.version }}"
+          bash Scripts/notarize.sh "${{ steps.version.outputs.version }}"
           rm -f "$APP_STORE_CONNECT_KEY_PATH"
 
       - name: Create GitHub Release
@@ -174,14 +174,14 @@ jobs:
           ref: main
 
       - name: Render screenshot
-        run: bash scripts/screenshot.sh
+        run: bash Scripts/screenshot.sh
 
       - name: Open a PR if the screenshot changed
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.release-macos.outputs.version }}
         run: |
-          PATHS=(assets/screenshot.png Site/Assets/images/screenshot.png)
+          PATHS=(Assets/screenshot.png Site/Assets/images/screenshot.png)
           if git diff --quiet -- "${PATHS[@]}"; then
             echo "screenshot is already up to date"
             exit 0
@@ -196,5 +196,5 @@ jobs:
           git push --force origin "$BRANCH"
           gh pr create --base main --head "$BRANCH" \
             --title "chore(assets): refresh README/Site screenshot for ${VERSION}" \
-            --body "Rendered from the real \`PopoverView\` at ${VERSION} by \`scripts/screenshot.sh\` (#62). Updates both README and the download page. Merge if the new screenshot looks right." \
+            --body "Rendered from the real \`PopoverView\` at ${VERSION} by \`Scripts/screenshot.sh\` (#62). Updates both README and the download page. Merge if the new screenshot looks right." \
             || echo "a PR for $BRANCH is already open"

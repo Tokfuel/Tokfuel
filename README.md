@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Tokfuel" width="100%"/>
+  <img src="Assets/banner.svg" alt="Tokfuel" width="100%"/>
 </p>
 
 <h1 align="center">Tokfuel</h1>
@@ -30,7 +30,7 @@
 ---
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Popover screenshot" width="560"/>
+  <img src="Assets/screenshot.png" alt="Popover screenshot" width="560"/>
 </p>
 
 ## Features
@@ -133,7 +133,7 @@
   Cursor's dashboard API (auth + date range only — no prompts); on **distribution
   builds**, Crashlytics crash reports (no consent prompt); and, only if you opt in,
   anonymous Firebase Analytics for app-UI events. Development builds never configure
-  Firebase. Details: [Privacy Policy](docs/PRIVACY.md) · [Terms of Use](docs/TERMS.md).
+  Firebase. Details: [Privacy Policy](Docs/PRIVACY.md) · [Terms of Use](Docs/TERMS.md).
 
 ## Install
 
@@ -153,7 +153,7 @@
 ```bash
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
-bash scripts/build.sh
+bash Scripts/build.sh
 ```
 
 ## Contributing

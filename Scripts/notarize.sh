@@ -1,7 +1,7 @@
 #!/bin/bash
 # dist/ にある署名済み DMG を公証（notarize）し、公証チケットを staple する。
 # App Store Connect API キーが必要なので CI 専用。
-# 使い方: bash scripts/notarize.sh <バージョン（scripts/release.sh に渡したものと同じ）>
+# 使い方: bash Scripts/notarize.sh <バージョン（Scripts/release.sh に渡したものと同じ）>
 #   環境変数: APP_STORE_CONNECT_KEY_ID / APP_STORE_CONNECT_ISSUER_ID /
 #             APP_STORE_CONNECT_KEY_PATH（.p8 のパス）
 set -euo pipefail
