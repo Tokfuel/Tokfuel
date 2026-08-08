@@ -419,9 +419,16 @@ final class AXDriver {
     // MARK: - AX primitives
 
     private func requireIdentifier(_ id: String, under root: AXUIElement? = nil) throws -> AXUIElement {
-        if let el = findByIdentifier(id, under: root) {
+        if let el = findByIdentifier(id, under: root ?? app) {
             builder.sawIdentifier(id)
             return el
+        }
+        // 前シナリオのクリックでホームパネルが閉じることがある。status item を押し直す。
+        if id == "tokfuel.home", root == nil {
+            try clickStatusItem()
+            if let el = try? waitForIdentifier("tokfuel.home", under: app, timeout: timeout(8)) {
+                return el
+            }
         }
         throw E2EError.notFound(uiDriftHint(id))
     }
