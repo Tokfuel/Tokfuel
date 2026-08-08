@@ -22,7 +22,7 @@ Stop using a single SPM target under `App/`. Split library targets **vertically 
 - Example axes: Claude / Cursor / Codex / Budget / Settings. Put only truly shared types in a thin `TokfuelCore` (exact names fixed at implementation time)
 - Aggregation (Store) and shell UI remain shared, but **push as much as possible into feature targets** (source-specific UI and totals live with the feature; the shared shell stays wiring plus thin aggregation)
 - Keep Firebase, retok resources, and sqlite3 inside the targets that use them
-- **Do not enforce layer edges (UI → Store → drivers) with SPM target boundaries.** Keep them via AGENTS.md and AI coding (skills / review)
+- **Do not buy compile-time layer edges (UI → Store → drivers) in this decision.** With aggregation and shell UI remaining as shared surfaces, the same SPM shape could not both maximize feature-split collision reduction and enforce layers via targets. Keep layer direction via AGENTS.md and AI coding (skills / review)
 - Do not change product behavior or the ground rules (local-only data, zero setup, unmodified retok, optional python3, no new packages)
 
 The parent layout stays under `App/` per ADR-0001. This decision is about **target / module boundaries**, not about rehoming the top-level tree again.
@@ -119,7 +119,7 @@ flowchart LR
 
 ### Summary of alternatives
 
-Score options primarily on **parallel-PR collision reduction**. Layer boundaries can be kept by AI coding and AGENTS, so a hybrid that also cuts SPM layers is not worth the extra cost. Layers-only still funnels work into Store / UI. Adopt feature vertical splits and deliberately thin the shared shell. Extreme fine layering is too heavy at this size.
+Trying to get both collision reduction (feature splits) and dependency enforcement (layer targets) in one architecture still leaves aggregation and shell UI shared, so a hybrid does not deliver both. Because they could not be reconciled, **prefer parallel-PR collision reduction and leave layers to convention + AI**. Layers-only still funnels work into Store / UI. Extreme fine layering is too heavy at this size.
 
 ## Context
 
@@ -139,15 +139,15 @@ As an OSS repo with concurrent Issues / PRs, unrelated work collides in the same
    - The set of files for a feature or source is not obvious from directory names.
 3. **A fat shared shell undercuts feature splits**
    - If aggregation and screens keep collecting every change, vertical splits help less.
-4. **Layer leaks remain possible, but are not the main goal**
-   - Convention-only boundaries stay; this decision does not repurchase them with SPM.
+4. **Collision reduction and layer enforcement cannot both be satisfied in one SPM shape**
+   - Aggregation and shell UI remain product-level shared surfaces. Adding layer targets there does not cut unrelated-PR overlap beyond a feature split.
 
 ### Goals
 
-- Shrink conflict surface between unrelated Issues (primary)
+- Shrink conflict surface between unrelated Issues (the side we take of the two irreconcilable goals)
 - Make change scope easier to explain to contributors
 - Thin the shared shell (Store / shell UI) and push work into features
-- Keep layers via AGENTS + AI coding
+- Cover the side we did not take (layer enforcement) with AGENTS + AI coding
 - Keep `swift test` / `swift build -c release` green at each step
 
 ## Consideration
@@ -172,19 +172,19 @@ Primary criterion: reduce parallel-PR collisions.
 |-----------|--------------|---------------|-----------------|---------------|----------|
 | Reduce parallel-PR collisions (primary) | × Large hotspots | △ Work still piles into Store / UI | ◎ Unrelated Issues diverge | ○ Diverges but heavy to run | ◎ Same order as 3; shared shell remains |
 | Scope a change | × One entry point | △ Layers clear; feature axis weak | ◎ “Which source?” is clear | △ Too many targets | ◎ Same feature axis; more layer boxes |
-| Layer guarantees | △ Docs + AI | ◎ Compile-time direction | △ Docs + AI (enough here) | ◎ Even finer | ◎ SPM can enforce, but excess for the primary goal |
+| Layer guarantees | △ Docs + AI | ◎ Compile-time direction | △ Docs + AI (covers the side we did not take) | ◎ Even finer | ◎ Layers can be enforced, but shared-surface collisions stay like 3 |
 | Migration cost | ◎ No change | ○ Medium | ○ Medium | × Too large here | △ Heavier than 3 (extra layer targets) |
-| Fit for Tokfuel / AI workflows | △ Collisions remain | △ Weak on collisions | ◎ Collisions first; AI covers layers | × Aimed at SDKs / huge apps | △ Layer enforcement is nice; cost wins |
+| Reconcile both goals | × Weak on both | × Weak on collisions | ○ Take collisions; leave layers outside SPM | × Too heavy | × Aims at both; shared surface prevents true reconciliation |
 
 ### Overall
 
 | Option | Assessment | Verdict |
 |--------|------------|---------|
 | 1: Status quo | Collision surface remains | **Rejected** |
-| 2: Layers only | Weak on the primary goal | **Rejected** |
-| 3: Feature vertical split | Best collision cut; layers via AI / convention | **Accepted** |
+| 2: Layers only | Does not reconcile with collision reduction | **Rejected** |
+| 3: Feature vertical split | Of the two irreconcilable goals, take collisions; layers via docs + AI | **Accepted** |
 | 4: Fine layers | Cleanliness does not justify cost | **Rejected** |
-| 5: Hybrid | Buys layer enforcement; little extra collision win over 3 | **Rejected** |
+| 5: Hybrid | Tries to take both; shared surface means they are not reconciled | **Rejected** |
 
 ## Consequences
 
@@ -201,7 +201,7 @@ Primary criterion: reduce parallel-PR collisions.
 | Risk | Detail | Mitigation |
 |------|--------|------------|
 | Store / shell UI hotspots | Aggregation and screens can still collide | Move source-specific UI and totals into features; keep the shell as wiring plus thin aggregation |
-| Layer leaks | SPM will not stop UI from seeing drivers | Keep AGENTS.md; catch in AI implementation / review; open another ADR for layer targets if abuse grows |
+| Layer leaks | The side we could not take in SPM; UI may still see drivers | Keep AGENTS.md; catch in AI implementation / review; after thinning the shared shell, open another ADR for layer targets if still needed |
 | More targets | Heavier `Package.swift` and imports | Keep Core thin; do not adopt options 4 or 5 |
 | Remaining inverted deps | For example BudgetMonitor → UI, AppSettings → drivers | Untangle with callbacks / protocols before cutting targets |
 | Resource moves | `Bundle.module` for retok or Firebase plist can break | Move with Claude / Analytics targets; verify with `swift test` and runtime checks |
