@@ -41,9 +41,20 @@ bash App/E2E/run-core6.sh
 
 UI の `accessibilityIdentifier` が変わると、記録上の必須 ID が見つからず失敗します（ログに `UI may have changed` と baseline ID 一覧が出ます）。
 
+### 失敗時の PR コメント
+
+CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメントにまとめます。
+
+- どのシナリオで落ちたか
+- なぜ落ちたか（エラーと日本語の説明）
+- 失敗時のスクリーンショットと画面録画（`.mov`）
+- 正常な画面（`ScreenshotRenderer` / `--ui-preview` のフィクスチャ）
+
+画像・動画は `e2e-failure-images` orphan ブランチ経由で `raw.githubusercontent.com` に載せます（ui-preview と同じ方式）。
+
 ### ローカルの Accessibility 許可
 
-初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与します。
+初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティ（と、動画を残すなら画面収録）で、ターミナル（または `TokfuelE2E` / `screencapture`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与します。
 
 ### CI
 

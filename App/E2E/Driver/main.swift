@@ -23,19 +23,28 @@ struct TokfuelE2EMain {
         let recordingPath = value(after: "--recording", in: args)
         let writePath = value(after: "--write-recording", in: args)
             ?? E2ERecording.localCachePath
+        let reportPath = value(after: "--report", in: args) ?? E2EReport.defaultPath
+
+        let driver: AXDriver
+        do {
+            driver = try AXDriver(pid: pid, recordingPath: recordingPath)
+        } catch {
+            fputs("TokfuelE2E failed: \(error)\n", stderr)
+            exit(1)
+        }
 
         do {
-            let driver = try AXDriver(pid: pid, recordingPath: recordingPath)
             try driver.runCore6()
             try driver.persistRecording(to: writePath)
-            // 明示時のみリポジトリ正本を上書き（普段は .build 側のキャッシュを更新）。
             if ProcessInfo.processInfo.environment["TOKFUEL_E2E_UPDATE_REPO_RECORDING"] == "1",
                writePath != E2ERecording.defaultPath {
                 try driver.persistRecording(to: E2ERecording.defaultPath)
             }
+            try driver.writeReport(ok: true, error: nil, to: reportPath)
             print("TokfuelE2E core6 OK")
             exit(0)
         } catch {
+            try? driver.writeReport(ok: false, error: "\(error)", to: reportPath)
             fputs("TokfuelE2E failed: \(error)\n", stderr)
             exit(1)
         }
@@ -67,6 +76,16 @@ final class AXDriver {
     private let recording: E2ERecording?
     private let builder = E2ERecordingBuilder()
     private let pollInterval: TimeInterval
+    private var completedScenarios: [String] = []
+    private var failedScenario: String?
+    private let scenarioOrder = [
+        "MenuBar-01-open-home",
+        "Cost-03-model-list",
+        "Cost-01-chart-style",
+        "Cost-02-period-switch",
+        "Settings-01-open",
+        "Settings-02-reflect"
+    ]
 
     init(pid: pid_t, recordingPath: String?) throws {
         self.pid = pid
@@ -78,30 +97,85 @@ final class AXDriver {
     }
 
     func runCore6() throws {
-        try runScenario("MenuBar-01-open-home", scenarioMenuBar01OpenHome)
-        try runScenario("Cost-03-model-list", scenarioCost03ModelList)
-        try runScenario("Cost-01-chart-style", scenarioCost01ChartStyle)
-        try runScenario("Cost-02-period-switch", scenarioCost02PeriodSwitch)
-        try runScenario("Settings-01-open", scenarioSettings01Open)
-        try runScenario("Settings-02-reflect", scenarioSettings02Reflect)
+        for id in scenarioOrder {
+            switch id {
+            case "MenuBar-01-open-home": try runScenario(id, scenarioMenuBar01OpenHome)
+            case "Cost-03-model-list": try runScenario(id, scenarioCost03ModelList)
+            case "Cost-01-chart-style": try runScenario(id, scenarioCost01ChartStyle)
+            case "Cost-02-period-switch": try runScenario(id, scenarioCost02PeriodSwitch)
+            case "Settings-01-open": try runScenario(id, scenarioSettings01Open)
+            case "Settings-02-reflect": try runScenario(id, scenarioSettings02Reflect)
+            default: break
+            }
+        }
     }
 
     func persistRecording(to path: String) throws {
-        let required = recording?.requiredIdentifiers ?? [
-            "tokfuel.home",
-            "tokfuel.hero.today",
-            "tokfuel.section.trend",
-            "tokfuel.section.models",
-            "tokfuel.model-list",
-            "tokfuel.chart.style",
-            "tokfuel.chart.period",
-            "tokfuel.menu.more",
-            "tokfuel.settings"
-        ]
+        let required = recording?.requiredIdentifiers ?? Self.defaultRequiredIdentifiers
         let built = builder.build(requiredIdentifiers: required, previous: recording)
         try built.write(to: path)
         print("E2E recording written: \(path)")
     }
+
+    func writeReport(ok: Bool, error: String?, to path: String) throws {
+        let built = builder.build(
+            requiredIdentifiers: recording?.requiredIdentifiers ?? Self.defaultRequiredIdentifiers,
+            previous: recording
+        )
+        var results: [E2EReport.ScenarioResult] = []
+        var seen = Set<String>()
+        for scenario in built.scenarios {
+            let failed = scenario.id == failedScenario
+            results.append(.init(
+                id: scenario.id,
+                status: failed ? "failed" : "passed",
+                elapsedMs: scenario.elapsedMs,
+                error: failed ? error : nil
+            ))
+            seen.insert(scenario.id)
+        }
+        for id in scenarioOrder where !seen.contains(id) {
+            let status: String
+            if id == failedScenario {
+                status = "failed"
+            } else if failedScenario != nil {
+                status = "skipped"
+            } else {
+                status = "passed"
+            }
+            results.append(.init(
+                id: id,
+                status: status,
+                elapsedMs: nil,
+                error: id == failedScenario ? error : nil
+            ))
+        }
+        let report = E2EReport(
+            ok: ok,
+            failedScenario: failedScenario,
+            error: error,
+            explanation: error.map { E2EReport.explain(error: $0, scenario: failedScenario) },
+            completedScenarios: completedScenarios,
+            scenarios: results,
+            baselineIdentifiers: recording?.requiredIdentifiers ?? Self.defaultRequiredIdentifiers,
+            expectedScreens: E2EReport.expectedScreens(for: failedScenario),
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        try report.write(to: path)
+        print("E2E report written: \(path)")
+    }
+
+    private static let defaultRequiredIdentifiers = [
+        "tokfuel.home",
+        "tokfuel.hero.today",
+        "tokfuel.section.trend",
+        "tokfuel.section.models",
+        "tokfuel.model-list",
+        "tokfuel.chart.style",
+        "tokfuel.chart.period",
+        "tokfuel.menu.more",
+        "tokfuel.settings"
+    ]
 
     private func runScenario(_ id: String, _ body: () throws -> Void) throws {
         print("→ \(id)")
@@ -109,7 +183,9 @@ final class AXDriver {
         do {
             try body()
             builder.endCurrent()
+            completedScenarios.append(id)
         } catch {
+            failedScenario = id
             builder.endCurrent()
             if let recording {
                 fputs(

@@ -1,6 +1,7 @@
 name: E2E
 
-# コアシナリオの AX E2E（macos-15 + Accessibility TCC）。
+# コアシナリオの AX E2E（macos-15 + Accessibility / Screen Recording TCC）。
+# 失敗時は証拠（画面・動画・正常フィクスチャ）を orphan ブランチへ載せ、PR コメントする。
 on:
   push:
     branches: [main]
@@ -17,6 +18,7 @@ on:
       - "Package.resolved"
       - ".github/workflows/e2e.yml"
   pull_request:
+    types: [opened, synchronize, reopened, closed]
     paths:
       - "App/Tokfuel/**"
       - "App/E2E/**"
@@ -37,9 +39,15 @@ concurrency:
 jobs:
   core6:
     name: Core6 AX E2E
+    if: github.event.action != 'closed'
     runs-on: macos-15
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Show toolchain
         run: |
@@ -59,27 +67,73 @@ jobs:
 
       - name: Build
         run: |
-          # SwiftPM は複数 --product だと最後だけビルドすることがある。
           swift build --product Tokfuel
           swift build --product TokfuelE2E
 
-      - name: Grant Accessibility TCC
+      - name: Grant Accessibility / Screen Recording TCC
         run: |
           bash App/E2E/grant-tcc.sh \
             "$PWD/.build/debug/TokfuelE2E" \
             "$PWD/.build/debug/Tokfuel" \
             /usr/bin/osascript \
-            /bin/bash
+            /bin/bash \
+            /usr/sbin/screencapture
 
       - name: Run core6 E2E
+        id: e2e
         env:
           TOKFUEL_E2E_GRANT_TCC: "0"
         run: bash App/E2E/run-core6.sh
 
-      - name: Upload E2E recording
+      - name: Upload E2E evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-core6-recording
-          path: .build/e2e/core6-last.json
+          name: e2e-core6-evidence
+          path: |
+            .build/e2e/report.json
+            .build/e2e/core6-last.json
+            .build/e2e/failure.png
+            .build/e2e/failure.mov
+            .build/e2e/expected/
           if-no-files-found: ignore
+
+      - name: Comment failure evidence on PR
+        if: failure() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: bash App/E2E/comment-failure.sh
+
+  cleanup:
+    name: Remove E2E failure images on close
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Remove this PR's failure evidence
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          BRANCH="e2e-failure-images"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$BRANCH" 2>/dev/null || exit 0
+          git switch -C "$BRANCH" "origin/$BRANCH"
+          shopt -s nullglob
+          files=(pr-${PR_NUMBER}-*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no evidence for PR #${PR_NUMBER}"
+            exit 0
+          fi
+          git rm -f -- "${files[@]}"
+          git commit -m "chore: remove e2e failure evidence for PR #${PR_NUMBER}"
+          git push origin "$BRANCH"
