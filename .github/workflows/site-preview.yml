@@ -77,6 +77,43 @@ jobs:
           BUILD_OUT="$(mktemp -d)/Build"
           cp -R Site/Build "$BUILD_OUT"
 
+          # Ignite emits production root-absolute paths (/Tokfuel/...). On
+          # raw.githack.com those resolve against the CDN origin and 404, so
+          # rewrite them to this preview directory before publishing.
+          PREVIEW_URL_BASE="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}"
+          PREVIEW_PATH_PREFIX="/${REPO}/${BRANCH}/${DIR}"
+          /usr/bin/python3 - "$BUILD_OUT" "$PREVIEW_PATH_PREFIX" "$PREVIEW_URL_BASE" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          path_prefix = sys.argv[2].rstrip("/")
+          url_base = sys.argv[3].rstrip("/")
+          suffixes = {".html", ".css", ".js", ".json", ".xml", ".txt", ".svg"}
+
+          def rewrite(text: str) -> str:
+              text = text.replace("https://tokfuel.github.io/Tokfuel", url_base)
+              text = text.replace('"/Tokfuel/', f'"{path_prefix}/')
+              text = text.replace("'/Tokfuel/", f"'{path_prefix}/")
+              text = text.replace("(/Tokfuel/", f"({path_prefix}/")
+              for folder in ("js", "css", "images", "fonts"):
+                  text = re.sub(
+                      rf'(["\'])/{folder}/',
+                      rf"\1{path_prefix}/{folder}/",
+                      text,
+                  )
+              return text
+
+          for path in root.rglob("*"):
+              if not path.is_file() or path.suffix.lower() not in suffixes:
+                  continue
+              original = path.read_text(encoding="utf-8")
+              updated = rewrite(original)
+              if updated != original:
+                  path.write_text(updated, encoding="utf-8")
+          PY
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -96,7 +133,7 @@ jobs:
           git commit -m "chore: site preview for PR #${PR_NUMBER} (${SHORT_SHA})"
           git push origin "$BRANCH"
 
-          echo "preview_url=https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html" >> "$GITHUB_OUTPUT"
+          echo "preview_url=${PREVIEW_URL_BASE}/index.html" >> "$GITHUB_OUTPUT"
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
 
