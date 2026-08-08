@@ -59,3 +59,5 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 ### CI
 
 [`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。GitHub 上のチェック名は **E2E メニューバー** です。
+
+PR に `e2e 🧪` ラベルを付けると再実行します（起動後にラベルは外れるので、何度でも付け直せます）。失敗コメントは前回分を hide（outdated）してから新規投稿します。

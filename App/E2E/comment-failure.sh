@@ -245,13 +245,20 @@ if [[ -n "$RUN_URL" ]]; then
   BODY="${BODY}"$'\n'"Actions ログ: ${RUN_URL}"$'\n'
 fi
 
-COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-  --jq '[.[] | select(.body | startswith("<!-- e2e-core6-bot -->"))][0].id // empty')
+# 既存の E2E ボットコメントは sticky 更新せず、hide（outdated）してから新規投稿する。
+# macos の bash 3.2 でも動くよう pipe で回す。
+gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+  --jq '.[] | select(.body | startswith("<!-- e2e-core6-bot -->")) | .node_id // empty' \
+| while IFS= read -r node_id; do
+  [[ -z "$node_id" ]] && continue
+  if gh api graphql \
+    -f query='mutation($id:ID!){minimizeComment(input:{subjectId:$id,classifier:OUTDATED}){minimizedComment{isMinimized}}}' \
+    -f id="$node_id" >/dev/null; then
+    echo "hid previous e2e comment ${node_id}"
+  else
+    echo "warning: failed to hide e2e comment ${node_id}" >&2
+  fi
+done
 
-if [[ -n "$COMMENT_ID" ]]; then
-  gh api -X PATCH "repos/${REPO}/issues/comments/${COMMENT_ID}" -f body="$BODY" > /dev/null
-  echo "updated comment ${COMMENT_ID}"
-else
-  gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
-  echo "created failure comment"
-fi
+gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
+echo "created failure comment"
