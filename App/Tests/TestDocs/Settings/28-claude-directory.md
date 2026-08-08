@@ -32,4 +32,6 @@ Claude ディレクトリを変更で選べ、デフォルトで戻せます。
 
 ## 対応済みPR
 
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
+
 - （未作成）

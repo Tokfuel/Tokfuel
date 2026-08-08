@@ -25,4 +25,6 @@ Cursor の取得が劣化しているとき、節約のヒントに Cursor 由�
 
 ## 対応済みPR
 
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
+
 - （未作成）

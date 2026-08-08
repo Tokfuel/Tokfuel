@@ -25,4 +25,6 @@ Cursor のセッション行には、Cursor（推定）であることが分か�
 
 ## 対応済みPR
 
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
+
 - （未作成）

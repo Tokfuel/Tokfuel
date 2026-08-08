@@ -27,4 +27,6 @@ Cursor の取得が劣化しているとき、ヒーロー下に警告文と警�
 
 ## 対応済みPR
 
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
+
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）
