@@ -1,0 +1,117 @@
+{
+  "baselineIdentifiers" : [
+    "tokfuel.home",
+    "tokfuel.hero.today",
+    "tokfuel.section.trend",
+    "tokfuel.section.models",
+    "tokfuel.model-list",
+    "tokfuel.chart.style",
+    "tokfuel.chart.period",
+    "tokfuel.menu.more",
+    "tokfuel.settings"
+  ],
+  "completedScenarios" : [
+    "Budget-01-popover-daily-row",
+    "Budget-02-popover-monthly-row",
+    "Budget-03-popover-hidden-when-off",
+    "Budget-04-meter-ok-state",
+    "Budget-05-meter-warning-state",
+    "Budget-06-meter-over-state",
+    "Budget-07-meter-warn-marker",
+    "Budget-08-notification-warning",
+    "Budget-09-notification-over"
+  ],
+  "error" : "not found: picker 知らせ方",
+  "expectedScreens" : [
+    "popover"
+  ],
+  "explanation" : "Budget-10-alert-window-warning で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
+  "failedScenario" : "Budget-10-alert-window-warning",
+  "ok" : false,
+  "scenarios" : [
+    {
+      "elapsedMs" : 1972,
+      "id" : "Budget-01-popover-daily-row",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 51,
+      "id" : "Budget-02-popover-monthly-row",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 55,
+      "id" : "Budget-03-popover-hidden-when-off",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 45,
+      "id" : "Budget-04-meter-ok-state",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 57,
+      "id" : "Budget-05-meter-warning-state",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 81,
+      "id" : "Budget-06-meter-over-state",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 58,
+      "id" : "Budget-07-meter-warn-marker",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 59,
+      "id" : "Budget-08-notification-warning",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 65,
+      "id" : "Budget-09-notification-over",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 3971,
+      "error" : "not found: picker 知らせ方",
+      "id" : "Budget-10-alert-window-warning",
+      "status" : "failed"
+    },
+    {
+      "id" : "Budget-11-alert-window-over",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-12-alert-open-settings",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-13-alert-close",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-14-alert-both-channels",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-15-daily-vs-monthly-independent",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-16-side-by-side-still-combined",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-17-auth-on-budget-set",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-18-period-reset-notify",
+      "status" : "skipped"
+    }
+  ],
+  "updatedAt" : "2026-08-08T16:24:00Z"
+}
