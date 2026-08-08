@@ -48,13 +48,15 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 - どのシナリオで落ちたか
 - なぜ落ちたか（エラーと日本語の説明）
 - 失敗時のスクリーンショットと挙動 GIF（0.1 秒/コマ）
-- 正常な画面（`ScreenshotRenderer` / `--ui-preview` のフィクスチャ）
+- 前回成功時の実画面（orphan ブランチ `e2e-baselines` の popover / settings）
 
-画像・GIF は `e2e-failure-images` orphan ブランチ経由で `raw.githubusercontent.com` に載せます（ui-preview と同じ方式）。
+成功時は `App/E2E/publish-baselines.sh` が同じ実画面を `e2e-baselines` へ上書きします。失敗コメントの「成功 vs 失敗」はこの前回成功画像をスナップショットして並べます（同一コミットの `--ui-preview` は使いません）。まだ一度も緑になっていないときは「前回成功画面なし」と出ます。
+
+失敗時の画像・GIF は `e2e-failure-images` orphan ブランチ経由で `raw.githubusercontent.com` に載せます（ui-preview と同じ方式）。
 
 ### ローカルの Accessibility 許可
 
-初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与し、Screen Recording の Allow は `dismiss-tcc-prompt.sh` が押します。失敗時は 0.1 秒ごとの PNG を `ffmpeg` で `failure.mov` / `failure.gif` にし（再生も 0.1 秒/コマのまま）、PR コメントには挙動 GIF をインライン表示します。あわせて期待画面と失敗画面の並び比較も載せます。
+初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与し、Screen Recording の Allow は `dismiss-tcc-prompt.sh` が押します。失敗時は 0.1 秒ごとの PNG を `ffmpeg` で `failure.mov` / `failure.gif` にし（再生も 0.1 秒/コマのまま）、PR コメントには挙動 GIF をインライン表示します。あわせて前回成功と失敗の並び比較も載せます。
 
 ### CI
 

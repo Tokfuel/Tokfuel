@@ -3,7 +3,9 @@ import AppKit
 import Foundation
 
 /// E2E メニューバー用ドライバ（コアシナリオを Accessibility 操作で通す）。
-/// 使い方: TokfuelE2E --pid <TokfuelのPID> [--recording <path>] [--write-recording <path>]
+/// 使い方:
+///   TokfuelE2E --pid <TokfuelのPID> [--recording <path>] [--write-recording <path>]
+///   TokfuelE2E --pid <TokfuelのPID> --capture-baselines <dir>
 @main
 struct TokfuelE2EMain {
     static func main() {
@@ -12,6 +14,7 @@ struct TokfuelE2EMain {
               pidFlag + 1 < args.count,
               let pid = pid_t(args[pidFlag + 1]) else {
             fputs("usage: TokfuelE2E --pid <tokfuel-pid> [--recording path] [--write-recording path]\n", stderr)
+            fputs("       TokfuelE2E --pid <tokfuel-pid> --capture-baselines <dir>\n", stderr)
             exit(2)
         }
 
@@ -24,6 +27,7 @@ struct TokfuelE2EMain {
         let writePath = value(after: "--write-recording", in: args)
             ?? E2ERecording.localCachePath
         let reportPath = value(after: "--report", in: args) ?? E2EReport.defaultPath
+        let baselinesDir = value(after: "--capture-baselines", in: args)
 
         let driver: AXDriver
         do {
@@ -31,6 +35,17 @@ struct TokfuelE2EMain {
         } catch {
             fputs("TokfuelE2E failed: \(error)\n", stderr)
             exit(1)
+        }
+
+        if let baselinesDir {
+            do {
+                try driver.captureBaselines(to: baselinesDir)
+                print("baselines written under \(baselinesDir)")
+                exit(0)
+            } catch {
+                fputs("TokfuelE2E capture-baselines failed: \(error)\n", stderr)
+                exit(1)
+            }
         }
 
         do {
@@ -94,6 +109,52 @@ final class AXDriver {
         self.pollInterval = recording?.pollIntervalSeconds ?? 0.15
         // Warm up the tree.
         _ = copyAttribute(app, kAXRoleAttribute as String)
+    }
+
+    /// 成功直後の実画面を前回成功 baseline として残す（popover / settings）。
+    func captureBaselines(to directory: String) throws {
+        let fm = FileManager.default
+        try fm.createDirectory(atPath: directory, withIntermediateDirectories: true)
+        try ensureHomeOpen()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        try screencapture(to: (directory as NSString).appendingPathComponent("popover.png"))
+
+        try openSettingsFromHome()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.6))
+        try screencapture(to: (directory as NSString).appendingPathComponent("settings.png"))
+    }
+
+    private func ensureHomeOpen() throws {
+        if findByIdentifier("tokfuel.home", under: app) != nil { return }
+        try clickStatusItem()
+        _ = try waitForIdentifier("tokfuel.home", under: app, timeout: timeout(8))
+    }
+
+    private func openSettingsFromHome() throws {
+        if let settings = findByIdentifier("tokfuel.settings", under: app)
+            ?? (try? waitForWindowTitle("Tokfuel 設定", timeout: timeout(1))) {
+            // ホームが前面だと settings スクショが潰れるので閉じる。
+            if findByIdentifier("tokfuel.home", under: app) != nil {
+                try clickStatusItem()
+                RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+            }
+            _ = AXUIElementPerformAction(settings, "AXRaise" as CFString)
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            return
+        }
+        try scenarioSettings01Open()
+    }
+
+    private func screencapture(to path: String) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        process.arguments = ["-x", path]
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0,
+              FileManager.default.fileExists(atPath: path) else {
+            throw E2EError.assertFailed("screencapture failed for \(path)")
+        }
     }
 
     func runCore6() throws {

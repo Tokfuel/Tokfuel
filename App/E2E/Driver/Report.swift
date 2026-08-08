@@ -53,11 +53,14 @@ struct E2EReport: Codable {
         return "\(sid) で E2E が失敗しました。"
     }
 
-    /// 失敗シナリオから、比較用に出すべき「正常画面」キーを決める。
+    /// 失敗シナリオから、比較用に出すべき「前回成功画面」キーを決める。
+    /// Settings-02 はホームの表示反映が Then なので popover を優先する。
     static func expectedScreens(for scenario: String?) -> [String] {
         switch scenario {
-        case "Settings-01-open", "Settings-02-reflect":
+        case "Settings-01-open":
             return ["settings", "popover"]
+        case "Settings-02-reflect":
+            return ["popover", "settings"]
         default:
             return ["popover"]
         }

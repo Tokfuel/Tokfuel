@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E2E 失敗時に証拠（スクショ・挙動 GIF・正常画面）を orphan ブランチへ載せ、PR コメントする。
+# E2E 失敗時に証拠（スクショ・挙動 GIF・前回成功画面）を orphan ブランチへ載せ、PR コメントする。
 # ui-preview.yml と同じ手法（raw.githubusercontent.com 埋め込み）。
 #
 # usage: bash App/E2E/comment-failure.sh
@@ -17,6 +17,7 @@ cd "$ROOT"
 OUT_DIR="$ROOT/.build/e2e"
 REPORT="$OUT_DIR/report.json"
 BRANCH="e2e-failure-images"
+BASELINES_BRANCH="e2e-baselines"
 SHORT_SHA="${PR_SHA:0:7}"
 RUN_URL=""
 if [[ -n "${GITHUB_RUN_ID:-}" ]]; then
@@ -109,14 +110,18 @@ cp "$REPORT" "$STAGE/${PREFIX}-report.json"
 [[ -f "$OUT_DIR/failure.png" ]] && cp "$OUT_DIR/failure.png" "$STAGE/${PREFIX}-failure.png"
 [[ -f "$OUT_DIR/failure.mov" ]] && cp "$OUT_DIR/failure.mov" "$STAGE/${PREFIX}-failure.mov"
 [[ -f "$OUT_DIR/failure.gif" ]] && cp "$OUT_DIR/failure.gif" "$STAGE/${PREFIX}-failure.gif"
-[[ -f "$OUT_DIR/compare.png" ]] && cp "$OUT_DIR/compare.png" "$STAGE/${PREFIX}-compare.png"
 for t in start mid end; do
   [[ -f "$OUT_DIR/timeline-${t}.png" ]] && cp "$OUT_DIR/timeline-${t}.png" "$STAGE/${PREFIX}-timeline-${t}.png"
 done
+
+# 前回成功の実画面（e2e-baselines）を取得し、この PR 証拠へスナップショットする。
+git fetch origin "$BASELINES_BRANCH" 2>/dev/null || true
 for screen in $EXPECTED_SCREENS; do
-  src="$OUT_DIR/expected/${screen}.png"
-  if [[ -f "$src" ]]; then
-    cp "$src" "$STAGE/${PREFIX}-expected-${screen}.png"
+  if git show "origin/${BASELINES_BRANCH}:${screen}.png" > "$STAGE/${PREFIX}-expected-${screen}.png" 2>/dev/null; then
+    echo "copied baseline ${screen}.png from ${BASELINES_BRANCH}"
+  else
+    rm -f "$STAGE/${PREFIX}-expected-${screen}.png"
+    echo "warning: no baseline ${screen}.png on ${BASELINES_BRANCH}" >&2
   fi
 done
 
@@ -187,25 +192,25 @@ BODY=$(printf '%s\n' \
   "" \
   "\`${BASELINE}\`" \
   "" \
-  "#### 失敗 vs 成功（比較）" \
+  "#### 成功 vs 失敗（比較）" \
   ""
 )
 
 BODY="${BODY}"$'\n'"<table><tr>"$'\n'
-# 成功列
+# 成功列（前回 E2E 緑の実画面）
 BODY="${BODY}<td width=\"50%\" valign=\"top\" bgcolor=\"#e6f4ea\">"
-BODY="${BODY}<p><strong><font color=\"#1a7f37\">🟢 成功（期待）</font></strong></p>"
+BODY="${BODY}<p><strong><font color=\"#1a7f37\">🟢 成功（前回）</font></strong></p>"
 exp_name="${PREFIX}-expected-${PRIMARY_EXPECTED}.png"
 if [[ -f "$exp_name" ]]; then
   URL="$(raw "$exp_name")"
-  BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"expected\" width=\"360\"></a></p>"
+  BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"last success\" width=\"360\"></a></p>"
 else
-  BODY="${BODY}<p>_期待画面なし_</p>"
+  BODY="${BODY}<p>_前回成功画面なし（まだ緑の実行で baseline が載っていない）_</p>"
 fi
 BODY="${BODY}</td>"
 # 失敗列
 BODY="${BODY}<td width=\"50%\" valign=\"top\" bgcolor=\"#ffebe9\">"
-BODY="${BODY}<p><strong><font color=\"#c41e3a\">🔴 失敗（実際）</font></strong></p>"
+BODY="${BODY}<p><strong><font color=\"#c41e3a\">🔴 失敗（今回）</font></strong></p>"
 if [[ "$HAS_FAIL_IMG" -eq 1 ]]; then
   URL="$(raw "$FAILURE_IMG")"
   BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure\" width=\"360\"></a></p>"

@@ -78,13 +78,13 @@ sleep "$SETTLE"
 # 静止画でも Screen Recording の Allow が出ることがあるので、dismiss を並行起動する。
 VIDEO_OUT="$OUT_DIR/failure.mov"
 GIF_OUT="$OUT_DIR/failure.gif"
-COMPARE_OUT="$OUT_DIR/compare.png"
 FRAMES_DIR="$OUT_DIR/frames"
+BASELINE_DIR="$OUT_DIR/baseline"
 FRAME_INTERVAL="0.1"
 FRAME_FPS="10"
 FRAME_MAX="300"
-rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
-rm -rf "$FRAMES_DIR"
+rm -f "$VIDEO_OUT" "$GIF_OUT"
+rm -rf "$FRAMES_DIR" "$BASELINE_DIR"
 mkdir -p "$FRAMES_DIR"
 
 # Allow が出るのは最初の数キャプチャが多い。長く回すと System Events が E2E と競合する。
@@ -126,8 +126,15 @@ if [[ -n "${FRAME_PID}" ]]; then
 fi
 
 if [[ "$DRIVER_STATUS" -eq 0 ]]; then
-  rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
+  rm -f "$VIDEO_OUT" "$GIF_OUT"
   rm -rf "$FRAMES_DIR"
+  # 前回成功比較用に、実アプリのホーム / 設定を撮って残す。
+  mkdir -p "$BASELINE_DIR"
+  if "$DRIVER" --pid "$APP_PID" --capture-baselines "$BASELINE_DIR"; then
+    echo "baselines captured under ${BASELINE_DIR}"
+  else
+    echo "warning: failed to capture success baselines" >&2
+  fi
   echo "E2E メニューバー OK"
   exit 0
 fi
@@ -166,59 +173,12 @@ if [[ ${#frames[@]} -gt 0 ]]; then
   fi
 fi
 
-# 正常時の参照画面（フィクスチャ描画）。失敗シナリオに応じて popover / settings を残す。
-EXPECTED_DIR="$OUT_DIR/expected"
-rm -rf "$EXPECTED_DIR"
-mkdir -p "$EXPECTED_DIR"
-if "$APP" --ui-preview "$EXPECTED_DIR" >/dev/null 2>&1; then
-  echo "expected screens written under ${EXPECTED_DIR}"
-else
-  echo "warning: failed to render expected ui-preview screens" >&2
-fi
-
 # レポートが無い場合の最低限フォールバック。
+# 比較用の成功画像は ui-preview ではなく e2e-baselines（前回成功の実画面）を使う。
 if [[ ! -f "$REPORT" ]]; then
   cat > "$REPORT" <<EOF
 {"ok":false,"failedScenario":null,"error":"driver exited ${DRIVER_STATUS}","explanation":"ドライバが非ゼロで終了しました。","completedScenarios":[],"scenarios":[],"baselineIdentifiers":[],"expectedScreens":["popover"],"updatedAt":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 EOF
-fi
-
-# 成功（期待）と失敗（実際）を横並びにした比較画像（緑枠 / 赤枠）。
-if command -v ffmpeg >/dev/null 2>&1 && [[ -f "$OUT_DIR/failure.png" ]]; then
-  expected_png=""
-  if [[ -f "$REPORT" ]] && command -v python3 >/dev/null; then
-    expected_png="$(python3 - "$REPORT" "$EXPECTED_DIR" <<'PY'
-import json, os, sys
-r = json.load(open(sys.argv[1]))
-root = sys.argv[2]
-for name in r.get("expectedScreens") or ["popover"]:
-    path = os.path.join(root, f"{name}.png")
-    if os.path.isfile(path):
-        print(path)
-        break
-PY
-)"
-  fi
-  if [[ -z "$expected_png" ]]; then
-    for name in settings popover; do
-      if [[ -f "$EXPECTED_DIR/${name}.png" ]]; then
-        expected_png="$EXPECTED_DIR/${name}.png"
-        break
-      fi
-    done
-  fi
-  if [[ -n "$expected_png" ]]; then
-    # 緑=成功（期待） / 赤=失敗（実際）。ラベルはコメント側の見出しで示す。
-    ffmpeg -y -hide_banner -loglevel error \
-      -i "$expected_png" -i "$OUT_DIR/failure.png" \
-      -filter_complex "\
-        [0:v]scale=-1:360,pad=iw+24:ih+24:12:12:color=0x1a7f37[left];\
-        [1:v]scale=-1:360,pad=iw+24:ih+24:12:12:color=0xc41e3a[right];\
-        [left][right]hstack=inputs=2[out]" \
-      -map '[out]' "$COMPARE_OUT" \
-      && echo "wrote compare.png (expected vs failure)" \
-      || echo "warning: failed to synthesize compare.png" >&2
-  fi
 fi
 
 exit "$DRIVER_STATUS"

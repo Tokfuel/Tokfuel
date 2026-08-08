@@ -1,7 +1,7 @@
 name: E2E メニューバー
 
 # TestDocs コアシナリオを、実際のメニューバー操作で通す（macos-15）。
-# 失敗時は証拠（画面・挙動 GIF・正常フィクスチャ）を orphan ブランチへ載せ、PR コメントする。
+# 失敗時は証拠（画面・挙動 GIF・前回成功画面）を orphan ブランチへ載せ、PR コメントする。
 # `e2e 🧪` ラベルを付けると再実行する（ui-preview 📸 と同型。起動後にラベルは外す）。
 on:
   push:
@@ -163,10 +163,19 @@ jobs:
             .build/e2e/failure.png
             .build/e2e/failure.mov
             .build/e2e/failure.gif
-            .build/e2e/compare.png
             .build/e2e/timeline-*.png
-            .build/e2e/expected/
+            .build/e2e/baseline/
           if-no-files-found: ignore
+
+      - name: Publish success baselines
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: bash App/E2E/publish-baselines.sh
 
       - name: Comment failure evidence on PR
         if: failure() && github.event_name == 'pull_request'
