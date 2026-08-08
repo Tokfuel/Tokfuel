@@ -22,15 +22,15 @@ Thanks for your interest! This is a small, personal-use macOS menu-bar app, but 
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
 
-bash scripts/setup.sh             # install local git hooks (.githooks)
+bash Scripts/setup.sh             # install local git hooks (.githooks)
 swift build            # debug build
 swift run -c release   # run the app from source
-bash scripts/build.sh             # package + install Tokfuel.app to /Applications
-bash scripts/screenshot.sh        # regenerate README + Site screenshots from the real UI
+bash Scripts/build.sh             # package + install Tokfuel.app to /Applications
+bash Scripts/screenshot.sh        # regenerate README + Site screenshots from the real UI
 ```
 
-**Screenshots (README + download page).** `bash scripts/screenshot.sh` renders the real
-`PopoverView` once and writes the same PNG to both `assets/screenshot.png` (README) and
+**Screenshots (README + download page).** `bash Scripts/screenshot.sh` renders the real
+`PopoverView` once and writes the same PNG to both `Assets/screenshot.png` (README) and
 `Site/Assets/images/screenshot.png` (GitHub Pages). After a UI change, run it locally and
 commit both files — don't leave the Site copy stale. Releases also open a review PR with a
 fresh pair (see `.github/workflows/release.yml`); that path still wants a human look before
@@ -42,7 +42,7 @@ The app reads Claude Code transcripts under `~/.claude/projects/` directly (no h
 amount instead of waiting for real usage, install a debug-configuration build:
 
 ```bash
-bash scripts/build.sh --debug   # debug build, with the Settings → デバッグ section
+bash Scripts/build.sh --debug   # debug build, with the Settings → デバッグ section
 ```
 
 It lets you override today's / this month's cost or simulate "report not loaded". The whole
@@ -51,11 +51,11 @@ Overrides are in-memory only — a relaunch always returns to real data.
 
 **App icon.** The design is not edited here. It lives as an Icon Composer document in
 [Tokfuel/icon](https://github.com/Tokfuel/icon); this repository only carries the exported
-`assets/icon-master.png` and the sizes derived from it. After a design change, export a
+`Assets/icon-master.png` and the sizes derived from it. After a design change, export a
 1024×1024 PNG from Icon Composer, replace the master, and rebake:
 
 ```bash
-swift assets/make-icon.swift   # rewrites assets/AppIcon.iconset/ and assets/AppIcon.icns
+swift Assets/make-icon.swift   # rewrites Assets/AppIcon.iconset/ and Assets/AppIcon.icns
 ```
 
 ### Coding style
@@ -63,7 +63,7 @@ swift assets/make-icon.swift   # rewrites assets/AppIcon.iconset/ and assets/App
 - SwiftUI + Swift Concurrency. UI-touching state lives on `@MainActor`.
 - Keep `UsageStore` the single source of truth for parsing and aggregation; `PopoverView` stays pure presentation.
 - Don't add dependencies unless there's a strong reason — staying dependency-free keeps the app trivial to build.
-- Match the existing file layout under [`Tokfuel/Sources/`](Tokfuel/Sources/).
+- Match the existing file layout under [`App/Tokfuel/`](App/Tokfuel/).
 
 ### Commit messages
 
@@ -113,15 +113,15 @@ self-contained Proposal if you're looking for something to build.
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
 
-bash scripts/setup.sh             # ローカルの git hooks（.githooks）を取り込む
+bash Scripts/setup.sh             # ローカルの git hooks（.githooks）を取り込む
 swift build            # デバッグビルド
 swift run -c release   # ソースから実行
-bash scripts/build.sh             # Tokfuel.app をパッケージして /Applications にインストール
-bash scripts/screenshot.sh        # README + Site のスクリーンショットを実物の UI から再生成
+bash Scripts/build.sh             # Tokfuel.app をパッケージして /Applications にインストール
+bash Scripts/screenshot.sh        # README + Site のスクリーンショットを実物の UI から再生成
 ```
 
-**スクリーンショット（README + ダウンロードページ）。** `bash scripts/screenshot.sh` は実物の
-`PopoverView` を 1 回描画し、同じ PNG を `assets/screenshot.png`（README）と
+**スクリーンショット（README + ダウンロードページ）。** `bash Scripts/screenshot.sh` は実物の
+`PopoverView` を 1 回描画し、同じ PNG を `Assets/screenshot.png`（README）と
 `Site/Assets/images/screenshot.png`（GitHub Pages）の両方へ書き出します。UI を変えたら
 手元で実行して両ファイルをコミットしてください。Site 側だけ古いまま残さないこと。
 リリース時も同じペアを撮り直した確認用 PR が立ちます（`.github/workflows/release.yml`）。
@@ -132,15 +132,15 @@ bash scripts/screenshot.sh        # README + Site のスクリーンショット
 **デバッグセクション。** メニューバーの表示・アイコン色・予算アラートを、実際の使用量を待たずに任意の金額で確認できます。debug 構成のビルドを入れてください。
 
 ```bash
-bash scripts/build.sh --debug   # 設定に「デバッグ」セクションが付く debug ビルド
+bash Scripts/build.sh --debug   # 設定に「デバッグ」セクションが付く debug ビルド
 ```
 
 設定の一番下で、今日／今月のコストを上書きしたり「レポート未取得」を再現できます。この機能全体を `#if DEBUG` で囲んでいるため、ユーザーが入れるリリースビルドにはコンパイルされません。上書き値はメモリ上だけに持つため、再起動すれば必ず実データに戻ります。
 
-**アプリアイコン。** デザインはこのリポジトリでは編集しません。正本は [Tokfuel/icon](https://github.com/Tokfuel/icon) の Icon Composer ドキュメントで、ここが持つのは書き出した `assets/icon-master.png` とそこから焼いた各サイズだけです。デザインを変えたら、Icon Composer から 1024×1024 の PNG を書き出してマスターを差し替え、焼き直してください。
+**アプリアイコン。** デザインはこのリポジトリでは編集しません。正本は [Tokfuel/icon](https://github.com/Tokfuel/icon) の Icon Composer ドキュメントで、ここが持つのは書き出した `Assets/icon-master.png` とそこから焼いた各サイズだけです。デザインを変えたら、Icon Composer から 1024×1024 の PNG を書き出してマスターを差し替え、焼き直してください。
 
 ```bash
-swift assets/make-icon.swift   # assets/AppIcon.iconset/ と assets/AppIcon.icns を再生成
+swift Assets/make-icon.swift   # Assets/AppIcon.iconset/ と Assets/AppIcon.icns を再生成
 ```
 
 ### コーディングスタイル
@@ -148,7 +148,7 @@ swift assets/make-icon.swift   # assets/AppIcon.iconset/ と assets/AppIcon.icns
 - SwiftUI + Swift Concurrency。UI に触る状態は `@MainActor` に置く。
 - パースと集計は `UsageStore` に集約（SSOT）。`PopoverView` は純粋な表示層に保つ。
 - 依存パッケージは原則追加しない（ビルドを最小に保ちたい）。
-- ファイル配置は既存の [`Tokfuel/Sources/`](Tokfuel/Sources/) に揃える。
+- ファイル配置は既存の [`App/Tokfuel/`](App/Tokfuel/) に揃える。
 
 ### コミットメッセージ
 

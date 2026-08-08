@@ -70,7 +70,7 @@ Issue 1 件の実装は大きく、巻き戻しにくい。だから具体的な
 - **UI を足したら ui-preview も同じ PR で更新する（必須）**：`PopoverView` /
   `SettingsView` / `AboutView`、または単独で見せる新規 View（同意ダイアログやアラートなど）を
   追加・変更したときは、次を同じ差分に含める。怠るとレビュアーに新しい UI が見えない。
-  1. [`ScreenshotRenderer.allScreens()`](../../../Tokfuel/Sources/ScreenshotRenderer.swift)
+  1. [`ScreenshotRenderer.allScreens()`](../../../App/Tokfuel/ScreenshotRenderer.swift)
      にフィクスチャ画面を追加または更新する
   2. [`.github/workflows/ui-preview.yml`](../../../.github/workflows/ui-preview.yml) の
      `ORDER` と `screen_title` を揃える
@@ -87,17 +87,17 @@ Issue 1 件の実装は大きく、巻き戻しにくい。だから具体的な
 - 組み込みの **`simplify`** スキル（再利用、死んだコード、過剰な抽象化）を実行し、修正を適用する。
 - 組み込みの **`code-review`** スキルで、ビルドには見えない正しさのバグを探す。
 - 正しさが実行時の挙動に懸かる項目なら、組み込みの **`verify`** スキルで実アプリを動かす。
-  `bash scripts/build.sh` でビルドとインストールをし、挙動を実際に操作して、見たものを報告する。
+  `bash Scripts/build.sh` でビルドとインストールをし、挙動を実際に操作して、見たものを報告する。
   動作未確認のまま動くと主張しない。
 
 ### 7. 検証する
 
 ```bash
 swift build                    # 緑が必須
-swift build -c release         # scripts/build.sh が使うリリース構成
+swift build -c release         # Scripts/build.sh が使うリリース構成
 ```
 
-ビルドを赤のまま残さない。実行時に見える変更なら、さらに `bash scripts/build.sh` で実アプリを
+ビルドを赤のまま残さない。実行時に見える変更なら、さらに `bash Scripts/build.sh` で実アプリを
 確認する（`verify` を使う）。
 
 ### 8. PR は求められたときだけ

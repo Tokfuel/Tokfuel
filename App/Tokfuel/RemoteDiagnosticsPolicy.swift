@@ -3,8 +3,8 @@ import Foundation
 /// Firebase Crashlytics / Analytics を動かしてよいかの判定（#22）。
 /// 送信そのものは `AnalyticsService` が担う。ここはゲート条件だけを置き、テスト可能にする。
 enum RemoteDiagnosticsPolicy {
-    /// 配布ビルド（`scripts/release.sh` が `-DTOKFUEL_DISTRIBUTION` を付けたもの）だけ true。
-    /// DEBUG や手元の `swift build` / `scripts/build.sh` では false（開発中は Firebase を起動しない）。
+    /// 配布ビルド（`Scripts/release.sh` が `-DTOKFUEL_DISTRIBUTION` を付けたもの）だけ true。
+    /// DEBUG や手元の `swift build` / `Scripts/build.sh` では false（開発中は Firebase を起動しない）。
     static var isDistributionBuild: Bool {
         #if DEBUG
         return false

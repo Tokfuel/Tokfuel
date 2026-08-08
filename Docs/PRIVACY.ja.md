@@ -28,7 +28,7 @@ Tokfuel が通信するのは以下のケースのみで、Claude Code の trans
 - **アプリの更新確認（自動）**：アプリ内アップデートを提案するため、`UpdateChecker` が起動時と以後 24 時間ごとに、GitHub の公開 Releases API（`api.github.com`）へ Tokfuel の最新リリースを問い合わせます。リクエストに利用データや識別子は含みません。リリースファイル自体のダウンロードは、ポップオーバーの**アップデート**ボタンを押したときにのみ行います。
 - **Cursor の価格表（自動、Cursor 導入時）**：Cursor のコスト見積りを精緻化するため、`CursorPricingService` が `cursor.com/docs/models-and-pricing` から公開価格表を 1 日 1 回取得します。ページ取得のみで、利用データは送信しません。
 - **Cursor のダッシュボード利用量（Cursor 導入かつサインイン時）**：`CursorDashboardService` が、Cursor 自身のローカル `state.vscdb` にすでに保存されているセッショントークンを使い、Cursor のダッシュボード利用量 API（`api2.cursor.sh`）を呼び出します。送信するのはその認証ヘッダーと日付範囲のみで、プロンプトやローカル transcript は含みません。失敗時はローカルの SQLite トークンスナップショットにフォールバックします。
-- **クラッシュレポート（配布ビルド、同意不要）**：GitHub Release など配布用にビルドしたアプリでは、Firebase Crashlytics へクラッシュ時のスタックトレースと端末・OS・アプリバージョンなどの診断情報を送ります。プロンプト、コスト、ファイルパス、transcript は含みません。開発用ビルド（`scripts/build.sh` や `swift build`）では Firebase を起動せず、この通信は発生しません。
+- **クラッシュレポート（配布ビルド、同意不要）**：GitHub Release など配布用にビルドしたアプリでは、Firebase Crashlytics へクラッシュ時のスタックトレースと端末・OS・アプリバージョンなどの診断情報を送ります。プロンプト、コスト、ファイルパス、transcript は含みません。開発用ビルド（`Scripts/build.sh` や `swift build`）では Firebase を起動せず、この通信は発生しません。
 - **利用状況アナリティクス（配布ビルド、オプトイン）**：設定の「利用状況の送信を許可」を ON にしたときだけ、Firebase Analytics へ匿名のアプリ操作イベント（起動、タブ表示、設定キー名の変更など）を送ります。既定値は OFF です。プロンプト、コスト、パス、Skill / MCP 名など Claude / Cursor 由来のデータは送りません。OFF のときは Analytics の収集を無効化し、開発用ビルドでは同意の有無に関わらず送りません。
 
 一般の Web リクエストと同様、これらの API の運営者は IP アドレスなどの標準的な接続メタデータを技術的に受け取ります。

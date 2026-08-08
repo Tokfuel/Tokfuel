@@ -14,7 +14,7 @@ As stated in the MIT License, the software is provided **"as is", without warran
 
 ## Bundled third-party software
 
-Tokfuel bundles [retok](https://github.com/d-date/retok) unmodified for cost analysis. retok is © [Daiki Matsudate (@d-date)](https://github.com/d-date) and licensed under the [MIT License](../Tokfuel/Sources/Resources/LICENSE-retok). Exchange rates are provided by the [Frankfurter API](https://frankfurter.dev) under its own terms.
+Tokfuel bundles [retok](https://github.com/d-date/retok) unmodified for cost analysis. retok is © [Daiki Matsudate (@d-date)](https://github.com/d-date) and licensed under the [MIT License](../App/Tokfuel/Resources/LICENSE-retok). Exchange rates are provided by the [Frankfurter API](https://frankfurter.dev) under its own terms.
 
 ## Trademarks
 

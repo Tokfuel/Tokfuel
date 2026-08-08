@@ -14,7 +14,7 @@ MIT License が定めるとおり、本ソフトウェアは**「現状のまま
 
 ## 同梱のサードパーティソフトウェア
 
-Tokfuel はコスト分析のために [retok](https://github.com/d-date/retok) を無改変で同梱しています。retok は [Daiki Matsudate (@d-date)](https://github.com/d-date) 氏の著作物で、[MIT License](../Tokfuel/Sources/Resources/LICENSE-retok) の下で提供されています。為替レートは [Frankfurter API](https://frankfurter.dev) がその規約の下で提供します。
+Tokfuel はコスト分析のために [retok](https://github.com/d-date/retok) を無改変で同梱しています。retok は [Daiki Matsudate (@d-date)](https://github.com/d-date) 氏の著作物で、[MIT License](../App/Tokfuel/Resources/LICENSE-retok) の下で提供されています。為替レートは [Frankfurter API](https://frankfurter.dev) がその規約の下で提供します。
 
 ## 商標
 

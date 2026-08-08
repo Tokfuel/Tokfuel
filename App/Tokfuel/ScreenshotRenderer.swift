@@ -4,7 +4,7 @@ import SwiftUI
 
 /// README / Site に貼るスクリーンショットを、実物の `PopoverView` から生成する
 /// （TF-0015 / #62）。手描きのモックアップと違い、UI を変えれば絵も追従する。
-/// 既定では `scripts/screenshot.sh` が同じ PNG を README と Site の両方へ配る。
+/// 既定では `Scripts/screenshot.sh` が同じ PNG を README と Site の両方へ配る。
 ///
 /// `Tokfuel --screenshot <出力先>` で起動すると、常駐処理に入る前にここで PNG を書き出して
 /// 終了する。DEBUG ビルド専用なので配布バイナリには含まれない。
@@ -13,7 +13,7 @@ import SwiftUI
 /// （解析中のスピナーが写り込まないよう、期間は `UsageStore` の初期化前に決める）。
 ///
 /// グラフやメーターの `Color.accentColor` は生成機のシステムアクセントカラーに従い、AppKit は
-/// それを起動時に読む。どの機械でも同じ絵にするため `scripts/screenshot.sh` が
+/// それを起動時に読む。どの機械でも同じ絵にするため `Scripts/screenshot.sh` が
 /// `-AppleAccentColor 1`（オレンジ）を起動引数で渡している。
 @MainActor
 enum ScreenshotRenderer {

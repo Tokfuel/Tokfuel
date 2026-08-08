@@ -1,6 +1,6 @@
 // アプリアイコンの .iconset / .icns を生成する。
 //
-//     swift assets/make-icon.swift
+//     swift Assets/make-icon.swift
 //
 // デザインの正本はこのリポジトリではなく Icon Composer ドキュメント
 // （https://github.com/Tokfuel/icon の Tokfuel.icon）。ここでの仕事は、

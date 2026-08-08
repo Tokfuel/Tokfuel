@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Tokfuel" width="100%"/>
+  <img src="Assets/banner.svg" alt="Tokfuel" width="100%"/>
 </p>
 
 <h1 align="center">Tokfuel</h1>
@@ -30,7 +30,7 @@
 ---
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="ポップオーバーのスクリーンショット" width="560"/>
+  <img src="Assets/screenshot.png" alt="ポップオーバーのスクリーンショット" width="560"/>
 </p>
 
 ## 特長
@@ -123,7 +123,7 @@
   ダッシュボード使用量照会（認証と日付範囲のみ。プロンプト本文は送りません）、**配布ビルド**での
   Crashlytics クラッシュレポート（同意プロンプトなし）、および設定で許可したときだけの
   匿名 Firebase Analytics（アプリ UI 操作）です。開発用ビルドでは Firebase を起動しません。
-  詳細は[プライバシーポリシー](docs/PRIVACY.ja.md)と[利用規約](docs/TERMS.ja.md)へ。
+  詳細は[プライバシーポリシー](Docs/PRIVACY.ja.md)と[利用規約](Docs/TERMS.ja.md)へ。
 
 ## インストール
 
@@ -143,7 +143,7 @@
 ```bash
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
-bash scripts/build.sh
+bash Scripts/build.sh
 ```
 
 ## コントリビュート
@@ -191,7 +191,7 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 ## 謝辞
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
-  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
+  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](App/Tokfuel/Resources/LICENSE-retok)。
 - **アプリアイコン** — [Icon Composer](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer) でデザイン。
   ソースドキュメントは [Tokfuel/icon](https://github.com/Tokfuel/icon) にあります。
 - **為替レート** — [Frankfurter](https://frankfurter.dev)。
