@@ -1,8 +1,9 @@
 name: Site Preview
 
-# site-preview 🌐 ラベルを付けると、Site/ をビルドして専用の orphan branch
+# 0-site-preview 🌐 ラベルを付けると、Site/ をビルドして専用の orphan branch
 # (site-preview-pages) に PR 番号別のサブディレクトリとして push し、
 # raw.githack.com 経由でレンダリングした URL を PR コメントに貼る。
+# 再ラベルのたびに新規コメントを足し、以前の bot コメントは OUTDATED で隠す。
 #
 # GitHub Pages の公開デプロイ（pages.yml）は actions/deploy-pages を使っており、
 # 1 リポジトリにつき 1 つの公開先しか持てないため、同じ仕組みで PR ごとのプレビューを
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   preview:
     name: Build & publish site preview
-    if: github.event.action == 'labeled' && github.event.label.name == 'site-preview 🌐'
+    if: github.event.action == 'labeled' && github.event.label.name == '0-site-preview 🌐'
     runs-on: macos-15
     permissions:
       contents: write
@@ -75,17 +76,22 @@ jobs:
           git push origin "$BRANCH"
 
           PREVIEW_URL="https://raw.githack.com/${REPO}/${BRANCH}/${DIR}/index.html"
-          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s の内容が更新されるたびに (再ラベル付けで) 上書きされる。' \
+          BODY=$(printf '<!-- site-preview-bot -->\n### 🌐 Site Preview\n\nBuilt at `%s` by `swift run` in `Site/`.\n\n%s\n\nこの URL は %s の内容が更新されるたびに (再ラベル付けで) 差し替わる。以前のプレビューコメントは非表示になる。' \
             "$SHORT_SHA" "$PREVIEW_URL" "$DIR")
 
-          COMMENT_ID=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-            --jq '[.[] | select(.body | startswith("<!-- site-preview-bot -->"))][0].id // empty')
+          # 既存の bot コメントは隠してから、毎回新規コメントを足す。
+          while IFS= read -r NODE_ID; do
+            [ -n "$NODE_ID" ] || continue
+            gh api graphql -f query='
+              mutation($id: ID!) {
+                minimizeComment(input: { subjectId: $id, classifier: OUTDATED }) {
+                  minimizedComment { isMinimized }
+                }
+              }' -f id="$NODE_ID" > /dev/null
+          done < <(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- site-preview-bot -->")) | .node_id')
 
-          if [ -n "$COMMENT_ID" ]; then
-            gh api -X PATCH "repos/${REPO}/issues/comments/${COMMENT_ID}" -f body="$BODY" > /dev/null
-          else
-            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
-          fi
+          gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$BODY" > /dev/null
 
   cleanup:
     name: Remove preview on close
