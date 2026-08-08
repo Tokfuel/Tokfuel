@@ -13,7 +13,8 @@
 2. **観点 ID / GWT / 判定結果を捏造しない。** 既存 MD・コード・Issue に接地する。根拠が無いときはユーザーに確認する。
 3. **シナリオ起票中はプロダクトコードとテストコードを触らない。** `App/Tokfuel/` / `App/Tests/` / `App/E2E/` の変更は実装レーンの役割である。
 4. **実装の正はビルド / テストである。** テスト未通過のまま `status` を `done` にしない。通過後はマージ前の実装 PR で `done` にしてよい。
-5. **グラウンドルールを守る。** ローカルオンリー、ゼロセットアップ、新規パッケージ禁止はリポジトリ全体の AGENTS に従う。
+5. **UI や仕様の変化で合わなくなったシナリオを書き換えて追従しない。** `status: archived` にして履歴として残し、新しい観点 ID で新規起票する（任意で `superseded_by`）。
+6. **グラウンドルールを守る。** ローカルオンリー、ゼロセットアップ、新規パッケージ禁止はリポジトリ全体の AGENTS に従う。
 
 ## 担保手段の優先
 
@@ -36,9 +37,11 @@
 - Domain は `primary_domain` と一致（`MenuBar` / `Cost` / `Settings` / `Budget` / `Cursor`）
 - `nn` はドメイン内 2 桁連番。`slug` は英小文字ハイフンでファイル名末尾と一致
 - 雛形: [`_TEMPLATE.md`](_TEMPLATE.md) / 入口: [`README.md`](README.md) / 網羅確認: [`CATALOG.md`](CATALOG.md)
-- カバレッジ: `python3 Scripts/generate-testdocs-catalog.py` が [`CATALOG.md`](CATALOG.md) / [`coverage.json`](coverage.json) / README のカバレッジ節を更新する。主指標は実装カバレッジ（`status: done` / 全件）
+- カバレッジ: `python3 Scripts/generate-testdocs-catalog.py` が [`CATALOG.md`](CATALOG.md) / [`coverage.json`](coverage.json) / README のカバレッジ節を更新する。主指標は実装カバレッジ（`status: done` / 現行シナリオ。`archived` は母数外）
+- status: `ideation` / `ready` / `in-progress` / `review` / `done` / `archived`（詳細は [`README.md`](README.md)）
 - 節順: **シナリオ → 完了条件 → 経路（テスト単位 GWT）→ 対応済みPR**
 - `platforms` は front matter。本文に `## 対象` / 「前提条件」節は書かない
+- UI 変更で陳腐化したら本文を直さず `archived` にし、後任を新規 ID で起票する
 - 経路見出しは振る舞いのみ（クラス名禁止）
 - Then は Store / Settings / 表示状態を主とし、HTTP 回数などは補助
 - シナリオ MD の地の文は敬体（ですます調）。本ファイルのような作業規範は常体でよい

@@ -1,7 +1,12 @@
 {
+  "active": 131,
+  "archived": 0,
   "by_domain": {
     "Budget": {
+      "active": 18,
+      "archived": 0,
       "by_status": {
+        "archived": 0,
         "done": 0,
         "ideation": 0,
         "in-progress": 0,
@@ -14,7 +19,10 @@
       "total": 18
     },
     "Cost": {
+      "active": 26,
+      "archived": 0,
       "by_status": {
+        "archived": 0,
         "done": 0,
         "ideation": 0,
         "in-progress": 0,
@@ -27,7 +35,10 @@
       "total": 26
     },
     "Cursor": {
+      "active": 18,
+      "archived": 0,
       "by_status": {
+        "archived": 0,
         "done": 0,
         "ideation": 0,
         "in-progress": 0,
@@ -40,7 +51,10 @@
       "total": 18
     },
     "MenuBar": {
+      "active": 33,
+      "archived": 0,
       "by_status": {
+        "archived": 0,
         "done": 0,
         "ideation": 0,
         "in-progress": 0,
@@ -53,7 +67,10 @@
       "total": 33
     },
     "Settings": {
+      "active": 36,
+      "archived": 0,
       "by_status": {
+        "archived": 0,
         "done": 0,
         "ideation": 0,
         "in-progress": 0,
@@ -67,6 +84,7 @@
     }
   },
   "by_status": {
+    "archived": 0,
     "done": 0,
     "ideation": 0,
     "in-progress": 0,
@@ -75,7 +93,7 @@
   },
   "rates": {
     "e2e_completion_spec_rate": {
-      "definition": "完了条件に E2E があるシナリオ数 / 全シナリオ数",
+      "definition": "完了条件に E2E がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
       "fraction": "131/131",
       "label": "E2E 完了条件の記載率",
@@ -83,7 +101,7 @@
       "percent": "100.0%"
     },
     "filed_coverage": {
-      "definition": "status が ideation 以外のシナリオ数 / 全シナリオ数",
+      "definition": "status が ideation 以外の現行シナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
       "fraction": "131/131",
       "label": "起票完了率",
@@ -91,7 +109,7 @@
       "percent": "100.0%"
     },
     "implementation_coverage": {
-      "definition": "status が done のシナリオ数 / 全シナリオ数",
+      "definition": "status が done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
       "fraction": "0/131",
       "label": "実装カバレッジ",
@@ -99,7 +117,7 @@
       "percent": "0.0%"
     },
     "pr_link_rate": {
-      "definition": "対応済みPR に pull リンクまたは #NNNN があるシナリオ数 / 全シナリオ数",
+      "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
       "fraction": "0/131",
       "label": "対応済み PR 紐付け率",
@@ -107,7 +125,7 @@
       "percent": "0.0%"
     },
     "started_coverage": {
-      "definition": "status が in-progress / review / done のシナリオ数 / 全シナリオ数",
+      "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
       "fraction": "0/131",
       "label": "着手カバレッジ",

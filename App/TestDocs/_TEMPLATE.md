@@ -5,6 +5,7 @@ primary_domain: Cost
 platforms: [macOS]
 status: ideation
 # issue: <URL または #NNNN>（関連 Issue があるときだけ。無いときはこの行ごと省略）
+# superseded_by: Cost-00-example-slug（archived にするとき、後任があれば）
 ---
 
 ## シナリオ

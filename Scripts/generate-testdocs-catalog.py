@@ -18,7 +18,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TESTDOCS = ROOT / "App" / "TestDocs"
 DOMAINS = ["MenuBar", "Cost", "Settings", "Budget", "Cursor"]
-STATUSES = ["ideation", "ready", "in-progress", "review", "done"]
+STATUSES = ["ideation", "ready", "in-progress", "review", "done", "archived"]
+ACTIVE_STATUSES = ["ideation", "ready", "in-progress", "review", "done"]
 MEANS = ["E2E", "UT&IT", "VRT"]
 
 README_START = "<!-- testdocs-coverage:start -->"
@@ -87,69 +88,77 @@ def collect() -> list[dict[str, object]]:
 def compute_coverage(scenarios: list[dict[str, object]]) -> dict[str, object]:
     total = len(scenarios)
     by_status = Counter(str(s["status"]) for s in scenarios)
+    active_rows = [s for s in scenarios if s["status"] != "archived"]
+    active = len(active_rows)
+    archived = by_status.get("archived", 0)
     done = by_status.get("done", 0)
-    started = sum(by_status.get(st, 0) for st in ("in-progress", "review", "done"))
-    filed = total - by_status.get("ideation", 0)
-    with_e2e = sum(1 for s in scenarios if "E2E" in s["means"])
-    with_pr = sum(1 for s in scenarios if s["has_pr"])
+    started = sum(1 for s in active_rows if s["status"] in ("in-progress", "review", "done"))
+    filed = sum(1 for s in active_rows if s["status"] != "ideation")
+    with_e2e = sum(1 for s in active_rows if "E2E" in s["means"])
+    with_pr = sum(1 for s in active_rows if s["has_pr"])
 
     by_domain: dict[str, dict[str, object]] = {}
     for domain in DOMAINS:
         domain_rows = [s for s in scenarios if s["domain"] == domain]
-        domain_total = len(domain_rows)
-        domain_done = sum(1 for s in domain_rows if s["status"] == "done")
+        domain_active_rows = [s for s in domain_rows if s["status"] != "archived"]
+        domain_active = len(domain_active_rows)
+        domain_done = sum(1 for s in domain_active_rows if s["status"] == "done")
         domain_status = Counter(str(s["status"]) for s in domain_rows)
         by_domain[domain] = {
-            "total": domain_total,
+            "total": len(domain_rows),
+            "active": domain_active,
+            "archived": domain_status.get("archived", 0),
             "done": domain_done,
-            "implementation_coverage": pct(domain_done, domain_total),
-            "implementation_fraction": f"{domain_done}/{domain_total}",
+            "implementation_coverage": pct(domain_done, domain_active),
+            "implementation_fraction": f"{domain_done}/{domain_active}",
             "by_status": {st: domain_status.get(st, 0) for st in STATUSES},
         }
 
     return {
         "total": total,
+        "active": active,
+        "archived": archived,
         "by_status": {st: by_status.get(st, 0) for st in STATUSES},
         "rates": {
             "implementation_coverage": {
                 "label": "実装カバレッジ",
-                "definition": "status が done のシナリオ数 / 全シナリオ数",
+                "definition": "status が done のシナリオ数 / 現行シナリオ数（archived を除く）",
                 "numerator": done,
-                "denominator": total,
-                "fraction": f"{done}/{total}",
-                "percent": pct(done, total),
+                "denominator": active,
+                "fraction": f"{done}/{active}",
+                "percent": pct(done, active),
             },
             "started_coverage": {
                 "label": "着手カバレッジ",
-                "definition": "status が in-progress / review / done のシナリオ数 / 全シナリオ数",
+                "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
                 "numerator": started,
-                "denominator": total,
-                "fraction": f"{started}/{total}",
-                "percent": pct(started, total),
+                "denominator": active,
+                "fraction": f"{started}/{active}",
+                "percent": pct(started, active),
             },
             "filed_coverage": {
                 "label": "起票完了率",
-                "definition": "status が ideation 以外のシナリオ数 / 全シナリオ数",
+                "definition": "status が ideation 以外の現行シナリオ数 / 現行シナリオ数（archived を除く）",
                 "numerator": filed,
-                "denominator": total,
-                "fraction": f"{filed}/{total}",
-                "percent": pct(filed, total),
+                "denominator": active,
+                "fraction": f"{filed}/{active}",
+                "percent": pct(filed, active),
             },
             "e2e_completion_spec_rate": {
                 "label": "E2E 完了条件の記載率",
-                "definition": "完了条件に E2E があるシナリオ数 / 全シナリオ数",
+                "definition": "完了条件に E2E がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
                 "numerator": with_e2e,
-                "denominator": total,
-                "fraction": f"{with_e2e}/{total}",
-                "percent": pct(with_e2e, total),
+                "denominator": active,
+                "fraction": f"{with_e2e}/{active}",
+                "percent": pct(with_e2e, active),
             },
             "pr_link_rate": {
                 "label": "対応済み PR 紐付け率",
-                "definition": "対応済みPR に pull リンクまたは #NNNN があるシナリオ数 / 全シナリオ数",
+                "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
                 "numerator": with_pr,
-                "denominator": total,
-                "fraction": f"{with_pr}/{total}",
-                "percent": pct(with_pr, total),
+                "denominator": active,
+                "fraction": f"{with_pr}/{active}",
+                "percent": pct(with_pr, active),
             },
         },
         "by_domain": by_domain,
@@ -162,8 +171,9 @@ def render_coverage_section(coverage: dict[str, object]) -> list[str]:
         "## カバレッジ",
         "",
         "シナリオ MD の front matter と節から、スクリプトが決定的に集計します。"
-        "主指標は **実装カバレッジ**（`status: done` / 全件）です。",
+        "主指標は **実装カバレッジ**（`status: done` / 現行シナリオ。`archived` は母数外）です。",
         "",
+        f"- 現行シナリオ: `{coverage['active']}` / 全ファイル: `{coverage['total']}` / archived: `{coverage['archived']}`",
         "- 生成: `python3 Scripts/generate-testdocs-catalog.py`",
         "- 機械可読: [`coverage.json`](coverage.json)",
         "",
@@ -189,14 +199,14 @@ def render_coverage_section(coverage: dict[str, object]) -> list[str]:
             "",
             "### ドメイン別の実装カバレッジ",
             "",
-            "| Domain | 実装カバレッジ | done / 全件 |",
-            "| --- | ---: | ---: |",
+            "| Domain | 実装カバレッジ | done / 現行 | archived |",
+            "| --- | ---: | ---: | ---: |",
         ]
     )
     for domain in DOMAINS:
         row = coverage["by_domain"][domain]
         lines.append(
-            f"| {domain} | {row['implementation_coverage']} | `{row['implementation_fraction']}` |"
+            f"| {domain} | {row['implementation_coverage']} | `{row['implementation_fraction']}` | {row['archived']} |"
         )
 
     lines.extend(
@@ -258,6 +268,7 @@ def render_catalog(scenarios: list[dict[str, object]], coverage: dict[str, objec
             "| `in-progress` | 実装中 |",
             "| `review` | レビュー中 |",
             "| `done` | 実装完了 |",
+            "| `archived` | UI / 仕様変化で現行外（書き換えず履歴として残す） |",
             "",
         ]
     )
@@ -295,7 +306,7 @@ def render_readme_coverage_block(coverage: dict[str, object]) -> str:
         README_START,
         "## カバレッジ",
         "",
-        f"主指標の **実装カバレッジ** はいま **{impl['percent']}**（`{impl['fraction']}`）です。"
+        f"主指標の **実装カバレッジ** はいま **{impl['percent']}**（`{impl['fraction']}`、現行のみ。archived 除外）です。"
         f"着手カバレッジは {started['percent']}（`{started['fraction']}`）、"
         f"起票完了率は {filed['percent']}（`{filed['fraction']}`）、"
         f"E2E 完了条件の記載率は {e2e['percent']}（`{e2e['fraction']}`）です。",
