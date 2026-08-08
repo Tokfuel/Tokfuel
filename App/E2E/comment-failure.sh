@@ -188,7 +188,7 @@ BODY="${BODY}"$'\n'"#### 失敗時の動画"$'\n'
 if [[ "$HAS_FAIL_GIF" -eq 1 ]]; then
   URL="$(raw "$FAILURE_GIF")"
   BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure animation\" width=\"720\"></a></p>"
-  BODY="${BODY}"$'\n'"<p>コメント内のアニメ GIF（1 秒ごとの画面キャプチャ）</p>"$'\n'
+  BODY="${BODY}"$'\n'"<p>コメント内のアニメ GIF（0.2 秒ごとの画面キャプチャ）</p>"$'\n'
 fi
 if [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
   URL="$(raw "$FAILURE_MOV")"

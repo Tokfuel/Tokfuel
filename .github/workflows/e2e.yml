@@ -110,7 +110,11 @@ jobs:
           swift build --product Tokfuel
           swift build --product TokfuelE2E
 
-      - name: Grant Accessibility TCC
+      # 失敗時の動画は取得済み PNG フレームを ffmpeg でつなぐ。
+      - name: Install ffmpeg
+        run: brew install ffmpeg
+
+      - name: Grant Accessibility / Screen Recording TCC
         run: |
           bash App/E2E/grant-tcc.sh \
             "$PWD/.build/debug/TokfuelE2E" \
@@ -118,12 +122,29 @@ jobs:
             /usr/bin/osascript \
             /bin/bash \
             /bin/zsh \
-            /usr/sbin/screencapture
+            /usr/sbin/screencapture \
+            "$(command -v ffmpeg)" \
+            "$SHELL"
 
-      # 失敗時の動画は screencapture -v（Allow ダイアログ）ではなく、
-      # 取得済み PNG フレームを ffmpeg でつなぐ。
-      - name: Install ffmpeg
-        run: brew install ffmpeg
+      # 静止画 screencapture でも Allow が出ることがあるので、先に一度通しておく。
+      - name: Warm up Screen Recording Allow
+        run: |
+          set -euo pipefail
+          bash App/E2E/dismiss-tcc-prompt.sh 20 &
+          DISMISS_PID=$!
+          for i in 1 2 3 4 5; do
+            /usr/sbin/screencapture -x "/tmp/tokfuel-e2e-warmup-${i}.png" >/dev/null 2>&1 || true
+            sleep 0.4
+          done
+          kill "$DISMISS_PID" 2>/dev/null || true
+          wait "$DISMISS_PID" 2>/dev/null || true
+          # ウォームアップ後に実ファイルが残っていれば許可は通っている。
+          if ls /tmp/tokfuel-e2e-warmup-*.png >/dev/null 2>&1; then
+            echo "screen recording warm-up ok"
+            rm -f /tmp/tokfuel-e2e-warmup-*.png
+          else
+            echo "warning: warm-up screencapture produced no files (Allow may still be pending)" >&2
+          fi
 
       - name: Run core6 E2E
         id: e2e

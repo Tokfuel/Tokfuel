@@ -50,7 +50,12 @@ echo "Launching Tokfuel --e2e-fixture… (settle=${SETTLE}s, recording=${RECORDI
 APP_PID=$!
 
 FRAME_PID=""
+DISMISS_PID=""
 cleanup() {
+  if [[ -n "${DISMISS_PID:-}" ]] && kill -0 "$DISMISS_PID" 2>/dev/null; then
+    kill "$DISMISS_PID" 2>/dev/null || true
+    wait "$DISMISS_PID" 2>/dev/null || true
+  fi
   if [[ -n "${FRAME_PID:-}" ]] && kill -0 "$FRAME_PID" 2>/dev/null; then
     kill "$FRAME_PID" 2>/dev/null || true
     wait "$FRAME_PID" 2>/dev/null || true
@@ -69,26 +74,34 @@ done
 sleep "$SETTLE"
 
 # 失敗時に「そのときの様子」を残す。
-# screencapture -v は Screen Recording の Allow ダイアログで止まりやすいので使わない。
-# 代わりに 1 秒ごとの PNG を撮り、失敗時に ffmpeg で failure.mov を合成する。
+# screencapture -v は使わず、0.2 秒ごとの PNG を ffmpeg で failure.mov / .gif にする。
+# 静止画でも Screen Recording の Allow が出ることがあるので、dismiss を並行起動する。
 VIDEO_OUT="$OUT_DIR/failure.mov"
 GIF_OUT="$OUT_DIR/failure.gif"
 COMPARE_OUT="$OUT_DIR/compare.png"
 FRAMES_DIR="$OUT_DIR/frames"
+FRAME_INTERVAL="0.2"
+FRAME_FPS="5"
+FRAME_MAX="150"
 rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
 rm -rf "$FRAMES_DIR"
 mkdir -p "$FRAMES_DIR"
+
+bash "$ROOT/App/E2E/dismiss-tcc-prompt.sh" 120 &
+DISMISS_PID=$!
+echo "tcc dismiss pid=${DISMISS_PID}"
+
 (
   i=0
   while kill -0 "$APP_PID" 2>/dev/null; do
-    /usr/sbin/screencapture -x "$FRAMES_DIR/frame-$(printf '%02d' "$i").png" 2>/dev/null || true
+    /usr/sbin/screencapture -x "$FRAMES_DIR/frame-$(printf '%03d' "$i").png" 2>/dev/null || true
     i=$((i + 1))
-    [[ "$i" -ge 40 ]] && break
-    sleep 1
+    [[ "$i" -ge "$FRAME_MAX" ]] && break
+    sleep "$FRAME_INTERVAL"
   done
 ) &
 FRAME_PID=$!
-echo "frame capture pid=${FRAME_PID} → ${FRAMES_DIR}"
+echo "frame capture pid=${FRAME_PID} → ${FRAMES_DIR} (every ${FRAME_INTERVAL}s)"
 
 echo "Running TokfuelE2E against pid=${APP_PID}..."
 set +e
@@ -99,7 +112,12 @@ set +e
 DRIVER_STATUS=$?
 set -e
 
-# フレーム取得を止める（成功時は証拠を捨てる）。
+# フレーム取得 / Allow 監視を止める（成功時は証拠を捨てる）。
+if [[ -n "${DISMISS_PID}" ]]; then
+  kill "$DISMISS_PID" 2>/dev/null || true
+  wait "$DISMISS_PID" 2>/dev/null || true
+  DISMISS_PID=""
+fi
 if [[ -n "${FRAME_PID}" ]]; then
   kill "$FRAME_PID" 2>/dev/null || true
   wait "$FRAME_PID" 2>/dev/null || true
@@ -124,23 +142,22 @@ if [[ ${#frames[@]} -gt 0 ]]; then
   cp "${frames[$mid]}" "$OUT_DIR/timeline-mid.png"
   cp "${frames[$(( ${#frames[@]} - 1 ))]}" "$OUT_DIR/timeline-end.png"
 
-  # Allow ダイアログ不要: PNG 連番から動画 / GIF を合成する。
-  # GIF は PR コメントに <img> でインライン表示できる（.mov はリンクになりやすい）。
+  # PNG 連番から動画 / GIF を合成（再生も 0.2 秒/コマ = 5 fps）。
   if command -v ffmpeg >/dev/null 2>&1; then
     ffmpeg -y -hide_banner -loglevel error \
-      -framerate 1 \
+      -framerate "$FRAME_FPS" \
       -pattern_type glob -i "$FRAMES_DIR/frame-*.png" \
       -c:v libx264 -pix_fmt yuv420p -movflags +faststart \
       "$VIDEO_OUT" \
-      && echo "synthesized failure.mov from ${#frames[@]} frames" \
+      && echo "synthesized failure.mov from ${#frames[@]} frames @ ${FRAME_FPS}fps" \
       || echo "warning: ffmpeg failed to synthesize failure.mov" >&2
     ffmpeg -y -hide_banner -loglevel error \
-      -framerate 1 \
+      -framerate "$FRAME_FPS" \
       -pattern_type glob -i "$FRAMES_DIR/frame-*.png" \
-      -vf "scale=720:-1:flags=lanczos,fps=1,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
+      -vf "scale=720:-1:flags=lanczos,fps=${FRAME_FPS},split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
       -loop 0 \
       "$GIF_OUT" \
-      && echo "synthesized failure.gif from ${#frames[@]} frames" \
+      && echo "synthesized failure.gif from ${#frames[@]} frames @ ${FRAME_FPS}fps" \
       || echo "warning: ffmpeg failed to synthesize failure.gif" >&2
   else
     echo "warning: ffmpeg not found; skip failure.mov / failure.gif" >&2

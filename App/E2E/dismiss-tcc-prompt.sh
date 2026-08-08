@@ -9,11 +9,18 @@ DEADLINE=$((SECONDS + DURATION))
 click_allow() {
   /usr/bin/osascript <<'APPLESCRIPT' 2>/dev/null || true
 tell application "System Events"
-  set buttonNames to {"Allow", "許可", "OK", "続けて許可", "Once", "今回のみ許可"}
-  repeat with procName in {"UserNotificationCenter", "SecurityAgent", "coreautha", "screencaptureui", "WindowManager"}
+  set buttonNames to {"Allow", "許可", "OK", "続けて許可", "Once", "今回のみ許可", "Allow Once", "今回だけ許可"}
+  set procNames to {"UserNotificationCenter", "SecurityAgent", "coreautha", "screencaptureui", "WindowManager", "tccd", "CoreServicesUIAgent"}
+  repeat with procName in procNames
     try
       tell process (procName as text)
+        set frontmost to true
         repeat with w in windows
+          set winName to ""
+          try
+            set winName to name of w as text
+          end try
+          -- Screen Recording / 画面収録のダイアログを優先
           repeat with bName in buttonNames
             try
               click button (bName as text) of w
@@ -27,8 +34,11 @@ tell application "System Events"
               click button (bName as text) of sheet 1 of w
               return
             end try
+            try
+              click button (bName as text) of scroll area 1 of w
+              return
+            end try
           end repeat
-          -- ダイアログ内の任意ボタンで「許可」を含むものを押す
           try
             repeat with b in (buttons of w)
               set t to name of b as text
@@ -36,6 +46,18 @@ tell application "System Events"
                 click b
                 return
               end if
+            end repeat
+          end try
+          -- ネストした UI 要素も探す
+          try
+            repeat with g in (groups of w)
+              repeat with b in (buttons of g)
+                set t to name of b as text
+                if t contains "Allow" or t contains "許可" then
+                  click b
+                  return
+                end if
+              end repeat
             end repeat
           end try
         end repeat
@@ -49,6 +71,6 @@ APPLESCRIPT
 echo "dismiss-tcc-prompt: watching for Allow/許可 up to ${DURATION}s"
 while (( SECONDS < DEADLINE )); do
   click_allow
-  sleep 0.4
+  sleep 0.2
 done
 echo "dismiss-tcc-prompt: done"
