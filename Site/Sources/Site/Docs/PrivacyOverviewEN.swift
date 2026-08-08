@@ -4,7 +4,7 @@ struct PrivacyOverviewEN: StaticPage {
     var path = "/docs/privacy"
     var title = "Privacy & network policy — Tokfuel"
     var description = "Tokfuel is local-only. Here's the full list of the few requests it makes and why."
-    var layout: DocsLayout { DocsLayout() }
+    var layout: DocsLayout { DocsLayout(page: .privacy, language: .en) }
 
     var body: some HTML {
         VStack(spacing: 24) {
@@ -78,9 +78,9 @@ struct PrivacyOverviewEN: StaticPage {
             .foregroundStyle(.secondary)
 
             HStack(spacing: 16) {
-                Link("Privacy Policy", target: "https://github.com/Tokfuel/Tokfuel/blob/main/docs/PRIVACY.md")
+                Link("Privacy Policy", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/PRIVACY.md")
                     .linkStyle(.underline(.heavy))
-                Link("Terms of Use", target: "https://github.com/Tokfuel/Tokfuel/blob/main/docs/TERMS.md")
+                Link("Terms of Use", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/TERMS.md")
                     .linkStyle(.underline(.heavy))
             }
         }

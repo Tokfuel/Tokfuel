@@ -4,7 +4,7 @@ struct UsageGuideJA: StaticPage {
     var path = "/ja/docs/usage"
     var title = "使い方ガイド — Tokfuel"
     var description = "Tokfuel のインストール方法と、表示される内容の読み方。"
-    var layout: DocsLayout { DocsLayout() }
+    var layout: DocsLayout { DocsLayout(page: .usage, language: .ja) }
 
     var body: some HTML {
         VStack(spacing: 24) {

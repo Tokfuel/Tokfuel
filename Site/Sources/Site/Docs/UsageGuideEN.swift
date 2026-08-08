@@ -4,7 +4,7 @@ struct UsageGuideEN: StaticPage {
     var path = "/docs/usage"
     var title = "Usage guide — Tokfuel"
     var description = "How to install Tokfuel and read what it shows you."
-    var layout: DocsLayout { DocsLayout() }
+    var layout: DocsLayout { DocsLayout(page: .usage, language: .en) }
 
     var body: some HTML {
         VStack(spacing: 24) {

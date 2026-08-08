@@ -3,8 +3,8 @@ import Ignite
 struct ArchitectureJA: StaticPage {
     var path = "/ja/docs/architecture"
     var title = "アーキテクチャ — Tokfuel"
-    var description = "UsageStore・BudgetMonitor・各ソース別 Service など、Tokfuel の構成。"
-    var layout: DocsLayout { DocsLayout() }
+    var description = "UI → Store → sources の SPM レイヤーと、UsageStore・各ソースの役割。"
+    var layout: DocsLayout { DocsLayout(page: .architecture, language: .ja) }
 
     var body: some HTML {
         VStack(spacing: 24) {
@@ -17,11 +17,65 @@ struct ArchitectureJA: StaticPage {
             """)
             .foregroundStyle(.secondary)
 
+            Text("SPM レイヤー").docsSubheading()
+
+            Text("""
+            アプリ本体は App/ 配下の複数 SPM target に分かれる。依存の向きは \
+            UI → Store → sources。executable（Tokfuel）が具象を組み立てる。
+            """)
+            .foregroundStyle(.secondary)
+
+            List {
+                ListItem {
+                    Text {
+                        Code("TokfuelUI")
+                        " — ポップオーバー・設定・About など表示"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("TokfuelStore")
+                        " — 合算と UI 向け整形（"
+                        Code("UsageStore")
+                        "）"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("TokfuelClaude")
+                        " / "
+                        Code("TokfuelCursor")
+                        " / "
+                        Code("TokfuelCodex")
+                        " / "
+                        Code("TokfuelBudget")
+                        " — 取得・判定などの sources"
+                    }
+                }
+                ListItem {
+                    Text {
+                        Code("TokfuelSettings")
+                        " / "
+                        Code("TokfuelAnalytics")
+                        " / "
+                        Code("TokfuelCore")
+                        " — 設定、任意の Analytics、横断型"
+                    }
+                }
+            }
+
+            Text {
+                "データの流れは取得 → 整形・合算 → 表示。決定の正本は "
+                Link("ADR-0002", target: "https://github.com/Tokfuel/Tokfuel/blob/main/ADR/0002-layer-spm-modules/0002-layer-spm-modules.ja.md")
+                "。リポジトリ README にも同じ依存図がある。"
+            }
+            .foregroundStyle(.secondary)
+
             Text("UsageStore：唯一の情報源").docsSubheading()
 
             Text("""
-            UsageStore は全ビューが参照する唯一の @MainActor オブジェクト。現在の \
-            コスト合計・チャート・モデル別内訳を保持し、タイマーで更新する（待機中は \
+            UsageStore（TokfuelStore）は全ビューが参照する唯一の @MainActor オブジェクト。 \
+            現在のコスト合計・チャート・モデル別内訳を保持し、タイマーで更新する（待機中は \
             10 分ごと、コストが動くと 5 分間だけ 1 分ごとに切り替わる）。 \
             PopoverView など UI 側は純粋な表示層のままで、設定は AppSettings \
             （UserDefaults ベース）に分離している。
@@ -31,8 +85,8 @@ struct ArchitectureJA: StaticPage {
             Text("RetokService：Claude Code 自身のトランスクリプトを読む").docsSubheading()
 
             Text {
-                "RetokService は同梱の "
-                Link("retok", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Tokfuel/Sources/Resources/README-retok.md")
+                "RetokService（TokfuelClaude）は同梱の "
+                Link("retok", target: "https://github.com/Tokfuel/Tokfuel/blob/main/App/TokfuelClaude/Resources/README-retok.md")
                 "（© Daiki Matsudate、MIT、無改変で同梱）を呼び出し、Claude Code が "
                 "自分で書き出す "
                 Code("~/.claude/projects/")
@@ -45,9 +99,9 @@ struct ArchitectureJA: StaticPage {
             Text("BudgetMonitor").docsSubheading()
 
             Text("""
-            BudgetMonitor は UsageStore の合計値を AppSettings の月次・日次の上限と \
-            突き合わせ、しきい値を超えるたびに一度だけ通知・フローティングアラート \
-            ウィンドウ・両方のいずれかで知らせる。
+            BudgetMonitor（TokfuelBudget）は UsageStore の合計値を AppSettings の月次・日次の \
+            上限と突き合わせ、しきい値を超えるたびに一度だけ知らせる。アラートウィンドウの \
+            表示は App / UI 側が組み立てる。
             """)
             .foregroundStyle(.secondary)
 
@@ -82,7 +136,7 @@ struct ArchitectureJA: StaticPage {
                 ListItem {
                     Text {
                         Code("UpdateChecker")
-                        " — 起動時と以後 1 時間ごとに GitHub Releases をポーリングし、"
+                        " — 起動時と以後 24 時間ごとに GitHub Releases をポーリングし、"
                         "新しいバージョンを検知する。リリースアセットのダウンロードは "
                         "アップデートボタンを押したときだけ。"
                     }
@@ -105,12 +159,11 @@ struct ArchitectureJA: StaticPage {
 
             Text("""
             各ソースは独立に扱い、ラベル付きで区別する。Cursor や Codex のコストが \
-            ラベルなしで Claude の合計に混ざることはない。詳細なファイル構成は \
-            リポジトリの Tokfuel/Sources/ を参照。
+            ラベルなしで Claude の合計に混ざることはない。
             """)
             .foregroundStyle(.secondary)
 
-            Link("GitHub でソースを見る", target: "https://github.com/Tokfuel/Tokfuel/tree/main/Tokfuel/Sources")
+            Link("GitHub で App/ を見る", target: "https://github.com/Tokfuel/Tokfuel/tree/main/App")
                 .linkStyle(.underline(.heavy))
         }
         .frame(maxWidth: 720)

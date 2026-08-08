@@ -38,7 +38,7 @@ struct Home: StaticPage {
             .padding(.vertical, 96)
             .horizontalAlignment(.center)
         }
-        .background(.black)
+        .background(Brand.heroGradient)
         .foregroundStyle(.white)
         .horizontalAlignment(.center)
 
@@ -74,9 +74,9 @@ struct Home: StaticPage {
                     .linkStyle(.underline(.heavy))
 
                 HStack(spacing: 16) {
-                    Link("Read the docs", target: "/docs/usage")
+                    Link("Read the docs", target: "\(sitePath)/docs/usage")
                         .linkStyle(.underline(.heavy))
-                    Link("ドキュメント（日本語）", target: "/ja/docs/usage")
+                    Link("ドキュメント（日本語）", target: "\(sitePath)/ja/docs/usage")
                         .linkStyle(.underline(.heavy))
                 }
             }

@@ -4,7 +4,7 @@ struct PrivacyOverviewJA: StaticPage {
     var path = "/ja/docs/privacy"
     var title = "プライバシー・通信ポリシー — Tokfuel"
     var description = "Tokfuel はローカルオンリー。数少ない通信の全リストとその理由。"
-    var layout: DocsLayout { DocsLayout() }
+    var layout: DocsLayout { DocsLayout(page: .privacy, language: .ja) }
 
     var body: some HTML {
         VStack(spacing: 24) {
@@ -79,9 +79,9 @@ struct PrivacyOverviewJA: StaticPage {
             .foregroundStyle(.secondary)
 
             HStack(spacing: 16) {
-                Link("プライバシーポリシー", target: "https://github.com/Tokfuel/Tokfuel/blob/main/docs/PRIVACY.ja.md")
+                Link("プライバシーポリシー", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/PRIVACY.ja.md")
                     .linkStyle(.underline(.heavy))
-                Link("利用規約", target: "https://github.com/Tokfuel/Tokfuel/blob/main/docs/TERMS.ja.md")
+                Link("利用規約", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/TERMS.ja.md")
                     .linkStyle(.underline(.heavy))
             }
         }
