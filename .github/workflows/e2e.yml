@@ -70,7 +70,7 @@ jobs:
           swift build --product Tokfuel
           swift build --product TokfuelE2E
 
-      - name: Grant Accessibility / Screen Recording TCC
+      - name: Grant Accessibility TCC
         run: |
           bash App/E2E/grant-tcc.sh \
             "$PWD/.build/debug/TokfuelE2E" \
@@ -79,15 +79,11 @@ jobs:
             /bin/bash \
             /bin/zsh \
             /usr/sbin/screencapture
-          # 許可ダイアログ監視を先に起動し、短尺録画で Screen Recording を一度通す。
-          bash App/E2E/dismiss-tcc-prompt.sh 20 &
-          DISMISS_PID=$!
-          /usr/sbin/screencapture -x -v -V 3 /tmp/tokfuel-e2e-preflight.mov >/dev/null 2>&1 || true
-          sleep 2
-          kill "$DISMISS_PID" 2>/dev/null || true
-          wait "$DISMISS_PID" 2>/dev/null || true
-          rm -f /tmp/tokfuel-e2e-preflight.mov
-          ls -la /tmp/tokfuel-e2e-preflight.mov 2>/dev/null || echo "preflight recording cleaned"
+
+      # 失敗時の動画は screencapture -v（Allow ダイアログ）ではなく、
+      # 取得済み PNG フレームを ffmpeg でつなぐ。
+      - name: Install ffmpeg
+        run: brew install ffmpeg
 
       - name: Run core6 E2E
         id: e2e

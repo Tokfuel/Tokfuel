@@ -138,26 +138,24 @@ fi
 BODY="${BODY}"$'\n'"#### 失敗時の動画 / 経過"$'\n'
 if [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
   URL="$(raw "$FAILURE_MOV")"
-  BODY="${BODY}"$'\n'"- [failure.mov を開く](${URL})"$'\n'
-else
-  BODY="${BODY}"$'\n'"_連続録画 (mov) は取得できませんでした。1 秒ごとの経過フレームを載せます。_"$'\n'
-  BODY="${BODY}"$'\n'"<table><tr>"$'\n'
-  for t in start mid end; do
-    name="${PREFIX}-timeline-${t}.png"
-    if [[ -f "$name" ]]; then
-      URL="$(raw "$name")"
-      label="$t"
-      case "$t" in
-        start) label="開始付近" ;;
-        mid) label="中盤" ;;
-        end) label="終了付近" ;;
-      esac
-      BODY="${BODY}<td valign=\"top\"><p><strong>${label}</strong></p>"
-      BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${t}\" width=\"280\"></a></p></td>"
-    fi
-  done
-  BODY="${BODY}"$'\n'"</tr></table>"$'\n'
+  BODY="${BODY}"$'\n'"- [failure.mov を開く](${URL})（1 秒ごとの画面キャプチャを連結）"$'\n'
 fi
+BODY="${BODY}"$'\n'"<table><tr>"$'\n'
+for t in start mid end; do
+  name="${PREFIX}-timeline-${t}.png"
+  if [[ -f "$name" ]]; then
+    URL="$(raw "$name")"
+    label="$t"
+    case "$t" in
+      start) label="開始付近" ;;
+      mid) label="中盤" ;;
+      end) label="終了付近" ;;
+    esac
+    BODY="${BODY}<td valign=\"top\"><p><strong>${label}</strong></p>"
+    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${t}\" width=\"280\"></a></p></td>"
+  fi
+done
+BODY="${BODY}"$'\n'"</tr></table>"$'\n'
 
 BODY="${BODY}"$'\n'"#### 正常な画面（フィクスチャ描画）"$'\n'$'\n'"<table><tr>"$'\n'
 for screen in $EXPECTED_SCREENS; do
