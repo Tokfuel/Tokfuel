@@ -11,169 +11,153 @@
     "tokfuel.settings"
   ],
   "completedScenarios" : [
-    "Settings-01-open",
-    "Settings-02-reflect"
+    "MenuBar-01-open-home",
+    "MenuBar-02-close-outside"
   ],
-  "error" : "not found: ログイン時に自動起動 toggle",
+  "error" : "timed out: tokfuel.home (present in last successful recording; UI may have changed)",
   "expectedScreens" : [
     "popover"
   ],
-  "explanation" : "Settings-03-launch-at-login で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
-  "failedScenario" : "Settings-03-launch-at-login",
+  "explanation" : "MenuBar-03-toggle-reopen で、前回成功時に存在した accessibilityIdentifier が見つかりませんでした。 対象コントロールの identifier \/ ラベルが変わったか、ホーム UI が開いていない可能性があります。",
+  "failedScenario" : "MenuBar-03-toggle-reopen",
   "ok" : false,
   "scenarios" : [
     {
-      "elapsedMs" : 9367,
-      "id" : "Settings-01-open",
+      "elapsedMs" : 1953,
+      "id" : "MenuBar-01-open-home",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 1950,
-      "id" : "Settings-02-reflect",
+      "elapsedMs" : 1085,
+      "id" : "MenuBar-02-close-outside",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 4405,
-      "error" : "not found: ログイン時に自動起動 toggle",
-      "id" : "Settings-03-launch-at-login",
+      "elapsedMs" : 11459,
+      "error" : "timed out: tokfuel.home (present in last successful recording; UI may have changed)",
+      "id" : "MenuBar-03-toggle-reopen",
       "status" : "failed"
     },
     {
-      "id" : "Settings-04-appearance",
+      "id" : "MenuBar-04-hero-today-cost",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-05-cost-source-combined",
+      "id" : "MenuBar-05-footer-last-updated",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-06-cost-source-claude-only",
+      "id" : "MenuBar-06-footer-reload",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-07-cost-source-cursor-only",
+      "id" : "MenuBar-07-footer-quit",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-08-cost-source-codex-only",
+      "id" : "MenuBar-08-open-about",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-09-cost-source-side-by-side",
+      "id" : "MenuBar-09-status-amount-today",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-10-model-breakdown-mode",
+      "id" : "MenuBar-10-status-amount-month",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-11-week-start",
+      "id" : "MenuBar-11-status-amount-both",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-12-menu-bar-metric",
+      "id" : "MenuBar-12-status-prompts",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-13-menu-bar-representation",
+      "id" : "MenuBar-13-status-percent",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-14-menu-bar-gauge-shape",
+      "id" : "MenuBar-14-status-ring",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-15-menu-bar-shows-icon",
+      "id" : "MenuBar-15-status-ring-and-value",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-16-menu-bar-percent-basis",
+      "id" : "MenuBar-16-status-icon-only",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-17-menu-bar-shows-remaining",
+      "id" : "MenuBar-17-gauge-shape-ring",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-18-adaptive-refresh",
+      "id" : "MenuBar-18-gauge-shape-tank",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-19-activity-animation",
+      "id" : "MenuBar-19-ring-with-icon",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-20-budget-monthly-limit",
+      "id" : "MenuBar-20-percent-basis-budget",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-21-budget-daily-limit",
+      "id" : "MenuBar-21-percent-basis-average",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-22-budget-period",
+      "id" : "MenuBar-22-shows-remaining",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-23-budget-warn-threshold",
+      "id" : "MenuBar-23-side-by-side-title",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-24-budget-alert-style",
+      "id" : "MenuBar-24-unavailable-dash",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-25-privacy-analytics-toggle",
+      "id" : "MenuBar-25-budget-icon-warning",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-26-advanced-disclosure",
+      "id" : "MenuBar-26-budget-icon-over",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-27-report-language",
+      "id" : "MenuBar-27-tooltip",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-28-claude-directory",
+      "id" : "MenuBar-28-adaptive-glow",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-29-event-log-toggle",
+      "id" : "MenuBar-29-update-button-offer",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-30-event-log-reveal",
+      "id" : "MenuBar-30-update-skip-version",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-31-event-log-delete",
+      "id" : "MenuBar-31-update-release-page",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-32-about-window",
+      "id" : "MenuBar-32-update-retry",
       "status" : "skipped"
     },
     {
-      "id" : "Settings-33-analytics-consent-first-run",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-34-analytics-consent-deny",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-35-menu-bar-preview-note",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-36-currency-jpy-budget-unit",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Settings-37-debug-disclosure",
+      "id" : "MenuBar-33-open-on-launch-reload",
       "status" : "skipped"
     }
   ],
-  "updatedAt" : "2026-08-08T15:55:28Z"
+  "updatedAt" : "2026-08-08T15:56:12Z"
 }
