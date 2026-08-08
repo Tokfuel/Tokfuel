@@ -1,0 +1,62 @@
+{
+  "baselineIdentifiers" : [
+    "tokfuel.home",
+    "tokfuel.hero.today",
+    "tokfuel.section.trend",
+    "tokfuel.section.models",
+    "tokfuel.model-list",
+    "tokfuel.chart.style",
+    "tokfuel.chart.period",
+    "tokfuel.menu.more",
+    "tokfuel.settings"
+  ],
+  "completedScenarios" : [
+    "MenuBar-01-open-home",
+    "Cost-03-model-list",
+    "Cost-01-chart-style",
+    "Cost-02-period-switch",
+    "Settings-01-open"
+  ],
+  "error" : "assert failed: expected JPY formatting after currency switch; saw: 今日 $16.54 Claude $12.34 · Cursor $4.20 予算 (今日) 残り $3.46 予算 (今月) 残り $50.00 推移 合計 $104 · プロンプト単価 $0.28 モデル別 fable-5 $68.30 sonnet-5 $20.16 haiku-4-5 $11.45 4.5-sonnet $3.36 gpt-5-codex $0.84 節約のヒント 更新 2",
+  "expectedScreens" : [
+    "settings",
+    "popover"
+  ],
+  "explanation" : "Settings-02-reflect の完了条件（Then）を満たしませんでした。表示内容か選択状態が期待と異なります。",
+  "failedScenario" : "Settings-02-reflect",
+  "ok" : false,
+  "scenarios" : [
+    {
+      "elapsedMs" : 1949,
+      "id" : "MenuBar-01-open-home",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 24,
+      "id" : "Cost-03-model-list",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 763,
+      "id" : "Cost-01-chart-style",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 831,
+      "id" : "Cost-02-period-switch",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1622,
+      "id" : "Settings-01-open",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 5037,
+      "error" : "assert failed: expected JPY formatting after currency switch; saw: 今日 $16.54 Claude $12.34 · Cursor $4.20 予算 (今日) 残り $3.46 予算 (今月) 残り $50.00 推移 合計 $104 · プロンプト単価 $0.28 モデル別 fable-5 $68.30 sonnet-5 $20.16 haiku-4-5 $11.45 4.5-sonnet $3.36 gpt-5-codex $0.84 節約のヒント 更新 2",
+      "id" : "Settings-02-reflect",
+      "status" : "failed"
+    }
+  ],
+  "updatedAt" : "2026-08-08T14:00:25Z"
+}
