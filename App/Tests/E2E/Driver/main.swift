@@ -140,8 +140,20 @@ final class AXDriver {
 
     func ensureHomeOpen() throws {
         if findByIdentifier("tokfuel.home", under: app) != nil { return }
-        try clickStatusItem()
-        _ = try waitForIdentifier("tokfuel.home", under: app, timeout: timeout(8))
+        var lastError: Error?
+        for _ in 0..<3 {
+            do {
+                try clickStatusItem()
+                _ = try waitForIdentifier("tokfuel.home", under: app, timeout: timeout(5))
+                return
+            } catch {
+                lastError = error
+                RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+                if findByIdentifier("tokfuel.home", under: app) != nil { return }
+            }
+        }
+        if let lastError { throw lastError }
+        throw E2EError.timedOut("tokfuel.home")
     }
 
     func openSettingsFromHome() throws {

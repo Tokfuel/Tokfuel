@@ -71,6 +71,8 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: macos-15
+    env:
+      TZ: Asia/Tokyo
     strategy:
       fail-fast: false
       matrix:

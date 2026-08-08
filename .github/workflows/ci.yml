@@ -54,6 +54,10 @@ jobs:
           path: App/Tests/UnitTests/__Snapshots__/UISnapshotTests/
 
       - name: Unit Test
+        env:
+          # フィクスチャの「今日」は Asia/Tokyo の fixtureNow。Calendar.current を揃えないと
+          # UTC ランナーでヒーロー金額と VRT がずれる。
+          TZ: Asia/Tokyo
         run: SNAPSHOT_TESTING_RECORD=never swift test
 
       - name: Upload failed VRT diffs

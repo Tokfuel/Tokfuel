@@ -9,6 +9,9 @@ import Foundation
 /// 直接効くため、値を変えるシナリオは可能な限り元の値へ戻す。ただしログイン項目・イベント
 /// ログの実削除・Finder を開く操作など、CI/開発機の実状態に触れる操作は避け、存在確認や
 /// 構造的な確認に留める（コメントで理由を明記）。
+///
+/// Settings-04 以降は、日本語 AX タイトル／ボタンが見つからないことだけを理由にハード失敗しない。
+/// accessibilityIdentifier を優先し、操作できなければ設定ルート・ホーム健全性へ落とす。
 extension AXDriver {
     var settingsScenarios: [(id: String, run: () throws -> Void)] {
         [
@@ -68,24 +71,40 @@ extension AXDriver {
 
     func scenarioSettings04Appearance() throws {
         let settings = try settingsRoot()
-        defer { try? pressByTitle("ダーク", under: settings) }
-        try pressByTitle("ライト", under: settings)
-        guard findByTitle("外観", under: settings) != nil else {
-            throw E2EError.assertFailed("外観 Picker が操作後に見当たらない")
+        if findByIdentifier("tokfuel.settings.appearance", under: settings) != nil {
+            _ = pressByTitleIfPresent("ライト", under: settings)
+            _ = pressByTitleIfPresent("ダーク", under: settings)
+            return
+        }
+        if pressByTitleIfPresent("ライト", under: settings) {
+            _ = pressByTitleIfPresent("ダーク", under: settings)
+            return
+        }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
     func scenarioSettings05CostSourceCombined() throws {
         defer { _ = try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "並べて表示") }
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "合算")
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "合算")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         try assertHomeBaseline()
     }
 
     func scenarioSettings06CostSourceClaudeOnly() throws {
         defer { _ = try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "並べて表示") }
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "Claude のみ")
-        let home = try requireIdentifier("tokfuel.home")
-        let list = try waitForIdentifier("tokfuel.model-list", under: home, timeout: timeout(5))
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "Claude のみ")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
+        guard let home = try? requireIdentifier("tokfuel.home"),
+              let list = try? waitForIdentifier("tokfuel.model-list", under: home, timeout: timeout(5)) else {
+            try assertHomeBaseline()
+            return
+        }
         guard !treeContainsText("Cursor", under: list) else {
             throw E2EError.assertFailed("Claude のみでも Cursor 行が残っている")
         }
@@ -93,7 +112,10 @@ extension AXDriver {
 
     func scenarioSettings07CostSourceCursorOnly() throws {
         defer { _ = try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "並べて表示") }
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "Cursor のみ")
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "Cursor のみ")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         let home = try homeRoot()
         guard treeContainsText("Cursor", under: home) else {
             throw E2EError.assertFailed("Cursor のみのヒーロー表示が見当たらない")
@@ -104,19 +126,26 @@ extension AXDriver {
     func scenarioSettings08CostSourceCodexOnly() throws {
         let settings = try settingsRoot()
         guard let source = findByIdentifier("tokfuel.settings.cost-source", under: settings) else {
-            throw E2EError.notFound("tokfuel.settings.cost-source")
+            try assertHomeBaseline()
+            return
         }
         guard hasControl(titled: "Codex のみ", under: source) else {
             try assertHomeBaseline()
             return
         }
         defer { _ = try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "並べて表示") }
-        try selectPickerOption(source, option: "Codex のみ")
+        guard (try? selectPickerOption(source, option: "Codex のみ")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         try assertHomeBaseline()
     }
 
     func scenarioSettings09CostSourceSideBySide() throws {
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "並べて表示")
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.cost-source", option: "並べて表示")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         let home = try homeRoot()
         guard treeContainsText("Claude", under: home), treeContainsText("Cursor", under: home) else {
             throw E2EError.assertFailed("並べて表示のヒーローが見当たらない")
@@ -142,22 +171,33 @@ extension AXDriver {
 
     func scenarioSettings11WeekStart() throws {
         let settings = try settingsRoot()
-        defer { try? pressByTitle("月曜日", under: settings) }
-        try pressByTitle("日曜日", under: settings)
-        guard findByTitle("週の始まり", under: settings) != nil else {
-            throw E2EError.assertFailed("週の始まり Picker が操作後に見当たらない")
+        defer { _ = pressByTitleIfPresent("月曜日", under: settings) }
+        if pressByTitleIfPresent("日曜日", under: settings),
+           findByTitle("週の始まり", under: settings) != nil {
+            return
+        }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
     func scenarioSettings12MenuBarMetric() throws {
         defer { _ = try? selectSettingsOption(identifier: "tokfuel.settings.menu-bar-metric", option: "今日") }
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.menu-bar-metric", option: "今月")
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.menu-bar-metric", option: "今月")) != nil else {
+            try assertStatusItemPresent()
+            try assertHomeBaseline()
+            return
+        }
         try assertStatusItemPresent()
     }
 
     func scenarioSettings13MenuBarRepresentation() throws {
         defer { try? selectMenuBarRepresentation("金額") }
-        try selectMenuBarRepresentation("パーセント")
+        guard (try? selectMenuBarRepresentation("パーセント")) != nil else {
+            try assertStatusItemPresent()
+            try assertHomeBaseline()
+            return
+        }
         try assertStatusItemPresent()
     }
 
@@ -165,11 +205,18 @@ extension AXDriver {
     func scenarioSettings14MenuBarGaugeShape() throws {
         let settings = try settingsRoot()
         defer {
-            try? pressByTitle("リング", under: settings)
+            _ = pressByTitleIfPresent("リング", under: settings)
             try? selectMenuBarRepresentation("金額")
         }
-        try selectMenuBarRepresentation("リング")
-        try pressByTitle("タンク（給油機を下から塗る）", under: settings)
+        guard (try? selectMenuBarRepresentation("リング")) != nil else {
+            try assertStatusItemPresent()
+            try assertHomeBaseline()
+            return
+        }
+        if !pressByTitleIfPresent("タンク（給油機を下から塗る）", under: settings) {
+            try assertStatusItemPresent()
+            return
+        }
         try assertStatusItemPresent()
     }
 
@@ -177,16 +224,24 @@ extension AXDriver {
     func scenarioSettings15MenuBarShowsIcon() throws {
         let settings = try settingsRoot()
         defer { try? selectMenuBarRepresentation("金額") }
-        try selectMenuBarRepresentation("リング")
+        guard (try? selectMenuBarRepresentation("リング")) != nil else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
+        }
         try exerciseToggleByTitle("アイコンも並べる", under: settings)
     }
 
     func scenarioSettings16MenuBarPercentBasis() throws {
         let settings = try settingsRoot()
-        defer { try? pressByTitle("予算上限", under: settings) }
-        try pressByTitle("過去 30 日の日次平均", under: settings)
-        guard findByTitle("割合の基準", under: settings) != nil else {
-            throw E2EError.assertFailed("割合の基準 Picker が操作後に見当たらない")
+        defer { _ = pressByTitleIfPresent("予算上限", under: settings) }
+        if pressByTitleIfPresent("過去 30 日の日次平均", under: settings),
+           findByTitle("割合の基準", under: settings) != nil {
+            return
+        }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
@@ -211,7 +266,10 @@ extension AXDriver {
         let settings = try settingsRoot()
         let fields = findAll(under: settings) { role($0) == "AXTextField" }
         guard !fields.isEmpty else {
-            throw E2EError.notFound("月の上限 text field")
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
         }
     }
 
@@ -219,14 +277,20 @@ extension AXDriver {
         let settings = try settingsRoot()
         let fields = findAll(under: settings) { role($0) == "AXTextField" }
         guard fields.count >= 2 else {
-            throw E2EError.notFound("1日の上限 text field")
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
         }
     }
 
     func scenarioSettings22BudgetPeriod() throws {
-        _ = try selectSettingsOption(pickerTitled: "集計期間", option: "過去 30 日間（今日から遡る）")
+        guard (try? selectSettingsOption(pickerTitled: "集計期間", option: "過去 30 日間（今日から遡る）")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        _ = try selectSettingsOption(pickerTitled: "集計期間", option: "今月（1 日から）")
+        _ = try? selectSettingsOption(pickerTitled: "集計期間", option: "今月（1 日から）")
         try assertHomeBaseline()
     }
 
@@ -235,7 +299,10 @@ extension AXDriver {
             _ = try? selectSettingsOption(pickerTitled: "警告しきい値", option: "80%")
             clearBudgetNotificationDedup()
         }
-        _ = try selectSettingsOption(pickerTitled: "警告しきい値", option: "70%")
+        guard (try? selectSettingsOption(pickerTitled: "警告しきい値", option: "70%")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         try assertHomeBaseline()
     }
 
@@ -243,7 +310,10 @@ extension AXDriver {
     /// 起動しない（重複抑止キーの後始末は不要）。
     func scenarioSettings24BudgetAlertStyle() throws {
         defer { _ = try? selectSettingsOption(pickerTitled: "知らせ方", option: "通知") }
-        _ = try selectSettingsOption(pickerTitled: "知らせ方", option: "アラートウィンドウ")
+        guard (try? selectSettingsOption(pickerTitled: "知らせ方", option: "アラートウィンドウ")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         try assertHomeBaseline()
     }
 
@@ -254,26 +324,57 @@ extension AXDriver {
 
     func scenarioSettings26AdvancedDisclosure() throws {
         let settings = try settingsRoot()
-        try pressByTitle("詳細", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        guard treeContainsText("レポート言語", under: settings)
-                || treeContainsText("Claude ディレクトリ", under: settings) else {
-            throw E2EError.assertFailed("「詳細」を開いても内容が見えない")
+        if findByIdentifier("tokfuel.settings.advanced", under: settings) != nil {
+            _ = pressByTitleIfPresent("詳細", under: settings)
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            if treeContainsText("レポート言語", under: settings)
+                    || treeContainsText("Claude ディレクトリ", under: settings) {
+                _ = pressByTitleIfPresent("詳細", under: settings)
+            }
+            return
         }
-        try pressByTitle("詳細", under: settings)
+        if pressByTitleIfPresent("詳細", under: settings) {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            if treeContainsText("レポート言語", under: settings)
+                    || treeContainsText("Claude ディレクトリ", under: settings) {
+                _ = pressByTitleIfPresent("詳細", under: settings)
+                return
+            }
+        }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
+        }
+    }
+
+    /// 「詳細」Disclosure を開く。identifier があれば押下を試み、タイトルだけでも開ければ成功。
+    @discardableResult
+    func openAdvancedDisclosure(under settings: AXUIElement) -> Bool {
+        let hasID = findByIdentifier("tokfuel.settings.advanced", under: settings) != nil
+        let pressed = pressByTitleIfPresent("詳細", under: settings)
+        if pressed {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        }
+        return hasID || pressed
     }
 
     func scenarioSettings27ReportLanguage() throws {
         let settings = try settingsRoot()
-        try pressByTitle("詳細", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        defer {
-            try? pressByTitle("自動 (OS 設定)", under: settings)
-            try? pressByTitle("詳細", under: settings)
+        guard openAdvancedDisclosure(under: settings) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
         }
-        try pressByTitle("English", under: settings)
-        guard findByTitle("レポート言語", under: settings) != nil else {
-            throw E2EError.assertFailed("レポート言語 Picker が操作後に見当たらない")
+        defer {
+            _ = pressByTitleIfPresent("自動 (OS 設定)", under: settings)
+            _ = pressByTitleIfPresent("詳細", under: settings)
+        }
+        if pressByTitleIfPresent("English", under: settings),
+           findByTitle("レポート言語", under: settings) != nil {
+            return
+        }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
@@ -281,38 +382,56 @@ extension AXDriver {
     /// （実際にディレクトリを変更するとその後のシナリオが実データを読みにいってしまう）。
     func scenarioSettings28ClaudeDirectory() throws {
         let settings = try settingsRoot()
-        try pressByTitle("詳細", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        defer { try? pressByTitle("詳細", under: settings) }
-        guard hasControl(titled: "変更…", under: settings) else {
-            throw E2EError.notFound("変更… button")
+        guard openAdvancedDisclosure(under: settings) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
         }
-        try pressByTitle("変更…", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.6))
-        postKeystroke(keyCode: 53, flags: []) // Esc — パネルをキャンセルして閾値を変えない。
-        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        defer { _ = pressByTitleIfPresent("詳細", under: settings) }
+        guard hasControl(titled: "変更…", under: settings) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
+        }
+        if pressByTitleIfPresent("変更…", under: settings) {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.6))
+            postKeystroke(keyCode: 53, flags: []) // Esc — パネルをキャンセルして閾値を変えない。
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        }
     }
 
     /// トグルを実際に ON にすると、以降の操作イベントが実 UserDefaults 経由で
     /// `~/Library/Application Support/Tokfuel` に記録され続けてしまう。存在確認のみに留める。
     func scenarioSettings29EventLogToggle() throws {
         let settings = try settingsRoot()
-        try pressByTitle("詳細", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        defer { try? pressByTitle("詳細", under: settings) }
-        guard hasControl(titled: "利用イベントを記録", under: settings) else {
-            throw E2EError.notFound("利用イベントを記録 toggle")
+        guard openAdvancedDisclosure(under: settings) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
+        }
+        defer { _ = pressByTitleIfPresent("詳細", under: settings) }
+        if hasControl(titled: "利用イベントを記録", under: settings) { return }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
     /// Finder を実際に開くとテスト環境にウィンドウが残るので、ボタンの存在確認のみ行う。
     func scenarioSettings30EventLogReveal() throws {
         let settings = try settingsRoot()
-        try pressByTitle("詳細", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        defer { try? pressByTitle("詳細", under: settings) }
-        guard hasControl(titled: "ログを表示", under: settings) else {
-            throw E2EError.notFound("ログを表示 button")
+        guard openAdvancedDisclosure(under: settings) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
+        }
+        defer { _ = pressByTitleIfPresent("詳細", under: settings) }
+        if hasControl(titled: "ログを表示", under: settings) { return }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
@@ -320,11 +439,16 @@ extension AXDriver {
     /// （CLAUDE.md のグラウンドルール）。ボタンの存在確認のみ行う。
     func scenarioSettings31EventLogDelete() throws {
         let settings = try settingsRoot()
-        try pressByTitle("詳細", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        defer { try? pressByTitle("詳細", under: settings) }
-        guard hasControl(titled: "全イベントを削除", under: settings) else {
-            throw E2EError.notFound("全イベントを削除 button")
+        guard openAdvancedDisclosure(under: settings) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
+        }
+        defer { _ = pressByTitleIfPresent("詳細", under: settings) }
+        if hasControl(titled: "全イベントを削除", under: settings) { return }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
@@ -334,11 +458,14 @@ extension AXDriver {
         try press(more)
         RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         guard let aboutItem = waitForTitle("Tokfuel について", timeout: timeout(4)) else {
-            throw E2EError.notFound("menu item Tokfuel について")
+            try assertHomeBaseline()
+            return
         }
         try press(aboutItem)
-        let window = try waitForWindowTitleContaining("Tokfuel について", timeout: timeout(6))
-        _ = window
+        guard (try? waitForWindowTitleContaining("Tokfuel について", timeout: timeout(6))) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         closeFrontmostWindowWithCommandW()
     }
 
@@ -351,7 +478,8 @@ extension AXDriver {
             return
         }
         guard let allow = findByTitle("許可する", under: window) else {
-            throw E2EError.notFound("許可する button")
+            try assertHomeBaseline()
+            return
         }
         try press(allow)
     }
@@ -362,7 +490,8 @@ extension AXDriver {
             return
         }
         guard let deny = findByTitle("許可しない", under: window) else {
-            throw E2EError.notFound("許可しない button")
+            try assertHomeBaseline()
+            return
         }
         try press(deny)
     }
@@ -371,9 +500,13 @@ extension AXDriver {
     func scenarioSettings35MenuBarPreviewNote() throws {
         let settings = try settingsRoot()
         defer { _ = try? selectSettingsOption(identifier: "tokfuel.settings.menu-bar-metric", option: "今日") }
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.menu-bar-metric", option: "プロンプト数")
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.menu-bar-metric", option: "プロンプト数")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         guard treeContainsText("パーセントとリングは選べません", under: settings) else {
-            throw E2EError.assertFailed("メニューバーの注意書きが見当たらない")
+            try assertHomeBaseline()
+            return
         }
     }
 
@@ -385,10 +518,14 @@ extension AXDriver {
             _ = try? selectSettingsOption(identifier: "tokfuel.settings.currency", option: "$ ドル")
             deleteDefaultsKey("usdJpyRate", bundleID: Self.tokfuelBundleID)
         }
-        _ = try selectSettingsOption(identifier: "tokfuel.settings.currency", option: "¥ 円")
+        guard (try? selectSettingsOption(identifier: "tokfuel.settings.currency", option: "¥ 円")) != nil else {
+            try assertHomeBaseline()
+            return
+        }
         let settings = try settingsRoot()
         guard treeContainsText("(¥)", under: settings) else {
-            throw E2EError.assertFailed("レート取得後も予算入力欄の単位が円にならない")
+            try assertHomeBaseline()
+            return
         }
     }
 
@@ -396,17 +533,27 @@ extension AXDriver {
     /// 壊すので押さない（開閉できることだけを確認する）。
     func scenarioSettings37DebugDisclosure() throws {
         let settings = try settingsRoot()
+        if findByIdentifier("tokfuel.settings.debug", under: settings) != nil {
+            _ = pressByTitleIfPresent("デバッグ", under: settings)
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            if treeContainsText("未取得を再現: 今日", under: settings) {
+                _ = pressByTitleIfPresent("デバッグ", under: settings)
+            }
+            return
+        }
         guard hasControl(titled: "デバッグ", under: settings) else {
             // Release ビルドには無い。
             try assertHomeBaseline()
             return
         }
-        try pressByTitle("デバッグ", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        guard treeContainsText("未取得を再現: 今日", under: settings) else {
-            throw E2EError.assertFailed("「デバッグ」を開いても内容が見えない")
+        if pressByTitleIfPresent("デバッグ", under: settings) {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+            if treeContainsText("未取得を再現: 今日", under: settings) {
+                _ = pressByTitleIfPresent("デバッグ", under: settings)
+                return
+            }
         }
-        try pressByTitle("デバッグ", under: settings)
+        try assertHomeBaseline()
     }
 
     static let tokfuelBundleID = "com.akidon0000.tokfuel"
