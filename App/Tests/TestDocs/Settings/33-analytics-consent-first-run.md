@@ -3,7 +3,7 @@ id: Settings-33-analytics-consent-first-run
 title: 初回に利用状況送信の同意ダイアログが出る
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: in-progress
 - **Then**：同意ダイアログが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

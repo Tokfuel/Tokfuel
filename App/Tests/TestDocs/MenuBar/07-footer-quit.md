@@ -3,7 +3,7 @@ id: MenuBar-07-footer-quit
 title: メニューから Tokfuel を終了できる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：アプリプロセスが終了している
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

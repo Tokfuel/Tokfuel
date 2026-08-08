@@ -3,7 +3,7 @@ id: Settings-07-cost-source-cursor-only
 title: コストのソースを Cursor のみにできる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：ホームが Cursor のみの表示になる
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

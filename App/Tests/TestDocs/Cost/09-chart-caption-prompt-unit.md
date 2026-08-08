@@ -3,7 +3,7 @@ id: Cost-09-chart-caption-prompt-unit
 title: 推移キャプションにプロンプト単価が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Claude を含みプロンプトがあるとき、推移キャプションにプ�
 - **Then**：プロンプト単価がキャプションに見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

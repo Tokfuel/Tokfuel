@@ -3,7 +3,7 @@ id: Settings-22-budget-period
 title: 月予算の集計期間を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：ホームの予算ラベルが選んだ期間に追従する
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

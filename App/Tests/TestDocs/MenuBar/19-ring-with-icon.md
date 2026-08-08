@@ -3,7 +3,7 @@ id: MenuBar-19-ring-with-icon
 title: リング表示時にアイコンも並べられる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：アイコンとリングが横並びに見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

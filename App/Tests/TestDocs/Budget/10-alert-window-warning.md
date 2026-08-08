@@ -3,7 +3,7 @@ id: Budget-10-alert-window-warning
 title: しきい値到達をアラートウィンドウで知らせる
 primary_domain: Budget
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: in-progress
 - **Then**：警告アラートが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

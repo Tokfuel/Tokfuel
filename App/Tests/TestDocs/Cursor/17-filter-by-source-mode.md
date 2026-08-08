@@ -3,7 +3,7 @@ id: Cursor-17-filter-by-source-mode
 title: Claude のみのとき Cursor の行やヒントが隠れる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：Cursor のモデル行、セッション、ヒントが見えない
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

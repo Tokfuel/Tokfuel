@@ -3,7 +3,7 @@ id: Cost-05-stale-while-revalidate
 title: 再解析中も前回のグラフが残る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：前回のグラフと進行表示の両方が見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

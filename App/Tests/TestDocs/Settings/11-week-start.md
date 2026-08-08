@@ -3,7 +3,7 @@ id: Settings-11-week-start
 title: 週の始まりの変更が推移の今週に効く
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: ready
 - **Then**：今週の集計範囲または表示が追従する
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

@@ -3,7 +3,7 @@ id: Cursor-04-model-rows
 title: モデル別に Cursor モデル行が出る
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Cursor のモデル内訳があるとき、モデル別に Cursor のモデル�
 - **Then**：Cursor のモデル行が見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

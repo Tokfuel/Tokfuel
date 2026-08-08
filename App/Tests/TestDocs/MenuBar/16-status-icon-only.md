@@ -3,7 +3,7 @@ id: MenuBar-16-status-icon-only
 title: メニューバーがアイコンのみになる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：タイトル文字列が空で、アイコンが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

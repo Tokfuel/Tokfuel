@@ -3,7 +3,7 @@ id: Cursor-01-chart-stacked-bar
 title: 合算の推移に Cursor 系列が載る
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：Cursor 系列が見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

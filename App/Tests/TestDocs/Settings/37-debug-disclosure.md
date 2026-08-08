@@ -3,7 +3,7 @@ id: Settings-37-debug-disclosure
 title: デバッグを開くと診断用の設定が見える
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -28,5 +28,7 @@ status: in-progress
 - **Then**：イベントログなど診断用の項目が見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

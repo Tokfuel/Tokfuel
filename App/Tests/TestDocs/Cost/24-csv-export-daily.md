@@ -3,7 +3,7 @@ id: Cost-24-csv-export-daily
 title: 日別 CSV を書き出せる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：日別集計の CSV ファイルができる
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

@@ -3,7 +3,7 @@ id: MenuBar-27-tooltip
 title: メニューバーアイコンのツールチップに指標説明が出る
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：指標の説明を含むツールチップが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

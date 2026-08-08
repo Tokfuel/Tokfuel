@@ -3,7 +3,7 @@ id: Settings-12-menu-bar-metric
 title: メニューバーの見る指標を切り替えられる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：メニューバー表示が選んだ指標に追従する
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

@@ -3,7 +3,7 @@ id: MenuBar-06-footer-reload
 title: 再読み込みで集計が更新される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -27,5 +27,7 @@ status: ready
 - **Then**：集計が走り、表示が更新される
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

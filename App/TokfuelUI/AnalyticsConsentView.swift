@@ -55,5 +55,7 @@ public struct AnalyticsConsentView: View {
         }
         .padding(20)
         .frame(width: 420)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tokfuel.analytics.consent")
     }
 }

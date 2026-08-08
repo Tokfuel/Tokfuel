@@ -12,6 +12,8 @@ public final class UsageStore: ObservableObject {
     @Published public var daily: [DailyUsage] = []
     @Published public var lastUpdated: Date?
     @Published public var isLoading = false
+    /// E2E フィクスチャ常駐時は disk / ネットワーク集計を走らせず、メモリ上の値を保つ。
+    public var freezeNetworkIO = false
 
     // retok によるコストレポート
     @Published private var loadedReport: RetokReport?
@@ -285,6 +287,11 @@ public final class UsageStore: ObservableObject {
 
     /// トランスクリプト走査（バックグラウンド）→ 今日の回数へ反映。retok も並行して実行する。
     public func reload() {
+        if freezeNetworkIO {
+            lastUpdated = Date()
+            objectWillChange.send()
+            return
+        }
         guard !isLoading else { return }
         isLoading = true
         reloadReport()
@@ -302,6 +309,7 @@ public final class UsageStore: ObservableObject {
     /// 得られた今日のコストは、表示中のレポートに重ねる（レポートごと差し替えると
     /// 推移グラフが 1 日分に痩せてしまう）。重い集計が走り始めたら結果は捨てる。
     public func reloadToday() {
+        if freezeNetworkIO { return }
         let lang = settings.language.resolved
         let claudeDir = settings.claudeDirectoryURL
         let isDefault = claudeDir.standardizedFileURL.path
@@ -357,6 +365,7 @@ public final class UsageStore: ObservableObject {
 
     /// retok レポートを再取得する（設定変更や言語変更からも呼べるよう公開）。
     public func reloadReport() {
+        if freezeNetworkIO { return }
         let period = reportPeriod
         let weekStart = settings.weekStart
         let window = Self.reportWindow(period: period, weekStart: weekStart)
@@ -424,6 +433,7 @@ public final class UsageStore: ObservableObject {
     /// 予算期間内の消費額を再計算する。表示用レポート（7d/30d 切替）とは独立に、
     /// 暦月の最大長（31 日）を必ずカバーする 32 日分で retok を実行する。
     public func reloadBudget() {
+        if freezeNetworkIO { return }
         // 集計が不要になった場合も含めて先に世代を進める。そうしないと、実行中の集計が
         // 「0 にした」あとから古い値を書き戻してしまう。
         budgetGeneration += 1

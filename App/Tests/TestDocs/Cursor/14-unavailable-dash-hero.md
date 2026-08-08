@@ -3,7 +3,7 @@ id: Cursor-14-unavailable-dash-hero
 title: Cursor のみかつ劣化でヒーローがダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Cursor のみで取得劣化のとき、ヒーロー金額はダッシュにな�
 - **Then**：金額がダッシュである
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

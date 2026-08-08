@@ -3,7 +3,7 @@ id: Cost-14-cursor-only-label
 title: Cursor のみのときヒーローに Cursor 推定ラベルが出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：Cursor 推定のラベルが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

@@ -3,7 +3,7 @@ id: Cursor-10-advice-hidden-when-degraded
 title: Cursor 取得劣化時は Cursor ヒントが出ない
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Cursor の取得が劣化しているとき、節約のヒントに Cursor 由�
 - **Then**：Cursor 由来のヒントが見えない
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

@@ -3,7 +3,7 @@ id: MenuBar-29-update-button-offer
 title: 新バージョン検出時にアップデートボタンが出る
 primary_domain: MenuBar
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: in-progress
 - **Then**：フッターにアップデートボタンが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

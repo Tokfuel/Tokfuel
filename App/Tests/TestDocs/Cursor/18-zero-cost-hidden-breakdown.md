@@ -3,7 +3,7 @@ id: Cursor-18-zero-cost-hidden-breakdown
 title: 0 円の Cursor は内訳キャプションに載らない
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Cursor が 0 円のとき、並べて表示の内訳キャプションに Cursor
 - **Then**：Cursor が見えない
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

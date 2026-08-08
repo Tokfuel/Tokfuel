@@ -3,7 +3,7 @@ id: MenuBar-24-unavailable-dash
 title: 取得不能時メニューバーがダッシュになる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：金額が 0 ではなくダッシュである
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

@@ -3,7 +3,7 @@ id: Cost-01-chart-style
 title: 推移グラフの表示形式を切り替えられる
 primary_domain: Cost
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -35,5 +35,7 @@ status: in-progress
 - **Then**：日別棒のグラフが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

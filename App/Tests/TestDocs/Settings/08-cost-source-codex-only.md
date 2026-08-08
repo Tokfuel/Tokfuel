@@ -3,7 +3,7 @@ id: Settings-08-cost-source-codex-only
 title: Codex がある環境で Codex のみを選べる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ Codex CLI がインストールされている Mac では、コストのソー�
 - **Then**：ホームが Codex のみの表示になる
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

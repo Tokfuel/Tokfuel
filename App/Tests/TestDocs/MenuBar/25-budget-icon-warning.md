@@ -3,7 +3,7 @@ id: MenuBar-25-budget-icon-warning
 title: 予算しきい値到達でメニューバーアイコンが警告色になる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：警告色になっている
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

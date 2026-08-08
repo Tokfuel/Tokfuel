@@ -3,7 +3,7 @@ id: Cost-03-model-list
 title: モデル別セクションにモデル行が表示される
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -27,5 +27,7 @@ status: ready
 - **Then**：モデル別の見出しが見え、モデル名と金額を持つ行が 1 行以上見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

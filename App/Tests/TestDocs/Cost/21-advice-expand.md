@@ -3,7 +3,7 @@ id: Cost-21-advice-expand
 title: 節約のヒントを展開できる
 primary_domain: Cost
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: in-progress
 - **Then**：詳細テキストが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

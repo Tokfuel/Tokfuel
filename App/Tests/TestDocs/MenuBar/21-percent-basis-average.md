@@ -3,7 +3,7 @@ id: MenuBar-21-percent-basis-average
 title: 割合の基準が日次平均のときペース比が表示される
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: ready
 - **Then**：日次平均を分母にした率が見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

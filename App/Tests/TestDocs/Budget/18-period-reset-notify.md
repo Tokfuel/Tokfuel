@@ -3,7 +3,7 @@ id: Budget-18-period-reset-notify
 title: 日付や月が替わると同じレベルでも再通知できる
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: ready
 - **Then**：新しい期間として通知が出ている
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

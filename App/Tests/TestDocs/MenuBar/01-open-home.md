@@ -3,7 +3,7 @@ id: MenuBar-01-open-home
 title: メニューバーからホーム（ポップオーバー）を表示できる
 primary_domain: MenuBar
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -35,5 +35,7 @@ status: in-progress
 - **Then**：今日の見出しが見え、推移とモデル別のセクションが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

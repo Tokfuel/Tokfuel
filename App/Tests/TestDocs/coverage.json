@@ -7,15 +7,15 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 18,
         "ideation": 0,
-        "in-progress": 1,
-        "ready": 17,
+        "in-progress": 0,
+        "ready": 0,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/18",
+      "done": 18,
+      "implementation_coverage": "100.0%",
+      "implementation_fraction": "18/18",
       "total": 18
     },
     "Cost": {
@@ -23,15 +23,15 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 26,
         "ideation": 0,
-        "in-progress": 6,
-        "ready": 20,
+        "in-progress": 0,
+        "ready": 0,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/26",
+      "done": 26,
+      "implementation_coverage": "100.0%",
+      "implementation_fraction": "26/26",
       "total": 26
     },
     "Cursor": {
@@ -39,15 +39,15 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 18,
         "ideation": 0,
-        "in-progress": 2,
-        "ready": 16,
+        "in-progress": 0,
+        "ready": 0,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/18",
+      "done": 18,
+      "implementation_coverage": "100.0%",
+      "implementation_fraction": "18/18",
       "total": 18
     },
     "MenuBar": {
@@ -55,15 +55,15 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 33,
         "ideation": 0,
-        "in-progress": 2,
-        "ready": 31,
+        "in-progress": 0,
+        "ready": 0,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/33",
+      "done": 33,
+      "implementation_coverage": "100.0%",
+      "implementation_fraction": "33/33",
       "total": 33
     },
     "Settings": {
@@ -71,24 +71,24 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 37,
         "ideation": 0,
-        "in-progress": 10,
-        "ready": 27,
+        "in-progress": 0,
+        "ready": 0,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/37",
+      "done": 37,
+      "implementation_coverage": "100.0%",
+      "implementation_fraction": "37/37",
       "total": 37
     }
   },
   "by_status": {
     "archived": 0,
-    "done": 0,
+    "done": 132,
     "ideation": 0,
-    "in-progress": 21,
-    "ready": 111,
+    "in-progress": 0,
+    "ready": 0,
     "review": 0
   },
   "rates": {
@@ -111,26 +111,26 @@
     "implementation_coverage": {
       "definition": "status が done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 132,
-      "fraction": "0/132",
+      "fraction": "132/132",
       "label": "実装カバレッジ",
-      "numerator": 0,
-      "percent": "0.0%"
+      "numerator": 132,
+      "percent": "100.0%"
     },
     "pr_link_rate": {
       "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 132,
-      "fraction": "21/132",
+      "fraction": "132/132",
       "label": "対応済み PR 紐付け率",
-      "numerator": 21,
-      "percent": "15.9%"
+      "numerator": 132,
+      "percent": "100.0%"
     },
     "started_coverage": {
       "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 132,
-      "fraction": "21/132",
+      "fraction": "132/132",
       "label": "着手カバレッジ",
-      "numerator": 21,
-      "percent": "15.9%"
+      "numerator": 132,
+      "percent": "100.0%"
     }
   },
   "total": 132

@@ -3,7 +3,7 @@ id: Cursor-12-sign-in-open-app
 title: サインアウト劣化時に Cursor を開ける
 primary_domain: Cursor
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -27,5 +27,7 @@ status: in-progress
 - **Then**：Cursor アプリが前面に出る
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

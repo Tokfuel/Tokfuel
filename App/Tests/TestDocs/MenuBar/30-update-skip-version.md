@@ -3,7 +3,7 @@ id: MenuBar-30-update-skip-version
 title: 提示中のバージョンをスキップできる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：同じバージョンのアップデート提示が見えなくなる
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

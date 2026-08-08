@@ -3,7 +3,7 @@ id: Cost-02-period-switch
 title: 推移の期間を切り替え、表示が期間に追従する
 primary_domain: Cost
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -37,5 +37,7 @@ status: in-progress
 - **Then**：表示上の期間ラベルが選んだ期間と一致し、集計範囲もそれに追従する
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

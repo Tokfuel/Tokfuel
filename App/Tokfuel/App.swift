@@ -28,11 +28,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var settingsWindow: NSWindow?
     private var aboutWindow: NSWindow?
+    #if DEBUG
+    /// `--e2e-fixture` 時のみ。NSPopover は AX ツリーに載らないため、同じホーム UI を Panel で出す。
+    private var e2eHomePanel: NSPanel?
+    #endif
     /// 初回 Analytics 同意ダイアログ。答えるまで保持する。
     private var analyticsConsentWindow: NSWindow?
     private let usageStore: UsageStore
     private let settings: AppSettings
-    private let updater = UpdateChecker.shared
+    private var updater = UpdateChecker.shared
     private var cancellables = Set<AnyCancellable>()
     private var refreshTimer: Timer?
     /// ポップオーバー表示中の「外側クリックで閉じる」監視。
@@ -80,6 +84,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--verify-cursor-ui") {
             VerifyCursorUI.runAndExit()
         }
+        // AX E2E 用フィクスチャ常駐。実 Application Support は触らずメニューバーを出す。
+        if E2EFixture.isEnabled {
+            E2EFixture.prepareLaunch()
+            if E2EFixture.profile == .updateAvailable {
+                updater = .preview(version: ScreenshotRenderer.previewUpdateVersion)
+            }
+        }
         #endif
 
         NSApp.setActivationPolicy(.accessory)
@@ -93,6 +104,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.imagePosition = .imageLeading
             button.action = #selector(togglePopover)
             button.target = self
+            button.setAccessibilityElement(true)
+            button.setAccessibilityIdentifier("tokfuel.status-item")
+            button.setAccessibilityTitle("Tokfuel")
+            button.setAccessibilityRole(.button)
         }
 
         popover = NSPopover()
@@ -100,14 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // .transient だと ⋯ メニューを開いた瞬間にフォーカス移動を「外側クリック」と
         // 誤認してポップオーバーが閉じることがある。閉じる判定は自前で行う。
         popover.behavior = .applicationDefined
-        popover.contentViewController = NSHostingController(
-            rootView: PopoverView(store: usageStore,
-                                  settings: settings,
-                                  updater: updater,
-                                  onOpenSettings: { [weak self] in self?.openSettings() },
-                                  onOpenAbout: { [weak self] in self?.openAbout() })
-            .tint(.orange)   // 燃料ブランドのアクセント 1 色に統一
-        )
+        popover.contentViewController = NSHostingController(rootView: makeHomeRootView())
 
         // 集計期間は UsageStore が「最後に選んだ値」を自分で復元する（CU-0011）。
         // 設定の既定値は初回（未選択）時のフォールバックと、明示的な変更時のみ反映する。
@@ -115,7 +123,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bindStateChanges()
 
         lastFullReload = Date()
+        #if DEBUG
+        if E2EFixture.isEnabled {
+            E2EFixture.seed(usageStore)
+        } else {
+            usageStore.reload()
+        }
+        #else
         usageStore.reload()
+        #endif
         updateStatusItem()
 
         // ポップオーバーを開かなくてもメニューバーの数字が古くならないよう定期更新する。
@@ -123,13 +139,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         armRefreshTimer(interval: RefreshScheduler.baseInterval)
         observeSystemState()
 
+        #if DEBUG
+        let e2eFixture = E2EFixture.isEnabled
+        #else
+        let e2eFixture = false
+        #endif
+
         // 新バージョンの確認（起動時 + 24 時間ごと）。ヘッドレス実行（スクリーンショット等）
         // は冒頭の runAndExit (-> Never) でここに到達しないので、撮影に混ざらない。
-        updater.startPeriodicChecks()
+        // E2E フィクスチャ常駐では外部 API を叩かない。
+        if !e2eFixture {
+            updater.startPeriodicChecks()
+        }
 
         // Firebase（#22）。配布ビルド以外では no-op。Analytics は同意後のみ。
         AnalyticsService.shared.start()
-        promptAnalyticsConsentIfNeeded()
+        if !e2eFixture {
+            promptAnalyticsConsentIfNeeded()
+        }
 
         #if DEBUG
         // 手動確認用: `Tokfuel --open-popover` で起動すると集計を待ってからポップオーバーを開く。
@@ -422,9 +449,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // アイコンと数字がくっつくので 1 文字ぶん空ける。
         button.title = content.title.isEmpty ? "" : " " + content.title
         button.toolTip = content.toolTip
+        E2EProbe.recordTooltip(content.toolTip)
+    }
+
+    private func makeHomeRootView() -> some View {
+        PopoverView(store: usageStore,
+                    settings: settings,
+                    updater: updater,
+                    onOpenSettings: { [weak self] in self?.openSettings() },
+                    onOpenAbout: { [weak self] in self?.openAbout() })
+            .tint(.orange)   // 燃料ブランドのアクセント 1 色に統一
     }
 
     @objc private func togglePopover() {
+        #if DEBUG
+        if E2EFixture.isEnabled {
+            toggleE2EHomePanel()
+            return
+        }
+        #endif
         guard let button = statusItem.button else { return }
         if popover.isShown {
             closePopover()
@@ -434,14 +477,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.activate(ignoringOtherApps: true)
             UsageEventLog.shared.log(.popoverOpen)
             // 他アプリをクリックしたら閉じる（自アプリ内のメニュー操作では発火しない）。
-            outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
-                matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.closePopover() }
+            // 合成クリックが直後に閉じないよう、監視は次の runloop で付ける。
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.popover.isShown, self.outsideClickMonitor == nil else { return }
+                self.outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+                    matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                    Task { @MainActor [weak self] in self?.closePopover() }
+                }
             }
         }
     }
 
+    #if DEBUG
+    private func toggleE2EHomePanel() {
+        if let panel = e2eHomePanel, panel.isVisible {
+            panel.orderOut(nil)
+            return
+        }
+        usageStore.reload()
+        if e2eHomePanel == nil {
+            let hosting = NSHostingController(rootView: makeHomeRootView())
+            let panel = NSPanel(contentViewController: hosting)
+            panel.title = "Tokfuel"
+            panel.styleMask = [.titled, .closable, .fullSizeContentView]
+            panel.isFloatingPanel = true
+            panel.becomesKeyOnlyIfNeeded = false
+            panel.level = .floating
+            panel.setContentSize(NSSize(width: 360, height: 520))
+            panel.isReleasedWhenClosed = false
+            e2eHomePanel = panel
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        e2eHomePanel?.center()
+        e2eHomePanel?.makeKeyAndOrderFront(nil)
+        UsageEventLog.shared.log(.popoverOpen)
+    }
+    #endif
+
     private func closePopover() {
+        #if DEBUG
+        e2eHomePanel?.orderOut(nil)
+        #endif
         popover.performClose(nil)
         if let monitor = outsideClickMonitor {
             NSEvent.removeMonitor(monitor)
@@ -466,6 +542,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
+            window.setAccessibilityIdentifier("tokfuel.settings.window")
             settingsWindow = window
         }
         settingsWindow?.makeKeyAndOrderFront(nil)

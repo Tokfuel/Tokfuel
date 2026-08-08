@@ -3,7 +3,7 @@ id: MenuBar-15-status-ring-and-value
 title: メニューバーにリングとパーセントが並ぶ
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：リングとパーセント数値の両方が見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

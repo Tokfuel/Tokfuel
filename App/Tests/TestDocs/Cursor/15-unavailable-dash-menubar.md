@@ -3,7 +3,7 @@ id: Cursor-15-unavailable-dash-menubar
 title: Cursor のみかつ劣化でメニューバーがダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Cursor のみで取得劣化のとき、メニューバーもダッシュにな�
 - **Then**：金額がダッシュである
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

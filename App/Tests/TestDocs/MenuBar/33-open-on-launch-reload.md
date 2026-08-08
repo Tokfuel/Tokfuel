@@ -3,7 +3,7 @@ id: MenuBar-33-open-on-launch-reload
 title: ホームを開いたときに集計が走って数字が新しくなる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：集計が走り、表示が最新である
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

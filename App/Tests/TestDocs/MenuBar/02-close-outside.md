@@ -3,7 +3,7 @@ id: MenuBar-02-close-outside
 title: ホーム外をクリックするとポップオーバーが閉じる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: ready
 - **Then**：ホームが閉じている
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

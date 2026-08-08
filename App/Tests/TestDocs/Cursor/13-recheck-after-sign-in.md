@@ -3,7 +3,7 @@ id: Cursor-13-recheck-after-sign-in
 title: サインイン後にホームを開き直すと再取得する
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：再取得が走り、劣化表示が解消へ向かう
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

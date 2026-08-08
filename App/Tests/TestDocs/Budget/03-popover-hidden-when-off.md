@@ -3,7 +3,7 @@ id: Budget-03-popover-hidden-when-off
 title: 上限未設定のとき予算セクションが隠れている
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：予算セクションが見えない
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

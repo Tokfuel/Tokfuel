@@ -3,7 +3,7 @@ id: Settings-28-claude-directory
 title: Claude ディレクトリを変更しデフォルトに戻せる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -31,5 +31,7 @@ Claude ディレクトリを変更で選べ、デフォルトで戻せます。
 - **Then**：Settings のパスがデフォルトに戻る
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

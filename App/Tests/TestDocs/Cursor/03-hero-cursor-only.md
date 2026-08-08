@@ -3,7 +3,7 @@ id: Cursor-03-hero-cursor-only
 title: Cursor のみでヒーローが Cursor 推定になる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ Cursor のみのとき、ヒーローは Cursor の推定コストだけを示�
 - **Then**：ヒーローが Cursor 推定だけを示す
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

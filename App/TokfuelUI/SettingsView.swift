@@ -62,14 +62,18 @@ public struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 620)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tokfuel.settings")
     }
 
     private var generalSection: some View {
         Section {
             Toggle("ログイン時に自動起動", isOn: $settings.launchAtLogin)
+                .accessibilityIdentifier("tokfuel.settings.launch-at-login")
             Picker("外観", selection: $settings.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.appearance")
             Picker("通貨", selection: $settings.displayCurrency) {
                 ForEach(DisplayCurrency.allCases) {
                     Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0)
@@ -77,13 +81,16 @@ public struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 180)
+            .accessibilityIdentifier("tokfuel.settings.currency")
             // Codex CLI が無い Mac では「Codex のみ」を出さない（常に $0 になるだけのため）。
             Picker("コストのソース", selection: $settings.costSourceMode) {
                 ForEach(settings.availableCostSourceModes) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.cost-source")
             Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
                 ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.model-breakdown")
             Picker("週の始まり", selection: $settings.weekStart) {
                 ForEach(WeekStart.allCases) { Text($0.label).tag($0) }
             }
@@ -102,6 +109,7 @@ public struct SettingsView: View {
             Picker("見る指標", selection: $settings.menuBarMetric) {
                 ForEach(MenuBarMetric.allCases) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.menu-bar-metric")
             ForEach(representationRows) { representationRow($0) }
             if settings.menuBarRepresentation.drawsRing {
                 Picker("ゲージの形", selection: $settings.menuBarGaugeShape) {
@@ -158,6 +166,7 @@ public struct SettingsView: View {
                     ForEach(BudgetPeriod.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.radioGroup)
+                .accessibilityIdentifier("tokfuel.settings.budget-period")
             }
             budgetLimitRow("1日の上限", keyPath: \.dailyBudgetLimit)
             if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
@@ -168,9 +177,11 @@ public struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 220)
+                .accessibilityIdentifier("tokfuel.settings.budget-warn")
                 Picker("知らせ方", selection: $settings.budgetAlertStyle) {
                     ForEach(BudgetAlertStyle.allCases) { Text($0.label).tag($0) }
                 }
+                .accessibilityIdentifier("tokfuel.settings.budget-alert-style")
             }
         } header: {
             Text("予算")
@@ -242,6 +253,7 @@ public struct SettingsView: View {
                     .controlSize(.small)
                 }
             }
+            .accessibilityIdentifier("tokfuel.settings.advanced")
         }
     }
 
@@ -290,6 +302,7 @@ public struct SettingsView: View {
                     }
                 }
             }
+            .accessibilityIdentifier("tokfuel.settings.debug")
         }
     }
     #endif

@@ -3,7 +3,7 @@ id: Settings-34-analytics-consent-deny
 title: 同意ダイアログで許可しないを選べる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ status: ready
 - **Then**：ダイアログが閉じ、送信設定がオフである
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

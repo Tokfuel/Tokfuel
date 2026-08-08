@@ -3,7 +3,7 @@ id: Settings-26-advanced-disclosure
 title: 詳細を開くと高度な設定が見える
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: in-progress
 - **Then**：レポート言語や Claude ディレクトリが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

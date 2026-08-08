@@ -3,7 +3,7 @@ id: Cost-06-retok-error
 title: retok 失敗時にエラー文が出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -25,5 +25,7 @@ python3 が無いなど retok が失敗すると、ホームに警告ラベル�
 - **Then**：エラー文が見え、設定は開ける
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

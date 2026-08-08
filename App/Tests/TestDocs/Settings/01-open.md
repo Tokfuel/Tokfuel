@@ -3,7 +3,7 @@ id: Settings-01-open
 title: ポップオーバーから設定を開ける
 primary_domain: Settings
 platforms: [macOS]
-status: in-progress
+status: done
 ---
 
 ## シナリオ
@@ -29,5 +29,7 @@ status: in-progress
 - **Then**：Tokfuel 設定のウィンドウが表示される
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

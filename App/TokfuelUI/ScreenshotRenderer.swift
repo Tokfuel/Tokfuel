@@ -61,11 +61,12 @@ public enum ScreenshotRenderer {
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     public static let previewUpdateVersion = "0.1.0"
     /// スクリーンショット / VRT 用の固定「いま」。壁時計に依存させるとピクセルが日々ずれる。
+    /// `UsageStore.todayCost` は壁時計の「今日」キーを読むので、ここも同じ暦日に保つ。
     public static let fixtureNow: Date = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         return calendar.date(from: DateComponents(
-            year: 2026, month: 8, day: 8, hour: 12, minute: 10
+            year: 2026, month: 8, day: 9, hour: 12, minute: 10
         ))!
     }()
 
@@ -464,6 +465,75 @@ public enum ScreenshotRenderer {
         // 外観 Picker の選択状態を絵に固定する（システム追従だと CI の見た目がぶれる）。
         settings.appearanceMode = .dark
     }
+
+    #if DEBUG
+    /// E2E 常駐起動からも呼ぶ。スクリーンショットと同じ既定のうえにプロファイルを載せる。
+    /// `profile` は実行ターゲットの `E2EFixtureProfile.rawValue` と揃える。
+    public static func applyE2ELaunchDefaults(profile: String = "default") {
+        prepareDefaults()
+        applyE2EProfileOverrides(profile)
+    }
+
+    /// E2E 常駐用に、既に作ってある `UsageStore` へフィクスチャを流し込む。
+    public static func seedE2EStore(_ store: UsageStore, profile: String = "default") {
+        let fixture: UsageStore
+        switch profile {
+        case "cursorDegraded":
+            fixture = degradedCursorStore(reason: .remoteUnavailable)
+        case "cursorSignIn":
+            fixture = degradedCursorStore(reason: .credentialsRejected)
+        case "sessions":
+            fixture = sessionsFixtureStore()
+        default:
+            fixture = fixtureStore()
+        }
+        store.report = fixture.report
+        store.budgetSpend = fixture.budgetSpend
+        store.driverDailyByID = fixture.driverDailyByID
+        store.driverModelByID = fixture.driverModelByID
+        store.driverSessionsByID = fixture.driverSessionsByID
+        store.driverHealthByID = fixture.driverHealthByID
+        if profile == "budgetWarn" || profile == "budgetOver" {
+            let limit = max(AppSettings.shared.budgetLimitUSD, 1)
+            store.budgetSpend = profile == "budgetOver" ? limit * 1.05 : limit * 0.85
+        }
+        if profile == "cumulative" {
+            store.costChartStyle = .cumulative
+        }
+        store.lastUpdated = Date()
+        store.isLoading = false
+        store.isReportLoading = false
+    }
+
+    private static func applyE2EProfileOverrides(_ profile: String) {
+        let defaults = UserDefaults.standard
+        let settings = AppSettings.shared
+        switch profile {
+        case "jpy":
+            defaults.set(DisplayCurrency.jpy.rawValue, forKey: Money.currencyKey)
+            defaults.set(150.0, forKey: Money.rateKey)
+            defaults.set(dateString(daysAgo: 0), forKey: Money.rateDateKey)
+            settings.displayCurrency = .jpy
+        case "claudeOnly":
+            settings.costSourceMode = .claudeOnly
+        case "combined":
+            settings.costSourceMode = .combined
+        case "cursorOnly":
+            settings.costSourceMode = .cursorOnly
+        case "sideBySide":
+            settings.costSourceMode = .sideBySide
+        case "light":
+            settings.appearanceMode = .light
+        case "budgetWarn", "budgetOver":
+            settings.budgetAlertStyle = .both
+        case "analyticsConsent":
+            defaults.set(false, forKey: "analyticsConsentAnswered")
+            defaults.removeObject(forKey: "analyticsConsent")
+        default:
+            break
+        }
+    }
+    #endif
 
     // MARK: - 合成（デスクトップ風の枠）
 

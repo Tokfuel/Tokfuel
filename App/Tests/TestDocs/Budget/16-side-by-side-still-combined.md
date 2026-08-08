@@ -3,7 +3,7 @@ id: Budget-16-side-by-side-still-combined
 title: 並べて表示でも予算の分母は合算のまま
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -26,5 +26,7 @@ status: ready
 - **Then**：分母が合算コストになっている
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

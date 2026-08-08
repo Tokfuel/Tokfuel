@@ -3,7 +3,7 @@ id: Cost-13-side-by-side-caption
 title: 並べて表示でヒーロー下にソース内訳キャプションが出る
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：ソース内訳キャプションが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

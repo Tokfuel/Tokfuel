@@ -3,7 +3,7 @@ id: Cursor-16-unavailable-side-by-side
 title: 並べて表示で Cursor 側だけダッシュになる
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：Cursor 側だけがダッシュである
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）

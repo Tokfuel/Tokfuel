@@ -3,7 +3,7 @@ id: Budget-01-popover-daily-row
 title: 1日上限があるときホームに今日の予算行が出る
 primary_domain: Budget
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -24,5 +24,7 @@ status: ready
 - **Then**：予算（今日）の行とメーターが見える
 
 ## 対応済みPR
+
+- [#160](https://github.com/Tokfuel/Tokfuel/pull/160) AX E2E（TestDocs 全シナリオ）
 
 - （未作成）
