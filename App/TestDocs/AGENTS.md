@@ -5,7 +5,7 @@
 ## これは何か
 
 **TestDocs** は、Tokfuel アプリのテスト観点シナリオを git 上の Markdown で管理する置き場である。  
-成果物は `App/TestDocs/IT/**/*.md` とする。壁打ちで MD を起票し、実装 PR でテストとステータス更新まで進める。
+成果物は `App/TestDocs/{Domain}/**/*.md` とする。壁打ちで MD を起票し、実装 PR でテストとステータス更新まで進める。
 
 ## 破ってはいけないこと
 
@@ -19,8 +19,8 @@
 
 詳細は [`coverage-strategy.md`](coverage-strategy.md)。
 
-- 完了条件: **UT&IT** → **VRT**。E2E は必要な観点だけ
-- 同じ観点を二度テストしない
+- 完了条件: **E2E** を主とする。UT&IT と VRT は補助
+- 同じ観測を手段のあいだで二重にテストしない
 
 ## 完了判定
 
@@ -31,8 +31,10 @@
 
 ## 規約（要約）
 
-- パス: `App/TestDocs/IT/F{番号}/{区分}{連番}.md`
-- 観点 ID: `IT-F{番号}-{区分}{連番}`（例: `IT-F001-DS01`）
+- パス: `App/TestDocs/{Domain}/{nn}-{slug}.md`
+- 観点 ID: `{Domain}-{nn}-{slug}`（例: `Cost-02-period-switch`）
+- Domain は `primary_domain` と一致（`MenuBar` / `Cost` / `Settings` / `Budget` / `Cursor`）
+- `nn` はドメイン内 2 桁連番。`slug` は英小文字ハイフンでファイル名末尾と一致
 - 雛形: [`_TEMPLATE.md`](_TEMPLATE.md) / 索引: [`README.md`](README.md)
 - 節順: **シナリオ → 完了条件 → 経路（テスト単位 GWT）→ 対応済みPR**
 - `platforms` は front matter。本文に `## 対象` / 「前提条件」節は書かない
