@@ -29,25 +29,82 @@ if [[ ! -f "$REPORT" ]]; then
 fi
 
 # レポートをシェル変数へ展開（bash 3.2 / macos）。
-eval "$(python3 - "$REPORT" <<'PY'
+eval "$(python3 - "$REPORT" "$REPO" "$PR_SHA" <<'PY'
 import json, shlex, sys
 r = json.load(open(sys.argv[1]))
+repo = sys.argv[2]
+sha = sys.argv[3]
+
 def emit(k, v):
     print(f"{k}={shlex.quote('' if v is None else str(v))}")
-emit("FAILED_SCENARIO", r.get("failedScenario") or "（不明）")
+
+def doc_path(scenario_id: str):
+    # MenuBar-01-open-home → App/TestDocs/MenuBar/01-open-home.md
+    if not scenario_id or "-" not in scenario_id:
+        return None
+    domain, rest = scenario_id.split("-", 1)
+    if not domain or not rest:
+        return None
+    return f"App/TestDocs/{domain}/{rest}.md"
+
+def blob_url(path: str) -> str:
+    return f"https://github.com/{repo}/blob/{sha}/{path}"
+
+def linked_id(scenario_id: str) -> str:
+    path = doc_path(scenario_id)
+    if path:
+        return f"[`{scenario_id}`]({blob_url(path)})"
+    return f"`{scenario_id}`"
+
+failed = r.get("failedScenario") or "（不明）"
+emit("FAILED_SCENARIO", failed)
+emit("FAILED_SCENARIO_LINK", linked_id(failed) if failed != "（不明）" else failed)
 emit("ERROR", r.get("error") or "（エラー詳細なし）")
 emit("EXPLANATION", (r.get("explanation") or "").strip() or "失敗原因の説明を生成できませんでした。")
 emit("BASELINE", ", ".join(r.get("baselineIdentifiers") or []))
-completed = r.get("completedScenarios") or []
-emit("COMPLETED", ", ".join(completed) if completed else "（なし）")
+
 screens = r.get("expectedScreens") or ["popover"]
 emit("EXPECTED_SCREENS", " ".join(screens))
 emit("PRIMARY_EXPECTED", (screens[0] if screens else "popover"))
+
+scenarios = r.get("scenarios") or []
+total = len(scenarios)
+passed = sum(1 for s in scenarios if s.get("status") == "passed")
+failed_n = sum(1 for s in scenarios if s.get("status") == "failed")
+skipped = sum(1 for s in scenarios if s.get("status") == "skipped")
+if total == 0:
+    pass_pct = fail_pct = skip_pct = 0
+    fail_pos = "—"
+    bar = "（シナリオ情報なし）"
+else:
+    pass_pct = round(100 * passed / total)
+    fail_pct = round(100 * failed_n / total)
+    skip_pct = round(100 * skipped / total)
+    fail_pos = next(
+        (f"{i + 1}/{total} 本目" for i, s in enumerate(scenarios) if s.get("status") == "failed"),
+        "—",
+    )
+    bar = "".join(
+        {"passed": "🟩", "failed": "🟥", "skipped": "⬜"}.get(s.get("status"), "⬛")
+        for s in scenarios
+    )
+
+coverage = (
+    f"{bar}\n\n"
+    f"- 通過 **{pass_pct}%**（{passed}/{total or 0}）\n"
+    f"- 失敗位置 **{fail_pos}**\n"
+    f"- 未検証 **{skip_pct}%**（{skipped}/{total or 0}）"
+)
+emit("COVERAGE", coverage)
+
 rows = []
-for s in r.get("scenarios") or []:
+for s in scenarios:
+    sid = s.get("id") or "unknown"
     mark = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(s.get("status"), "•")
-    rows.append(f"{mark} `{s.get('id')}` ({s.get('status')})")
-emit("SCENARIO_LIST", "\n".join(rows) if rows else f"❌ `{r.get('failedScenario') or 'unknown'}`")
+    rows.append(f"{mark} {linked_id(sid)} ({s.get('status')})")
+if not rows:
+    rows = [f"❌ {linked_id(failed) if failed != '（不明）' else '`unknown`'}"]
+emit("SCENARIO_LIST", "\n".join(rows))
 PY
 )"
 
@@ -122,9 +179,12 @@ BODY=$(printf '%s\n' \
   "" \
   "| 項目 | 内容 |" \
   "| --- | --- |" \
-  "| 失敗シナリオ | \`${FAILED_SCENARIO}\` |" \
+  "| 失敗シナリオ | ${FAILED_SCENARIO_LINK} |" \
   "| エラー | \`${ERROR}\` |" \
-  "| 通過済み | ${COMPLETED} |" \
+  "" \
+  "#### カバレッジ" \
+  "" \
+  "${COVERAGE}" \
   "" \
   "#### なぜ落ちたか" \
   "" \
