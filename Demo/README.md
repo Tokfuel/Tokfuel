@@ -1,61 +1,37 @@
-# Demo（#155 spike）
+# Demo（#155）
 
-インストール前にポップオーバー相当を辿る**閲覧デモ**の両スタック試作。
+インストール前にポップオーバー相当を辿る**閲覧デモ**。
 正本の仕様は [Issue #155](https://github.com/Tokfuel/Tokfuel/issues/155)。
 
-## 何があるか
+## 思想
 
-| パス | 内容 |
+- **正本は Swift の UI 構成**（`Demo/DemoUI`）。Web 用に別デザインの HTML を育てることは本線にしない。
+- 「そのまま」は **ソース共有**を指す。Apple の SwiftUI ランタイム自体は Wasm に出せない。
+- 描画ホストは `Demo/DemoSwiftUI` を **ローカル `TokamakDOM` シム**として使う（JavaScriptKit）。上流の Tokamak は Swift 6.2 wasip1 ではまだビルドできないため、載せ替え可能な境界だけ先に切ってある。
+- **HTML / CSS / JS は参考モック**。大きな変更は DemoUI 側だけにする。
+
+フィクスチャ専用。Claude / Cursor / Codex の利用データは読み取らず、送信もしない。
+
+## 構成
+
+| パス | 役割 |
 |------|------|
-| `fixtures.json` | 共通フィクスチャ（`ScreenshotRenderer` と同じ数値） |
-| `html/` | 静的 HTML / CSS / JS デモ |
-| `wasm/` | SwiftWasm（JavaScriptKit）デモのソース |
-| `wasm/hosted/` | `Scripts/build-wasm-demo.sh` の静的成果物 |
-| `compare.html` | 両方への入口（公開時は `/demo/`） |
+| `DemoUI/` | 正本。`DemoPopoverView` + `DemoFixtures` |
+| `DemoSwiftUI/` | ローカル `TokamakDOM` シム（ノード木 → DOM） |
+| `wasm/` | Wasm ホスト + `hosted/` 成果物 |
+| `html/` | 参考モック |
+| `compare.html` | `/demo/`。Wasm 本線、HTML 参考 |
 
-どちらもフィクスチャ専用。Claude / Cursor / Codex の利用データは読み取らず、送信もしない。
-
-## ローカルで触る
+## ローカル
 
 ```bash
-# 任意: Wasm 成果物を更新
 bash Scripts/build-wasm-demo.sh
-
-# 比較入口をサーブ
 bash Scripts/demo-serve.sh
-# → http://127.0.0.1:8765/demo/
+# → http://127.0.0.1:8765/demo/wasm/
 ```
 
-HTML だけなら `build-wasm-demo.sh` は不要（Wasm ページにビルド手順が出る）。
+### ビルド要件
 
-## SwiftWasm ビルド要件
-
-Xcode 付属の `/usr/bin/swift` は `wasm32-unknown-wasip1` を扱えない。次が必要。
-
-1. [swiftly](https://www.swift.org/install/macos/) の OSS Swift（例: 6.2.4）を PATH 先頭へ
-2. 対応する Swift SDK for WebAssembly（例: `swift-6.2.4-RELEASE_wasm`）
-3. Wasm 向け clang（Homebrew `llvm` で可）
-
-ElementaryUI は Swift 6.3 前提のため、このスパイクでは JavaScriptKit 直の薄い DOM 実装にした。
-
-## 公開面
-
-GitHub Pages では Site ビルド成果に `/demo/` を載せる。
-
-- `/demo/` — 比較入口
-- `/demo/html/` — HTML デモ
-- `/demo/wasm/` — SwiftWasm デモ（`hosted/` があるとき）
-
-追従は `main` への Site / Demo 変更で Pages が更新される想定（リリース専用パイプラインは後回し）。
-
-## 比較観点
-
-スパイク完了時に、次で本線を決める。
-
-1. 見た目の近さ（ヒーロー、予算、モデル別）
-2. 操作の滑らかさ（開閉、設定 / About 遷移）
-3. ビルドと依存の重さ
-4. Pages への載せやすさ
-5. App との距離（今後の保守）
-
-この PR で両方を永久併記する前提にはしない。結果は Issue #155 にコメントする。
+1. swiftly の OSS Swift（例: 6.2.4）
+2. Swift SDK for WebAssembly（例: `swift-6.2.4-RELEASE_wasm`）
+3. Wasm 向け clang（Homebrew `llvm`）
