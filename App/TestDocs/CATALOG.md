@@ -223,28 +223,3 @@ python3 Scripts/generate-testdocs-catalog.py
 | [`Cursor-16-unavailable-side-by-side`](Cursor/16-unavailable-side-by-side.md) | 並べて表示で Cursor 側だけダッシュになる | ready | E2E |
 | [`Cursor-17-filter-by-source-mode`](Cursor/17-filter-by-source-mode.md) | Claude のみのとき Cursor の行やヒントが隠れる | ready | E2E |
 | [`Cursor-18-zero-cost-hidden-breakdown`](Cursor/18-zero-cost-hidden-breakdown.md) | 0 円の Cursor は内訳キャプションに載らない | ready | E2E |
-
-## 面ごとの確認チェック
-
-実装の UI 面と、対応するシナリオ群です。空欄や薄いところがあれば起票漏れの候補です。
-
-| 面 | 想定シナリオ |
-| --- | --- |
-| メニューバー開閉 | `MenuBar-01` … `03`, `33` |
-| ホームヒーロー / フッター | `MenuBar-04` … `08` |
-| メニューバー指標 / 表現 / ゲージ | `MenuBar-09` … `23`, `Settings-12` … `19` |
-| アップデート導線 | `MenuBar-29` … `32` |
-| 推移グラフ / 期間 | `Cost-01`, `02`, `07` … `11` |
-| 読み込み / エラー / CSV | `Cost-04` … `06`, `24` … `26` |
-| モデル別 / セッション / ヒント | `Cost-03`, `16` … `23` |
-| 設定一般 / ソース / 外観 | `Settings-01` … `11`, `36` |
-| 設定の予算 / プライバシー / 詳細 | `Settings-20` … `35` |
-| 予算メーター / 通知 / アラート | `Budget-01` … `18` |
-| Cursor 表示 / 劣化 / ヒント | `Cursor-01` … `18` |
-
-## 意図的な対象外
-
-- Cursor included 枠の専用 UI（未実装）
-- DEBUG 専用のデバッグ節
-- 利用データを Mac の外へ出す検証
-- Site（`Site/`）
