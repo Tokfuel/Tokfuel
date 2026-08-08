@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Tokfuel" width="100%"/>
+  <img src="Assets/banner.svg" alt="Tokfuel" width="100%"/>
 </p>
 
 <h1 align="center">Tokfuel</h1>
@@ -30,7 +30,7 @@
 ---
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="ポップオーバーのスクリーンショット" width="560"/>
+  <img src="Assets/screenshot.png" alt="ポップオーバーのスクリーンショット" width="560"/>
 </p>
 
 ## 特長
@@ -123,7 +123,7 @@
   ダッシュボード使用量照会（認証と日付範囲のみ。プロンプト本文は送りません）、**配布ビルド**での
   Crashlytics クラッシュレポート（同意プロンプトなし）、および設定で許可したときだけの
   匿名 Firebase Analytics（アプリ UI 操作）です。開発用ビルドでは Firebase を起動しません。
-  詳細は[プライバシーポリシー](docs/PRIVACY.ja.md)と[利用規約](docs/TERMS.ja.md)へ。
+  詳細は[プライバシーポリシー](Docs/PRIVACY.ja.md)と[利用規約](Docs/TERMS.ja.md)へ。
 
 ## インストール
 
@@ -143,8 +143,56 @@
 ```bash
 git clone https://github.com/akidon0000/Tokfuel.git
 cd Tokfuel
-bash scripts/build.sh
+bash Scripts/build.sh
 ```
+
+## アーキテクチャ
+
+アプリ関連は [`App/`](App/) 配下。SPM は **UI → Store → sources** のレイヤーで割り、executable が組み立てる（[ADR-0002](ADR/0002-layer-spm-modules/0002-layer-spm-modules.ja.md)）。矢印は import 方向。
+
+```mermaid
+flowchart TB
+  App["Tokfuel<br/>executable・DI"]
+  UI["TokfuelUI"]
+  Store["TokfuelStore"]
+  Settings["TokfuelSettings"]
+  Claude["TokfuelClaude"]
+  Cursor["TokfuelCursor"]
+  Codex["TokfuelCodex"]
+  Budget["TokfuelBudget"]
+  Analytics["TokfuelAnalytics"]
+  Core["TokfuelCore"]
+
+  App --> UI
+  App --> Store
+  App --> Settings
+  App --> Claude
+  App --> Cursor
+  App --> Codex
+  App --> Budget
+  App --> Analytics
+  App --> Core
+
+  UI --> Store
+  UI --> Settings
+  UI --> Core
+
+  Store --> Settings
+  Store --> Claude
+  Store --> Cursor
+  Store --> Codex
+  Store --> Budget
+  Store --> Core
+
+  Claude --> Core
+  Cursor --> Core
+  Codex --> Core
+  Budget --> Core
+  Settings --> Core
+  Analytics --> Core
+```
+
+データの流れは **取得（sources）→ 整形・合算（Store）→ 表示（UI）**。検証物は [`App/Tests/`](App/Tests/)（`UnitTests` が `swift test` の対象。TestDocs / E2E は実行しない／別ランナー）。決定の正本は [`ADR/`](ADR/INDEX.ja.md)。
 
 ## コントリビュート
 
@@ -152,6 +200,7 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 
 - テスト: `swift test`
 - ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
+- アーキテクチャ決定: [ADR/INDEX.ja.md](ADR/INDEX.ja.md)（[English](ADR/INDEX.md)）
 - 脆弱性を見つけたときは非公開で報告してください。[SECURITY.ja.md](SECURITY.ja.md) を参照。
 
 ### コントリビューター
@@ -191,7 +240,7 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 ## 謝辞
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
-  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
+  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](App/TokfuelClaude/Resources/LICENSE-retok)。
 - **アプリアイコン** — [Icon Composer](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer) でデザイン。
   ソースドキュメントは [Tokfuel/icon](https://github.com/Tokfuel/icon) にあります。
 - **為替レート** — [Frankfurter](https://frankfurter.dev)。
