@@ -96,6 +96,13 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 - **`ideation`**：アイデアを GitHub Issue に仕立てる（起案のみ）。
 - **`implementation`**：Issue 番号を起点に実装して出荷する（Issue 本文が仕様）。
 - **`task-select`**：オープンな Issue を見渡し、次に実装する項目を選ぶ。
+- **`write-adr`**：技術的意思決定を [`ADR/`](ADR/) に起草する（1 決定 = 1 ディレクトリ、
+  本文は `NNNN-slug(.ja).md`。型は [`ADR/TEMPLATE/`](ADR/TEMPLATE/)、一覧は
+  [`ADR/INDEX.ja.md`](ADR/INDEX.ja.md)）。
+
+アーキテクチャ上の決定は [`ADR/NNNN-slug/`](ADR/) に置く（`NNNN-slug.ja.md` と
+`NNNN-slug.md`）。ずれたときは日本語を正本とする。大きな方針は Issue（ラベル `ADR 🏯`）
+で議論し、合意を ADR に落とす。
 
 ## 作業言語
 

@@ -152,6 +152,7 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 
 - テスト: `swift test`
 - ロードマップ: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
+- アーキテクチャ決定: [ADR/INDEX.ja.md](ADR/INDEX.ja.md)（[English](ADR/INDEX.md)）
 - 脆弱性を見つけたときは非公開で報告してください。[SECURITY.ja.md](SECURITY.ja.md) を参照。
 
 ### コントリビューター
