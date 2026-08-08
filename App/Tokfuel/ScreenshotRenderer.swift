@@ -42,9 +42,9 @@ enum ScreenshotRenderer {
     static let cursorTodayCost: Double = 4.20
     /// Cursor のモデル別内訳 (USD)。合計は `cursorTodayCost` に一致させる（テストで検査）。
     /// `composer-1` を $0 にして、価格表に無いモデル（`CursorPricing` が値付けできない）の
-    /// ヒントまで絵に入れる。値付けできたぶんは 1 モデルに寄せ、偏りのヒントも出す。
+    /// ヒントまで絵に入れる。長い `cursor-grok-…` ID でモデル別の全文表示（IT-F001）も写す。
     static let cursorModelCosts: [String: Double] = [
-        "claude-4.5-sonnet": 3.36,
+        "cursor-grok-4.5-high-fast": 3.36,
         "gpt-5-codex": 0.84,
         "composer-1": 0
     ]
