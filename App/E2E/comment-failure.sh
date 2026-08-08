@@ -42,6 +42,7 @@ completed = r.get("completedScenarios") or []
 emit("COMPLETED", ", ".join(completed) if completed else "（なし）")
 screens = r.get("expectedScreens") or ["popover"]
 emit("EXPECTED_SCREENS", " ".join(screens))
+emit("PRIMARY_EXPECTED", (screens[0] if screens else "popover"))
 rows = []
 for s in r.get("scenarios") or []:
     mark = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(s.get("status"), "•")
@@ -59,6 +60,8 @@ PREFIX="pr-${PR_NUMBER}-${SHORT_SHA}"
 cp "$REPORT" "$STAGE/${PREFIX}-report.json"
 [[ -f "$OUT_DIR/failure.png" ]] && cp "$OUT_DIR/failure.png" "$STAGE/${PREFIX}-failure.png"
 [[ -f "$OUT_DIR/failure.mov" ]] && cp "$OUT_DIR/failure.mov" "$STAGE/${PREFIX}-failure.mov"
+[[ -f "$OUT_DIR/failure.gif" ]] && cp "$OUT_DIR/failure.gif" "$STAGE/${PREFIX}-failure.gif"
+[[ -f "$OUT_DIR/compare.png" ]] && cp "$OUT_DIR/compare.png" "$STAGE/${PREFIX}-compare.png"
 for t in start mid end; do
   [[ -f "$OUT_DIR/timeline-${t}.png" ]] && cp "$OUT_DIR/timeline-${t}.png" "$STAGE/${PREFIX}-timeline-${t}.png"
 done
@@ -96,10 +99,22 @@ raw() {
 
 FAILURE_IMG="${PREFIX}-failure.png"
 FAILURE_MOV="${PREFIX}-failure.mov"
+FAILURE_GIF="${PREFIX}-failure.gif"
+COMPARE_IMG="${PREFIX}-compare.png"
 HAS_FAIL_IMG=0
 HAS_FAIL_MOV=0
+HAS_FAIL_GIF=0
+HAS_COMPARE=0
 [[ -f "$FAILURE_IMG" ]] && HAS_FAIL_IMG=1
 [[ -f "$FAILURE_MOV" ]] && HAS_FAIL_MOV=1
+[[ -f "$FAILURE_GIF" ]] && HAS_FAIL_GIF=1
+[[ -f "$COMPARE_IMG" ]] && HAS_COMPARE=1
+
+PRIMARY_TITLE="$PRIMARY_EXPECTED"
+case "$PRIMARY_EXPECTED" in
+  popover) PRIMARY_TITLE="ホーム" ;;
+  settings) PRIMARY_TITLE="設定" ;;
+esac
 
 BODY=$(printf '%s\n' \
   "<!-- e2e-core6-bot -->" \
@@ -115,6 +130,11 @@ BODY=$(printf '%s\n' \
   "" \
   "${EXPLANATION}" \
   "" \
+  "\`\`\`diff" \
+  "- 失敗（実際）: ${ERROR}" \
+  "+ 成功（期待）: ${PRIMARY_TITLE} 画面へ到達し、必須 UI が見つかること" \
+  "\`\`\`" \
+  "" \
   "前回成功時に期待していた identifier:" \
   "" \
   "\`${BASELINE}\`" \
@@ -123,23 +143,69 @@ BODY=$(printf '%s\n' \
   "" \
   "${SCENARIO_LIST}" \
   "" \
-  "#### 失敗時の画面" \
+  "#### 失敗 vs 成功（比較）" \
+  "" \
+  "左が <strong><font color=\"#1a7f37\">成功（期待・フィクスチャ）</font></strong>、右が <strong><font color=\"#c41e3a\">失敗（実際の画面）</font></strong> です。" \
   ""
 )
 
-if [[ "$HAS_FAIL_IMG" -eq 1 ]]; then
-  URL="$(raw "$FAILURE_IMG")"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure\" width=\"640\"></a></p>"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\">失敗時スクリーンショット（原寸）</a></p>"$'\n'
+if [[ "$HAS_COMPARE" -eq 1 ]]; then
+  URL="$(raw "$COMPARE_IMG")"
+  BODY="${BODY}"$'\n'"<table><tr>"
+  BODY="${BODY}<td width=\"50%\" valign=\"top\"><p><strong><font color=\"#1a7f37\">🟢 成功（期待）</font></strong></p></td>"
+  BODY="${BODY}<td width=\"50%\" valign=\"top\"><p><strong><font color=\"#c41e3a\">🔴 失敗（実際）</font></strong></p></td>"
+  BODY="${BODY}</tr></table>"
+  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"compare expected vs failure\" width=\"720\"></a></p>"
+  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\">比較画像（原寸）</a></p>"$'\n'
 else
-  BODY="${BODY}"$'\n'"_失敗時スクリーンショットを取得できませんでした。_"$'\n'
+  BODY="${BODY}"$'\n'"_比較画像を生成できませんでした。個別の画面を下に載せます。_"$'\n'
 fi
 
-BODY="${BODY}"$'\n'"#### 失敗時の動画 / 経過"$'\n'
+BODY="${BODY}"$'\n'"<table><tr>"$'\n'
+# 成功列
+BODY="${BODY}<td width=\"50%\" valign=\"top\" bgcolor=\"#e6f4ea\">"
+BODY="${BODY}<p><strong><font color=\"#1a7f37\">🟢 成功（期待）</font></strong></p>"
+exp_name="${PREFIX}-expected-${PRIMARY_EXPECTED}.png"
+if [[ -f "$exp_name" ]]; then
+  URL="$(raw "$exp_name")"
+  BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"expected\" width=\"360\"></a></p>"
+  BODY="${BODY}<p><a href=\"${URL}\">${PRIMARY_TITLE}（正常）を開く</a></p>"
+else
+  BODY="${BODY}<p>_期待画面なし_</p>"
+fi
+BODY="${BODY}</td>"
+# 失敗列
+BODY="${BODY}<td width=\"50%\" valign=\"top\" bgcolor=\"#ffebe9\">"
+BODY="${BODY}<p><strong><font color=\"#c41e3a\">🔴 失敗（実際）</font></strong></p>"
+if [[ "$HAS_FAIL_IMG" -eq 1 ]]; then
+  URL="$(raw "$FAILURE_IMG")"
+  BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure\" width=\"360\"></a></p>"
+  BODY="${BODY}<p><a href=\"${URL}\">失敗時スクリーンショット（原寸）</a></p>"
+else
+  BODY="${BODY}<p>_失敗時スクリーンショットなし_</p>"
+fi
+BODY="${BODY}</td>"
+BODY="${BODY}"$'\n'"</tr></table>"$'\n'
+
+BODY="${BODY}"$'\n'"#### 失敗時の動画"$'\n'
+if [[ "$HAS_FAIL_GIF" -eq 1 ]]; then
+  URL="$(raw "$FAILURE_GIF")"
+  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure animation\" width=\"720\"></a></p>"
+  BODY="${BODY}"$'\n'"<p>コメント内のアニメ GIF（1 秒ごとの画面キャプチャ）</p>"$'\n'
+fi
 if [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
   URL="$(raw "$FAILURE_MOV")"
-  BODY="${BODY}"$'\n'"- [failure.mov を開く](${URL})（1 秒ごとの画面キャプチャを連結）"$'\n'
+  # GitHub は raw の mp4/mov を <video> で再生できる場合がある。効かない環境向けにリンクも残す。
+  BODY="${BODY}"$'\n'"<video src=\"${URL}\" width=\"720\" controls muted playsinline>"
+  BODY="${BODY}"$'\n'"<a href=\"${URL}\">failure.mov を開く</a>"
+  BODY="${BODY}"$'\n'"</video>"$'\n'
+  BODY="${BODY}"$'\n'"- [failure.mov をダウンロード](${URL})"$'\n'
 fi
+if [[ "$HAS_FAIL_GIF" -eq 0 && "$HAS_FAIL_MOV" -eq 0 ]]; then
+  BODY="${BODY}"$'\n'"_動画を取得できませんでした。経過フレームを載せます。_"$'\n'
+fi
+
+BODY="${BODY}"$'\n'"<details><summary>経過フレーム（開始 / 中盤 / 終了）</summary>"$'\n'
 BODY="${BODY}"$'\n'"<table><tr>"$'\n'
 for t in start mid end; do
   name="${PREFIX}-timeline-${t}.png"
@@ -152,13 +218,15 @@ for t in start mid end; do
       end) label="終了付近" ;;
     esac
     BODY="${BODY}<td valign=\"top\"><p><strong>${label}</strong></p>"
-    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${t}\" width=\"280\"></a></p></td>"
+    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${t}\" width=\"240\"></a></p></td>"
   fi
 done
-BODY="${BODY}"$'\n'"</tr></table>"$'\n'
+BODY="${BODY}"$'\n'"</tr></table>"$'\n'"</details>"$'\n'
 
-BODY="${BODY}"$'\n'"#### 正常な画面（フィクスチャ描画）"$'\n'$'\n'"<table><tr>"$'\n'
+BODY="${BODY}"$'\n'"<details><summary>その他の正常フィクスチャ</summary>"$'\n'
+BODY="${BODY}"$'\n'"<table><tr>"$'\n'
 for screen in $EXPECTED_SCREENS; do
+  [[ "$screen" == "$PRIMARY_EXPECTED" ]] && continue
   name="${PREFIX}-expected-${screen}.png"
   if [[ -f "$name" ]]; then
     URL="$(raw "$name")"
@@ -168,11 +236,10 @@ for screen in $EXPECTED_SCREENS; do
       settings) title="設定（正常）" ;;
     esac
     BODY="${BODY}<td valign=\"top\"><p><strong>${title}</strong></p>"
-    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${screen}\" width=\"360\"></a></p>"
-    BODY="${BODY}<p><a href=\"${URL}\">原寸を開く</a></p></td>"
+    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${screen}\" width=\"320\"></a></p></td>"
   fi
 done
-BODY="${BODY}"$'\n'"</tr></table>"$'\n'
+BODY="${BODY}"$'\n'"</tr></table>"$'\n'"</details>"$'\n'
 
 if [[ -n "$RUN_URL" ]]; then
   BODY="${BODY}"$'\n'"Actions ログ: ${RUN_URL}"$'\n'

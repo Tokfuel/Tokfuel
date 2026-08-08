@@ -72,8 +72,10 @@ sleep "$SETTLE"
 # screencapture -v は Screen Recording の Allow ダイアログで止まりやすいので使わない。
 # 代わりに 1 秒ごとの PNG を撮り、失敗時に ffmpeg で failure.mov を合成する。
 VIDEO_OUT="$OUT_DIR/failure.mov"
+GIF_OUT="$OUT_DIR/failure.gif"
+COMPARE_OUT="$OUT_DIR/compare.png"
 FRAMES_DIR="$OUT_DIR/frames"
-rm -f "$VIDEO_OUT"
+rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
 rm -rf "$FRAMES_DIR"
 mkdir -p "$FRAMES_DIR"
 (
@@ -105,7 +107,7 @@ if [[ -n "${FRAME_PID}" ]]; then
 fi
 
 if [[ "$DRIVER_STATUS" -eq 0 ]]; then
-  rm -f "$VIDEO_OUT"
+  rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
   rm -rf "$FRAMES_DIR"
   echo "E2E メニューバー OK"
   exit 0
@@ -122,7 +124,8 @@ if [[ ${#frames[@]} -gt 0 ]]; then
   cp "${frames[$mid]}" "$OUT_DIR/timeline-mid.png"
   cp "${frames[$(( ${#frames[@]} - 1 ))]}" "$OUT_DIR/timeline-end.png"
 
-  # Allow ダイアログ不要: PNG 連番から動画を合成する。
+  # Allow ダイアログ不要: PNG 連番から動画 / GIF を合成する。
+  # GIF は PR コメントに <img> でインライン表示できる（.mov はリンクになりやすい）。
   if command -v ffmpeg >/dev/null 2>&1; then
     ffmpeg -y -hide_banner -loglevel error \
       -framerate 1 \
@@ -131,8 +134,16 @@ if [[ ${#frames[@]} -gt 0 ]]; then
       "$VIDEO_OUT" \
       && echo "synthesized failure.mov from ${#frames[@]} frames" \
       || echo "warning: ffmpeg failed to synthesize failure.mov" >&2
+    ffmpeg -y -hide_banner -loglevel error \
+      -framerate 1 \
+      -pattern_type glob -i "$FRAMES_DIR/frame-*.png" \
+      -vf "scale=720:-1:flags=lanczos,fps=1,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
+      -loop 0 \
+      "$GIF_OUT" \
+      && echo "synthesized failure.gif from ${#frames[@]} frames" \
+      || echo "warning: ffmpeg failed to synthesize failure.gif" >&2
   else
-    echo "warning: ffmpeg not found; skip failure.mov" >&2
+    echo "warning: ffmpeg not found; skip failure.mov / failure.gif" >&2
   fi
 fi
 
@@ -151,6 +162,44 @@ if [[ ! -f "$REPORT" ]]; then
   cat > "$REPORT" <<EOF
 {"ok":false,"failedScenario":null,"error":"driver exited ${DRIVER_STATUS}","explanation":"ドライバが非ゼロで終了しました。","completedScenarios":[],"scenarios":[],"baselineIdentifiers":[],"expectedScreens":["popover"],"updatedAt":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 EOF
+fi
+
+# 成功（期待）と失敗（実際）を横並びにした比較画像（緑枠 / 赤枠）。
+if command -v ffmpeg >/dev/null 2>&1 && [[ -f "$OUT_DIR/failure.png" ]]; then
+  expected_png=""
+  if [[ -f "$REPORT" ]] && command -v python3 >/dev/null; then
+    expected_png="$(python3 - "$REPORT" "$EXPECTED_DIR" <<'PY'
+import json, os, sys
+r = json.load(open(sys.argv[1]))
+root = sys.argv[2]
+for name in r.get("expectedScreens") or ["popover"]:
+    path = os.path.join(root, f"{name}.png")
+    if os.path.isfile(path):
+        print(path)
+        break
+PY
+)"
+  fi
+  if [[ -z "$expected_png" ]]; then
+    for name in settings popover; do
+      if [[ -f "$EXPECTED_DIR/${name}.png" ]]; then
+        expected_png="$EXPECTED_DIR/${name}.png"
+        break
+      fi
+    done
+  fi
+  if [[ -n "$expected_png" ]]; then
+    # 緑=成功（期待） / 赤=失敗（実際）。ラベルはコメント側の見出しで示す。
+    ffmpeg -y -hide_banner -loglevel error \
+      -i "$expected_png" -i "$OUT_DIR/failure.png" \
+      -filter_complex "\
+        [0:v]scale=-1:360,pad=iw+24:ih+24:12:12:color=0x1a7f37[left];\
+        [1:v]scale=-1:360,pad=iw+24:ih+24:12:12:color=0xc41e3a[right];\
+        [left][right]hstack=inputs=2[out]" \
+      -map '[out]' "$COMPARE_OUT" \
+      && echo "wrote compare.png (expected vs failure)" \
+      || echo "warning: failed to synthesize compare.png" >&2
+  fi
 fi
 
 exit "$DRIVER_STATUS"

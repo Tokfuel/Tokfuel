@@ -101,6 +101,8 @@ jobs:
             .build/e2e/core6-last.json
             .build/e2e/failure.png
             .build/e2e/failure.mov
+            .build/e2e/failure.gif
+            .build/e2e/compare.png
             .build/e2e/timeline-*.png
             .build/e2e/expected/
           if-no-files-found: ignore

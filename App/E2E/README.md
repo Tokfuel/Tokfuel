@@ -54,7 +54,7 @@ CI で落ちたときは `App/E2E/comment-failure.sh` が次を PR コメント�
 
 ### ローカルの Accessibility 許可
 
-初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与します。失敗時の動画は Screen Recording の Allow ダイアログを避けるため、1 秒ごとの PNG を `ffmpeg` で連結して作ります。
+初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与します。失敗時は 1 秒ごとの PNG を `ffmpeg` で `failure.mov` / `failure.gif` にし、PR コメントには GIF をインライン表示します（`.mov` はリンク）。あわせて期待画面と失敗画面の赤／緑比較画像も載せます。
 
 ### CI
 
