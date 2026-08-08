@@ -236,14 +236,38 @@ extension AXDriver {
     /// 実 UserDefaults の重複抑止キーを書き換えるので、呼び出し側は必ず
     /// `clearBudgetNotificationDedup()` を defer で呼び、実アプリの今月の通知状態を汚さない
     /// ようにすること。上限が 0（未設定）だと `集計期間` 自体が無いので nil を返す。
+    /// identifier → タイトルの順で設定 Picker を選び、どちらも失敗したら false。
+    @discardableResult
+    func trySelectSettingsOption(identifier: String?, pickerTitle: String?, option: String) -> Bool {
+        if let identifier,
+           (try? selectSettingsOption(identifier: identifier, option: option)) != nil {
+            return true
+        }
+        if let pickerTitle,
+           (try? selectSettingsOption(pickerTitled: pickerTitle, option: option)) != nil {
+            return true
+        }
+        return false
+    }
+
     @discardableResult
     func retriggerBudgetAlert(style: String = "アラートウィンドウ") throws -> AXUIElement? {
-        _ = try selectSettingsOption(pickerTitled: "知らせ方", option: style)
+        // 「知らせ方」「集計期間」は AX タイトルで取れないことがあるので identifier 優先。
+        guard trySelectSettingsOption(
+            identifier: "tokfuel.settings.budget-alert-style",
+            pickerTitle: "知らせ方",
+            option: style
+        ) else { return nil }
+
         let settings = try settingsRoot()
-        guard let picker = findByTitle("集計期間", under: settings) else { return nil }
-        try selectPickerOption(picker, option: "過去 30 日間（今日から遡る）")
+        let periodPicker = findByIdentifier("tokfuel.settings.budget-period", under: settings)
+            ?? findByTitle("集計期間", under: settings)
+        guard let periodPicker else { return nil }
+
+        try selectPickerOption(periodPicker, option: "過去 30 日間（今日から遡る）")
         RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        if let picker2 = findByTitle("集計期間", under: settings) {
+        if let picker2 = findByIdentifier("tokfuel.settings.budget-period", under: settings)
+            ?? findByTitle("集計期間", under: settings) {
             try selectPickerOption(picker2, option: "今月（1 日から）")
         }
         RunLoop.current.run(until: Date().addingTimeInterval(0.3))

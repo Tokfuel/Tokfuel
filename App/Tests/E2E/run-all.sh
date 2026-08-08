@@ -132,7 +132,11 @@ fi
 
 if [[ "$DRIVER_STATUS" -eq 0 ]]; then
   rm -f "$VIDEO_OUT" "$GIF_OUT"
-  rm -rf "$FRAMES_DIR"
+  # フレーム取得プロセスの遅延書き込みと競合すると rm が "Directory not empty"
+  # で非 0 になることがある。成功判定を落とさないよう許容して再試行する。
+  rm -rf "$FRAMES_DIR" 2>/dev/null || true
+  /bin/sleep 0.2
+  rm -rf "$FRAMES_DIR" 2>/dev/null || true
   # 前回成功比較用に、実アプリのホーム / 設定を撮って残す。
   mkdir -p "$BASELINE_DIR"
   if "$DRIVER" --pid "$APP_PID" --capture-baselines "$BASELINE_DIR"; then

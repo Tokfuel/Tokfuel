@@ -166,6 +166,7 @@ public struct SettingsView: View {
                     ForEach(BudgetPeriod.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.radioGroup)
+                .accessibilityIdentifier("tokfuel.settings.budget-period")
             }
             budgetLimitRow("1日の上限", keyPath: \.dailyBudgetLimit)
             if settings.budgetLimit > 0 || settings.dailyBudgetLimit > 0 {
@@ -176,9 +177,11 @@ public struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 220)
+                .accessibilityIdentifier("tokfuel.settings.budget-warn")
                 Picker("知らせ方", selection: $settings.budgetAlertStyle) {
                     ForEach(BudgetAlertStyle.allCases) { Text($0.label).tag($0) }
                 }
+                .accessibilityIdentifier("tokfuel.settings.budget-alert-style")
             }
         } header: {
             Text("予算")
