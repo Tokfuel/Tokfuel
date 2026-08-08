@@ -62,7 +62,7 @@ swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
 シナリオと担保手段（UT&IT / VRT / E2E）の優先は
-[`App/TestDocs/coverage-strategy.md`](App/TestDocs/coverage-strategy.md) を見る。
+[`App/TestDocs/README.md`](App/TestDocs/README.md) の「担保手段」節を見る。
 
 CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
 `App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（Docs / Site

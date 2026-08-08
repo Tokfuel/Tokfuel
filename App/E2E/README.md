@@ -9,6 +9,6 @@
 - Maestro / Appium / 別リポジトリは持ち込まない
 - 見た目の固定は E2E ではなく VRT（`ScreenshotRenderer` / `ui-preview`）に置く
 - 最初の候補は起動スモークと主要画面到達に限る
-- 詳細な優先順位は [`../TestDocs/coverage-strategy.md`](../TestDocs/coverage-strategy.md)
+- 詳細な優先順位は [`../TestDocs/README.md`](../TestDocs/README.md) の「担保手段」節
 
 このディレクトリにテスト実装を足すときは、対応する TestDocs シナリオを `ready` 以上にしてから進めます。
