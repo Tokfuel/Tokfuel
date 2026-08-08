@@ -501,7 +501,7 @@ struct PopoverView: View {
                 }
                 .disabled(store.report == nil)
                 Divider()
-                Button("設定") { onOpenSettings() }
+                Button("設訂") { onOpenSettings() }  // UI copy drift demo (1 char): E2E expects 設定
                     .accessibilityIdentifier("tokfuel.menu.settings")
                 Button("Tokfuel について") { onOpenAbout() }
                 Divider()
