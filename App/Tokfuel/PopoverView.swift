@@ -358,15 +358,17 @@ struct PopoverView: View {
                             .padding(.top, source == rows.first?.source ? 0 : 4)
                     }
                     HStack(spacing: 8) {
-                        Text(shortModel(row.model))
+                        Text(ModelBreakdownLayout.name(row.model))
                             .font(.caption)
                             .lineLimit(1)
-                            .frame(width: 100, alignment: .leading)
+                            .frame(minWidth: ModelBreakdownLayout.nameMinWidth, alignment: .leading)
+                            .layoutPriority(1)
                         MeterBar(fraction: row.cost / maxCost, color: .secondary.opacity(0.45))
+                            .frame(minWidth: 24)
                         Text(Self.money(row.cost))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
-                            .frame(width: 64, alignment: .trailing)
+                            .frame(width: ModelBreakdownLayout.moneyWidth, alignment: .trailing)
                     }
                 }
             }
@@ -677,11 +679,6 @@ struct PopoverView: View {
     nonisolated static func shortDate(_ date: String) -> String {
         let parts = date.split(separator: "-")
         return parts.count == 3 ? "\(parts[1])/\(parts[2])" : date
-    }
-
-    private func shortModel(_ model: String) -> String {
-        model.replacingOccurrences(of: "claude-", with: "")
-            .replacingOccurrences(of: "-20251001", with: "")
     }
 
     // 表示通貨（USD / JPY）を反映するフォーマッタ。actor 隔離なしで呼べる。

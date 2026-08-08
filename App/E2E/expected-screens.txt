@@ -1,0 +1,16 @@
+# IT-F010-LC01 — screens that App/E2E/run-smoke.sh must produce.
+# Keep in sync with ScreenshotRenderer.allScreens() names and ui-preview.yml ORDER.
+popover
+popover-light
+popover-update
+popover-cursor-degraded
+popover-cursor-signin
+popover-sessions
+popover-advice
+popover-advice-expanded
+settings
+settings-advanced
+settings-debug
+about
+budget-alert
+analytics-consent
