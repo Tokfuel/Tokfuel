@@ -247,56 +247,13 @@ BODY="${BODY}"$'\n'"</tr></table>"$'\n'
 BODY="${BODY}"$'\n'"#### 失敗時の動画"$'\n'
 if [[ "$HAS_FAIL_GIF" -eq 1 ]]; then
   URL="$(raw "$FAILURE_GIF")"
-  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure animation\" width=\"720\"></a></p>"
-  BODY="${BODY}"$'\n'"<p>コメント内のアニメ GIF（0.2 秒ごとの画面キャプチャ）</p>"$'\n'
-fi
-if [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
+  BODY="${BODY}"$'\n'"<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"failure animation\" width=\"720\"></a></p>"$'\n'
+elif [[ "$HAS_FAIL_MOV" -eq 1 ]]; then
   URL="$(raw "$FAILURE_MOV")"
-  # GitHub は raw の mp4/mov を <video> で再生できる場合がある。効かない環境向けにリンクも残す。
-  BODY="${BODY}"$'\n'"<video src=\"${URL}\" width=\"720\" controls muted playsinline>"
-  BODY="${BODY}"$'\n'"<a href=\"${URL}\">failure.mov を開く</a>"
-  BODY="${BODY}"$'\n'"</video>"$'\n'
-  BODY="${BODY}"$'\n'"- [failure.mov をダウンロード](${URL})"$'\n'
+  BODY="${BODY}"$'\n'"<video src=\"${URL}\" width=\"720\" controls muted playsinline></video>"$'\n'
+else
+  BODY="${BODY}"$'\n'"_動画を取得できませんでした。_"$'\n'
 fi
-if [[ "$HAS_FAIL_GIF" -eq 0 && "$HAS_FAIL_MOV" -eq 0 ]]; then
-  BODY="${BODY}"$'\n'"_動画を取得できませんでした。経過フレームを載せます。_"$'\n'
-fi
-
-BODY="${BODY}"$'\n'"<details><summary>経過フレーム（開始 / 中盤 / 終了）</summary>"$'\n'
-BODY="${BODY}"$'\n'"<table><tr>"$'\n'
-for t in start mid end; do
-  name="${PREFIX}-timeline-${t}.png"
-  if [[ -f "$name" ]]; then
-    URL="$(raw "$name")"
-    label="$t"
-    case "$t" in
-      start) label="開始付近" ;;
-      mid) label="中盤" ;;
-      end) label="終了付近" ;;
-    esac
-    BODY="${BODY}<td valign=\"top\"><p><strong>${label}</strong></p>"
-    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${t}\" width=\"240\"></a></p></td>"
-  fi
-done
-BODY="${BODY}"$'\n'"</tr></table>"$'\n'"</details>"$'\n'
-
-BODY="${BODY}"$'\n'"<details><summary>その他の正常フィクスチャ</summary>"$'\n'
-BODY="${BODY}"$'\n'"<table><tr>"$'\n'
-for screen in $EXPECTED_SCREENS; do
-  [[ "$screen" == "$PRIMARY_EXPECTED" ]] && continue
-  name="${PREFIX}-expected-${screen}.png"
-  if [[ -f "$name" ]]; then
-    URL="$(raw "$name")"
-    title="$screen"
-    case "$screen" in
-      popover) title="ホーム（正常）" ;;
-      settings) title="設定（正常）" ;;
-    esac
-    BODY="${BODY}<td valign=\"top\"><p><strong>${title}</strong></p>"
-    BODY="${BODY}<p><a href=\"${URL}\"><img src=\"${URL}\" alt=\"${screen}\" width=\"320\"></a></p></td>"
-  fi
-done
-BODY="${BODY}"$'\n'"</tr></table>"$'\n'"</details>"$'\n'
 
 if [[ -n "$RUN_URL" ]]; then
   BODY="${BODY}"$'\n'"Actions ログ: ${RUN_URL}"$'\n'
