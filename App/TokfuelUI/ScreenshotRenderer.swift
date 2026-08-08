@@ -722,20 +722,23 @@ public enum ScreenshotRenderer {
                 let components = DateComponents(year: year, month: month, day: 1)
                 guard let date = calendar.date(from: components) else { continue }
                 guard date <= fixtureNow else { continue }
-                daily[UsageStore.dateString(date)] = cost
+                // UsageStore.dateString は Calendar.current（CI では UTC 等）なので、
+                // 東京の月初 0:00 が前日に落ちる。フィクスチャキーは東京暦で固定する。
+                daily[LocalDay.string(from: date, calendar: calendar)] = cost
             }
             daily[dateString(daysAgo: 0)] = todayCost
             return (daily, window.days)
         }
     }
 
-    /// 集計キーの日付文字列。書式は `UsageStore` に合わせる（ずれるとヒーローが「–」になる）。
-    /// 基準は壁時計ではなく `fixtureNow`（VRT / ui-preview のピクセルを日々ずらさない）。
+    /// 集計キーの日付文字列。基準は壁時計ではなく `fixtureNow`（VRT / ui-preview の
+    /// ピクセルを日々ずらさない）。タイムゾーンも Asia/Tokyo に固定し、CI（UTC）で
+    /// 月初が前日キーになるのを防ぐ。
     public static func dateString(daysAgo: Int) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         let date = calendar.date(byAdding: .day, value: -daysAgo, to: fixtureNow) ?? fixtureNow
-        return UsageStore.dateString(date)
+        return LocalDay.string(from: date, calendar: calendar)
     }
 }
 #endif
