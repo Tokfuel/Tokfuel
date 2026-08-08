@@ -146,6 +146,54 @@ cd Tokfuel
 bash Scripts/build.sh
 ```
 
+## アーキテクチャ
+
+アプリ関連は [`App/`](App/) 配下。SPM は **UI → Store → sources** のレイヤーで割り、executable が組み立てる（[ADR-0002](ADR/0002-layer-spm-modules/0002-layer-spm-modules.ja.md)）。矢印は import 方向。
+
+```mermaid
+flowchart TB
+  App["Tokfuel<br/>executable・DI"]
+  UI["TokfuelUI"]
+  Store["TokfuelStore"]
+  Settings["TokfuelSettings"]
+  Claude["TokfuelClaude"]
+  Cursor["TokfuelCursor"]
+  Codex["TokfuelCodex"]
+  Budget["TokfuelBudget"]
+  Analytics["TokfuelAnalytics"]
+  Core["TokfuelCore"]
+
+  App --> UI
+  App --> Store
+  App --> Settings
+  App --> Claude
+  App --> Cursor
+  App --> Codex
+  App --> Budget
+  App --> Analytics
+  App --> Core
+
+  UI --> Store
+  UI --> Settings
+  UI --> Core
+
+  Store --> Settings
+  Store --> Claude
+  Store --> Cursor
+  Store --> Codex
+  Store --> Budget
+  Store --> Core
+
+  Claude --> Core
+  Cursor --> Core
+  Codex --> Core
+  Budget --> Core
+  Settings --> Core
+  Analytics --> Core
+```
+
+データの流れは **取得（sources）→ 整形・合算（Store）→ 表示（UI）**。検証物は [`App/Tests/`](App/Tests/)（`UnitTests` が `swift test` の対象。TestDocs / E2E は実行しない／別ランナー）。決定の正本は [`ADR/`](ADR/INDEX.ja.md)。
+
 ## コントリビュート
 
 PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
