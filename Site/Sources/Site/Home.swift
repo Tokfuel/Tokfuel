@@ -31,9 +31,17 @@ struct Home: StaticPage {
                     .role(.primary)
                     .padding(.horizontal, 8)
 
+                Link("Try the browsable demo", target: "demo/")
+                    .linkStyle(.underline(.heavy))
+
                 Text("macOS 14 or later · Free and open source")
                     .font(.small)
                     .foregroundStyle(.secondary)
+
+                Text("The web demo uses fixture data only — it does not read or send usage data.")
+                    .font(.small)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 560)
             }
             .padding(.vertical, 96)
             .horizontalAlignment(.center)

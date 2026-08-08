@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tokfuel Demo — SwiftWasm</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "@bjorn3/browser_wasi_shim": "https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.3.0/+esm"
+    }
+  }
+  </script>
+  <style>
+    .status-box {
+      max-width: 560px;
+      margin: 24px auto;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-elevated);
+      color: var(--secondary);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .status-box code { color: var(--text); }
+  </style>
+</head>
+<body>
+  <p class="banner">
+    フィクスチャ専用の閲覧デモです。利用データは読み取らず、送信もしません。
+    <span class="banner-en">Fixture-only browsable demo. No usage data is read or sent.</span>
+  </p>
+
+  <main class="stage">
+    <div class="chrome" id="app">
+      <div class="loading">Starting SwiftWasm runtime…</div>
+    </div>
+  </main>
+
+  <div class="status-box" id="status" hidden></div>
+
+  <p class="footnote">
+    <a href="../">比較入口へ戻る</a>
+    · SwiftWasm spike for <a href="https://github.com/Tokfuel/Tokfuel/issues/155">#155</a>
+  </p>
+
+  <script type="module">
+    const status = document.getElementById("status");
+    const app = document.getElementById("app");
+
+    function showStatus(html) {
+      status.hidden = false;
+      status.innerHTML = html;
+    }
+
+    async function boot() {
+      try {
+        const head = await fetch("./TokfuelDemo.wasm", { method: "HEAD" });
+        if (!head.ok) throw new Error("TokfuelDemo.wasm missing");
+        const { init } = await import("./index.js");
+        await init();
+        // @main should have painted #app; if not, leave a hint.
+        if (!app.querySelector(".hero-amount, .nav-title, .about-name")) {
+          showStatus("Wasm booted but UI did not mount. Check the browser console.");
+        }
+      } catch (err) {
+        showStatus(`
+          <strong>SwiftWasm artifact is not runnable here.</strong><br />
+          Build with <code>bash Scripts/build-wasm-demo.sh</code>
+          (OSS Swift via swiftly + Wasm SDK; Xcode’s <code>/usr/bin/swift</code> cannot target wasip1).<br />
+          Meanwhile try the <a href="../html/">HTML demo</a>.
+          <br /><code>${String(err && err.message ? err.message : err)}</code>
+        `);
+        app.innerHTML = `<div class="loading">Wasm host waiting for build output.</div>`;
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>

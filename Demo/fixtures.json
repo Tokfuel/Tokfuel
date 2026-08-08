@@ -1,0 +1,44 @@
+{
+  "notice": "Fixture-only demo data. No Claude / Cursor / Codex usage is read or sent.",
+  "noticeJa": "フィクスチャ専用のデモデータです。Claude / Cursor / Codex の利用データは読み取らず、送信もしません。",
+  "periodLabel": "今週",
+  "todayCost": 12.34,
+  "claudeTodayCost": 12.34,
+  "cursorTodayCost": 4.2,
+  "dailyCosts": [8.42, 15.1, 6.05, 21.3, 11.8, 24.9, 12.34],
+  "dayLabels": ["月", "火", "水", "木", "金", "土", "日"],
+  "modelCosts": {
+    "claude-fable-5": 68.3,
+    "claude-sonnet-5": 20.16,
+    "claude-haiku-4-5-20251001": 11.45
+  },
+  "budgetLimit": 300,
+  "budgetSpend": 250,
+  "dailyBudgetLimit": 20,
+  "cursorModelCosts": {
+    "claude-4.5-sonnet": 3.36,
+    "gpt-5-codex": 0.84,
+    "composer-1": 0
+  },
+  "advice": {
+    "title": "高価格モデルでの小粒セッションが 12 件 ($18.40)",
+    "detail": "一問一答や軽い確認は Haiku/Sonnet で十分なことが多いです。/model で切り替えるか、軽い用途向けに別プロファイルを用意すると節約できます。",
+    "severity": "medium"
+  },
+  "settings": {
+    "currency": "USD",
+    "costSourceMode": "並べて表示",
+    "dailyBudget": 20,
+    "monthlyBudget": 300,
+    "appearance": "ダーク"
+  },
+  "about": {
+    "name": "Tokfuel",
+    "tagline": "See what AI coding costs you, from the menu bar.",
+    "version": "demo",
+    "credits": [
+      "retok © Daiki Matsudate (MIT)",
+      "Frankfurter API (optional USD→JPY)"
+    ]
+  }
+}

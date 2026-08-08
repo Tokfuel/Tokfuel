@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tokfuel Demo — HTML</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <p class="banner" id="banner">
+    フィクスチャ専用の閲覧デモです。利用データは読み取らず、送信もしません。
+    <span class="banner-en">Fixture-only browsable demo. No usage data is read or sent.</span>
+  </p>
+
+  <main class="stage">
+    <div class="chrome" id="app" aria-live="polite">
+      <div class="loading">Loading fixtures…</div>
+    </div>
+  </main>
+
+  <p class="footnote">
+    <a href="../">比較入口へ戻る</a>
+    · HTML / CSS / JS spike for <a href="https://github.com/Tokfuel/Tokfuel/issues/155">#155</a>
+  </p>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

@@ -36,5 +36,6 @@ Docs/drafts/
 
 # Local verification artifacts (do not commit)
 .verify-*
+.demo-serve/
 
 tokfuel-*.png

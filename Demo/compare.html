@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tokfuel Demo — compare</title>
+  <style>
+    :root {
+      --bg: #000;
+      --text: #f5f5f7;
+      --secondary: #a1a1a6;
+      --accent: #2997ff;
+      --panel: #1d1d1f;
+      --line: #424245;
+      --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.47;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 32px 64px;
+    }
+    h1 {
+      font-size: 40px;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+    }
+    .lead { color: var(--secondary); margin: 0 0 28px; max-width: 40em; }
+    .banner {
+      padding: 12px 14px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--secondary);
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+    .cards { display: grid; gap: 16px; }
+    a.card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+    a.card:hover { border-color: var(--accent); }
+    .card h2 { margin: 0 0 6px; font-size: 20px; }
+    .card p { margin: 0; color: var(--secondary); font-size: 14px; }
+    .meta { margin-top: 28px; font-size: 13px; color: var(--secondary); }
+    .meta a { color: var(--accent); }
+    .status {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--secondary);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Tokfuel demo</h1>
+    <p class="lead">
+      インストール前にポップオーバー相当を辿る閲覧デモのスパイク（#155）。
+      同じフィクスチャで HTML と SwiftWasm の両方を試せます。
+    </p>
+    <div class="banner">
+      フィクスチャ専用です。Claude / Cursor / Codex の利用データは読み取らず、送信もしません。
+      <br />Fixture-only. No usage data is read or sent.
+    </div>
+    <div class="cards">
+      <a class="card" href="html/">
+        <h2>HTML / CSS / JS</h2>
+        <p>バニラ静的デモ。依存なしで Pages に載せやすい。</p>
+      </a>
+      <a class="card" href="wasm/">
+        <h2>SwiftWasm</h2>
+        <p>JavaScriptKit による薄い DOM デモ。ビルド成果物があるときだけ動く。</p>
+        <p class="status" id="wasm-status">Checking wasm build…</p>
+      </a>
+    </div>
+    <p class="meta">
+      <a href="../">Tokfuel site</a>
+      · <a href="https://github.com/Tokfuel/Tokfuel/issues/155">Issue #155</a>
+      · See <code>Demo/README.md</code> for comparison notes.
+    </p>
+  </main>
+  <script>
+    fetch("wasm/TokfuelDemo.wasm", { method: "HEAD" })
+      .then((r) => {
+        const el = document.getElementById("wasm-status");
+        el.textContent = r.ok
+          ? "Wasm artifact present."
+          : "Wasm artifact missing — open wasm/ for build status and instructions.";
+      })
+      .catch(() => {
+        document.getElementById("wasm-status").textContent =
+          "Could not probe wasm artifact.";
+      });
+  </script>
+</body>
+</html>

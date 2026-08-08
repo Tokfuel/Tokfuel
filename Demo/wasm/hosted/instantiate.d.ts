@@ -1,0 +1,107 @@
+
+export type Imports = {}
+export type Exports = {}
+
+/**
+ * The path to the WebAssembly module relative to the root of the package
+ */
+export declare const MODULE_PATH: string;
+
+export interface WASI {
+    /**
+     * The WASI Preview 1 import object
+     */
+    wasiImport: WebAssembly.ModuleImports
+    /**
+     * Initialize the WASI reactor instance
+     *
+     * @param instance - The instance of the WebAssembly module
+     */
+    initialize(instance: WebAssembly.Instance): void
+    /**
+     * Set a new instance of the WebAssembly module to the WASI context
+     * Typically used when instantiating a WebAssembly module for a thread
+     *
+     * @param instance - The instance of the WebAssembly module
+     */
+    setInstance(instance: WebAssembly.Instance): void
+    /**
+     * Extract a file from the WASI filesystem
+     *
+     * @param path - The path to the file to extract
+     * @returns The data of the file if it was extracted, undefined otherwise
+     */
+    extractFile?(path: string): Uint8Array | undefined
+}
+
+export type SwiftRuntime = {
+    UnsafeEventLoopYield: { [Symbol.hasInstance]: (value: unknown) => boolean }
+    main(): void;
+    startThread(tid: number, startArg: number): void;
+}
+
+export type ModuleSource = WebAssembly.Module | ArrayBufferView | ArrayBuffer | Response | PromiseLike<Response>
+
+/**
+ * The options for instantiating a WebAssembly module
+ */
+export type InstantiateOptions = {
+    /**
+     * The WebAssembly namespace to use for instantiation.
+     * Defaults to the globalThis.WebAssembly object.
+     */
+    WebAssembly?: typeof globalThis.WebAssembly,
+    /**
+     * The WebAssembly module to instantiate
+     */
+    module: ModuleSource,
+    /**
+     * The WASI implementation to use
+     */
+    wasi: WASI,
+    /**
+     * Add imports to the WebAssembly import object
+     * @param imports - The imports to add
+     * @param context - The context object
+     */
+    addToCoreImports?: (
+        imports: WebAssembly.Imports,
+        context: {
+            getInstance: () => WebAssembly.Instance | null,
+            getExports: () => Exports | null,
+            _swift: SwiftRuntime,
+        }
+    ) => void
+
+    /**
+     * Instrument the WebAssembly instance
+     *
+     * @param instance - The instance of the WebAssembly module
+     * @param context - The context object
+     * @returns The instrumented instance
+     */
+    instrumentInstance?: (
+        instance: WebAssembly.Instance,
+        context: {
+            _swift: SwiftRuntime
+        }
+    ) => WebAssembly.Instance
+}
+
+/**
+ * Instantiate the given WebAssembly module
+ */
+export declare function instantiate(options: InstantiateOptions): Promise<{
+    instance: WebAssembly.Instance,
+    swift: SwiftRuntime,
+    exports: Exports
+}>
+
+/**
+ * Instantiate the given WebAssembly module for a thread
+ */
+export declare function instantiateForThread(tid: number, startArg: number, options: InstantiateOptions): Promise<{
+    instance: WebAssembly.Instance,
+    swift: SwiftRuntime,
+    exports: Exports
+}>
