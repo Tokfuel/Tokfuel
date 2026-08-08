@@ -101,11 +101,12 @@ App/Tests/TestDocs/
 
 - 土台: `ScreenshotRenderer` のフィクスチャ描画と、Point-Free `swift-snapshot-testing`（`App/Tests/UnitTests`、参考画像は `__Snapshots__`）
 - `ui-preview` は人間レビュー用の絵出しとして残す
-- 完了条件の VRT は「対象画面がフィクスチャとして固定されている」ことを指す
+- 完了条件の VRT は「対象画面がフィクスチャとして固定されている」ことを指す。画面名はバッククォートで書く（例: `popover-jpy`）
+- **画面名 ↔ 観点 ID** の対応表は [`VRT_SCREENS.md`](VRT_SCREENS.md)。機械可読の正本は `App/Tests/UnitTests/VRTScreenMap.swift`
 - **設定フラグごとの画面パターン**（通貨、コストソース、外観、詳細／デバッグ開示、推移期間など）は、フラグが効いたあとの見え方をフィクスチャとして固定する。操作の通しは E2E、見た目は VRT に分ける
 - 同じ期待を E2E と VRT で二重にしない
 - 新規パッケージや外部 VRT SaaS は、オーナー承認なしでは入れない（`swift-snapshot-testing` はオーナー承認済みの例外）
-- UI を変える PR では、`ScreenshotRenderer.allScreens()` / `ui-preview.yml` / 参考画像を同じ差分で更新する
+- UI を変える PR では、`ScreenshotRenderer.allScreens()` / `ui-preview.yml` / 参考画像 / `VRTScreenMap` を同じ差分で更新する
 
 ### 対象外
 
@@ -128,7 +129,8 @@ python3 Scripts/generate-testdocs-catalog.py
 
 ## シナリオ索引
 
-全件の一覧とカバレッジは [`CATALOG.md`](CATALOG.md) を見てください。
+全件の一覧とカバレッジは [`CATALOG.md`](CATALOG.md) を見てください。  
+VRT の画面名と観点 ID の対応は [`VRT_SCREENS.md`](VRT_SCREENS.md) を見てください。
 
 シナリオを追加・変更したら、次で索引を再生成します。
 

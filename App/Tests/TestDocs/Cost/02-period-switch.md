@@ -20,7 +20,7 @@ status: in-progress
 - **UT&IT**
   - 選んだ期間に対応する集計範囲が、表示用の状態と一致する
 - **VRT**
-  - 推移期間が今日、今週、今月、今年のそれぞれのホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-period-month`、`popover-period-today`、`popover-period-week`、`popover-period-year` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
