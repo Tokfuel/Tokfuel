@@ -14,10 +14,10 @@ jobs:
     # once the author actually wants eyes on it.
     if: github.event.pull_request.draft == false
     steps:
-      - name: Request review from @Tokfuel/reviewer
+      - name: Request review from @Tokfuel/core-maintainers
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api \
             "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/requested_reviewers" \
-            -f "team_reviewers[]=reviewer"
+            -f "team_reviewers[]=core-maintainers"

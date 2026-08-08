@@ -78,7 +78,7 @@ swift Assets/make-icon.swift   # rewrites Assets/AppIcon.iconset/ and Assets/App
 - [ ] README / README.ja.md updated if user-visible behavior changed
 - [ ] No new dependencies (or, if so, explained in the PR description)
 
-Opening a PR out of draft automatically requests review from the `@Tokfuel/reviewer` team
+Opening a PR out of draft automatically requests review from the `@Tokfuel/core-maintainers` team
 (see `.github/workflows/auto-request-review.yml`); draft PRs are skipped until marked ready.
 
 ### Roadmap
@@ -163,7 +163,7 @@ swift Assets/make-icon.swift   # Assets/AppIcon.iconset/ と Assets/AppIcon.icns
 - [ ] ユーザーから見える変更があれば README / README.ja.md も更新
 - [ ] 新規依存は追加しない（追加する場合は PR 本文で理由を説明）
 
-PR を Draft から Ready for review にすると、`@Tokfuel/reviewer` チームへ自動でレビューが
+PR を Draft から Ready for review にすると、`@Tokfuel/core-maintainers` チームへ自動でレビューが
 リクエストされます（`.github/workflows/auto-request-review.yml` 参照）。Draft のままの PR には
 何も起きません。
 
