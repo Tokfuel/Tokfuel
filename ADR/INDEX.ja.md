@@ -9,6 +9,7 @@ Tokfuel のアーキテクチャ決定の全体像。詳細な書き方は [`REA
 | 番号 | タイトル | 状態 | 要約 | リンク |
 |------|----------|------|------|--------|
 | 0001 | アプリ関連を App/ 配下に集約する | Accepted | 本体・Tests・TestDocs・E2E の親を `App/` に固定する | [0001-app-tree.ja.md](0001-app-tree/0001-app-tree.ja.md) |
+| 0002 | SPM を UI / Store / sources のレイヤーで分割する | Proposed | 取得→整形→表示に合わせ UI→Store→sources で割る | [0002-layer-spm-modules.ja.md](0002-layer-spm-modules/0002-layer-spm-modules.ja.md) |
 
 ## 状態の見方
 
