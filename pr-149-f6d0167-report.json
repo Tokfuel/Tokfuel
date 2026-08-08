@@ -1,0 +1,60 @@
+{
+  "baselineIdentifiers" : [
+    "tokfuel.home",
+    "tokfuel.hero.today",
+    "tokfuel.section.trend",
+    "tokfuel.section.models",
+    "tokfuel.model-list",
+    "tokfuel.chart.style",
+    "tokfuel.chart.period",
+    "tokfuel.menu.more",
+    "tokfuel.settings"
+  ],
+  "completedScenarios" : [
+    "MenuBar-01-open-home",
+    "Cost-03-model-list",
+    "Cost-01-chart-style",
+    "Cost-02-period-switch"
+  ],
+  "error" : "not found: tokfuel.home (present in last successful recording; UI may have changed)",
+  "expectedScreens" : [
+    "settings",
+    "popover"
+  ],
+  "explanation" : "Settings-01-open で、前回成功時に存在した accessibilityIdentifier が見つかりませんでした。 対象コントロールの identifier \/ ラベルが変わったか、ホーム UI が開いていない可能性があります。",
+  "failedScenario" : "Settings-01-open",
+  "ok" : false,
+  "scenarios" : [
+    {
+      "elapsedMs" : 3088,
+      "id" : "MenuBar-01-open-home",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 27,
+      "id" : "Cost-03-model-list",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 864,
+      "id" : "Cost-01-chart-style",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 773,
+      "id" : "Cost-02-period-switch",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 31,
+      "error" : "not found: tokfuel.home (present in last successful recording; UI may have changed)",
+      "id" : "Settings-01-open",
+      "status" : "failed"
+    },
+    {
+      "id" : "Settings-02-reflect",
+      "status" : "skipped"
+    }
+  ],
+  "updatedAt" : "2026-08-08T10:27:09Z"
+}
