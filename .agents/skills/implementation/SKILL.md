@@ -70,7 +70,7 @@ Issue 1 件の実装は大きく、巻き戻しにくい。だから具体的な
 - **UI を足したら ui-preview も同じ PR で更新する（必須）**：`PopoverView` /
   `SettingsView` / `AboutView`、または単独で見せる新規 View（同意ダイアログやアラートなど）を
   追加・変更したときは、次を同じ差分に含める。怠るとレビュアーに新しい UI が見えない。
-  1. [`ScreenshotRenderer.allScreens()`](../../../Tokfuel/Sources/ScreenshotRenderer.swift)
+  1. [`ScreenshotRenderer.allScreens()`](../../../App/Tokfuel/ScreenshotRenderer.swift)
      にフィクスチャ画面を追加または更新する
   2. [`.github/workflows/ui-preview.yml`](../../../.github/workflows/ui-preview.yml) の
      `ORDER` と `screen_title` を揃える

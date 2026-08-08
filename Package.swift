@@ -15,7 +15,7 @@ let package = Package(
                 .product(name: "FirebaseAnalytics", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk"),
             ],
-            path: "Tokfuel/Sources",
+            path: "App/Tokfuel",
             resources: [
                 .copy("Resources/retok.py"),
                 .copy("Resources/locales"),
@@ -28,7 +28,7 @@ let package = Package(
         .testTarget(
             name: "TokfuelTests",
             dependencies: ["Tokfuel"],
-            path: "Tokfuel/Tests",
+            path: "App/Tests",
             linkerSettings: [.linkedLibrary("sqlite3")]
         )
     ]

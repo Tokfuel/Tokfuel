@@ -63,7 +63,7 @@ swift assets/make-icon.swift   # rewrites assets/AppIcon.iconset/ and assets/App
 - SwiftUI + Swift Concurrency. UI-touching state lives on `@MainActor`.
 - Keep `UsageStore` the single source of truth for parsing and aggregation; `PopoverView` stays pure presentation.
 - Don't add dependencies unless there's a strong reason — staying dependency-free keeps the app trivial to build.
-- Match the existing file layout under [`Tokfuel/Sources/`](Tokfuel/Sources/).
+- Match the existing file layout under [`App/Tokfuel/`](App/Tokfuel/).
 
 ### Commit messages
 
@@ -148,7 +148,7 @@ swift assets/make-icon.swift   # assets/AppIcon.iconset/ と assets/AppIcon.icns
 - SwiftUI + Swift Concurrency。UI に触る状態は `@MainActor` に置く。
 - パースと集計は `UsageStore` に集約（SSOT）。`PopoverView` は純粋な表示層に保つ。
 - 依存パッケージは原則追加しない（ビルドを最小に保ちたい）。
-- ファイル配置は既存の [`Tokfuel/Sources/`](Tokfuel/Sources/) に揃える。
+- ファイル配置は既存の [`App/Tokfuel/`](App/Tokfuel/) に揃える。
 
 ### コミットメッセージ
 

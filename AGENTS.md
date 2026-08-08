@@ -10,9 +10,10 @@
 設定可能なメニューバーゲージを可視化する SwiftUI ネイティブの macOS メニューバーアプリ。
 フックも手動のトークン登録も要らず、これらのアプリがローカルに残しているデータを読むだけでよい。
 同じ Mac に Codex CLI（`~/.codex/sessions/`）や Cursor があれば、そのコストも推定する。ただし
-各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。ソースコードはすべて
-[`Tokfuel/Sources/`](Tokfuel/Sources/) にある。ファイル構成は README の
-[Architecture](README.md#-architecture) 節を参照。
+各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。アプリ関連は
+[`App/`](App/) 配下に置く（本体 [`App/Tokfuel/`](App/Tokfuel/)、UT / IT
+[`App/Tests/`](App/Tests/)、シナリオ設計 [`App/TestDocs/`](App/TestDocs/)、通しテスト
+[`App/E2E/`](App/E2E/)）。
 
 ## グラウンドルール（違反禁止）
 
@@ -43,10 +44,10 @@
       匿名のアプリ UI イベントを送る（デフォルト OFF。送信面は `AnalyticsService` に集約）。
 2. **ゼロセットアップの維持**：アプリは Claude Code のトランスクリプトを直接読む。機能を
    動かすために、フック、外部ツールのインストール、Claude Code 側の設定を要求しない。
-3. **retok は無改変で同梱**：`Sources/Resources/retok.py` と `locales/` は
+3. **retok は無改変で同梱**：`App/Tokfuel/Resources/retok.py` と `locales/` は
    © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
    `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
-   [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md) にある。
+   [`README-retok.md`](App/Tokfuel/Resources/README-retok.md) にある。
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
@@ -55,17 +56,17 @@
 ## 検証ゲート
 
 ```bash
-swift test               # ユニットテスト（Tokfuel/Tests、Swift Testing）
+swift test               # ユニットテスト（App/Tests、Swift Testing）
 swift build -c release   # scripts/build.sh がパッケージする構成
 ```
 
-CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sources`・
-`Tokfuel/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
+CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
+`App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
 のみの変更では走らない）。リリース構成のビルドは `scripts/build.sh` / 配布フロー側で確認する。
 実行時に見える変更は、実アプリをインストールして観察する。
 `bash scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
 動くと主張せず、組み込みの `verify` スキルで確かめる）。ヘッドレスで検証できるロジック
-（`BudgetMonitor` や `RetokReport` のデコードなど）は `Tokfuel/Tests` にあり、新しいロジックには
+（`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests` にあり、新しいロジックには
 そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
 書かない。
 

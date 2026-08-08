@@ -14,9 +14,9 @@
 このファイルのコミットハッシュを更新すること:
 
 ```sh
-cp <retok>/retok    Tokfuel/Sources/Resources/retok.py
-cp -R <retok>/locales Tokfuel/Sources/Resources/locales
-cp <retok>/LICENSE  Tokfuel/Sources/Resources/LICENSE-retok
+cp <retok>/retok    App/Tokfuel/Resources/retok.py
+cp -R <retok>/locales App/Tokfuel/Resources/locales
+cp <retok>/LICENSE  App/Tokfuel/Resources/LICENSE-retok
 ```
 
 ローカルで改変しないこと（改変が必要になったら上流に PR を出す）。

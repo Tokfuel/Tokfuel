@@ -2,7 +2,7 @@
 # PR の ui-preview 📸 ラベル用に、メニューバー・設定・About の全画面を実物の UI から
 # 1 ディレクトリへ書き出す（TF-0034）。使い方: bash scripts/ui-preview.sh [出力先ディレクトリ]
 #
-# 絵の中身（フィクスチャ・撮る画面の一覧）は Tokfuel/Sources/ScreenshotRenderer.swift が持つ。
+# 絵の中身（フィクスチャ・撮る画面の一覧）は App/Tokfuel/ScreenshotRenderer.swift が持つ。
 # README 用の scripts/screenshot.sh と同じく -AppleAccentColor 1 でアクセントカラーを固定し、
 # --ui-preview も #if DEBUG のため debug ビルドのバイナリで実行する。
 set -euo pipefail

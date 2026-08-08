@@ -191,7 +191,7 @@ PR 歓迎です — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してくださ�
 ## 謝辞
 
 - **コスト分析** — [retok](https://github.com/d-date/retok) を無改変で同梱。
-  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](Tokfuel/Sources/Resources/LICENSE-retok)。
+  © [Daiki Matsudate (@d-date)](https://github.com/d-date)、[MIT License](App/Tokfuel/Resources/LICENSE-retok)。
 - **アプリアイコン** — [Icon Composer](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer) でデザイン。
   ソースドキュメントは [Tokfuel/icon](https://github.com/Tokfuel/icon) にあります。
 - **為替レート** — [Frankfurter](https://frankfurter.dev)。
