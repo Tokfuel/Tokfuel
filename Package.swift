@@ -7,6 +7,8 @@ let package = Package(
     dependencies: [
         // #22: オーナー承認の例外。Analytics + Crashlytics のみ。
         .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "11.15.0"),
+        // オーナー承認の例外。テスト専用の VRT（Point-Free SnapshotTesting）。
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.0"),
     ],
     targets: [
         .target(
@@ -111,6 +113,7 @@ let package = Package(
                 "TokfuelAnalytics",
                 "TokfuelStore",
                 "TokfuelUI",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
             ],
             path: "App/Tests/UnitTests",
             linkerSettings: [.linkedLibrary("sqlite3")]

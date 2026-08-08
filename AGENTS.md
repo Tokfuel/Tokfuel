@@ -14,7 +14,9 @@
 [`App/`](App/) 配下に置く（実行ファイル [`App/Tokfuel/`](App/Tokfuel/)、SPM レイヤー
 [`App/TokfuelCore/`](App/TokfuelCore/) など、検証は [`App/Tests/`](App/Tests/) —
 UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/IntegrationTests/)、
-シナリオ [`TestDocs/`](App/Tests/TestDocs/)、通し [`E2E/`](App/Tests/E2E/)）。
+シナリオ [`TestDocs/`](App/Tests/TestDocs/)、通し [`E2E/`](App/Tests/E2E/)）。テスト観点の正本は
+[`App/Tests/TestDocs/`](App/Tests/TestDocs/) に置き、起票 → 実装 → ステータス更新の流れで進める
+（規範は同ディレクトリの `AGENTS.md`）。
 
 ## グラウンドルール（違反禁止）
 
@@ -52,7 +54,8 @@ UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/Int
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
-   オーナー承認済みの `firebase-ios-sdk`（Analytics と Crashlytics 製品のみ、#22）。
+   オーナー承認済みの `firebase-ios-sdk`（Analytics と Crashlytics 製品のみ、#22）と、
+   テスト専用の `swift-snapshot-testing`（Point-Free VRT）。
 
 ## 検証ゲート
 
@@ -61,8 +64,11 @@ swift test               # ユニットテスト（App/Tests/UnitTests、Swift T
 swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
+シナリオと担保手段（UT&IT / VRT / E2E）の優先は
+[`App/Tests/TestDocs/README.md`](App/Tests/TestDocs/README.md) の「担保手段」節を見る。
+
 CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
-`App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
+`App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（Docs / Site
 のみの変更では走らない）。リリース構成のビルドは `Scripts/build.sh` / 配布フロー側で確認する。
 実行時に見える変更は、実アプリをインストールして観察する。
 `bash Scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
@@ -75,7 +81,9 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 アラートなど）を追加または変更するときは、同じ PR で
 `ScreenshotRenderer.allScreens()` のフィクスチャ画面（と
 [`ui-preview.yml`](.github/workflows/ui-preview.yml) の `ORDER` / `screen_title` リスト）も
-追加または更新して、`ui-preview 📸` ラベルが新しい状態を実際に描画できるようにする。ライブな
+追加または更新して、`ui-preview 📸` ラベルが新しい状態を実際に描画できるようにする。見た目を
+変える PR では、Point-Free VRT の参考画像（`App/Tests/UnitTests/__Snapshots__`）も同じ差分で
+更新する（`SNAPSHOT_TESTING_RECORD=all swift test --filter MatchesReference`）。ライブな
 シングルトン経由でしか到達できないビュー（ネットワーク応答や実際のインストールパスに依存する
 もの）には、`AppSettings.shared` が `prepareDefaults()` からフィクスチャ値を受け取るのと
 同じ形で、注入可能なフィクスチャを用意する（`UpdateChecker.preview` を参照）。ダイアログや

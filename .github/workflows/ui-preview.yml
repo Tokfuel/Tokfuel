@@ -69,16 +69,37 @@ jobs:
               popover-sessions) echo "メニューバー - 末尾までスクロールした状態（高コストのセッション）" ;;
               popover-advice) echo "メニューバー - 末尾までスクロールした状態（節約のヒント）" ;;
               popover-advice-expanded) echo "メニューバー - 節約のヒントを開き、プロンプトをコピーできる状態" ;;
+              popover-scrolled) echo "メニューバー - ホームを末尾までスクロールした状態" ;;
+              popover-more-menu) echo "メニューバー - ⋯ メニューを開いた状態" ;;
+              popover-period-today) echo "メニューバー - 集計期間「今日」" ;;
+              popover-period-week) echo "メニューバー - 集計期間「今週」" ;;
+              popover-period-month) echo "メニューバー - 集計期間「今月」" ;;
+              popover-period-year) echo "メニューバー - 集計期間「今年」" ;;
+              popover-jpy) echo "メニューバー - 通貨を円にした状態" ;;
+              popover-claude-only) echo "メニューバー - コストソース「Claude のみ」" ;;
+              popover-combined) echo "メニューバー - コストソース「合算」" ;;
+              popover-cumulative) echo "メニューバー - 推移を累積折れ線にした状態" ;;
               settings) echo "設定" ;;
-              settings-advanced) echo "設定 - 「詳細」を開いた状態" ;;
-              settings-debug) echo "設定 - 「デバッグ」を開いた状態" ;;
-              about) echo "About" ;;
-              budget-alert) echo "予算アラートのウィンドウ" ;;
-              analytics-consent) echo "初回 Analytics 同意ダイアログ" ;;
+              settings-jpy) echo "設定 - 通貨を円にした状態" ;;
+              settings-claude-only) echo "設定 - コストソース「Claude のみ」" ;;
+              settings-advanced) echo "設定 - 詳細を開いた状態" ;;
+              settings-debug) echo "設定 - デバッグを開いた状態" ;;
+              about) echo "Tokfuel について" ;;
+              budget-alert) echo "予算アラート" ;;
+              analytics-consent) echo "Analytics 同意" ;;
               *) echo "$1" ;;
             esac
           }
-          ORDER=(popover popover-light popover-update popover-cursor-degraded popover-cursor-signin popover-sessions popover-advice popover-advice-expanded settings settings-advanced settings-debug about budget-alert analytics-consent)
+          ORDER=(
+            popover popover-light popover-update
+            popover-cursor-degraded popover-cursor-signin
+            popover-sessions popover-advice popover-advice-expanded
+            popover-scrolled popover-more-menu
+            popover-period-today popover-period-week popover-period-month popover-period-year
+            popover-jpy popover-claude-only popover-combined popover-cumulative
+            settings settings-jpy settings-claude-only settings-advanced settings-debug
+            about budget-alert analytics-consent
+          )
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

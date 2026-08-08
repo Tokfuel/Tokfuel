@@ -1,0 +1,137 @@
+{
+  "active": 132,
+  "archived": 0,
+  "by_domain": {
+    "Budget": {
+      "active": 18,
+      "archived": 0,
+      "by_status": {
+        "archived": 0,
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 1,
+        "ready": 17,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/18",
+      "total": 18
+    },
+    "Cost": {
+      "active": 26,
+      "archived": 0,
+      "by_status": {
+        "archived": 0,
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 6,
+        "ready": 20,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/26",
+      "total": 26
+    },
+    "Cursor": {
+      "active": 18,
+      "archived": 0,
+      "by_status": {
+        "archived": 0,
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 2,
+        "ready": 16,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/18",
+      "total": 18
+    },
+    "MenuBar": {
+      "active": 33,
+      "archived": 0,
+      "by_status": {
+        "archived": 0,
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 2,
+        "ready": 31,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/33",
+      "total": 33
+    },
+    "Settings": {
+      "active": 37,
+      "archived": 0,
+      "by_status": {
+        "archived": 0,
+        "done": 0,
+        "ideation": 0,
+        "in-progress": 10,
+        "ready": 27,
+        "review": 0
+      },
+      "done": 0,
+      "implementation_coverage": "0.0%",
+      "implementation_fraction": "0/37",
+      "total": 37
+    }
+  },
+  "by_status": {
+    "archived": 0,
+    "done": 0,
+    "ideation": 0,
+    "in-progress": 21,
+    "ready": 111,
+    "review": 0
+  },
+  "rates": {
+    "e2e_completion_spec_rate": {
+      "definition": "完了条件に E2E がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
+      "denominator": 132,
+      "fraction": "132/132",
+      "label": "E2E 完了条件の記載率",
+      "numerator": 132,
+      "percent": "100.0%"
+    },
+    "filed_coverage": {
+      "definition": "status が ideation 以外の現行シナリオ数 / 現行シナリオ数（archived を除く）",
+      "denominator": 132,
+      "fraction": "132/132",
+      "label": "起票完了率",
+      "numerator": 132,
+      "percent": "100.0%"
+    },
+    "implementation_coverage": {
+      "definition": "status が done のシナリオ数 / 現行シナリオ数（archived を除く）",
+      "denominator": 132,
+      "fraction": "0/132",
+      "label": "実装カバレッジ",
+      "numerator": 0,
+      "percent": "0.0%"
+    },
+    "pr_link_rate": {
+      "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
+      "denominator": 132,
+      "fraction": "21/132",
+      "label": "対応済み PR 紐付け率",
+      "numerator": 21,
+      "percent": "15.9%"
+    },
+    "started_coverage": {
+      "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
+      "denominator": 132,
+      "fraction": "21/132",
+      "label": "着手カバレッジ",
+      "numerator": 21,
+      "percent": "15.9%"
+    }
+  },
+  "total": 132
+}

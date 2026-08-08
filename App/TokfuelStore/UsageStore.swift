@@ -504,8 +504,13 @@ public final class UsageStore: ObservableObject {
 
     /// 暦ベースの表示窓。開始日（YYYY-MM-DD）と、retok に渡す経過日数。
     public struct ReportWindow: Equatable, Sendable {
-        let start: String
-        let days: Int
+        public let start: String
+        public let days: Int
+
+        public init(start: String, days: Int) {
+            self.start = start
+            self.days = days
+        }
     }
 
     /// 今日 / 今週 / 今月 / 今年の開始〜 `end` までを、ローカル暦で数える。
