@@ -1,0 +1,66 @@
+name: E2E
+
+# コアシナリオの AX E2E（macos-15 + Accessibility TCC）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "App/Tokfuel/**"
+      - "App/E2E/**"
+      - "App/TestDocs/MenuBar/01-open-home.md"
+      - "App/TestDocs/Cost/01-chart-style.md"
+      - "App/TestDocs/Cost/02-period-switch.md"
+      - "App/TestDocs/Cost/03-model-list.md"
+      - "App/TestDocs/Settings/01-open.md"
+      - "App/TestDocs/Settings/02-reflect.md"
+      - "Package.swift"
+      - "Package.resolved"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    paths:
+      - "App/Tokfuel/**"
+      - "App/E2E/**"
+      - "App/TestDocs/MenuBar/01-open-home.md"
+      - "App/TestDocs/Cost/01-chart-style.md"
+      - "App/TestDocs/Cost/02-period-switch.md"
+      - "App/TestDocs/Cost/03-model-list.md"
+      - "App/TestDocs/Settings/01-open.md"
+      - "App/TestDocs/Settings/02-reflect.md"
+      - "Package.swift"
+      - "Package.resolved"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core6:
+    name: Core6 AX E2E
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build
+        run: |
+          # SwiftPM は複数 --product だと最後だけビルドすることがある。
+          swift build --product Tokfuel
+          swift build --product TokfuelE2E
+
+      - name: Grant Accessibility TCC
+        run: |
+          bash App/E2E/grant-tcc.sh \
+            "$PWD/.build/debug/TokfuelE2E" \
+            "$PWD/.build/debug/Tokfuel" \
+            /usr/bin/osascript \
+            /bin/bash
+
+      - name: Run core6 E2E
+        env:
+          TOKFUEL_E2E_GRANT_TCC: "0"
+        run: bash App/E2E/run-core6.sh

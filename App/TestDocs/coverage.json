@@ -23,15 +23,15 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 3,
         "ideation": 0,
         "in-progress": 0,
-        "ready": 26,
+        "ready": 23,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/26",
+      "done": 3,
+      "implementation_coverage": "11.5%",
+      "implementation_fraction": "3/26",
       "total": 26
     },
     "Cursor": {
@@ -55,15 +55,15 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 1,
         "ideation": 0,
         "in-progress": 0,
-        "ready": 33,
+        "ready": 32,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/33",
+      "done": 1,
+      "implementation_coverage": "3.0%",
+      "implementation_fraction": "1/33",
       "total": 33
     },
     "Settings": {
@@ -71,24 +71,24 @@
       "archived": 0,
       "by_status": {
         "archived": 0,
-        "done": 0,
+        "done": 2,
         "ideation": 0,
         "in-progress": 0,
-        "ready": 36,
+        "ready": 34,
         "review": 0
       },
-      "done": 0,
-      "implementation_coverage": "0.0%",
-      "implementation_fraction": "0/36",
+      "done": 2,
+      "implementation_coverage": "5.6%",
+      "implementation_fraction": "2/36",
       "total": 36
     }
   },
   "by_status": {
     "archived": 0,
-    "done": 0,
+    "done": 6,
     "ideation": 0,
     "in-progress": 0,
-    "ready": 131,
+    "ready": 125,
     "review": 0
   },
   "rates": {
@@ -111,10 +111,10 @@
     "implementation_coverage": {
       "definition": "status が done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
-      "fraction": "0/131",
+      "fraction": "6/131",
       "label": "実装カバレッジ",
-      "numerator": 0,
-      "percent": "0.0%"
+      "numerator": 6,
+      "percent": "4.6%"
     },
     "pr_link_rate": {
       "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
@@ -127,10 +127,10 @@
     "started_coverage": {
       "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 131,
-      "fraction": "0/131",
+      "fraction": "6/131",
       "label": "着手カバレッジ",
-      "numerator": 0,
-      "percent": "0.0%"
+      "numerator": 6,
+      "percent": "4.6%"
     }
   },
   "total": 131

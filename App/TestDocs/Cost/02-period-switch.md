@@ -3,7 +3,7 @@ id: Cost-02-period-switch
 title: 推移の期間を切り替え、表示が期間に追従する
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -36,4 +36,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- （本 PR で実装）

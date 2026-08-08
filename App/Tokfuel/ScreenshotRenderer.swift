@@ -304,6 +304,25 @@ enum ScreenshotRenderer {
         return png
     }
 
+    /// E2E 常駐起動（`--e2e-fixture`）からも呼ぶ。スクリーンショットと同じ既定を積む。
+    static func applyE2ELaunchDefaults() {
+        prepareDefaults()
+    }
+
+    /// E2E 常駐用に、既に作ってある `UsageStore` へフィクスチャを流し込む。
+    static func seedE2EStore(_ store: UsageStore) {
+        let fixture = fixtureStore()
+        store.report = fixture.report
+        store.budgetSpend = fixture.budgetSpend
+        store.driverDailyByID = fixture.driverDailyByID
+        store.driverModelByID = fixture.driverModelByID
+        store.driverSessionsByID = fixture.driverSessionsByID
+        store.driverHealthByID = fixture.driverHealthByID
+        store.lastUpdated = Date()
+        store.isLoading = false
+        store.isReportLoading = false
+    }
+
     /// 生成用の設定を UserDefaults に積む。書き込み先は（Info.plist を持たない）このツール
     /// 自身のドメインなので、インストール済み Tokfuel.app の設定には触らない。
     private static func prepareDefaults() {

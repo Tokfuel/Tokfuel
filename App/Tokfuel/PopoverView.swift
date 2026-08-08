@@ -58,6 +58,8 @@ struct PopoverView: View {
             footerBar
         }
         .frame(width: 360, height: 520)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tokfuel.home")
         .onAppear {
             UsageEventLog.shared.log(.tabOpen, meta: ["tab": "cost"])
             // サインインしに行ったあとの初回だけ、10 分の定期更新を待たずに拾い直す。
@@ -78,6 +80,7 @@ struct PopoverView: View {
             Text("今日")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("tokfuel.hero.today")
             // 取れなかったぶんだけで作った 0 円は誤情報なので、金額ではなく「—」を出す
             // （Cursor のみのモードで Cursor が劣化したときに起きる）。
             Text(store.todayCostUnavailable ? "—" : Self.money(store.todayCost))
@@ -197,22 +200,33 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 sectionHeader("推移")
+                    .accessibilityIdentifier("tokfuel.section.trend")
                 Picker("", selection: chartStyleSelection) {
-                    Image(systemName: "chart.bar.xaxis").tag(CostChartStyle.daily)
-                    Image(systemName: "chart.xyaxis.line").tag(CostChartStyle.cumulative)
+                    Image(systemName: "chart.bar.xaxis")
+                        .accessibilityLabel("日別")
+                        .tag(CostChartStyle.daily)
+                    Image(systemName: "chart.xyaxis.line")
+                        .accessibilityLabel("累積")
+                        .tag(CostChartStyle.cumulative)
                 }
                 .pickerStyle(.segmented)
                 .controlSize(.small)
                 .frame(width: 70)
                 .labelsHidden()
+                .accessibilityIdentifier("tokfuel.chart.style")
                 Spacer()
                 Picker("", selection: reportPeriodSelection) {
-                    ForEach(ReportPeriod.allCases) { Text($0.label).tag($0) }
+                    ForEach(ReportPeriod.allCases) { period in
+                        Text(period.label)
+                            .accessibilityIdentifier("tokfuel.period.\(period.rawValue)")
+                            .tag(period)
+                    }
                 }
                 .pickerStyle(.segmented)
                 .controlSize(.small)
                 .frame(width: 200)
                 .labelsHidden()
+                .accessibilityIdentifier("tokfuel.chart.period")
             }
             Group {
                 switch store.costChartStyle {
@@ -349,6 +363,7 @@ struct PopoverView: View {
             let maxCost = rows.map(\.cost).max() ?? 1
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("モデル別")
+                    .accessibilityIdentifier("tokfuel.section.models")
                 ForEach(rows) { row in
                     if let source = row.source,
                        row.id == rows.first(where: { $0.source == source })?.id {
@@ -368,8 +383,11 @@ struct PopoverView: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 64, alignment: .trailing)
                     }
+                    .accessibilityIdentifier("tokfuel.model-list.row")
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("tokfuel.model-list")
         }
     }
 
@@ -484,6 +502,7 @@ struct PopoverView: View {
                 .disabled(store.report == nil)
                 Divider()
                 Button("設定") { onOpenSettings() }
+                    .accessibilityIdentifier("tokfuel.menu.settings")
                 Button("Tokfuel について") { onOpenAbout() }
                 Divider()
                 Button("Tokfuel を終了") { NSApplication.shared.terminate(nil) }
@@ -493,6 +512,7 @@ struct PopoverView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
+            .accessibilityIdentifier("tokfuel.menu.more")
             // アクセントのオレンジは「注意して見るもの」（予算の警告・アップデート）に
             // 取っておく。常設の操作口は灰色のままにする。
             // borderlessButton のラベルはティントで塗られるので、

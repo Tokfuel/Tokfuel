@@ -30,6 +30,11 @@ let package = Package(
             dependencies: ["Tokfuel"],
             path: "App/Tests",
             linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
+        // AX E2E ドライバ（標準 SDK の ApplicationServices のみ。Firebase 非依存）。
+        .executableTarget(
+            name: "TokfuelE2E",
+            path: "App/E2E/Driver"
         )
     ]
 )

@@ -3,7 +3,7 @@ id: Cost-03-model-list
 title: モデル別セクションにモデル行が表示される
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -28,4 +28,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- （本 PR で実装）

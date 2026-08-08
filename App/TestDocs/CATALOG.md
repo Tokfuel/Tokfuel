@@ -21,8 +21,8 @@ python3 Scripts/generate-testdocs-catalog.py
 
 | 指標 | 率 | 件数 | 定義 |
 | --- | ---: | ---: | --- |
-| 実装カバレッジ | 0.0% | `0/131` | status が done のシナリオ数 / 現行シナリオ数（archived を除く） |
-| 着手カバレッジ | 0.0% | `0/131` | status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く） |
+| 実装カバレッジ | 4.6% | `6/131` | status が done のシナリオ数 / 現行シナリオ数（archived を除く） |
+| 着手カバレッジ | 4.6% | `6/131` | status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く） |
 | 起票完了率 | 100.0% | `131/131` | status が ideation 以外の現行シナリオ数 / 現行シナリオ数（archived を除く） |
 | E2E 完了条件の記載率 | 100.0% | `131/131` | 完了条件に E2E がある現行シナリオ数 / 現行シナリオ数（archived を除く） |
 | 対応済み PR 紐付け率 | 0.0% | `0/131` | 対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く） |
@@ -31,9 +31,9 @@ python3 Scripts/generate-testdocs-catalog.py
 
 | Domain | 実装カバレッジ | done / 現行 | archived |
 | --- | ---: | ---: | ---: |
-| MenuBar | 0.0% | `0/33` | 0 |
-| Cost | 0.0% | `0/26` | 0 |
-| Settings | 0.0% | `0/36` | 0 |
+| MenuBar | 3.0% | `1/33` | 0 |
+| Cost | 11.5% | `3/26` | 0 |
+| Settings | 5.6% | `2/36` | 0 |
 | Budget | 0.0% | `0/18` | 0 |
 | Cursor | 0.0% | `0/18` | 0 |
 
@@ -42,10 +42,10 @@ python3 Scripts/generate-testdocs-catalog.py
 | status | 件数 |
 | --- | ---: |
 | `ideation` | 0 |
-| `ready` | 131 |
+| `ready` | 125 |
 | `in-progress` | 0 |
 | `review` | 0 |
-| `done` | 0 |
+| `done` | 6 |
 | `archived` | 0 |
 | **合計** | **131** |
 
@@ -75,7 +75,7 @@ python3 Scripts/generate-testdocs-catalog.py
 
 | ID | title | status | 完了条件 |
 | --- | --- | --- | --- |
-| [`MenuBar-01-open-home`](MenuBar/01-open-home.md) | メニューバーからホーム（ポップオーバー）を表示できる | ready | E2E |
+| [`MenuBar-01-open-home`](MenuBar/01-open-home.md) | メニューバーからホーム（ポップオーバー）を表示できる | done | E2E |
 | [`MenuBar-02-close-outside`](MenuBar/02-close-outside.md) | ホーム外をクリックするとポップオーバーが閉じる | ready | E2E |
 | [`MenuBar-03-toggle-reopen`](MenuBar/03-toggle-reopen.md) | メニューバーアイコンの再操作でホームを閉じられる | ready | E2E |
 | [`MenuBar-04-hero-today-cost`](MenuBar/04-hero-today-cost.md) | ホームのヒーローに今日のコストが表示される | ready | E2E |
@@ -113,9 +113,9 @@ python3 Scripts/generate-testdocs-catalog.py
 
 | ID | title | status | 完了条件 |
 | --- | --- | --- | --- |
-| [`Cost-01-chart-style`](Cost/01-chart-style.md) | 推移グラフの表示形式を切り替えられる | ready | E2E, VRT |
-| [`Cost-02-period-switch`](Cost/02-period-switch.md) | 推移の期間を切り替え、表示が期間に追従する | ready | E2E, UT&IT |
-| [`Cost-03-model-list`](Cost/03-model-list.md) | モデル別セクションにモデル行が表示される | ready | E2E |
+| [`Cost-01-chart-style`](Cost/01-chart-style.md) | 推移グラフの表示形式を切り替えられる | done | E2E, VRT |
+| [`Cost-02-period-switch`](Cost/02-period-switch.md) | 推移の期間を切り替え、表示が期間に追従する | done | E2E, UT&IT |
+| [`Cost-03-model-list`](Cost/03-model-list.md) | モデル別セクションにモデル行が表示される | done | E2E |
 | [`Cost-04-loading-parse`](Cost/04-loading-parse.md) | レポート未取得時に解析中表示が出る | ready | E2E |
 | [`Cost-05-stale-while-revalidate`](Cost/05-stale-while-revalidate.md) | 再解析中も前回のグラフが残る | ready | E2E |
 | [`Cost-06-retok-error`](Cost/06-retok-error.md) | retok 失敗時にエラー文が出る | ready | E2E |
@@ -144,8 +144,8 @@ python3 Scripts/generate-testdocs-catalog.py
 
 | ID | title | status | 完了条件 |
 | --- | --- | --- | --- |
-| [`Settings-01-open`](Settings/01-open.md) | ポップオーバーから設定を開ける | ready | E2E |
-| [`Settings-02-reflect`](Settings/02-reflect.md) | 設定の変更がポップオーバー／メニューバー表示に反映される | ready | E2E, UT&IT |
+| [`Settings-01-open`](Settings/01-open.md) | ポップオーバーから設定を開ける | done | E2E |
+| [`Settings-02-reflect`](Settings/02-reflect.md) | 設定の変更がポップオーバー／メニューバー表示に反映される | done | E2E, UT&IT |
 | [`Settings-03-launch-at-login`](Settings/03-launch-at-login.md) | ログイン時に自動起動を切り替えられる | ready | E2E |
 | [`Settings-04-appearance`](Settings/04-appearance.md) | 外観の切替が各ウィンドウに反映される | ready | E2E |
 | [`Settings-05-cost-source-combined`](Settings/05-cost-source-combined.md) | コストのソースを合算にできる | ready | E2E |

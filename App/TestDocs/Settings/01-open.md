@@ -3,7 +3,7 @@ id: Settings-01-open
 title: ポップオーバーから設定を開ける
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -28,4 +28,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- （本 PR で実装）

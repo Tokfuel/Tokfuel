@@ -3,7 +3,7 @@ id: MenuBar-01-open-home
 title: メニューバーからホーム（ポップオーバー）を表示できる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -34,4 +34,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- （本 PR で実装）

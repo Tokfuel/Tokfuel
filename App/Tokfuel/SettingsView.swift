@@ -55,6 +55,8 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 620)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("tokfuel.settings")
     }
 
     private var generalSection: some View {
@@ -70,10 +72,12 @@ struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 180)
+            .accessibilityIdentifier("tokfuel.settings.currency")
             // Codex CLI が無い Mac では「Codex のみ」を出さない（常に $0 になるだけのため）。
             Picker("コストのソース", selection: $settings.costSourceMode) {
                 ForEach(settings.availableCostSourceModes) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.cost-source")
             Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
                 ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
             }
@@ -95,6 +99,7 @@ struct SettingsView: View {
             Picker("見る指標", selection: $settings.menuBarMetric) {
                 ForEach(MenuBarMetric.allCases) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.menu-bar-metric")
             ForEach(representationRows) { representationRow($0) }
             if settings.menuBarRepresentation.drawsRing {
                 Picker("ゲージの形", selection: $settings.menuBarGaugeShape) {

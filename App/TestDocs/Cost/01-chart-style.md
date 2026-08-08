@@ -3,7 +3,7 @@ id: Cost-01-chart-style
 title: 推移グラフの表示形式を切り替えられる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: done
 ---
 
 ## シナリオ
@@ -36,4 +36,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- （本 PR で実装）
