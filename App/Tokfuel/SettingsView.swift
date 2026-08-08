@@ -66,10 +66,9 @@ struct SettingsView: View {
                 ForEach(AppearanceMode.allCases) { Text($0.label).tag($0) }
             }
             Picker("通貨", selection: $settings.displayCurrency) {
-                // naming drift demo: E2E Settings-02 expects "¥ 円"; keep usd last so
-                // the driver's segment fallback does not accidentally select JPY.
-                Text("¥ 圓").tag(DisplayCurrency.jpy)
-                Text("$ ドル").tag(DisplayCurrency.usd)
+                ForEach(DisplayCurrency.allCases) {
+                    Text($0 == .usd ? "$ ドル" : "¥ 圓").tag($0)
+                }
             }
             .pickerStyle(.segmented)
             .frame(width: 180)
