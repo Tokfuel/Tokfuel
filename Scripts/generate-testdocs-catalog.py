@@ -35,16 +35,6 @@ def front_matter(text: str, key: str) -> str:
     return match.group(1).strip() if match else ""
 
 
-def scenario_summary(text: str) -> str:
-    match = re.search(r"## シナリオ\n\n(.+?)(?:\n\n|\n## )", text, re.S)
-    if not match:
-        return ""
-    summary = re.sub(r"\s+", " ", match.group(1).strip())
-    if len(summary) > 80:
-        return summary[:77] + "…"
-    return summary
-
-
 def listed_means(text: str) -> list[str]:
     means: list[str] = []
     for mean in MEANS:
@@ -88,7 +78,6 @@ def collect() -> list[dict[str, object]]:
                     "status": front_matter(text, "status"),
                     "means": means,
                     "means_label": ", ".join(means),
-                    "summary": scenario_summary(text),
                     "has_pr": has_linked_pr(text),
                 }
             )
@@ -277,8 +266,8 @@ def render_catalog(scenarios: list[dict[str, object]], coverage: dict[str, objec
         rows = by_domain[domain]
         lines.append(f"## {domain}（{len(rows)}）")
         lines.append("")
-        lines.append("| ID | title | status | 完了条件 | シナリオ要約 |")
-        lines.append("| --- | --- | --- | --- | --- |")
+        lines.append("| ID | title | status | 完了条件 |")
+        lines.append("| --- | --- | --- | --- |")
         for row in rows:
             lines.append(
                 "| "
@@ -288,7 +277,6 @@ def render_catalog(scenarios: list[dict[str, object]], coverage: dict[str, objec
                         esc(str(row["title"])),
                         esc(str(row["status"])),
                         esc(str(row["means_label"])),
-                        esc(str(row["summary"])),
                     ]
                 )
                 + " |"
