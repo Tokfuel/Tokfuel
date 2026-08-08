@@ -14,13 +14,8 @@ tell application "System Events"
   repeat with procName in procNames
     try
       tell process (procName as text)
-        set frontmost to true
+        -- frontmost にしない（E2E の System Events 操作と競合しやすい）
         repeat with w in windows
-          set winName to ""
-          try
-            set winName to name of w as text
-          end try
-          -- Screen Recording / 画面収録のダイアログを優先
           repeat with bName in buttonNames
             try
               click button (bName as text) of w
@@ -48,7 +43,6 @@ tell application "System Events"
               end if
             end repeat
           end try
-          -- ネストした UI 要素も探す
           try
             repeat with g in (groups of w)
               repeat with b in (buttons of g)

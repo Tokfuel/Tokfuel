@@ -87,9 +87,10 @@ rm -f "$VIDEO_OUT" "$GIF_OUT" "$COMPARE_OUT"
 rm -rf "$FRAMES_DIR"
 mkdir -p "$FRAMES_DIR"
 
-bash "$ROOT/App/E2E/dismiss-tcc-prompt.sh" 120 &
+# Allow が出るのは最初の数キャプチャが多い。長く回すと System Events が E2E と競合する。
+bash "$ROOT/App/E2E/dismiss-tcc-prompt.sh" 12 &
 DISMISS_PID=$!
-echo "tcc dismiss pid=${DISMISS_PID}"
+echo "tcc dismiss pid=${DISMISS_PID} (first 12s)"
 
 (
   i=0
