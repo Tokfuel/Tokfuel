@@ -46,6 +46,17 @@ jobs:
           swift --version
           xcodebuild -version
 
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: e2e-spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}-${{ hashFiles('App/Tokfuel/**', 'App/E2E/Driver/**') }}
+          restore-keys: |
+            e2e-spm-${{ runner.os }}-${{ hashFiles('Package.resolved', 'Package.swift') }}-
+            e2e-spm-${{ runner.os }}-
+
       - name: Build
         run: |
           # SwiftPM は複数 --product だと最後だけビルドすることがある。
@@ -64,3 +75,11 @@ jobs:
         env:
           TOKFUEL_E2E_GRANT_TCC: "0"
         run: bash App/E2E/run-core6.sh
+
+      - name: Upload E2E recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-core6-recording
+          path: .build/e2e/core6-last.json
+          if-no-files-found: ignore

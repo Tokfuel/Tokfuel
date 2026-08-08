@@ -34,7 +34,9 @@ let package = Package(
         // AX E2E ドライバ（標準 SDK の ApplicationServices のみ。Firebase 非依存）。
         .executableTarget(
             name: "TokfuelE2E",
-            path: "App/E2E/Driver"
+            path: "App/E2E/Driver",
+            // 複数 Swift ファイル + @main のため parse-as-library が必要。
+            swiftSettings: [.unsafeFlags(["-parse-as-library"])]
         )
     ]
 )

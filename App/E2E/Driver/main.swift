@@ -3,7 +3,7 @@ import AppKit
 import Foundation
 
 /// Tokfuel コア 6 シナリオを AX で駆動するドライバ（Maestro / Appium なし）。
-/// 使い方: TokfuelE2E --pid <TokfuelのPID>
+/// 使い方: TokfuelE2E --pid <TokfuelのPID> [--recording <path>] [--write-recording <path>]
 @main
 struct TokfuelE2EMain {
     static func main() {
@@ -11,7 +11,7 @@ struct TokfuelE2EMain {
         guard let pidFlag = args.firstIndex(of: "--pid"),
               pidFlag + 1 < args.count,
               let pid = pid_t(args[pidFlag + 1]) else {
-            fputs("usage: TokfuelE2E --pid <tokfuel-pid>\n", stderr)
+            fputs("usage: TokfuelE2E --pid <tokfuel-pid> [--recording path] [--write-recording path]\n", stderr)
             exit(2)
         }
 
@@ -20,15 +20,30 @@ struct TokfuelE2EMain {
             exit(3)
         }
 
+        let recordingPath = value(after: "--recording", in: args)
+        let writePath = value(after: "--write-recording", in: args)
+            ?? E2ERecording.localCachePath
+
         do {
-            let driver = try AXDriver(pid: pid)
+            let driver = try AXDriver(pid: pid, recordingPath: recordingPath)
             try driver.runCore6()
+            try driver.persistRecording(to: writePath)
+            // 明示時のみリポジトリ正本を上書き（普段は .build 側のキャッシュを更新）。
+            if ProcessInfo.processInfo.environment["TOKFUEL_E2E_UPDATE_REPO_RECORDING"] == "1",
+               writePath != E2ERecording.defaultPath {
+                try driver.persistRecording(to: E2ERecording.defaultPath)
+            }
             print("TokfuelE2E core6 OK")
             exit(0)
         } catch {
             fputs("TokfuelE2E failed: \(error)\n", stderr)
             exit(1)
         }
+    }
+
+    private static func value(after flag: String, in args: [String]) -> String? {
+        guard let idx = args.firstIndex(of: flag), idx + 1 < args.count else { return nil }
+        return args[idx + 1]
     }
 }
 
@@ -49,47 +64,91 @@ enum E2EError: Error, CustomStringConvertible {
 final class AXDriver {
     private let app: AXUIElement
     private let pid: pid_t
+    private let recording: E2ERecording?
+    private let builder = E2ERecordingBuilder()
+    private let pollInterval: TimeInterval
 
-    init(pid: pid_t) throws {
+    init(pid: pid_t, recordingPath: String?) throws {
         self.pid = pid
         self.app = AXUIElementCreateApplication(pid)
+        self.recording = E2ERecording.load(from: recordingPath)
+        self.pollInterval = recording?.pollIntervalSeconds ?? 0.15
         // Warm up the tree.
         _ = copyAttribute(app, kAXRoleAttribute as String)
     }
 
     func runCore6() throws {
-        try scenarioMenuBar01OpenHome()
-        try scenarioCost03ModelList()
-        try scenarioCost01ChartStyle()
-        try scenarioCost02PeriodSwitch()
-        try scenarioSettings01Open()
-        try scenarioSettings02Reflect()
+        try runScenario("MenuBar-01-open-home", scenarioMenuBar01OpenHome)
+        try runScenario("Cost-03-model-list", scenarioCost03ModelList)
+        try runScenario("Cost-01-chart-style", scenarioCost01ChartStyle)
+        try runScenario("Cost-02-period-switch", scenarioCost02PeriodSwitch)
+        try runScenario("Settings-01-open", scenarioSettings01Open)
+        try runScenario("Settings-02-reflect", scenarioSettings02Reflect)
+    }
+
+    func persistRecording(to path: String) throws {
+        let required = recording?.requiredIdentifiers ?? [
+            "tokfuel.home",
+            "tokfuel.hero.today",
+            "tokfuel.section.trend",
+            "tokfuel.section.models",
+            "tokfuel.model-list",
+            "tokfuel.chart.style",
+            "tokfuel.chart.period",
+            "tokfuel.menu.more",
+            "tokfuel.settings"
+        ]
+        let built = builder.build(requiredIdentifiers: required, previous: recording)
+        try built.write(to: path)
+        print("E2E recording written: \(path)")
+    }
+
+    private func runScenario(_ id: String, _ body: () throws -> Void) throws {
+        print("→ \(id)")
+        builder.begin(id)
+        do {
+            try body()
+            builder.endCurrent()
+        } catch {
+            builder.endCurrent()
+            if let recording {
+                fputs(
+                    "baseline requiredIdentifiers: \(recording.requiredIdentifiers.joined(separator: ", "))\n",
+                    stderr
+                )
+            }
+            throw error
+        }
+    }
+
+    private func timeout(_ cold: TimeInterval) -> TimeInterval {
+        recording?.scaledTimeout(cold) ?? cold
     }
 
     // MARK: - Scenarios
 
     private func scenarioMenuBar01OpenHome() throws {
-        print("→ MenuBar-01-open-home")
         try clickStatusItem()
-        let home = try waitForIdentifier("tokfuel.home", under: app, timeout: 8)
-        _ = try waitForIdentifier("tokfuel.hero.today", under: home, timeout: 5)
+        let home = try waitForIdentifier("tokfuel.home", under: app, timeout: timeout(8))
+        _ = try waitForIdentifier("tokfuel.hero.today", under: home, timeout: timeout(5))
         guard findByIdentifier("tokfuel.section.trend", under: home) != nil
                 || findByTitle("推移", under: home) != nil
                 || findByValue("推移", under: home) != nil else {
             throw E2EError.assertFailed("推移 section missing")
         }
+        builder.sawIdentifier("tokfuel.section.trend")
         guard findByIdentifier("tokfuel.section.models", under: home) != nil
                 || findByIdentifier("tokfuel.model-list", under: home) != nil
                 || findByTitle("モデル別", under: home) != nil
                 || findByValue("モデル別", under: home) != nil else {
             throw E2EError.assertFailed("モデル別 section missing")
         }
+        builder.sawIdentifier("tokfuel.section.models")
     }
 
     private func scenarioCost03ModelList() throws {
-        print("→ Cost-03-model-list")
         let home = try requireIdentifier("tokfuel.home")
-        let list = try waitForIdentifier("tokfuel.model-list", under: home, timeout: 5)
+        let list = try waitForIdentifier("tokfuel.model-list", under: home, timeout: timeout(5))
         let rows = findAllByIdentifier("tokfuel.model-list.row", under: list)
         guard !rows.isEmpty else {
             throw E2EError.assertFailed("expected at least one model row")
@@ -97,9 +156,8 @@ final class AXDriver {
     }
 
     private func scenarioCost01ChartStyle() throws {
-        print("→ Cost-01-chart-style")
         let home = try requireIdentifier("tokfuel.home")
-        let style = try waitForIdentifier("tokfuel.chart.style", under: home, timeout: 5)
+        let style = try waitForIdentifier("tokfuel.chart.style", under: home, timeout: timeout(5))
         // Segmented control: click the "累積" radio/button child.
         if let cumulative = findByTitle("累積", under: style) ?? findByLabel("累積", under: style) {
             try press(cumulative)
@@ -126,9 +184,8 @@ final class AXDriver {
     }
 
     private func scenarioCost02PeriodSwitch() throws {
-        print("→ Cost-02-period-switch")
         let home = try requireIdentifier("tokfuel.home")
-        let period = try waitForIdentifier("tokfuel.chart.period", under: home, timeout: 5)
+        let period = try waitForIdentifier("tokfuel.chart.period", under: home, timeout: timeout(5))
         let month = findByIdentifier("tokfuel.period.thisMonth", under: period)
             ?? findByTitle("今月", under: period)
             ?? findByValue("今月", under: period)
@@ -147,30 +204,28 @@ final class AXDriver {
     }
 
     private func scenarioSettings01Open() throws {
-        print("→ Settings-01-open")
         let home = try requireIdentifier("tokfuel.home")
-        let more = try waitForIdentifier("tokfuel.menu.more", under: home, timeout: 5)
+        let more = try waitForIdentifier("tokfuel.menu.more", under: home, timeout: timeout(5))
         try press(more)
         RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         // Menu items live under the app or the menu extras; search broadly.
-        guard let settingsItem = waitForTitle("設定", timeout: 5) else {
+        guard let settingsItem = waitForTitle("設定", timeout: timeout(5)) else {
             throw E2EError.notFound("menu item 設定")
         }
         try press(settingsItem)
         do {
-            _ = try waitForIdentifier("tokfuel.settings", under: app, timeout: 8)
+            _ = try waitForIdentifier("tokfuel.settings", under: app, timeout: timeout(8))
         } catch {
-            _ = try waitForWindowTitle("Tokfuel 設定", timeout: 8)
+            _ = try waitForWindowTitle("Tokfuel 設定", timeout: timeout(8))
         }
     }
 
     private func scenarioSettings02Reflect() throws {
-        print("→ Settings-02-reflect")
         let settings: AXUIElement
-        if let rooted = try? waitForIdentifier("tokfuel.settings", under: app, timeout: 5) {
+        if let rooted = try? waitForIdentifier("tokfuel.settings", under: app, timeout: timeout(5)) {
             settings = rooted
         } else {
-            settings = try waitForWindowTitle("Tokfuel 設定", timeout: 5)
+            settings = try waitForWindowTitle("Tokfuel 設定", timeout: timeout(5))
         }
         // Currency → ¥ 円
         if let currency = findByIdentifier("tokfuel.settings.currency", under: settings) {
@@ -200,7 +255,7 @@ final class AXDriver {
 
         // Re-open home and observe yen formatting or Claude-only caption absence of side-by-side.
         try clickStatusItem()
-        let home = try waitForIdentifier("tokfuel.home", under: app, timeout: 8)
+        let home = try waitForIdentifier("tokfuel.home", under: app, timeout: timeout(8))
         // After currency switch, money strings typically contain "¥" or fullwidth yen.
         let treeText = collectTitles(under: home).joined(separator: " ")
         let looksJPY = treeText.contains("¥") || treeText.contains("円")
@@ -288,8 +343,11 @@ final class AXDriver {
     // MARK: - AX primitives
 
     private func requireIdentifier(_ id: String, under root: AXUIElement? = nil) throws -> AXUIElement {
-        if let el = findByIdentifier(id, under: root) { return el }
-        throw E2EError.notFound(id)
+        if let el = findByIdentifier(id, under: root) {
+            builder.sawIdentifier(id)
+            return el
+        }
+        throw E2EError.notFound(uiDriftHint(id))
     }
 
     private func waitForIdentifier(
@@ -299,17 +357,20 @@ final class AXDriver {
     ) throws -> AXUIElement {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if let el = findByIdentifier(id, under: root ?? app) { return el }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+            if let el = findByIdentifier(id, under: root ?? app) {
+                builder.sawIdentifier(id)
+                return el
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(pollInterval))
         }
-        throw E2EError.timedOut(id)
+        throw E2EError.timedOut(uiDriftHint(id))
     }
 
     private func waitForTitle(_ title: String, timeout: TimeInterval) -> AXUIElement? {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if let el = findByTitle(title) { return el }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+            RunLoop.current.run(until: Date().addingTimeInterval(pollInterval))
         }
         return nil
     }
@@ -322,9 +383,17 @@ final class AXDriver {
                     if self.title(window) == title { return window }
                 }
             }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+            RunLoop.current.run(until: Date().addingTimeInterval(pollInterval))
         }
         throw E2EError.timedOut("window \(title)")
+    }
+
+    /// UI 改名などで identifier が消えたときに、baseline との差分がログに残るようにする。
+    private func uiDriftHint(_ id: String) -> String {
+        if let recording, recording.requiredIdentifiers.contains(id) {
+            return "\(id) (present in last successful recording; UI may have changed)"
+        }
+        return id
     }
 
     private func findByIdentifier(_ id: String, under root: AXUIElement? = nil) -> AXUIElement? {

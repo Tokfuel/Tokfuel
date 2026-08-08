@@ -30,6 +30,17 @@ bash App/E2E/run-core6.sh
 
 `--e2e-fixture` では NSPopover が AX ツリーに載らないため、ステータス項目のクリックで同じホーム UI を `NSPanel` に出します（本番の見た目経路は従来どおり NSPopover）。
 
+### 成功記録と再実行の高速化
+
+前回成功した挙動は [`recordings/core6.json`](recordings/core6.json) に残します（必要 identifier・起動待ち・timeout 係数）。
+
+- 次回以降はこの記録を読んで待ち時間を短縮します
+- 実行成功時は `.build/e2e/core6-last.json` にも実測を書き戻します
+- リポジトリ正本を更新するときだけ `TOKFUEL_E2E_UPDATE_REPO_RECORDING=1` を付けます
+- CI では SwiftPM の `.build` を cache し、再実行時のビルドを短縮します
+
+UI の `accessibilityIdentifier` が変わると、記録上の必須 ID が見つからず失敗します（ログに `UI may have changed` と baseline ID 一覧が出ます）。
+
 ### ローカルの Accessibility 許可
 
 初回はシステム設定 → プライバシーとセキュリティ → アクセシビリティで、ターミナル（または `TokfuelE2E`）を許可してください。CI では `App/E2E/grant-tcc.sh` が付与します。
