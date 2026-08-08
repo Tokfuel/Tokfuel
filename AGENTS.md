@@ -59,6 +59,7 @@
 ```bash
 swift test               # ユニットテスト（App/Tests、Swift Testing）
 swift build -c release   # Scripts/build.sh がパッケージする構成
+bash App/E2E/run-smoke.sh  # 起動スモーク（主要画面到達、ウィンドウサーバが必要）
 ```
 
 シナリオと担保手段（UT&IT / VRT / E2E）の優先は
