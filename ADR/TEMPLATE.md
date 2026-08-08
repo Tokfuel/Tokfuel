@@ -1,5 +1,5 @@
 ---
-title: "Title（意思決定の概要を示す簡潔な表現）"
+title: "Title (short verb-led decision)"
 status: Draft
 proposed: YYYY-MM-DD
 accepted:
@@ -7,87 +7,85 @@ supersedes:
 issue:
 ---
 
-# Title（意思決定の概要を示す簡潔な表現）
+# Title (short verb-led decision)
 
-## Decision（決定事項）
+[日本語](./NNNN-slug.ja.md)
 
-> アーキテクチャやソリューションの意思決定の内容
+## Decision
 
-### 決定事項
+> What was decided about the architecture or solution
 
-<!-- 1〜3文。何を採用 / 導入 / 変更するかを太字で先に述べる。 -->
+### Decision
 
-### 比較・検討内容の要約
+<!-- 1–3 sentences. Lead with the adopted choice in bold. -->
 
-<!-- どの案を比べ、なぜこの案を採ったか。不採用案の理由も短く。 -->
+### Summary of alternatives
 
-### English summary
+<!-- Which options were compared and why this one won. Mention rejected options briefly. -->
 
-<!-- Optional. 5–10 lines. Canonical text is the Japanese sections above. -->
+## Context
 
-## Context（経緯・背景情報）
+> Background, problem, and goal for this decision
 
-> この意思決定が行われる背景、問題点、目的など
+### Background
 
-### 背景
+<!-- Concrete current state. Prefer numbers (file count, LOC, incident count). -->
 
-<!-- 現状を具体的に。可能なら定量（ファイル数、行数、発生件数）。 -->
+### Problems
 
-### 課題
+1. **Problem name**
+   - Concrete impact
 
-1. **課題名**
-   - 具体的な説明と影響
+## Consideration
 
-## Consideration（比較・検討内容）
+> Alternatives that were considered
 
-> 他に検討した選択肢や検討した内容
+### Options
 
-### 比較対象
+| Option | Solution | Overview |
+|--------|----------|----------|
+| 1 | **Status quo** | Keep the current approach |
+| 2 | **…** | … |
+| 3 | **…** | … |
 
-| 案 | ソリューション | 概要 |
-|----|----------------|------|
-| 案1 | **現状維持** | 現行の〜を続ける |
-| 案2 | **…** | … |
-| 案3 | **…** | … |
+### Comparison
 
-### 比較表
+<!-- Do not leave cells as symbols only; add a short reason. -->
 
-<!-- 評価記号（◎○△×）だけで終わらせず、セルに理由を書く。 -->
-
-| 評価項目 | 案1 現状維持 | 案2 … | 案3 … |
-|----------|--------------|-------|-------|
+| Criterion | 1 Status quo | 2 … | 3 … |
+|-----------|--------------|-----|-----|
 | … | … | … | … |
 
-### 総合評価
+### Overall
 
-| 案 | 総合評価 | 判定 |
-|----|----------|------|
-| 案1: 現状維持 | … | **不採用** |
-| 案2: … | … | **採用** |
+| Option | Assessment | Verdict |
+|--------|------------|---------|
+| 1: Status quo | … | **Rejected** |
+| 2: … | … | **Accepted** |
 
-## Consequences（結果）
+## Consequences
 
-> 予期される結果。意思決定がシステムやプロジェクトに与える影響
+> Expected effects on the system and project
 
-### 期待される効果
+### Expected benefits
 
 1. …
 
-### 技術的リスクと対策
+### Risks and mitigations
 
-| リスク | 内容 | 対策 |
-|--------|------|------|
+| Risk | Detail | Mitigation |
+|------|--------|------------|
 | … | … | … |
 
-### 移行計画
+### Migration plan
 
-<!-- 任意。段階があるときだけ書く。 -->
+<!-- Optional. Only when the change rolls out in stages. -->
 
-## References（参照）
+## References
 
-> 関連リンク
+> Related links
 
 - Issue: #
 - PR: #
-- 関連 ADR:
-- 外部:
+- Related ADR:
+- External:

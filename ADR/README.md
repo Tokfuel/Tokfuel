@@ -1,39 +1,57 @@
-# ADR（Architecture Decision Records）
+# ADR (Architecture Decision Records)
 
-技術的な意思決定の記録を、Issue や会話に散らさずリポジトリに残す。
-「なぜその形にしたか」をあとから追えるようにする。
+[日本語](README.ja.md)
 
-本文は Decision / Context / Consideration / Consequences / References の
-5セクションとする。置き場は git 上のこのディレクトリとする（OSS とエージェントが
-同じ正本を読むため）。
+Keep technical decisions in the repo instead of scattering them across Issues and chat,
+so later readers can recover *why* a shape was chosen.
 
-## 置き方
+Each ADR uses five sections: Decision, Context, Consideration, Consequences, and
+References. ADRs live in this directory as git Markdown so OSS contributors and agents
+share one source of truth.
 
-| パス | 役割 |
+## Japanese and English pair
+
+Same convention as README / SECURITY: **ship English and Japanese as a pair**.
+
+| Path | Language |
+|------|----------|
+| `NNNN-slug.md` | English |
+| `NNNN-slug.ja.md` | Japanese |
+
+Both are required. If they drift, **the Japanese (`.ja.md`) file is canonical**; update
+the English file to match. Keep `status` / `proposed` / `accepted` / `issue` identical
+in both front matters.
+
+## Layout
+
+| Path | Role |
 |------|------|
-| [`TEMPLATE.md`](TEMPLATE.md) | 新規 ADR の雛形 |
-| `NNNN-slug.md` | 個別の決定（4桁ゼロ埋め + kebab-case） |
+| [`TEMPLATE.md`](TEMPLATE.md) / [`TEMPLATE.ja.md`](TEMPLATE.ja.md) | New-ADR scaffolds |
+| `NNNN-slug.md` / `NNNN-slug.ja.md` | One decision (zero-padded 4-digit id + kebab-case) |
 
-番号は既存の最大 + 1。連番を飛ばさない。
+Numbers increment by one from the highest existing id. A decision is incomplete until both
+language files exist for that number.
 
-## 状態（`status`）
+## Status (`status`)
 
-| 値 | 意味 |
-|----|------|
-| `Draft` | 下書き。まだ提案として出していない |
-| `Proposed` | レビュー待ち |
-| `Accepted` | 採用した |
-| `Rejected` | 採用しなかった（記録は残す） |
-| `Deprecated` | かつて Accepted だったが、いまは使わない |
-| `Superseded` | 別の ADR に置き換わった（`supersedes` / 後継を References に書く） |
+| Value | Meaning |
+|-------|---------|
+| `Draft` | Work in progress; not opened for review |
+| `Proposed` | Ready for review |
+| `Accepted` | Adopted |
+| `Rejected` | Not adopted (kept for the record) |
+| `Deprecated` | Was Accepted; no longer in force |
+| `Superseded` | Replaced by another ADR (`supersedes` / successor in References) |
 
-## 書き方
+## Writing
 
-1. [`TEMPLATE.md`](TEMPLATE.md) をコピーして `NNNN-slug.md` を作る
-2. タイトルは動詞終わりの意思決定文にする（「〜する」「〜に置き換える」）
-3. Decision → Context → Consideration → Consequences → References の順で書く
-4. Consideration には **現状維持** を必ず含める
-5. 作業文書なので日本語は常体。正本は日本語。短い English summary を Decision のあとに置いてよい
-6. 起案をエージェントに任せるときは [`write-adr`](../.agents/skills/write-adr/SKILL.md) スキルを使う
+1. Copy [`TEMPLATE.md`](TEMPLATE.md) and [`TEMPLATE.ja.md`](TEMPLATE.ja.md) to
+   `NNNN-slug.md` / `NNNN-slug.ja.md`
+2. Title is a short decision sentence (verb-led)
+3. Write Decision → Context → Consideration → Consequences → References
+4. Consideration must include a **status-quo** option
+5. Japanese body uses 常体 (plain form); English uses plain technical prose
+6. For agent-assisted drafts, use the [`write-adr`](../.agents/skills/write-adr/SKILL.md) skill
 
-大きな方針変更は、先に GitHub Issue（ラベル `ADR 🏯`）で議論し、合意した内容を ADR に落とす。
+For large direction changes, discuss in a GitHub Issue (label `ADR 🏯`) first, then record
+the agreement here.
