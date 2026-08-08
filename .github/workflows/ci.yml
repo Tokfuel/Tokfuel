@@ -6,15 +6,13 @@ on:
   push:
     branches: [main]
     paths:
-      - "App/Tokfuel/**"
-      - "App/Tests/**"
+      - "App/**"
       - "Package.swift"
       - "Package.resolved"
       - ".github/workflows/ci.yml"
   pull_request:
     paths:
-      - "App/Tokfuel/**"
-      - "App/Tests/**"
+      - "App/**"
       - "Package.swift"
       - "Package.resolved"
       - ".github/workflows/ci.yml"

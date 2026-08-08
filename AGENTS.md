@@ -11,7 +11,8 @@
 フックも手動のトークン登録も要らず、これらのアプリがローカルに残しているデータを読むだけでよい。
 同じ Mac に Codex CLI（`~/.codex/sessions/`）や Cursor があれば、そのコストも推定する。ただし
 各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。アプリ関連は
-[`App/`](App/) 配下に置く（本体 [`App/Tokfuel/`](App/Tokfuel/)、UT / IT
+[`App/`](App/) 配下に置く（実行ファイル [`App/Tokfuel/`](App/Tokfuel/)、SPM レイヤー
+[`App/TokfuelCore/`](App/TokfuelCore/) など、UT / IT
 [`App/Tests/`](App/Tests/)、シナリオ設計 [`App/TestDocs/`](App/TestDocs/)、通しテスト
 [`App/E2E/`](App/E2E/)）。
 
@@ -44,10 +45,10 @@
       匿名のアプリ UI イベントを送る（デフォルト OFF。送信面は `AnalyticsService` に集約）。
 2. **ゼロセットアップの維持**：アプリは Claude Code のトランスクリプトを直接読む。機能を
    動かすために、フック、外部ツールのインストール、Claude Code 側の設定を要求しない。
-3. **retok は無改変で同梱**：`App/Tokfuel/Resources/retok.py` と `locales/` は
-   © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
-   `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
-   [`README-retok.md`](App/Tokfuel/Resources/README-retok.md) にある。
+3. **retok は無改変で同梱**：`App/TokfuelClaude/Resources/retok.py` と `locales/` は
+ © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
+ `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
+ [`README-retok.md`](App/TokfuelClaude/Resources/README-retok.md) にある。
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
