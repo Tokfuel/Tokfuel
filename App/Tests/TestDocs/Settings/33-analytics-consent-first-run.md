@@ -3,7 +3,7 @@ id: Settings-33-analytics-consent-first-run
 title: 初回に利用状況送信の同意ダイアログが出る
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - 未回答のとき、同意ダイアログが見える
 - **VRT**
-  - 初回 Analytics 同意ダイアログが、プレビュー用フィクスチャとして固定されている
+  - 画面 `analytics-consent` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

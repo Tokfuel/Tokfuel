@@ -3,7 +3,7 @@ id: Cost-02-period-switch
 title: 推移の期間を切り替え、表示が期間に追従する
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -20,7 +20,7 @@ status: ready
 - **UT&IT**
   - 選んだ期間に対応する集計範囲が、表示用の状態と一致する
 - **VRT**
-  - 推移期間が今日、今週、今月、今年のそれぞれのホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-period-month`、`popover-period-today`、`popover-period-week`、`popover-period-year` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -38,4 +38,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

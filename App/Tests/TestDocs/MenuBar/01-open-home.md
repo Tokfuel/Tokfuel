@@ -3,7 +3,7 @@ id: MenuBar-01-open-home
 title: メニューバーからホーム（ポップオーバー）を表示できる
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -18,7 +18,7 @@ status: ready
   - メニューバーからホーム（ポップオーバー）を開ける
   - 開いたホームに、今日の見出しと主要セクション（推移、モデル別など）が見える
 - **VRT**
-  - ダーク外観のホーム（既定）が、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover`、`popover-more-menu` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -36,4 +36,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

@@ -3,7 +3,7 @@ id: Cost-01-chart-style
 title: 推移グラフの表示形式を切り替えられる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -18,8 +18,7 @@ status: ready
   - 推移で日別棒と累積折れ線を切り替えられる
   - 切り替えたあと、選んだ形式のグラフが表示される
 - **VRT**
-  - 日別棒グラフのホームが、プレビュー用フィクスチャとして固定されている
-  - 累積折れ線のホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-cumulative` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -37,4 +36,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

@@ -3,7 +3,7 @@ id: MenuBar-29-update-button-offer
 title: 新バージョン検出時にアップデートボタンが出る
 primary_domain: MenuBar
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - 新バージョン検出時、フッターにアップデートボタンが見える
 - **VRT**
-  - フッターにアップデートボタンが出たホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-update` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

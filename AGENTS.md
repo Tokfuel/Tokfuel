@@ -54,7 +54,8 @@ UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/Int
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
-   オーナー承認済みの `firebase-ios-sdk`（Analytics と Crashlytics 製品のみ、#22）。
+   オーナー承認済みの `firebase-ios-sdk`（Analytics と Crashlytics 製品のみ、#22）と、
+   テスト専用の `swift-snapshot-testing`（Point-Free VRT）。
 
 ## 検証ゲート
 
@@ -80,7 +81,9 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 アラートなど）を追加または変更するときは、同じ PR で
 `ScreenshotRenderer.allScreens()` のフィクスチャ画面（と
 [`ui-preview.yml`](.github/workflows/ui-preview.yml) の `ORDER` / `screen_title` リスト）も
-追加または更新して、`ui-preview 📸` ラベルが新しい状態を実際に描画できるようにする。ライブな
+追加または更新して、`ui-preview 📸` ラベルが新しい状態を実際に描画できるようにする。見た目を
+変える PR では、Point-Free VRT の参考画像（`App/Tests/UnitTests/__Snapshots__`）も同じ差分で
+更新する（`SNAPSHOT_TESTING_RECORD=all swift test --filter MatchesReference`）。ライブな
 シングルトン経由でしか到達できないビュー（ネットワーク応答や実際のインストールパスに依存する
 もの）には、`AppSettings.shared` が `prepareDefaults()` からフィクスチャ値を受け取るのと
 同じ形で、注入可能なフィクスチャを用意する（`UpdateChecker.preview` を参照）。ダイアログや

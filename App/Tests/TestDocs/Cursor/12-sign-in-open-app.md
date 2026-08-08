@@ -3,7 +3,7 @@ id: Cursor-12-sign-in-open-app
 title: サインアウト劣化時に Cursor を開ける
 primary_domain: Cursor
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -16,7 +16,7 @@ status: ready
   - サインアウト劣化時、Cursor を開く操作が見える
   - 操作すると Cursor アプリが前面に出る
 - **VRT**
-  - Cursor サインイン切れ時のホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-cursor-signin` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -28,4 +28,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

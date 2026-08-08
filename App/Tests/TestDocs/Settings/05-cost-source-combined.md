@@ -3,7 +3,7 @@ id: Settings-05-cost-source-combined
 title: コストのソースを合算にできる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - 合算のとき、ホームが全ソース合計を表示する
 - **VRT**
-  - コストソースが合算のときのホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-combined` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

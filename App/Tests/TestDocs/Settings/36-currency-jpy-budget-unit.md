@@ -3,7 +3,7 @@ id: Settings-36-currency-jpy-budget-unit
 title: 円とレート取得後に予算入力の単位が円になる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - 円かつレート取得後、予算入力の単位が円になる
 - **VRT**
-  - 通貨が円のときの設定画面が、プレビュー用フィクスチャとして固定されている
+  - 画面 `settings-jpy` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

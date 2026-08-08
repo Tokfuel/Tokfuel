@@ -3,7 +3,7 @@ id: Cost-12-jpy-formatting
 title: 円表示のときホームの金額が円表記になる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - 通貨が円のとき、ホームの金額が円表記になる
 - **VRT**
-  - 通貨が円のときのホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-jpy` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

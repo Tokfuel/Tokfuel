@@ -3,7 +3,7 @@ id: Settings-09-cost-source-side-by-side
 title: コストのソースを並べて表示にできる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - 並べて表示のとき、ホームにソース別内訳が見える
 - **VRT**
-  - コストソースが並べて表示のときのホームが、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

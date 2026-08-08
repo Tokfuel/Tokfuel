@@ -60,15 +60,25 @@ public enum ScreenshotRenderer {
     public static let popoverSize = CGSize(width: 360, height: 520)
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     public static let previewUpdateVersion = "0.1.0"
+    /// スクリーンショット / VRT 用の固定「いま」。壁時計に依存させるとピクセルが日々ずれる。
+    public static let fixtureNow: Date = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        return calendar.date(from: DateComponents(
+            year: 2026, month: 8, day: 8, hour: 12, minute: 10
+        ))!
+    }()
 
     public enum RenderError: LocalizedError {
         case usage
         case renderFailed
+        case unknownScreen(String)
 
         public var errorDescription: String? {
             switch self {
             case .usage: return "usage: Tokfuel --screenshot <output.png> | --ui-preview <output-dir>"
             case .renderFailed: return "画面のレンダリングに失敗しました"
+            case .unknownScreen(let name): return "unknown screenshot screen: \(name)"
             }
         }
     }
@@ -143,14 +153,38 @@ public enum ScreenshotRenderer {
     ///   最初の 1 画面に入らないため、ここでしか見えない）
     /// - `popover-advice-expanded`: ヒントを開いた状態。詳細と「プロンプトをコピー」は
     ///   展開しないと出ないので、折り畳んだ `popover-advice` では絵に写らない
-    /// - `settings` / `settings-advanced` / `settings-debug`: 設定ウィンドウ（既定・詳細を開いた状態・
-    ///   デバッグを開いた状態）。一般の「外観」Picker は `prepareDefaults` でダーク固定
+    /// - `popover-scrolled` / `popover-more-menu`: ホーム末尾スクロール、⋯ メニュー展開
+    /// - `popover-period-*`: 集計期間（今日 / 今週 / 今月 / 今年）
+    /// - `popover-jpy` / `popover-claude-only` / `popover-combined` / `popover-cumulative`:
+    ///   設定切替がホームの表示形式に効いた状態
+    /// - `settings` / `settings-jpy` / `settings-claude-only` / `settings-advanced` /
+    ///   `settings-debug`: 設定ウィンドウ（既定・通貨円・Claude のみ・詳細・デバッグ）
     /// - `about`: 「Tokfuel について」ウィンドウ
     /// - `budget-alert`: 予算アラートのウィンドウ（TF #81。ライブな `UsageStore` は通さず、
     ///   `budgetAlertContent` のフィクスチャだけを描く）
     /// - `analytics-consent`: 初回 Analytics 同意ダイアログ（#22）
     public static func allScreens() throws -> [(name: String, data: Data)] {
-        let store = fixtureStore()
+        try screenNames.map { ($0, try pngData(named: $0)) }
+    }
+
+    /// ui-preview / VRT が扱う画面名。追加したら `pngData(named:)` と
+    /// `UISnapshotTests` / `ui-preview.yml` も同じ PR で更新する。
+    public static let screenNames: [String] = [
+        "popover", "popover-light", "popover-update",
+        "popover-cursor-degraded", "popover-cursor-signin",
+        "popover-sessions", "popover-advice", "popover-advice-expanded",
+        "popover-scrolled", "popover-more-menu",
+        "popover-period-today", "popover-period-week",
+        "popover-period-month", "popover-period-year",
+        "popover-jpy", "popover-claude-only", "popover-combined", "popover-cumulative",
+        "settings", "settings-jpy", "settings-claude-only",
+        "settings-advanced", "settings-debug",
+        "about", "budget-alert", "analytics-consent"
+    ]
+
+    /// VRT / 単体テスト用。`allScreens()` と同じ描画経路で 1 画面だけ PNG にする。
+    public static func pngData(named name: String) throws -> Data {
+        prepareDefaults()
         // 設定は自身が .frame(width: 460, height: 620) を持つ（SettingsView.swift）ので
         // probeSize がそのまま最終サイズになる。About は幅 320 だけを持つので、
         // 高さは余裕を持った probeSize から実際の fittingSize へ縮める。
@@ -160,36 +194,110 @@ public enum ScreenshotRenderer {
         let alertProbeSize = CGSize(width: 360, height: 400)
         // 同意ダイアログは幅固定・高さは中身任せ。余裕のある probe から fittingSize へ縮める。
         let consentProbeSize = CGSize(width: 460, height: 400)
-        return [
-            ("popover", try renderPNG(store: store)),
-            ("popover-light", try renderStandalone(
-                PopoverView(store: store),
-                probeSize: popoverSize, colorScheme: .light)),
-            ("popover-update", try renderPNG(store: store,
-                                             updater: .preview(version: previewUpdateVersion))),
-            ("popover-cursor-degraded", try renderPNG(store: degradedCursorStore())),
-            ("popover-cursor-signin", try renderPNG(
-                store: degradedCursorStore(reason: .credentialsRejected))),
-            ("popover-sessions", try renderStandalone(
+        switch name {
+        case "popover":
+            return try renderPNG(store: fixtureStore())
+        case "popover-light":
+            return try renderStandalone(
+                PopoverView(store: fixtureStore()),
+                probeSize: popoverSize, colorScheme: .light)
+        case "popover-update":
+            return try renderPNG(
+                store: fixtureStore(),
+                updater: .preview(version: previewUpdateVersion))
+        case "popover-cursor-degraded":
+            return try renderPNG(store: degradedCursorStore())
+        case "popover-cursor-signin":
+            return try renderPNG(store: degradedCursorStore(reason: .credentialsRejected))
+        case "popover-sessions":
+            return try renderStandalone(
                 PopoverView(store: sessionsFixtureStore()),
-                probeSize: popoverSize, scrollsToBottom: true)),
-            ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
-            ("popover-advice-expanded", try renderStandalone(
-                PopoverView(store: store, initiallyExpandsAdvice: true),
-                probeSize: popoverSize, scrollsToBottom: true)),
-            ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
-            ("settings-advanced", try renderStandalone(
-                SettingsView(store: store, initiallyShowsAdvanced: true),
-                probeSize: settingsSize, scrollsToBottom: true)),
-            ("settings-debug", try renderStandalone(
-                SettingsView(store: store, initiallyShowsAdvanced: true, initiallyShowsDebug: true),
-                probeSize: settingsSize, scrollsToBottom: true)),
-            ("about", try renderStandalone(AboutView(), probeSize: aboutProbeSize)),
-            ("budget-alert", try renderStandalone(BudgetAlertView(content: budgetAlertContent),
-                                                  probeSize: alertProbeSize)),
-            ("analytics-consent", try renderStandalone(
-                AnalyticsConsentView(), probeSize: consentProbeSize))
-        ]
+                probeSize: popoverSize, scrollsToBottom: true)
+        case "popover-advice":
+            return try renderPNG(store: fixtureStore(), scrollsToBottom: true)
+        case "popover-advice-expanded":
+            return try renderStandalone(
+                PopoverView(store: fixtureStore(), initiallyExpandsAdvice: true),
+                probeSize: popoverSize, scrollsToBottom: true)
+        case "popover-scrolled":
+            return try renderPNG(store: fixtureStore(), scrollsToBottom: true)
+        case "popover-more-menu":
+            return try renderPNG(store: fixtureStore(), initiallyShowsMoreMenu: true)
+        case "popover-period-today":
+            return try renderPNG(store: makeStore(period: .today))
+        case "popover-period-week":
+            return try renderPNG(store: makeStore(period: .thisWeek))
+        case "popover-period-month":
+            return try renderPNG(store: makeStore(period: .thisMonth))
+        case "popover-period-year":
+            return try renderPNG(store: makeStore(period: .thisYear))
+        case "popover-jpy":
+            return try renderPNG(store: makeStore(currency: .jpy))
+        case "popover-claude-only":
+            return try renderPNG(store: makeStore(costSource: .claudeOnly))
+        case "popover-combined":
+            return try renderPNG(store: makeStore(costSource: .combined))
+        case "popover-cumulative":
+            return try renderPNG(store: makeStore(chartStyle: .cumulative))
+        case "settings":
+            return try renderStandalone(
+                SettingsView(store: makeStore()), probeSize: settingsSize)
+        case "settings-jpy":
+            return try renderStandalone(
+                SettingsView(store: makeStore(currency: .jpy)), probeSize: settingsSize)
+        case "settings-claude-only":
+            return try renderStandalone(
+                SettingsView(store: makeStore(costSource: .claudeOnly)), probeSize: settingsSize)
+        case "settings-advanced":
+            return try renderStandalone(
+                SettingsView(store: makeStore(), initiallyShowsAdvanced: true),
+                probeSize: settingsSize, scrollsToBottom: true)
+        case "settings-debug":
+            return try renderStandalone(
+                SettingsView(
+                    store: makeStore(),
+                    initiallyShowsAdvanced: true,
+                    initiallyShowsDebug: true
+                ),
+                probeSize: settingsSize, scrollsToBottom: true)
+        case "about":
+            return try renderStandalone(AboutView(), probeSize: aboutProbeSize)
+        case "budget-alert":
+            return try renderStandalone(
+                BudgetAlertView(content: budgetAlertContent), probeSize: alertProbeSize)
+        case "analytics-consent":
+            return try renderStandalone(AnalyticsConsentView(), probeSize: consentProbeSize)
+        default:
+            throw RenderError.unknownScreen(name)
+        }
+    }
+
+    /// 期間・通貨・ソース・チャート形式を変えたフィクスチャ Store を作る。
+    /// `reportPeriod` は init 前に UserDefaults へ書き、あとから代入して `reloadReport` で
+    /// フィクスチャが消えないようにする。チャートの日別は選んだ期間の暦窓に合わせる
+    /// （ピッカーだけ「今月」で棒が直近 7 日のまま、といった表記崩れを防ぐ）。
+    private static func makeStore(
+        period: ReportPeriod = reportPeriod,
+        chartStyle: CostChartStyle = .daily,
+        currency: DisplayCurrency = .usd,
+        costSource: CostSourceMode = .sideBySide
+    ) -> UsageStore {
+        prepareDefaults()
+        let defaults = UserDefaults.standard
+        defaults.set(period.rawValue, forKey: UsageStore.reportPeriodKey)
+        defaults.set(chartStyle.rawValue, forKey: UsageStore.costChartStyleKey)
+        defaults.set(currency.rawValue, forKey: Money.currencyKey)
+        if currency == .jpy {
+            defaults.set(150.0, forKey: Money.rateKey)
+            defaults.set(dateString(daysAgo: 0), forKey: Money.rateDateKey)
+        } else {
+            defaults.removeObject(forKey: Money.rateKey)
+            defaults.removeObject(forKey: Money.rateDateKey)
+        }
+        let settings = AppSettings.shared
+        settings.displayCurrency = currency
+        settings.costSourceMode = costSource
+        return fixtureStore(period: period)
     }
 
     /// フィクスチャを積んだポップオーバーを @2x で PNG にする。`updater` の既定は `.shared`
@@ -201,9 +309,18 @@ public enum ScreenshotRenderer {
     ///
     /// `scrollsToBottom` はポップオーバーの `ScrollView` を末尾まで送ってから撮る。
     /// 折り返しの下にあるセクション（節約のヒント）は、そうしないと絵に写らない。
-    private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared,
-                                  scrollsToBottom: Bool = false) throws -> Data {
-        let view = NSHostingView(rootView: composition(store: store, updater: updater, now: Date()))
+    private static func renderPNG(
+        store: UsageStore,
+        updater: UpdateChecker = .shared,
+        scrollsToBottom: Bool = false,
+        initiallyShowsMoreMenu: Bool = false
+    ) throws -> Data {
+        let view = NSHostingView(rootView: composition(
+            store: store,
+            updater: updater,
+            now: fixtureNow,
+            initiallyShowsMoreMenu: initiallyShowsMoreMenu
+        ))
         view.frame = CGRect(origin: .zero, size: canvas)
         return try capture(view, size: canvas, scrollsToBottom: scrollsToBottom)
     }
@@ -237,6 +354,9 @@ public enum ScreenshotRenderer {
         var size = hosting.fittingSize
         if size.width <= 0 { size.width = probeSize.width }
         if size.height <= 0 { size.height = probeSize.height }
+        // CI とローカルで fittingSize が 0.5pt ずれると SnapshotTesting がサイズ不一致で落ちる。
+        size.width = ceil(size.width)
+        size.height = ceil(size.height)
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.layoutSubtreeIfNeeded()
 
@@ -321,6 +441,8 @@ public enum ScreenshotRenderer {
         defaults.set(false, forKey: "analyticsConsent")
         defaults.set(true, forKey: "analyticsConsentAnswered")
         defaults.set(DisplayCurrency.usd.rawValue, forKey: Money.currencyKey)
+        defaults.removeObject(forKey: Money.rateKey)
+        defaults.removeObject(forKey: Money.rateDateKey)
         // UsageStore は集計期間とチャート形式を UserDefaults から復元する。プロパティ経由で
         // 変えると retok の再解析が走ってスピナーが写るため、初期化前にキーを直接書く。
         defaults.set(reportPeriod.rawValue, forKey: UsageStore.reportPeriodKey)
@@ -334,6 +456,8 @@ public enum ScreenshotRenderer {
         settings.budgetAlertStyle = .notification
         // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
         settings.costSourceMode = .sideBySide
+        // 通貨も毎回戻す（JPY 画面のあとで $ / ¥ が混ざるのを防ぐ）。
+        settings.displayCurrency = .usd
         // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
         settings.adaptiveRefreshEnabled = true
         settings.activityAnimationEnabled = true
@@ -345,10 +469,19 @@ public enum ScreenshotRenderer {
 
     /// メニューバー帯とポップオーバーをデスクトップ風の背景に合成した 1 枚。
     /// ポップオーバー本体は実物の `PopoverView` そのままで、枠だけがこのファイルの飾り。
-    private static func composition(store: UsageStore, updater: UpdateChecker, now: Date) -> some View {
+    private static func composition(
+        store: UsageStore,
+        updater: UpdateChecker,
+        now: Date,
+        initiallyShowsMoreMenu: Bool = false
+    ) -> some View {
         VStack(spacing: 0) {
             menuBar(now: now)
-            popoverCard(store: store, updater: updater)
+            popoverCard(
+                store: store,
+                updater: updater,
+                initiallyShowsMoreMenu: initiallyShowsMoreMenu
+            )
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 8)
                 .padding(.trailing, 24)
@@ -399,9 +532,17 @@ public enum ScreenshotRenderer {
     }
 
     /// ポップオーバーの器（角丸・縁・影）。NSPopover の見た目を絵の上で再現する。
-    private static func popoverCard(store: UsageStore, updater: UpdateChecker) -> some View {
+    private static func popoverCard(
+        store: UsageStore,
+        updater: UpdateChecker,
+        initiallyShowsMoreMenu: Bool = false
+    ) -> some View {
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        return PopoverView(store: store, updater: updater)
+        return PopoverView(
+            store: store,
+            updater: updater,
+            initiallyShowsMoreMenu: initiallyShowsMoreMenu
+        )
             .background(Color(nsColor: .windowBackgroundColor))
             .clipShape(shape)
             .overlay(shape.strokeBorder(.white.opacity(0.12)))
@@ -412,15 +553,18 @@ public enum ScreenshotRenderer {
 
     /// 実データを読まずに描くための固定データ。日付だけは「今日」を基準にずらすので、
     /// ヒーローの金額（今日のコスト）が常に埋まる。
-    public static func fixtureStore() -> UsageStore {
+    ///
+    /// `period` を渡すと日別・`periodDays` をその暦窓に合わせる（期間切替の VRT 用）。
+    /// 省略時は README 用の直近 7 日（`reportDays`）のまま。
+    public static func fixtureStore(period: ReportPeriod? = nil) -> UsageStore {
         let store = UsageStore(costDrivers: [CursorCostDriver(), CodexCostDriver()])
-        store.report = fixtureReport()
+        store.report = fixtureReport(period: period)
         store.budgetSpend = budgetSpend
         // Cursor（二次ソース、TF-0032）。ヒーロー合計と内訳キャプションに出る今日ぶんだけ積む。
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
         // モデル別内訳は「節約のヒント」の Cursor 由来（TF-0078）の入力でもある。
         store.driverModelByID = ["cursor": cursorModelCosts]
-        store.lastUpdated = Date()
+        store.lastUpdated = fixtureNow
         return store
     }
 
@@ -489,17 +633,30 @@ public enum ScreenshotRenderer {
     ]
 
     public static func fixtureReport(
+        period: ReportPeriod? = nil,
         topSessions: [RetokReport.TopSession] = [],
         advice: [RetokReport.Advice] = fixtureAdvice
     ) -> RetokReport {
-        var daily: [String: RetokReport.DailyCost] = [:]
-        for (offset, cost) in dailyCosts.reversed().enumerated() {
-            daily[dateString(daysAgo: offset)] = RetokReport.DailyCost(cost: cost,
-                                                                      output: Int(cost * 780))
+        let dailyCostsByDate: [String: Double]
+        let periodDays: Int
+        if let period {
+            let built = periodFixtureDaily(period)
+            dailyCostsByDate = built.daily
+            periodDays = built.days
+        } else {
+            var rolling: [String: Double] = [:]
+            for (offset, cost) in dailyCosts.reversed().enumerated() {
+                rolling[dateString(daysAgo: offset)] = cost
+            }
+            dailyCostsByDate = rolling
+            periodDays = reportDays
         }
-        let total = dailyCosts.reduce(0, +)
+        let daily = dailyCostsByDate.mapValues { cost in
+            RetokReport.DailyCost(cost: cost, output: Int(cost * 780))
+        }
+        let total = dailyCostsByDate.values.reduce(0, +)
         return RetokReport(
-            periodDays: reportDays,
+            periodDays: periodDays,
             filesScanned: 214,
             totals: RetokReport.Totals(cost: total, input: 1_284_000, output: 96_400,
                                        cacheRead: 18_900_000, cacheWrite: 2_150_000,
@@ -518,10 +675,70 @@ public enum ScreenshotRenderer {
         )
     }
 
-    /// 集計キーの日付文字列。書式は `UsageStore` に合わせる（ずれるとヒーローが「–」になる）。
+    /// 期間ピッカー用の日別フィクスチャ。`fixtureNow` 基準の暦窓に合わせ、
+    /// 今年は月初だけ・今日は 1 本、のように軸ラベルが期間の意味を持つようにする。
+    private static func periodFixtureDaily(
+        _ period: ReportPeriod
+    ) -> (daily: [String: Double], days: Int) {
+        let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+        let window = UsageStore.reportWindow(
+            period: period, weekStart: .monday, endingOn: fixtureNow, timeZone: tokyo)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = tokyo
+        let todayCost = dailyCosts.last ?? 12.34
+
+        switch period {
+        case .today:
+            return ([dateString(daysAgo: 0): todayCost], window.days)
+
+        case .thisWeek:
+            // 暦の今週。棒の本数は曜日で変わるが、金額パターンは `dailyCosts` の末尾から充てる。
+            var daily: [String: Double] = [:]
+            for offset in 0..<window.days {
+                let cost = dailyCosts[dailyCosts.count - 1 - offset]
+                daily[dateString(daysAgo: offset)] = cost
+            }
+            return (daily, window.days)
+
+        case .thisMonth:
+            // 月初〜今日。10 本以下なら軸は全日ラベル（`xAxisShortDates`）。
+            var daily: [String: Double] = [:]
+            for offset in 0..<window.days {
+                let pattern = dailyCosts[offset % dailyCosts.count]
+                daily[dateString(daysAgo: offset)] = offset == 0 ? todayCost : pattern
+            }
+            return (daily, window.days)
+
+        case .thisYear:
+            // 月初だけにコストを置き、「1月」「2月」…と軸が分かれて見えるようにする。
+            // 日別を足すと棒が密集してラベルが潰れるので、年表示では月初に限定する。
+            // ただしヒーローは今日キーを見るので、今日ぶんは必ず残す。
+            var daily: [String: Double] = [:]
+            let year = calendar.component(.year, from: fixtureNow)
+            let monthCosts: [Int: Double] = [
+                1: 42, 2: 55, 3: 48, 4: 71, 5: 63, 6: 88, 7: 95, 8: 110
+            ]
+            for (month, cost) in monthCosts {
+                let components = DateComponents(year: year, month: month, day: 1)
+                guard let date = calendar.date(from: components) else { continue }
+                guard date <= fixtureNow else { continue }
+                // UsageStore.dateString は Calendar.current（CI では UTC 等）なので、
+                // 東京の月初 0:00 が前日に落ちる。フィクスチャキーは東京暦で固定する。
+                daily[LocalDay.string(from: date, calendar: calendar)] = cost
+            }
+            daily[dateString(daysAgo: 0)] = todayCost
+            return (daily, window.days)
+        }
+    }
+
+    /// 集計キーの日付文字列。基準は壁時計ではなく `fixtureNow`（VRT / ui-preview の
+    /// ピクセルを日々ずらさない）。タイムゾーンも Asia/Tokyo に固定し、CI（UTC）で
+    /// 月初が前日キーになるのを防ぐ。
     public static func dateString(daysAgo: Int) -> String {
-        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
-        return UsageStore.dateString(date)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let date = calendar.date(byAdding: .day, value: -daysAgo, to: fixtureNow) ?? fixtureNow
+        return LocalDay.string(from: date, calendar: calendar)
     }
 }
 #endif

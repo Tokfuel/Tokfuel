@@ -3,7 +3,7 @@ id: Settings-01-open
 title: ポップオーバーから設定を開ける
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -18,7 +18,7 @@ status: ready
   - ホームから設定を開ける
   - 開いたウィンドウが Tokfuel 設定である
 - **VRT**
-  - 設定ウィンドウの既定状態が、プレビュー用フィクスチャとして固定されている
+  - 画面 `settings` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -30,4 +30,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

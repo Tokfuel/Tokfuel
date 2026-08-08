@@ -3,7 +3,7 @@ id: Settings-06-cost-source-claude-only
 title: コストのソースを Claude のみにできる
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,8 +15,7 @@ status: ready
 - **E2E**
   - Claude のみのとき、ホームに Claude 以外のソース金額が主表示されない
 - **VRT**
-  - コストソースが Claude のみのときのホームが、プレビュー用フィクスチャとして固定されている
-  - コストソースが Claude のみのときの設定画面が、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-claude-only`、`settings-claude-only` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -28,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

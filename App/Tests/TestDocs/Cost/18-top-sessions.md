@@ -3,7 +3,7 @@ id: Cost-18-top-sessions
 title: 高コストのセッション一覧が表示される
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -16,7 +16,7 @@ status: ready
   - 高コストのセッションに行が見える
   - 各行にタイトルと金額が見える
 - **VRT**
-  - 高コストのセッションが見えるホーム末尾の状態が、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-sessions` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -28,4 +28,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

@@ -3,7 +3,7 @@ id: Cost-21-advice-expand
 title: 節約のヒントを展開できる
 primary_domain: Cost
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -15,7 +15,7 @@ status: ready
 - **E2E**
   - ヒント行を操作すると詳細テキストが見える
 - **VRT**
-  - 節約のヒントを開いた状態が、プレビュー用フィクスチャとして固定されている
+  - 画面 `popover-advice-expanded` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -27,4 +27,4 @@ status: ready
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）

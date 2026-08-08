@@ -9,8 +9,8 @@
         "archived": 0,
         "done": 0,
         "ideation": 0,
-        "in-progress": 0,
-        "ready": 18,
+        "in-progress": 1,
+        "ready": 17,
         "review": 0
       },
       "done": 0,
@@ -25,8 +25,8 @@
         "archived": 0,
         "done": 0,
         "ideation": 0,
-        "in-progress": 0,
-        "ready": 26,
+        "in-progress": 6,
+        "ready": 20,
         "review": 0
       },
       "done": 0,
@@ -41,8 +41,8 @@
         "archived": 0,
         "done": 0,
         "ideation": 0,
-        "in-progress": 0,
-        "ready": 18,
+        "in-progress": 2,
+        "ready": 16,
         "review": 0
       },
       "done": 0,
@@ -57,8 +57,8 @@
         "archived": 0,
         "done": 0,
         "ideation": 0,
-        "in-progress": 0,
-        "ready": 33,
+        "in-progress": 2,
+        "ready": 31,
         "review": 0
       },
       "done": 0,
@@ -73,8 +73,8 @@
         "archived": 0,
         "done": 0,
         "ideation": 0,
-        "in-progress": 0,
-        "ready": 37,
+        "in-progress": 10,
+        "ready": 27,
         "review": 0
       },
       "done": 0,
@@ -87,8 +87,8 @@
     "archived": 0,
     "done": 0,
     "ideation": 0,
-    "in-progress": 0,
-    "ready": 132,
+    "in-progress": 21,
+    "ready": 111,
     "review": 0
   },
   "rates": {
@@ -119,18 +119,18 @@
     "pr_link_rate": {
       "definition": "対応済みPR に pull リンクまたは #NNNN がある現行シナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 132,
-      "fraction": "0/132",
+      "fraction": "21/132",
       "label": "対応済み PR 紐付け率",
-      "numerator": 0,
-      "percent": "0.0%"
+      "numerator": 21,
+      "percent": "15.9%"
     },
     "started_coverage": {
       "definition": "status が in-progress / review / done のシナリオ数 / 現行シナリオ数（archived を除く）",
       "denominator": 132,
-      "fraction": "0/132",
+      "fraction": "21/132",
       "label": "着手カバレッジ",
-      "numerator": 0,
-      "percent": "0.0%"
+      "numerator": 21,
+      "percent": "15.9%"
     }
   },
   "total": 132

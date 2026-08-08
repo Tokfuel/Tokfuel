@@ -3,7 +3,7 @@ id: Settings-32-about-window
 title: About にバージョンとクレジットが見える
 primary_domain: Settings
 platforms: [macOS]
-status: ready
+status: in-progress
 ---
 
 ## シナリオ
@@ -16,7 +16,7 @@ About ウィンドウにバージョン、作者、retok や Frankfurter など�
   - About にバージョンが見える
   - クレジット表記が見える
 - **VRT**
-  - About ウィンドウが、プレビュー用フィクスチャとして固定されている
+  - 画面 `about` が、プレビュー用フィクスチャとして固定されている
 
 ## 経路
 
@@ -28,4 +28,4 @@ About ウィンドウにバージョン、作者、retok や Frankfurter など�
 
 ## 対応済みPR
 
-- （未作成）
+- [#159](https://github.com/Tokfuel/Tokfuel/pull/159) Point-Free VRT（設定フラグ画面パターンのフィクスチャ固定）
