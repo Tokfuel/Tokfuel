@@ -13,7 +13,7 @@
 
 ## コアシナリオ（6 本）
 
-まずは次の 6 本を `App/Tests/E2E/run-core6.sh` がまとめて回します。CI 上の表示名は **E2E メニューバー** です。
+まずは次の 6 本を `App/Tests/E2E/run-core6.sh` がまとめて回します。CI 上の表示名は **E2E Core** です。
 
 - `MenuBar-01-open-home`
 - `Cost-01-chart-style`
@@ -87,6 +87,6 @@ CI で落ちたときは `App/Tests/E2E/comment-failure.sh` が次を PR コメ�
 
 ### CI
 
-[`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。GitHub 上のチェック名は **E2E メニューバー** です。
+[`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml) が macos-15 で同スクリプトを実行します。GitHub 上のチェック名は **E2E Core** / **E2E Budget** / **E2E Cost** / **E2E Cursor** / **E2E Menu Bar** / **E2E Settings** です。
 
 PR に `e2e 🧪` ラベルを付けると再実行します（起動後にラベルは外れるので、何度でも付け直せます）。失敗コメントは前回分を hide（outdated）してから新規投稿します。

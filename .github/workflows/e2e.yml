@@ -1,4 +1,4 @@
-name: E2E メニューバー
+name: E2E
 
 # TestDocs シナリオを、実際のメニューバー操作で通す（macos-15）。
 # 失敗時は証拠（画面・挙動 GIF・前回成功画面）を orphan ブランチへ載せ、PR コメントする。
@@ -67,14 +67,26 @@ jobs:
           fi
 
   e2e:
-    name: E2E ${{ matrix.suite }}
+    name: E2E ${{ matrix.name }}
     needs: gate
     if: needs.gate.outputs.run == 'true'
     runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
-        suite: [core6, Budget, Cost, Cursor, MenuBar, Settings]
+        include:
+          - suite: core6
+            name: Core
+          - suite: Budget
+            name: Budget
+          - suite: Cost
+            name: Cost
+          - suite: Cursor
+            name: Cursor
+          - suite: MenuBar
+            name: Menu Bar
+          - suite: Settings
+            name: Settings
     permissions:
       contents: write
       pull-requests: write
