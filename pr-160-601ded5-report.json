@@ -11,151 +11,95 @@
     "tokfuel.settings"
   ],
   "completedScenarios" : [
-    "Cost-01-chart-style",
-    "Cost-02-period-switch",
-    "Cost-03-model-list",
-    "Cost-04-loading-parse",
-    "Cost-05-stale-while-revalidate",
-    "Cost-06-retok-error",
-    "Cost-07-chart-multi-source-legend",
-    "Cost-08-chart-caption-total",
-    "Cost-09-chart-caption-prompt-unit",
-    "Cost-10-cumulative-budget-line",
-    "Cost-11-cumulative-month-projection",
-    "Cost-12-jpy-formatting",
-    "Cost-13-side-by-side-caption",
-    "Cost-14-cursor-only-label",
-    "Cost-15-unavailable-hero-dash"
+    "Budget-01-popover-daily-row",
+    "Budget-02-popover-monthly-row",
+    "Budget-03-popover-hidden-when-off"
   ],
-  "error" : "not found: picker モデル別の出し方",
+  "error" : "assert failed: 平常状態の「消費 \/ 上限」表示が見当たらない",
   "expectedScreens" : [
     "popover"
   ],
-  "explanation" : "Cost-16-model-breakdown-combined で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
-  "failedScenario" : "Cost-16-model-breakdown-combined",
+  "explanation" : "Budget-04-meter-ok-state の完了条件（Then）を満たしませんでした。表示内容か選択状態が期待と異なります。",
+  "failedScenario" : "Budget-04-meter-ok-state",
   "ok" : false,
   "scenarios" : [
     {
-      "elapsedMs" : 4213,
-      "id" : "Cost-01-chart-style",
+      "elapsedMs" : 2046,
+      "id" : "Budget-01-popover-daily-row",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 808,
-      "id" : "Cost-02-period-switch",
+      "elapsedMs" : 70,
+      "id" : "Budget-02-popover-monthly-row",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 29,
-      "id" : "Cost-03-model-list",
+      "elapsedMs" : 55,
+      "id" : "Budget-03-popover-hidden-when-off",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 38,
-      "id" : "Cost-04-loading-parse",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 43,
-      "id" : "Cost-05-stale-while-revalidate",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 37,
-      "id" : "Cost-06-retok-error",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 717,
-      "id" : "Cost-07-chart-multi-source-legend",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 52,
-      "id" : "Cost-08-chart-caption-total",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 44,
-      "id" : "Cost-09-chart-caption-prompt-unit",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 1881,
-      "id" : "Cost-10-cumulative-budget-line",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 1988,
-      "id" : "Cost-11-cumulative-month-projection",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 8635,
-      "id" : "Cost-12-jpy-formatting",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 2804,
-      "id" : "Cost-13-side-by-side-caption",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 7174,
-      "id" : "Cost-14-cursor-only-label",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 1353,
-      "id" : "Cost-15-unavailable-hero-dash",
-      "status" : "passed"
-    },
-    {
-      "elapsedMs" : 2066,
-      "error" : "not found: picker モデル別の出し方",
-      "id" : "Cost-16-model-breakdown-combined",
+      "elapsedMs" : 85,
+      "error" : "assert failed: 平常状態の「消費 \/ 上限」表示が見当たらない",
+      "id" : "Budget-04-meter-ok-state",
       "status" : "failed"
     },
     {
-      "id" : "Cost-17-model-breakdown-separated",
+      "id" : "Budget-05-meter-warning-state",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-18-top-sessions",
+      "id" : "Budget-06-meter-over-state",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-19-session-estimated-badge",
+      "id" : "Budget-07-meter-warn-marker",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-20-advice-section",
+      "id" : "Budget-08-notification-warning",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-21-advice-expand",
+      "id" : "Budget-09-notification-over",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-22-advice-copy-prompt",
+      "id" : "Budget-10-alert-window-warning",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-23-advice-source-badge",
+      "id" : "Budget-11-alert-window-over",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-24-csv-export-daily",
+      "id" : "Budget-12-alert-open-settings",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-25-csv-export-monthly",
+      "id" : "Budget-13-alert-close",
       "status" : "skipped"
     },
     {
-      "id" : "Cost-26-csv-export-disabled",
+      "id" : "Budget-14-alert-both-channels",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-15-daily-vs-monthly-independent",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-16-side-by-side-still-combined",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-17-auth-on-budget-set",
+      "status" : "skipped"
+    },
+    {
+      "id" : "Budget-18-period-reset-notify",
       "status" : "skipped"
     }
   ],
-  "updatedAt" : "2026-08-08T15:59:02Z"
+  "updatedAt" : "2026-08-08T15:59:28Z"
 }
