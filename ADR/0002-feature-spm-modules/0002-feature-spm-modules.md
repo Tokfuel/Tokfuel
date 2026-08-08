@@ -117,6 +117,34 @@ flowchart LR
 
 `Tokfuel*` names may be finalized at implementation time. The diagrams mean: split by feature to cut collisions, and keep source-specific content out of the shared parts. Layer correctness is not drawn as SPM edges.
 
+### Examples (shared parts vs features)
+
+Close to the UIKit “micro ViewController” idea, but here the unit is a **feature SPM target**, not child view controllers. The parent only assembles.
+
+**Example 1: Add a Cursor row to the popover**
+
+| | Closer to today | What this ADR aims for |
+|--|-----------------|------------------------|
+| Where you edit | Add Cursor `Text` / colors / labels directly in `PopoverView.swift` | Put a `CursorCostRow`-like view in `TokfuelCursor`; `PopoverView` only lays it out |
+| Collisions | Easy to collide with a Budget chrome PR in the same `PopoverView` | A Cursor PR tends to stay inside `TokfuelCursor` |
+
+**Example 2: Fix today’s Cursor cost display**
+
+| | Closer to today | What this ADR aims for |
+|--|-----------------|------------------------|
+| Where you edit | `UsageStore` grows Cursor-specific math and display properties | Cursor totals live in `TokfuelCursor`; `UsageStore` only sums Claude + Cursor + … and wires them |
+| Collisions | Easy to intersect Claude aggregation work in a huge `UsageStore` | Cursor total fixes tend to stay in the feature |
+
+**What stays shared vs what moves into a feature**
+
+| Keep shared (layout / sum / frame) | Move into a feature (source-specific) |
+|------------------------------------|---------------------------------------|
+| Popover frame, tabs, refresh control | “Cursor (estimated)” copy, color, row layout |
+| Display of all-source total spend | Claude / retok session list order and badges |
+| `UsageStore` wiring that sums each feature’s values | Cursor dashboard fetch, Codex session reads |
+
+Exact type names are placeholders. The point is: a Cursor-fixing PR should not have to dig deep into `PopoverView` / `UsageStore`.
+
 ### Summary of alternatives
 
 Trying to get both collision reduction (feature splits) and dependency enforcement (layer targets) in one architecture still leaves `UsageStore` totals and `PopoverView` frame UI shared, so a hybrid does not deliver both. Because they could not be reconciled, **prefer parallel-PR collision reduction and leave layers to convention + AI**. Layers-only still funnels work into Store / UI. Extreme fine layering is too heavy at this size.
