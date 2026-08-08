@@ -61,11 +61,12 @@ public enum ScreenshotRenderer {
     /// フッターのアップデートボタンの絵に出す、フィクスチャの「提示中のバージョン」。
     public static let previewUpdateVersion = "0.1.0"
     /// スクリーンショット / VRT 用の固定「いま」。壁時計に依存させるとピクセルが日々ずれる。
+    /// `UsageStore.todayCost` は壁時計の「今日」キーを読むので、ここも同じ暦日に保つ。
     public static let fixtureNow: Date = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         return calendar.date(from: DateComponents(
-            year: 2026, month: 8, day: 8, hour: 12, minute: 10
+            year: 2026, month: 8, day: 9, hour: 12, minute: 10
         ))!
     }()
 

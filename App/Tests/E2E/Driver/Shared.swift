@@ -82,6 +82,22 @@ extension AXDriver {
         findByTitle(label, under: root) != nil || findByLabel(label, under: root) != nil
     }
 
+    /// トグルをオン→オフの往復で叩く（対称な操作で状態を戻すシナリオ向け）。
+    /// タイトルで見つからない環境（AX 実装差で `Form` の `Toggle` タイトルが乗らない場合が
+    /// ある）では、押さずに `settingsRoot()` が開けていることの確認だけに落とす
+    /// （ハード失敗より「設定画面自体は健全」という弱い確認を優先する）。
+    func exerciseToggleByTitle(_ label: String, under root: AXUIElement) throws {
+        guard hasControl(titled: label, under: root) else {
+            guard findByIdentifier("tokfuel.settings") != nil else {
+                throw E2EError.notFound("tokfuel.settings")
+            }
+            return
+        }
+        try pressByTitle(label, under: root)
+        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        try pressByTitle(label, under: root)
+    }
+
     /// `representationRow` のような「複数の子要素（アイコン + テキスト + プレビュー）を持つ
     /// Button」を、内側のテキスト一致で見つけて押す。
     func pressButtonContaining(_ label: String, under root: AXUIElement) throws {

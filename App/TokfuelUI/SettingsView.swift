@@ -69,9 +69,11 @@ public struct SettingsView: View {
     private var generalSection: some View {
         Section {
             Toggle("ログイン時に自動起動", isOn: $settings.launchAtLogin)
+                .accessibilityIdentifier("tokfuel.settings.launch-at-login")
             Picker("外観", selection: $settings.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.appearance")
             Picker("通貨", selection: $settings.displayCurrency) {
                 ForEach(DisplayCurrency.allCases) {
                     Text($0 == .usd ? "$ ドル" : "¥ 円").tag($0)
@@ -88,6 +90,7 @@ public struct SettingsView: View {
             Picker("モデル別の出し方", selection: $settings.costModelBreakdownMode) {
                 ForEach(CostModelBreakdownMode.allCases) { Text($0.label).tag($0) }
             }
+            .accessibilityIdentifier("tokfuel.settings.model-breakdown")
             Picker("週の始まり", selection: $settings.weekStart) {
                 ForEach(WeekStart.allCases) { Text($0.label).tag($0) }
             }

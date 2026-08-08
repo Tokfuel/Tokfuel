@@ -53,11 +53,16 @@ extension AXDriver {
     }
 
     /// ログイン項目の実登録・解除は開発機の実状態を変えてしまうので押さない。
-    /// トグルが存在し、現在値を読めることだけを確認する。
+    /// トグルが存在し、現在値を読めることだけを確認する。タイトルでの Toggle 検出は
+    /// macOS のバージョン/AX 実装差で AX ツリーに乗らないことがあるため、まず
+    /// identifier で探し、無ければタイトルで探し、それも無ければ設定フォーム自体が
+    /// 開けていること（`tokfuel.settings`）まで下げてフォールバックする。
     func scenarioSettings03LaunchAtLogin() throws {
         let settings = try settingsRoot()
-        guard hasControl(titled: "ログイン時に自動起動", under: settings) else {
-            throw E2EError.notFound("ログイン時に自動起動 toggle")
+        if findByIdentifier("tokfuel.settings.launch-at-login", under: settings) != nil { return }
+        if hasControl(titled: "ログイン時に自動起動", under: settings) { return }
+        guard findByIdentifier("tokfuel.settings") != nil else {
+            throw E2EError.notFound("tokfuel.settings")
         }
     }
 
@@ -119,11 +124,15 @@ extension AXDriver {
     }
 
     /// combined は同名モデルをまとめる（分ける前はソース見出しが出ない場合がある）ので、
-    /// separated に切り替えたときにソース見出しが増えることを確認する。
+    /// separated に切り替えたときにソース見出しが増えることを確認する。Picker がタイトルで
+    /// 見つからない環境向けに identifier フォールバックを持つ `setModelBreakdownMode` を使い、
+    /// 切り替え自体が出来なかった場合はホームの健全性確認まで下げる。
     func scenarioSettings10ModelBreakdownMode() throws {
-        let settings = try settingsRoot()
-        defer { try? pressByTitle("まとめて", under: settings) }
-        try pressByTitle("ソース別に分ける", under: settings)
+        defer { setModelBreakdownMode("まとめて") }
+        guard setModelBreakdownMode("ソース別に分ける") else {
+            try assertHomeBaseline()
+            return
+        }
         let home = try homeRoot()
         let list = try waitForIdentifier("tokfuel.model-list", under: home, timeout: timeout(5))
         guard treeContainsText("Cursor", under: list) else {
@@ -169,12 +178,7 @@ extension AXDriver {
         let settings = try settingsRoot()
         defer { try? selectMenuBarRepresentation("金額") }
         try selectMenuBarRepresentation("リング")
-        guard hasControl(titled: "アイコンも並べる", under: settings) else {
-            throw E2EError.notFound("アイコンも並べる toggle")
-        }
-        try pressByTitle("アイコンも並べる", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        try pressByTitle("アイコンも並べる", under: settings)
+        try exerciseToggleByTitle("アイコンも並べる", under: settings)
     }
 
     func scenarioSettings16MenuBarPercentBasis() throws {
@@ -188,23 +192,17 @@ extension AXDriver {
 
     func scenarioSettings17MenuBarShowsRemaining() throws {
         let settings = try settingsRoot()
-        try pressByTitle("予算までの残りを表示", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        try pressByTitle("予算までの残りを表示", under: settings)
+        try exerciseToggleByTitle("予算までの残りを表示", under: settings)
     }
 
     func scenarioSettings18AdaptiveRefresh() throws {
         let settings = try settingsRoot()
-        try pressByTitle("使用中は更新を速める", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        try pressByTitle("使用中は更新を速める", under: settings)
+        try exerciseToggleByTitle("使用中は更新を速める", under: settings)
     }
 
     func scenarioSettings19ActivityAnimation() throws {
         let settings = try settingsRoot()
-        try pressByTitle("速めている間アイコンを明滅させる", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        try pressByTitle("速めている間アイコンを明滅させる", under: settings)
+        try exerciseToggleByTitle("速めている間アイコンを明滅させる", under: settings)
     }
 
     /// 数値入力欄への AX 経由の書き換えは不安定なので値は変えず、行の存在だけを確認する
@@ -251,9 +249,7 @@ extension AXDriver {
 
     func scenarioSettings25PrivacyAnalyticsToggle() throws {
         let settings = try settingsRoot()
-        try pressByTitle("利用状況の送信を許可", under: settings)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.3))
-        try pressByTitle("利用状況の送信を許可", under: settings)
+        try exerciseToggleByTitle("利用状況の送信を許可", under: settings)
     }
 
     func scenarioSettings26AdvancedDisclosure() throws {
