@@ -11,107 +11,210 @@
     "tokfuel.settings"
   ],
   "completedScenarios" : [
-    "Budget-01-popover-daily-row",
-    "Budget-02-popover-monthly-row",
-    "Budget-03-popover-hidden-when-off",
-    "Budget-04-meter-ok-state",
-    "Budget-05-meter-warning-state",
-    "Budget-06-meter-over-state",
-    "Budget-07-meter-warn-marker",
-    "Budget-08-notification-warning",
-    "Budget-09-notification-over"
+    "MenuBar-01-open-home",
+    "MenuBar-02-close-outside",
+    "MenuBar-03-toggle-reopen",
+    "MenuBar-04-hero-today-cost",
+    "MenuBar-05-footer-last-updated",
+    "MenuBar-06-footer-reload",
+    "MenuBar-07-footer-quit",
+    "MenuBar-08-open-about",
+    "MenuBar-09-status-amount-today",
+    "MenuBar-10-status-amount-month",
+    "MenuBar-11-status-amount-both",
+    "MenuBar-12-status-prompts",
+    "MenuBar-13-status-percent",
+    "MenuBar-14-status-ring",
+    "MenuBar-15-status-ring-and-value",
+    "MenuBar-16-status-icon-only",
+    "MenuBar-17-gauge-shape-ring",
+    "MenuBar-18-gauge-shape-tank",
+    "MenuBar-19-ring-with-icon",
+    "MenuBar-20-percent-basis-budget",
+    "MenuBar-21-percent-basis-average",
+    "MenuBar-22-shows-remaining",
+    "MenuBar-23-side-by-side-title",
+    "MenuBar-24-unavailable-dash",
+    "MenuBar-25-budget-icon-warning",
+    "MenuBar-26-budget-icon-over",
+    "MenuBar-27-tooltip",
+    "MenuBar-28-adaptive-glow",
+    "MenuBar-29-update-button-offer",
+    "MenuBar-30-update-skip-version",
+    "MenuBar-31-update-release-page",
+    "MenuBar-32-update-retry",
+    "MenuBar-33-open-on-launch-reload"
   ],
-  "error" : "not found: picker 知らせ方",
   "expectedScreens" : [
     "popover"
   ],
-  "explanation" : "Budget-10-alert-window-warning で必須要素が見つかりませんでした。セレクタと画面状態を確認してください。",
-  "failedScenario" : "Budget-10-alert-window-warning",
-  "ok" : false,
+  "ok" : true,
   "scenarios" : [
     {
-      "elapsedMs" : 1972,
-      "id" : "Budget-01-popover-daily-row",
+      "elapsedMs" : 1831,
+      "id" : "MenuBar-01-open-home",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 51,
-      "id" : "Budget-02-popover-monthly-row",
+      "elapsedMs" : 1030,
+      "id" : "MenuBar-02-close-outside",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 55,
-      "id" : "Budget-03-popover-hidden-when-off",
+      "elapsedMs" : 14212,
+      "id" : "MenuBar-03-toggle-reopen",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 45,
-      "id" : "Budget-04-meter-ok-state",
+      "elapsedMs" : 52,
+      "id" : "MenuBar-04-hero-today-cost",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 57,
-      "id" : "Budget-05-meter-warning-state",
+      "elapsedMs" : 48,
+      "id" : "MenuBar-05-footer-last-updated",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 4890,
+      "id" : "MenuBar-06-footer-reload",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2061,
+      "id" : "MenuBar-07-footer-quit",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1532,
+      "id" : "MenuBar-08-open-about",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 6183,
+      "id" : "MenuBar-09-status-amount-today",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2808,
+      "id" : "MenuBar-10-status-amount-month",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1296,
+      "id" : "MenuBar-11-status-amount-both",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2486,
+      "id" : "MenuBar-12-status-prompts",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2753,
+      "id" : "MenuBar-13-status-percent",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2976,
+      "id" : "MenuBar-14-status-ring",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 3028,
+      "id" : "MenuBar-15-status-ring-and-value",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2898,
+      "id" : "MenuBar-16-status-icon-only",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 3014,
+      "id" : "MenuBar-17-gauge-shape-ring",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 3045,
+      "id" : "MenuBar-18-gauge-shape-tank",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 3002,
+      "id" : "MenuBar-19-ring-with-icon",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2991,
+      "id" : "MenuBar-20-percent-basis-budget",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 5313,
+      "id" : "MenuBar-21-percent-basis-average",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1440,
+      "id" : "MenuBar-22-shows-remaining",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 2702,
+      "id" : "MenuBar-23-side-by-side-title",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1106,
+      "id" : "MenuBar-24-unavailable-dash",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 60,
+      "id" : "MenuBar-25-budget-icon-warning",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 63,
+      "id" : "MenuBar-26-budget-icon-over",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1,
+      "id" : "MenuBar-27-tooltip",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1971,
+      "id" : "MenuBar-28-adaptive-glow",
+      "status" : "passed"
+    },
+    {
+      "elapsedMs" : 1055,
+      "id" : "MenuBar-29-update-button-offer",
       "status" : "passed"
     },
     {
       "elapsedMs" : 81,
-      "id" : "Budget-06-meter-over-state",
+      "id" : "MenuBar-30-update-skip-version",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 58,
-      "id" : "Budget-07-meter-warn-marker",
+      "elapsedMs" : 82,
+      "id" : "MenuBar-31-update-release-page",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 59,
-      "id" : "Budget-08-notification-warning",
+      "elapsedMs" : 79,
+      "id" : "MenuBar-32-update-retry",
       "status" : "passed"
     },
     {
-      "elapsedMs" : 65,
-      "id" : "Budget-09-notification-over",
+      "elapsedMs" : 2301,
+      "id" : "MenuBar-33-open-on-launch-reload",
       "status" : "passed"
-    },
-    {
-      "elapsedMs" : 3971,
-      "error" : "not found: picker 知らせ方",
-      "id" : "Budget-10-alert-window-warning",
-      "status" : "failed"
-    },
-    {
-      "id" : "Budget-11-alert-window-over",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-12-alert-open-settings",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-13-alert-close",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-14-alert-both-channels",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-15-daily-vs-monthly-independent",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-16-side-by-side-still-combined",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-17-auth-on-budget-set",
-      "status" : "skipped"
-    },
-    {
-      "id" : "Budget-18-period-reset-notify",
-      "status" : "skipped"
     }
   ],
-  "updatedAt" : "2026-08-08T16:24:00Z"
+  "updatedAt" : "2026-08-08T16:24:45Z"
 }
