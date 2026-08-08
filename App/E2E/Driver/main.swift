@@ -423,11 +423,14 @@ final class AXDriver {
             builder.sawIdentifier(id)
             return el
         }
-        // 前シナリオのクリックでホームパネルが閉じることがある。status item を押し直す。
+        // 前シナリオの操作でホームが閉じることがある。status item はトグルなので
+        // 開いていた場合は一度で閉じてしまう → 見つからなければもう一度押す。
         if id == "tokfuel.home", root == nil {
-            try clickStatusItem()
-            if let el = try? waitForIdentifier("tokfuel.home", under: app, timeout: timeout(8)) {
-                return el
+            for _ in 0..<2 {
+                try clickStatusItem()
+                if let el = try? waitForIdentifier("tokfuel.home", under: app, timeout: timeout(4)) {
+                    return el
+                }
             }
         }
         throw E2EError.notFound(uiDriftHint(id))
