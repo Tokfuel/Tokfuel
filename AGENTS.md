@@ -13,7 +13,8 @@
 各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。アプリ関連は
 [`App/`](App/) 配下に置く（本体 [`App/Tokfuel/`](App/Tokfuel/)、UT / IT
 [`App/Tests/`](App/Tests/)、シナリオ設計 [`App/TestDocs/`](App/TestDocs/)、通しテスト
-[`App/E2E/`](App/E2E/)）。
+[`App/E2E/`](App/E2E/)）。テスト観点の正本は [`App/TestDocs/`](App/TestDocs/) に置き、
+起票 → 実装 → ステータス更新の流れで進める（規範は同ディレクトリの `AGENTS.md`）。
 
 ## グラウンドルール（違反禁止）
 
@@ -60,8 +61,11 @@ swift test               # ユニットテスト（App/Tests、Swift Testing）
 swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
+シナリオと担保手段（UT&IT / VRT / E2E）の優先は
+[`App/TestDocs/coverage-strategy.md`](App/TestDocs/coverage-strategy.md) を見る。
+
 CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
-`App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
+`App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（Docs / Site
 のみの変更では走らない）。リリース構成のビルドは `Scripts/build.sh` / 配布フロー側で確認する。
 実行時に見える変更は、実アプリをインストールして観察する。
 `bash Scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
