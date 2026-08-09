@@ -26,6 +26,7 @@ import TokfuelCodex
 @MainActor
 public enum ScreenshotRenderer {
     /// 画像の論理サイズ (pt)。@2x で書き出すので PNG は 2 倍のピクセル数になる。
+    /// README / `--screenshot` のデスクトップ合成キャンバス。VRT の popover 本体は `popoverSize`。
     public static let canvas = CGSize(width: 640, height: 584)
     /// 描画が落ち着くまでランループを回す時間（秒）。
     public static let settleSeconds: TimeInterval = 0.6
@@ -141,16 +142,18 @@ public enum ScreenshotRenderer {
     }
 
     /// 撮影する全画面。ファイル名（拡張子なし）→ PNG データ。
-    /// - `popover`: メニューバー帯付きの合成（README と同じ絵・ダーク）
-    /// - `popover-light`: ポップオーバー単体をライト外観で撮った状態。フッターの
+    /// VRT / ui-preview の `popover*` は本体のみ（`renderStandalone`）。デスクトップ＋
+    /// メニューバー帯の合成は `--screenshot`（README 用）だけが使う。
+    /// - `popover`: ポップオーバー本体（ダーク）
+    /// - `popover-light`: 同じ本体をライト外観で撮った状態。フッターの
     ///   `chromeTint`（ライトは tertiary）と、ダーク既定の `popover` を見比べる用（TF-0096）
-    /// - `popover-update`: 同じ合成に、フッターがアップデートボタンを提示中の状態を重ねたもの
+    /// - `popover-update`: フッターがアップデートボタンを提示中の状態
     /// - `popover-cursor-degraded`: Cursor の使用量 API に届かず、$0 の意味を注意書きで
     ///   断っている状態
     /// - `popover-cursor-signin`: 同じ注意書きに、サインインし直すボタンが付いた状態
-    /// - `popover-sessions`: ポップオーバー単体を末尾までスクロールした状態
+    /// - `popover-sessions`: 末尾までスクロールした状態
     ///   （折り返しの下にある「高コストのセッション」を Claude + Cursor で写す）
-    /// - `popover-advice`: 同じ合成を末尾までスクロールした状態（「節約のヒント」は
+    /// - `popover-advice`: 末尾までスクロールした状態（「節約のヒント」は
     ///   最初の 1 画面に入らないため、ここでしか見えない）
     /// - `popover-advice-expanded`: ヒントを開いた状態。詳細と「プロンプトをコピー」は
     ///   展開しないと出ないので、折り畳んだ `popover-advice` では絵に写らない
@@ -197,49 +200,46 @@ public enum ScreenshotRenderer {
         let consentProbeSize = CGSize(width: 460, height: 400)
         switch name {
         case "popover":
-            return try renderPNG(store: fixtureStore())
+            return try renderPopover(store: fixtureStore())
         case "popover-light":
-            return try renderStandalone(
-                PopoverView(store: fixtureStore()),
-                probeSize: popoverSize, colorScheme: .light)
+            return try renderPopover(store: fixtureStore(), colorScheme: .light)
         case "popover-update":
-            return try renderPNG(
+            return try renderPopover(
                 store: fixtureStore(),
                 updater: .preview(version: previewUpdateVersion))
         case "popover-cursor-degraded":
-            return try renderPNG(store: degradedCursorStore())
+            return try renderPopover(store: degradedCursorStore())
         case "popover-cursor-signin":
-            return try renderPNG(store: degradedCursorStore(reason: .credentialsRejected))
+            return try renderPopover(store: degradedCursorStore(reason: .credentialsRejected))
         case "popover-sessions":
-            return try renderStandalone(
-                PopoverView(store: sessionsFixtureStore()),
-                probeSize: popoverSize, scrollsToBottom: true)
+            return try renderPopover(store: sessionsFixtureStore(), scrollsToBottom: true)
         case "popover-advice":
-            return try renderPNG(store: fixtureStore(), scrollsToBottom: true)
+            return try renderPopover(store: fixtureStore(), scrollsToBottom: true)
         case "popover-advice-expanded":
-            return try renderStandalone(
-                PopoverView(store: fixtureStore(), initiallyExpandsAdvice: true),
-                probeSize: popoverSize, scrollsToBottom: true)
+            return try renderPopover(
+                store: fixtureStore(),
+                scrollsToBottom: true,
+                initiallyExpandsAdvice: true)
         case "popover-scrolled":
-            return try renderPNG(store: fixtureStore(), scrollsToBottom: true)
+            return try renderPopover(store: fixtureStore(), scrollsToBottom: true)
         case "popover-more-menu":
-            return try renderPNG(store: fixtureStore(), initiallyShowsMoreMenu: true)
+            return try renderPopover(store: fixtureStore(), initiallyShowsMoreMenu: true)
         case "popover-period-today":
-            return try renderPNG(store: makeStore(period: .today))
+            return try renderPopover(store: makeStore(period: .today))
         case "popover-period-week":
-            return try renderPNG(store: makeStore(period: .thisWeek))
+            return try renderPopover(store: makeStore(period: .thisWeek))
         case "popover-period-month":
-            return try renderPNG(store: makeStore(period: .thisMonth))
+            return try renderPopover(store: makeStore(period: .thisMonth))
         case "popover-period-year":
-            return try renderPNG(store: makeStore(period: .thisYear))
+            return try renderPopover(store: makeStore(period: .thisYear))
         case "popover-jpy":
-            return try renderPNG(store: makeStore(currency: .jpy))
+            return try renderPopover(store: makeStore(currency: .jpy))
         case "popover-claude-only":
-            return try renderPNG(store: makeStore(costSource: .claudeOnly))
+            return try renderPopover(store: makeStore(costSource: .claudeOnly))
         case "popover-combined":
-            return try renderPNG(store: makeStore(costSource: .combined))
+            return try renderPopover(store: makeStore(costSource: .combined))
         case "popover-cumulative":
-            return try renderPNG(store: makeStore(chartStyle: .cumulative))
+            return try renderPopover(store: makeStore(chartStyle: .cumulative))
         case "settings":
             return try renderStandalone(
                 SettingsView(store: makeStore()), probeSize: settingsSize)
@@ -301,15 +301,35 @@ public enum ScreenshotRenderer {
         return fixtureStore(period: period)
     }
 
-    /// フィクスチャを積んだポップオーバーを @2x で PNG にする。`updater` の既定は `.shared`
-    /// （`available` は nil のまま）なので、ボタンを出したい画面だけ `.preview(version:)` を渡す。
+    /// VRT / ui-preview 用。ポップオーバー本体だけを `popoverSize` で撮る。
+    /// デスクトップ＋メニューバー帯は画素を薄め精度を下げるのでここには載せない。
+    private static func renderPopover(
+        store: UsageStore,
+        updater: UpdateChecker = .shared,
+        scrollsToBottom: Bool = false,
+        initiallyExpandsAdvice: Bool = false,
+        initiallyShowsMoreMenu: Bool = false,
+        colorScheme: ColorScheme = .dark
+    ) throws -> Data {
+        try renderStandalone(
+            PopoverView(
+                store: store,
+                updater: updater,
+                initiallyExpandsAdvice: initiallyExpandsAdvice,
+                initiallyShowsMoreMenu: initiallyShowsMoreMenu
+            ),
+            probeSize: popoverSize,
+            scrollsToBottom: scrollsToBottom,
+            colorScheme: colorScheme
+        )
+    }
+
+    /// `--screenshot`（README 用）専用。メニューバー帯付きのデスクトップ合成を @2x で PNG にする。
+    /// VRT は `renderPopover` を使う。
     ///
     /// `ImageRenderer` ではなく `NSHostingView` を実際に描画させる。`ImageRenderer` は
     /// `ScrollView` の中身と AppKit 実装のコントロール（フッターの `Menu`・期間ピッカー）を
     /// 描けず、本文が空の絵になるため。
-    ///
-    /// `scrollsToBottom` はポップオーバーの `ScrollView` を末尾まで送ってから撮る。
-    /// 折り返しの下にあるセクション（節約のヒント）は、そうしないと絵に写らない。
     private static func renderPNG(
         store: UsageStore,
         updater: UpdateChecker = .shared,
@@ -535,10 +555,11 @@ public enum ScreenshotRenderer {
     }
     #endif
 
-    // MARK: - 合成（デスクトップ風の枠）
+    // MARK: - 合成（README / `--screenshot` 用のデスクトップ風の枠）
 
     /// メニューバー帯とポップオーバーをデスクトップ風の背景に合成した 1 枚。
     /// ポップオーバー本体は実物の `PopoverView` そのままで、枠だけがこのファイルの飾り。
+    /// VRT には使わない（本体のみの `renderPopover` を使う）。
     private static func composition(
         store: UsageStore,
         updater: UpdateChecker,
