@@ -10,9 +10,11 @@
 設定可能なメニューバーゲージを可視化する SwiftUI ネイティブの macOS メニューバーアプリ。
 フックも手動のトークン登録も要らず、これらのアプリがローカルに残しているデータを読むだけでよい。
 同じ Mac に Codex CLI（`~/.codex/sessions/`）や Cursor があれば、そのコストも推定する。ただし
-各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。ソースコードはすべて
-[`Tokfuel/Sources/`](Tokfuel/Sources/) にある。ファイル構成は README の
-[Architecture](README.md#-architecture) 節を参照。
+各ソースは独立に扱い、ラベルなしで Claude の合計に混ぜない。アプリ関連は
+[`App/`](App/) 配下に置く（実行ファイル [`App/Tokfuel/`](App/Tokfuel/)、SPM レイヤー
+[`App/TokfuelCore/`](App/TokfuelCore/) など、検証は [`App/Tests/`](App/Tests/) —
+UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/IntegrationTests/)、
+シナリオ [`TestDocs/`](App/Tests/TestDocs/)、通し [`E2E/`](App/Tests/E2E/)）。
 
 ## グラウンドルール（違反禁止）
 
@@ -36,17 +38,17 @@
       ごとにポーリングして新しいバージョンを検知する。リリースアセットのダウンロードは、
       ユーザーがポップオーバーのフッターで「アップデート」ボタンを押したときだけ GitHub から
       行う。これらのリクエストに使用状況データ、トランスクリプト、識別子は載らない。
-   5. **配布ビルドのみ**（`scripts/release.sh` の `-DTOKFUEL_DISTRIBUTION`）、
+   5. **配布ビルドのみ**（`Scripts/release.sh` の `-DTOKFUEL_DISTRIBUTION`）、
       Firebase Crashlytics へクラッシュレポートを送る（同意プロンプトなし。プロンプトや
       コストは載せない）。開発用ビルドでは `FirebaseApp.configure()` を呼ばない。
    6. **配布ビルドかつ**ユーザーが Analytics に同意したときだけ、Firebase Analytics へ
       匿名のアプリ UI イベントを送る（デフォルト OFF。送信面は `AnalyticsService` に集約）。
 2. **ゼロセットアップの維持**：アプリは Claude Code のトランスクリプトを直接読む。機能を
    動かすために、フック、外部ツールのインストール、Claude Code 側の設定を要求しない。
-3. **retok は無改変で同梱**：`Sources/Resources/retok.py` と `locales/` は
-   © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
-   `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
-   [`README-retok.md`](Tokfuel/Sources/Resources/README-retok.md) にある。
+3. **retok は無改変で同梱**：`App/TokfuelClaude/Resources/retok.py` と `locales/` は
+ © Daiki Matsudate（MIT）。この場で編集せず、変更したい場合は上流へ PR を送る。
+ `LICENSE-retok` とアプリ内のクレジット表記は維持する。出所と更新手順は
+ [`README-retok.md`](App/TokfuelClaude/Resources/README-retok.md) にある。
 4. **python3 は任意の依存**：無い環境では Claude のコスト分析がエラーを表示する。設定、
    プロンプト数、Cursor のフォールバックデータ、メニューバーアプリ本体は動き続けること。
 5. **新規パッケージ依存の禁止**：Swift 6 / SwiftUI / macOS 14+、標準 SDK のみ。例外は
@@ -55,19 +57,19 @@
 ## 検証ゲート
 
 ```bash
-swift test               # ユニットテスト（Tokfuel/Tests、Swift Testing）
-swift build -c release   # scripts/build.sh がパッケージする構成
+swift test               # ユニットテスト（App/Tests/UnitTests、Swift Testing）
+swift build -c release   # Scripts/build.sh がパッケージする構成
 ```
 
-CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sources`・
-`Tokfuel/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
-のみの変更では走らない）。リリース構成のビルドは `scripts/build.sh` / 配布フロー側で確認する。
+CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel`・
+`App/Tests`・`Package.swift` などを触った PR でユニットテストを実行する（docs / Site
+のみの変更では走らない）。リリース構成のビルドは `Scripts/build.sh` / 配布フロー側で確認する。
 実行時に見える変更は、実アプリをインストールして観察する。
-`bash scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
+`bash Scripts/build.sh` が `Tokfuel.app` を `/Applications` に配置して起動する（未検証の動作を
 動くと主張せず、組み込みの `verify` スキルで確かめる）。ヘッドレスで検証できるロジック
-（`BudgetMonitor` や `RetokReport` のデコードなど）は `Tokfuel/Tests` にあり、新しいロジックには
-そこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に触れるテストは
-書かない。
+（`BudgetMonitor` や `RetokReport` のデコードなど）は `App/Tests/UnitTests` にあり、新しい
+ロジックにはそこへテストを足す。実ユーザーの状態（`~/Library/Application Support/Tokfuel`）に
+触れるテストは書かない。
 
 `PopoverView`、`SettingsView`、`AboutView`、および単独で見せる新規 View（同意ダイアログや
 アラートなど）を追加または変更するときは、同じ PR で
@@ -95,20 +97,40 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
 - **`ideation`**：アイデアを GitHub Issue に仕立てる（起案のみ）。
 - **`implementation`**：Issue 番号を起点に実装して出荷する（Issue 本文が仕様）。
 - **`task-select`**：オープンな Issue を見渡し、次に実装する項目を選ぶ。
+- **`write-adr`**：技術的意思決定を [`ADR/`](ADR/) に起草する（1 決定 = 1 ディレクトリ、
+  本文は `NNNN-slug(.ja).md`。型は [`ADR/TEMPLATE/`](ADR/TEMPLATE/)、一覧は
+  [`ADR/INDEX.ja.md`](ADR/INDEX.ja.md)）。
+
+アーキテクチャ上の決定は [`ADR/NNNN-slug/`](ADR/) に置く（`NNNN-slug.ja.md` と
+`NNNN-slug.md`）。ずれたときは日本語を正本とする。大きな方針は Issue（ラベル `ADR 🏯`）
+で議論し、合意を ADR に落とす。
 
 ## 作業言語
 
 このリポジトリの基本言語は日本語。
 
-- セッションでのやり取り、GitHub Issue（タイトルと本文）、PR（タイトルと本文）、レビュー
-  コメント、AGENTS.md やスキルといった作業文書は日本語で書く。文章は
-  [`japanese-tech-writing`](.agents/skills/japanese-tech-writing/SKILL.md) スキルの規範に従う
-  （Issue と PR の本文は敬体、作業規範の文書は常体）。
+- セッションでのやり取り、レビューコメント、AGENTS.md やスキルといった作業文書は日本語で書く。
+  文章は [`japanese-tech-writing`](.agents/skills/japanese-tech-writing/SKILL.md) スキルの規範に従う
+  （Issue と PR の本文の日本語は敬体、作業規範の文書は常体）。
+- **GitHub Issue（新規）**：タイトルは `日本語 / English`。本文は日本語ブロック
+  （背景 / 要件 / タスク / 実現可否）のあとに英語ブロック（Background / Requirements /
+  Tasks / Feasibility）を置く。正本は日本語。実装方針や関連ファイル一覧は書かない。
+  ラベルは**種別**と、当てはまるなら**領域**を必ず自動付与する。
+  種別は機能 `enhancement 🚀`、バグ `bugs 🐞`、文書 `docs ✍️`、雑務 `chore 🏠`。
+  領域はアプリ `product 🍎`、サイト `web 🌐`、CI / Actions / 配布 `ci ⚙️`
+  （領域に当てはまらなければ種別のみ）。急ぐものだけ `high priority 🔥` を付ける
+  （低優先度ラベルは使わない）。詳細は [`ideation`](.agents/skills/ideation/SKILL.md) と
+  [`.github/ISSUE_TEMPLATE/proposal.md`](.github/ISSUE_TEMPLATE/proposal.md) を参照。
+- **GitHub PR（新規）**：タイトルは `日本語 / English`（Issue 実装 PR は先頭に `[TF-NNNN]`）。
+  本文は背景 / 変化 / 判断 / 懸念（あれば）＋ Background / Changes / Decisions / Concerns。
+  ファイルパスの列挙は diff に任せ、書かない。懸念が無ければその節は削除する。
+  ラベルは Issue と同じく種別＋領域を付ける。詳細は
+  [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) を参照。
 - コミットメッセージも日本語で書く（形式は「規約」のとおり）。
 - README と SECURITY は例外として日英併記を続ける。ユーザーに見える変更では `README.md` と
   `README.ja.md` の両方を更新する。
 - コード内のコメントは、周囲の既存コード（英語）に合わせる。
-- 英語のまま残っている古い Issue や文書は、内容に手を入れる機会に日本語へ寄せれば足りる。
+- 英語のみ・旧形式のまま残っている古い Issue / PR は、内容に手を入れる機会に新形式へ寄せれば足りる。
   翻訳だけを目的にした一括の書き換えはしない。
 
 ## 規約
@@ -116,12 +138,12 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`Tokfuel/Sou
 - ブランチは 1 トピックにつき 1 本（`claude/<short-topic>`）。PR は小さく焦点を絞る。
 - コミットの subject は 72 文字未満で変更を言い切り、body には理由（why）を書く。
   `feat(<scope>):` のような type プレフィックスは従来どおり使う。ロードマップの Issue を
-  実装する PR は、タイトル先頭に `[TF-NNNN]` を付ける。
+  実装する PR は、タイトル先頭に `[TF-NNNN]` を付け、続けて `日本語 / English` とする。
 - UI の状態は `@MainActor` に置く。`UsageStore` を唯一の情報源に保ち、`PopoverView` は
   純粋な表示層のまま。設定は `AppSettings`（UserDefaults ベース）に置く。
 - Git hooks は [`.githooks/`](.githooks/) で管理する。セッション開始時、クローン直後、または
   `.githooks/` に更新があったときは、次で取り込む。
 
   ```bash
-  bash scripts/setup.sh
+  bash Scripts/setup.sh
   ```

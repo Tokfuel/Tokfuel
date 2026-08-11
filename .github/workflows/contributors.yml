@@ -25,7 +25,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PINNED_LOGIN: akidon0000
-        run: ./scripts/update-contributors.sh
+        run: ./Scripts/update-contributors.sh
 
       # main requires changes to land via a PR (repo ruleset), so a direct
       # `git push` to main is rejected — open a PR on a throwaway branch and

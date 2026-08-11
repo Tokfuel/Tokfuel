@@ -32,7 +32,7 @@ Site/Build/
 .serena/
 
 # Unpublished issue/proposal drafts (private until opened on GitHub)
-docs/drafts/
+Docs/drafts/
 
 # Local verification artifacts (do not commit)
 .verify-*

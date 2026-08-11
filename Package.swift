@@ -9,27 +9,111 @@ let package = Package(
         .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "11.15.0"),
     ],
     targets: [
-        .executableTarget(
-            name: "Tokfuel",
-            dependencies: [
-                .product(name: "FirebaseAnalytics", package: "firebase-ios-sdk"),
-                .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk"),
-            ],
-            path: "Tokfuel/Sources",
+        .target(
+            name: "TokfuelCore",
+            path: "App/TokfuelCore"
+        ),
+        .target(
+            name: "TokfuelSettings",
+            dependencies: ["TokfuelCore"],
+            path: "App/TokfuelSettings"
+        ),
+        .target(
+            name: "TokfuelClaude",
+            dependencies: ["TokfuelCore"],
+            path: "App/TokfuelClaude",
             resources: [
                 .copy("Resources/retok.py"),
                 .copy("Resources/locales"),
                 .copy("Resources/LICENSE-retok"),
                 .copy("Resources/README-retok.md"),
-                .copy("Resources/GoogleService-Info.plist")
-            ],
+            ]
+        ),
+        .target(
+            name: "TokfuelCursor",
+            dependencies: ["TokfuelCore"],
+            path: "App/TokfuelCursor",
             linkerSettings: [.linkedLibrary("sqlite3")]
+        ),
+        .target(
+            name: "TokfuelCodex",
+            dependencies: ["TokfuelCore", "TokfuelClaude"],
+            path: "App/TokfuelCodex"
+        ),
+        .target(
+            name: "TokfuelBudget",
+            dependencies: ["TokfuelCore", "TokfuelSettings"],
+            path: "App/TokfuelBudget"
+        ),
+        .target(
+            name: "TokfuelAnalytics",
+            dependencies: [
+                "TokfuelCore",
+                "TokfuelSettings",
+                .product(name: "FirebaseAnalytics", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk"),
+            ],
+            path: "App/TokfuelAnalytics",
+            resources: [
+                .copy("Resources/GoogleService-Info.plist"),
+            ]
+        ),
+        .target(
+            name: "TokfuelStore",
+            dependencies: [
+                "TokfuelCore",
+                "TokfuelSettings",
+                "TokfuelClaude",
+                "TokfuelCursor",
+                "TokfuelCodex",
+                "TokfuelBudget",
+            ],
+            path: "App/TokfuelStore"
+        ),
+        .target(
+            name: "TokfuelUI",
+            dependencies: [
+                "TokfuelCore",
+                "TokfuelSettings",
+                "TokfuelStore",
+                "TokfuelBudget",
+                "TokfuelAnalytics",
+                "TokfuelClaude",
+                "TokfuelCursor",
+            ],
+            path: "App/TokfuelUI"
+        ),
+        .executableTarget(
+            name: "Tokfuel",
+            dependencies: [
+                "TokfuelCore",
+                "TokfuelSettings",
+                "TokfuelClaude",
+                "TokfuelCursor",
+                "TokfuelCodex",
+                "TokfuelBudget",
+                "TokfuelAnalytics",
+                "TokfuelStore",
+                "TokfuelUI",
+            ],
+            path: "App/Tokfuel"
         ),
         .testTarget(
             name: "TokfuelTests",
-            dependencies: ["Tokfuel"],
-            path: "Tokfuel/Tests",
+            dependencies: [
+                "Tokfuel",
+                "TokfuelCore",
+                "TokfuelSettings",
+                "TokfuelClaude",
+                "TokfuelCursor",
+                "TokfuelCodex",
+                "TokfuelBudget",
+                "TokfuelAnalytics",
+                "TokfuelStore",
+                "TokfuelUI",
+            ],
+            path: "App/Tests/UnitTests",
             linkerSettings: [.linkedLibrary("sqlite3")]
-        )
+        ),
     ]
 )

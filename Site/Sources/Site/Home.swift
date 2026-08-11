@@ -10,84 +10,105 @@ struct Home: StaticPage {
     var ownerURL = "https://github.com/Tokfuel"
 
     var body: some HTML {
+        SiteChrome(language: .en, topic: nil)
+
         Section {
-            VStack(spacing: 24) {
-                Image("images/app-icon.png", description: "Tokfuel app icon")
+            VStack(alignment: .leading, spacing: 28) {
+                Image("/images/app-icon.png", description: "Tokfuel app icon")
                     .resizable()
-                    .frame(width: 128, height: 128)
-                    .cornerRadius(28)
+                    .frame(width: 120, height: 120)
+                    .cornerRadius(26)
 
                 Text("Tokfuel")
                     .font(.title1)
                     .fontWeight(.bold)
+                    .foregroundStyle(.white)
 
                 Text("See what AI coding costs you — from the menu bar.")
                     .font(.lead)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(hex: "#A1A1A6"))
                     .frame(maxWidth: 560)
 
                 Link("Download for macOS", target: downloadURL)
                     .linkStyle(.button)
                     .role(.primary)
-                    .padding(.horizontal, 8)
 
-                Text("macOS 14 or later · Free and open source")
+                Text("macOS 14 or later. Free and open source.")
                     .font(.small)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(hex: "#86868B"))
             }
             .padding(.vertical, 96)
-            .horizontalAlignment(.center)
+            .padding(.horizontal, 32)
+            .frame(maxWidth: 980)
         }
-        .background(.black)
+        .class("tf-hero")
         .foregroundStyle(.white)
-        .horizontalAlignment(.center)
+        .horizontalAlignment(.leading)
 
         Section {
-            Image("images/screenshot.png", description: "Tokfuel's menu-bar popover showing cost, budgets, and per-model breakdown")
+            Image("/images/screenshot.png", description: "Tokfuel's menu-bar popover showing cost, budgets, and per-model breakdown")
                 .resizable()
-                .cornerRadius(16)
+                .cornerRadius(12)
                 .frame(maxWidth: 720)
-                .class("d-block", "mx-auto")
         }
-        .padding(.vertical, 64)
-        .horizontalAlignment(.center)
+        .padding(.vertical, 72)
+        .padding(.horizontal, 32)
+        .horizontalAlignment(.leading)
+        .class("tf-section-muted")
 
         Section {
-            VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 20) {
                 Text("How it works")
-                    .font(.title3)
+                    .font(.title2)
                     .fontWeight(.bold)
 
                 Text("""
-                Tokfuel reads the transcripts Claude Code already writes under \
-                ~/.claude/projects/ — nothing to configure, nothing installed \
-                on top of what you already have. Usage data stays on your Mac. \
-                Disclosed network requests are limited to an opt-in exchange-rate \
-                fetch and, when Cursor is present, its published pricing and \
-                signed-in dashboard usage APIs. Prompts are never sent.
+                Tokfuel reads what Claude Code, Codex CLI, and Cursor already \
+                leave on your Mac (~/.claude/projects/, ~/.codex/sessions/, and \
+                Cursor's local data) — no hooks, no setup. Each source stays \
+                labeled; nothing is mixed into a silent Claude total. Usage data \
+                and prompts never leave your Mac. The few network calls \
+                (optional FX rate, Cursor pricing / dashboard when present, \
+                update checks, and — in distribution builds — Crashlytics plus \
+                opt-in Analytics) are listed on the privacy page.
                 """)
                 .frame(maxWidth: 640)
                 .foregroundStyle(.secondary)
-                .horizontalAlignment(.center)
 
                 Link("View source and full details on GitHub", target: sourceURL)
                     .linkStyle(.underline(.heavy))
+
+                HStack(alignment: .center, spacing: 20) {
+                    Link("Read the docs", target: "\(sitePath)/docs/usage")
+                        .linkStyle(.underline(.heavy))
+                    Link("Roadmap", target: "\(sitePath)/docs/roadmap")
+                        .linkStyle(.underline(.heavy))
+                    Link("Privacy", target: "\(sitePath)/docs/privacy")
+                        .linkStyle(.underline(.heavy))
+                    Link("ADR index", target: "\(sitePath)/docs/adr")
+                        .linkStyle(.underline(.heavy))
+                    Link("Tests", target: "\(sitePath)/docs/testing")
+                        .linkStyle(.underline(.heavy))
+                }
             }
-            .padding(.vertical, 64)
-            .horizontalAlignment(.center)
+            .padding(.vertical, 72)
+            .padding(.horizontal, 32)
+            .frame(maxWidth: 980)
         }
-        .horizontalAlignment(.center)
+        .horizontalAlignment(.leading)
 
         Section {
             Text {
-                "MIT License · © "
+                "MIT License. © "
                 Link("Tokfuel", target: ownerURL)
                     .linkStyle(.underline(.heavy))
             }
             .font(.small)
             .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 32)
-        .horizontalAlignment(.center)
+        .padding(.vertical, 40)
+        .padding(.horizontal, 32)
+        .horizontalAlignment(.leading)
+        .class("tf-section-muted")
     }
 }

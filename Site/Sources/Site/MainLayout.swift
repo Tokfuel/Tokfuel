@@ -3,10 +3,13 @@ import Ignite
 struct MainLayout: Layout {
     var body: some Document {
         PlainDocument {
-            Head()
+            Head {
+                MetaLink(href: "/css/tokfuel.css", rel: .stylesheet)
+            }
             Body {
                 content
             }
+            .ignorePageGutters()
         }
     }
 }
