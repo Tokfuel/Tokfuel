@@ -1,0 +1,119 @@
+name: Daily release
+
+# Tokfuel/Sources（および Tests・パッケージ定義）に変更が入っている日だけ、人手を介さず
+# patch bump → PR 作成 → マージまでを完走させる（#119）。マージ後は既存の release.yml が
+# versions/macos の変更を検知して従来どおりビルド・公証・GitHub Release を作る（そちら側は
+# 変更しない）。
+#
+# main にブランチ保護（required status checks）が無いため、GitHub の auto-merge は
+# CI の完了を待たずに即マージしてしまう。そのため、このワークフロー自身が bump 前に
+# swift test を走らせてゲートにする。テストが通った場合だけ bump PR を作成し、
+# その場で squash マージする（別ワークフローの完了待ちにしない）。
+on:
+  schedule:
+    - cron: "0 20 * * *" # JST 毎朝 5:00
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  daily-release:
+    name: Bump & release if Sources changed
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check for an existing auto-bump PR
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COUNT="$(gh pr list --repo "${{ github.repository }}" \
+            --state open --base main --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("auto/bump-macos-"))] | length')"
+          if [ "$COUNT" != "0" ]; then
+            echo "an auto-bump PR is already open; skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for Sources changes since the last release tag
+        id: diff
+        if: steps.existing.outputs.skip != 'true'
+        run: |
+          git fetch --tags --force
+          LAST_TAG="$(git tag -l 'v*' --sort=-v:refname | head -1)"
+          if [ -z "$LAST_TAG" ]; then
+            echo "no v* tag found yet; nothing to diff against, skipping" >&2
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$LAST_TAG" -- Tokfuel/Sources Tokfuel/Tests Package.swift Package.resolved; then
+            echo "no relevant changes since $LAST_TAG; skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changes found since $LAST_TAG"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Show toolchain
+        if: steps.existing.outputs.skip != 'true' && steps.diff.outputs.skip != 'true'
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Test (gate for the auto-merge below)
+        if: steps.existing.outputs.skip != 'true' && steps.diff.outputs.skip != 'true'
+        run: swift test
+
+      - name: Resolve next version
+        id: version
+        if: steps.existing.outputs.skip != 'true' && steps.diff.outputs.skip != 'true'
+        run: bash scripts/resolve-release-version.sh macos patch
+
+      - name: Update version files
+        if: steps.existing.outputs.skip != 'true' && steps.diff.outputs.skip != 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.version }}
+        run: |
+          printf '%s\n' "$NEXT" > versions/macos
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $NEXT" Info.plist
+
+      - name: Open and merge the bump PR
+        if: steps.existing.outputs.skip != 'true' && steps.diff.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          CURRENT: ${{ steps.version.outputs.current }}
+        run: |
+          BRANCH="auto/bump-macos-${NEXT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add versions/macos Info.plist
+          git commit -m "chore(release): bump macos version to ${NEXT}"
+          git push origin "$BRANCH"
+
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(release): bump macos version to ${NEXT}" \
+            --body "$(cat <<EOF
+          ## 概要
+
+          \`Tokfuel/Sources\`（または \`Tests\` / パッケージ定義）に変更があったため、\`versions/macos\` を **${CURRENT}** から **${NEXT}** へ自動で patch bump します（[#119](https://github.com/Tokfuel/Tokfuel/issues/119)）。
+
+          このワークフロー内で \`swift test\` を通した上で作成しているため、レビューを待たずにこのまま自動マージします。マージ後は \`release.yml\` がタグ \`${TAG}\` の GitHub Release まで進めます。
+
+          ## 変更内容
+
+          - \`versions/macos\`：${CURRENT} → ${NEXT}
+          - \`Info.plist\`：\`CFBundleShortVersionString\` を同じ値に揃える
+          EOF
+          )"
+
+          gh pr merge "$BRANCH" --squash --delete-branch
