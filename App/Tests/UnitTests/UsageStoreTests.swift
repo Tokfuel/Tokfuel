@@ -15,7 +15,6 @@ private func daily(_ pairs: [String: Double]) -> [String: RetokReport.DailyCost]
     pairs.mapValues { RetokReport.DailyCost(cost: $0, output: 0) }
 }
 
-/// これでメニューバーの `bothCosts` 表示から金額が消えなくなる（Issue #4）。
 @MainActor
 struct UsageStoreTodayCostTests {
     private static func dateString(_ date: Date) -> String {
@@ -97,7 +96,7 @@ struct UsageStoreTodayCostTests {
         #expect(store.driverBreakdown.first?.cost == 3.1)
     }
 
-    /// 追従モード（TF-0080）の入力。表示モードで合成する前の生の値をソース別に返す。
+    /// 追従モードの入力。表示モードで合成する前の生の値をソース別に返す。
     @Test func todayCostBySourceはソース別の今日の額を返す() {
         let store = UsageStore()
         let today = Self.dateString(Date())
@@ -110,7 +109,7 @@ struct UsageStoreTodayCostTests {
         #expect(costs["codex"] == 0)
     }
 
-    /// 劣化中（TF-0073）の 0 は「使っていない」ではなく「取れなかった」。
+    /// 劣化中の 0 は「使っていない」ではなく「取れなかった」。
     @Test func todayCostBySourceは劣化したソースを外す() {
         let store = UsageStore()
         let today = Self.dateString(Date())
@@ -141,7 +140,7 @@ struct UsageStoreTodayCostTests {
     }
 }
 
-/// ここが黙って空辞書を返していたため、Cursor の使用量 API が止まった日に
+/// driverDailyByID が黙って空辞書を返していたため、API 停止日に劣化が伝わらなかった回帰を防ぐ。
 @MainActor
 struct UsageStoreDegradedSourceTests {
     @Test func 劣化したソースは表示名と説明を返す() {
@@ -208,7 +207,7 @@ struct UsageStoreDegradedSourceTests {
     }
 
     @Test func 劣化したソースは0円ではなく不明として並ぶ() {
-        // 0 円と「取れなかった」を同じ見た目にしない（Issue の出発点そのもの）。
+        // 0 円と「取れなかった」を同じ見た目にしない。
         let caption = PopoverView.sideBySideCaption(
             claudeCost: 12.34,
             driverBreakdown: [],
@@ -239,7 +238,7 @@ struct UsageStoreDegradedSourceTests {
     }
 }
 
-/// 「高コストのセッション」の Claude / 二次ソースのマージ（TF-0077）。
+/// Claude と二次ソースの会話をコスト降順でマージする。
 @MainActor
 struct UsageStoreTopSessionTests {
     private func report(_ sessions: [(String, String, Double)]) -> RetokReport {

@@ -30,7 +30,7 @@ public final class UpdateChecker: ObservableObject {
     private(set) var installTarget: URL?
     public var installsInPlace: Bool { installTarget != nil }
 
-    /// 「後で」を押した版。その版だけ次回起動まで抑制する（仕様どおり永続化しない）。
+    /// 「後で」は永続化しない（その版だけ次回起動まで抑制）。
     private var skippedVersion: String?
     private var timer: Timer?
 
@@ -41,7 +41,8 @@ public final class UpdateChecker: ObservableObject {
         installTarget = Self.installedAppURL()
     }
 
-    /// 可否は常に true として見せる — プレビューを撮る debug バイナリは `.app` ではないので
+    /// debug バイナリは `.app` ではないので実判定に任せると「リリースページを開く」側になり、
+    /// 大多数のユーザーが見る「アップデート」ボタンを ui-preview で確かめられない。
     public static func preview(version: String) -> UpdateChecker {
         let checker = UpdateChecker()
         checker.installTarget = URL(fileURLWithPath: "/Applications/Tokfuel.app")
@@ -81,14 +82,12 @@ public final class UpdateChecker: ObservableObject {
         available = offer
     }
 
-    /// 「後で」— 提示中の版を次回起動まで出さない。
     public func skipOffered() {
         skippedVersion = available?.version
         available = nil
         phase = .idle
     }
 
-    /// 「アップデート」— ダウンロード → 検証 → 差し替えヘルパー起動 → 自プロセス終了。
     public func installOffered() {
         guard let update = available, phase != .working else { return }
         guard let destination = installTarget else {
@@ -201,7 +200,7 @@ public final class UpdateChecker: ObservableObject {
         return url
     }
 
-    /// nonisolated async なので main actor の外で走る — hdiutil / ditto の待ち合わせが
+    /// hdiutil / ditto の待ち合わせが main actor を塞ぐと UI が止まるので nonisolated にしている。
     nonisolated private static func downloadAndStageReplacement(
         _ update: AvailableUpdate, replacing destination: URL) async throws {
         guard let (downloaded, response) = try? await URLSession.shared.download(from: update.assetURL),
@@ -251,7 +250,7 @@ public final class UpdateChecker: ObservableObject {
         return entries.first { $0.pathExtension == "app" }
     }
 
-    /// すり替え・破損・中身違いを弾く: 自分と同じ bundle ID で、提示した版そのもので、
+    /// bundle ID・版・署名を検証し、すり替え・破損・中身違いを弾く。
     nonisolated private static func validate(appAt url: URL, expecting version: String) throws {
         guard let bundle = Bundle(url: url),
               bundle.bundleIdentifier == Bundle.main.bundleIdentifier,

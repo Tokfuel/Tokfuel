@@ -2,9 +2,8 @@ import Foundation
 import SQLite3
 import TokfuelCore
 
-/// 残るため、こちらが無いと今日の使用が常に $0 になる。
-/// UI ではどちら経由でも「推定」と出す——プラン込み枠の換算や非公式 API の揺らぎがあるため。
-/// 「使っていない」ではなく「取れていない」ので、UI がその 2 つを書き分けられるようにする。
+/// ダッシュボード API が無いとローカル DB の tokenCount はほぼ 0 のままなので、今日の使用が常に $0 になる。
+/// フォールバック時は health を degraded にし、「使っていない」と「取れていない」を UI が書き分けられるようにする。
 public struct CursorCostDriver {
     public let id = "cursor"
     public let displayName = "Cursor"
@@ -72,9 +71,7 @@ extension CursorCostDriver: CostDriver {
         return CostSnapshot(daily: daily, byModel: [:], health: health)
     }
 
-    /// （timestamp / chargedCents / model だけ）ので、API が成功していてもここだけは
-    /// ローカルの `state.vscdb` から作る。金額の桁が API 側とそろわないことがあるため、
-    /// 空を返す —— 会話が無いことは劣化表示の担当で、$0 の行を並べる意味は無い。
+    /// 会話 API には会話 ID が無いので、内訳だけは state.vscdb から作る。桁が API と揃わない行は並べない。
     public func sessions(from: String, to: String) async -> [CostSnapshot.Session] {
         guard isAvailable else { return [] }
         let path = stateDBURL.path
@@ -84,8 +81,7 @@ extension CursorCostDriver: CostDriver {
     }
 }
 
-/// `immutable=1` は「読んでいる間ファイルは変わらない」という宣言なので常用はしない——
-/// `-wal` が残っているうち（＝Cursor が書きかけ）は素の読み取り専用が成功するので、
+/// WAL がある間は readonly で開ける。immutable=1 は常用しない（読み取り専用の宣言が強すぎる）。
 public enum CursorSQLite {
     public static func openReadOnly(path: String) -> OpaquePointer? {
         if let db = open(dsn: path, flags: SQLITE_OPEN_READONLY) {
@@ -118,14 +114,11 @@ public enum CursorSQLite {
     }
 }
 
-/// ため——システムの libsqlite3 のみを使う）。
 public enum CursorUsageReader {
-    /// Cursor の会話 1 件。`CostSnapshot.Session` と同じ形なので、driver 側は詰め替えずに返す。
     public typealias CursorSession = CostSnapshot.Session
 
     public static let untitledSessionTitle = "無題の会話"
 
-    /// 1 回の走査で得られる日別と会話別。同じ bubble 行から両方を作るので、
     public struct ScanResult: Sendable {
         public let daily: [String: Double]
         public let sessions: [CursorSession]
@@ -137,7 +130,7 @@ public enum CursorUsageReader {
         scanAll(dbPath: dbPath, from: from, to: to).daily
     }
 
-    /// コストが 0 のままの会話は落とす —— Cursor 3.x では `tokenCount` が残らず
+    /// Cursor 3.x では tokenCount が残らずコスト 0 の会話が多いので、並べない。
     public static func scanSessions(dbPath: String, from: String, to: String) -> [CursorSession] {
         scanAll(dbPath: dbPath, from: from, to: to).sessions
     }

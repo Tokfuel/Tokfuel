@@ -11,7 +11,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-// TF #53 — 推移チャートの累積化・集計期間の丸め・着地予測・レポートキャッシュ。
 
 struct CumulativeRowsTests {
     private let dates = ["2026-07-01", "2026-07-02", "2026-07-03"]

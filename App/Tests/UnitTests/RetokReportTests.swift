@@ -68,7 +68,7 @@ struct RetokReportTests {
         #expect(report.cost(on: "2026-01-01") == nil)
     }
 
-    /// 追従モード（TF-0080）は 1 日ぶんの結果を長期集計に重ねる。
+    /// 1 日ぶんの結果を長期集計に重ねる（レポートごと差し替えると推移グラフが痩せる）。
     @Test func 日別だけを重ねられる() throws {
         let report = try decode()
         let merged = report.merging(daily: ["2026-07-28": .init(cost: 44.0, output: 10),

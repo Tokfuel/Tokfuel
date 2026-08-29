@@ -137,7 +137,7 @@ struct CostSourceModeUsageStoreTests {
         withSourceMode(.codexOnly) { #expect(store.todayCost == 1) }
         withSourceMode(.cursorOnly) { #expect(store.todayCost == 2) }
         withSourceMode(.claudeOnly) { #expect(store.todayCost == 4) }
-        // 並べて表示の Cursor 側は二次ソース合計のまま（この Issue では拡張しない）。
+        // 並べて表示の Cursor 側は二次ソース合計のまま。
         #expect(store.secondaryTodayCost == 3)
         #expect(store.todayCost(forSource: CostSourceMode.codexSourceID) == 1)
     }

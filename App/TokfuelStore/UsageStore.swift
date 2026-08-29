@@ -108,6 +108,7 @@ public final class UsageStore: ObservableObject {
     @Published private var reportedBudgetSpendBySource: [String: Double] = [:]
 
     /// DEBUG では読み取りだけデバッグ上書きを通す。書き込みは常に実データ側へ入るので、
+    /// 上書きを OFF にすればそのまま元の数字に戻る。
     public var budgetSpend: Double {
         get {
             #if DEBUG
@@ -176,6 +177,7 @@ public final class UsageStore: ObservableObject {
 
     public func menuBarInput(isFollowing: Bool = false) -> MenuBarInput {
         // レートの UserDefaults 読み取りを含む変換なので、明滅ループ（最大 12Hz）で
+        // 呼ばれても 1 回の呼び出しにつき 1 回ずつで済むようここだけで評価する。
         let dailyLimitUSD = settings.dailyBudgetLimitUSD
         let monthlyLimitUSD = settings.budgetLimitUSD
         return MenuBarInput(
@@ -195,7 +197,6 @@ public final class UsageStore: ObservableObject {
             dailyLimit: dailyLimitUSD,
             monthlyLimit: monthlyLimitUSD,
             cursorUnavailable: !degradedSourceWarnings.isEmpty,
-            // 並べて表示は Claude と二次ソース合計の 2 列（この Issue では拡張しない）。
             todayClaude: todayCost(forSource: CostSourceMode.claudeSourceID),
             todayCursor: secondaryTodayCost,
             monthClaude: claudeBudgetSpend,
@@ -205,11 +206,8 @@ public final class UsageStore: ObservableObject {
             isFollowing: isFollowing)
     }
 
-    /// ソース別の今日の金額（USD）。追従モード（TF-0080）の `RefreshScheduler` が
-    /// 表示モード（`costSourceMode`）で合成する前の生の値を返す — 表示から外している
-    /// ソースが動いたときも、追従モードには入る。取得が劣化しているソース（TF-0073 の
-    /// `CostSnapshot.Health.degraded`）はキーごと落とす。劣化中の 0 は「使っていない」では
-    /// なく「取れなかった」なので、復旧した瞬間の 0 → 実額を増加と読むと誤発火する。
+    /// 表示モードで合成する前の生の値。表示から外しているソースが動いても追従モードには入る。
+    /// 劣化中の 0 は「取れなかった」なのでキーごと落とす。復旧時の 0 → 実額を増加と読むと誤発火する。
     public var todayCostBySource: [String: Double] {
         let today = Self.dateString(Date())
         var byID = [CostSourceMode.claudeSourceID: report?.cost(on: today) ?? 0]
@@ -251,7 +249,7 @@ public final class UsageStore: ObservableObject {
         rescanTranscripts()
     }
 
-    /// 追従モード（TF-0080）の軽い更新。今日を含む短い窓だけを取り直し、32 日集計
+    /// 今日を含む短い窓だけを取り直し、32 日集計と表示窓の再解析は回さない。
     /// python3 のサブプロセスを走らせるので、走査日数は 1 日に絞る。
     public func reloadToday() {
         let lang = settings.language.resolved
@@ -277,7 +275,7 @@ public final class UsageStore: ObservableObject {
             }
             let snapshots = await driverTask
             guard !Task.isCancelled, generation == self.reportGeneration else { return }
-            // その場で劣化（TF-0073）へ倒して「—」と注意書きを出す。
+            // 追従中に取得できなくなったら、その場で劣化へ倒して「—」と注意書きを出す。
             for (id, snapshot) in snapshots {
                 var merged = self.driverDailyByID[id] ?? [:]
                 for (date, cost) in snapshot.daily { merged[date] = cost }
@@ -362,6 +360,7 @@ public final class UsageStore: ObservableObject {
 
     public func reloadBudget() {
         // 集計が不要になった場合も含めて先に世代を進める。そうしないと、実行中の集計が
+        // 後から旧状態を書き戻す。
         budgetGeneration += 1
         let generation = budgetGeneration
         budgetTask?.cancel()
@@ -386,7 +385,7 @@ public final class UsageStore: ObservableObject {
             )
             async let driverTask = self.fetchDriverSnapshots(from: start, to: today)
 
-            // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない — reloadReport() と
+            // retok が失敗しても（python3 なし等）二次ソースの結果は捨てない（CLAUDE.md ルール 4）。
             let r = try? await retokTask
             // 設定を連続で変えると 32 日集計が並走しうる。古い結果で新しい結果を上書きしない。
             guard !Task.isCancelled, generation == self.budgetGeneration else { return }
@@ -409,6 +408,7 @@ public final class UsageStore: ObservableObject {
             }
 
             // 稼働日数・日次平均は retok 専用の指標。budgetSpend と違い二次ソースの分が無いので、
+            // retok が取れなければ更新しない。
             guard let r else { return }
             self.activeDaysInPeriod = Self.activeDays(in: r.daily, since: start)
             let now = Date()
@@ -500,6 +500,7 @@ extension UsageStore {
     }
 
     /// 劣化した二次ソース 1 件ぶんの注意書き。金額の 0 を「使っていない」と誤読させないため、
+    /// UI はこれをそのまま金額の近くに出す。
     public struct SourceWarning: Identifiable, Equatable {
         public let id: String
         public let name: String
@@ -543,6 +544,7 @@ extension UsageStore {
 
     /// 取得が劣化している二次ソースの注意書き。表示対象に入っているドライバのぶんだけ出す
     /// ——合計に含めていないソース（「Claude のみ」での Cursor など）の注意書きは、
+    /// 見ていない数字の話にしかならない。
     public var degradedSourceWarnings: [SourceWarning] {
         displayedDrivers.compactMap { driver in
             guard case .degraded(let reason) = driverHealthByID[driver.id] else { return nil }
@@ -655,6 +657,7 @@ extension UsageStore {
     }
 
     /// 表示窓の全日付（古い順）。累積線の X 軸はカテゴリなので、コストの無い日を落とすと
+    /// 日付が詰まって傾き＝ペースが歪む。この列で全日を点として埋める。
     public nonisolated static func windowDates(days: Int, endingOn end: Date = Date()) -> [String] {
         let cal = Calendar.current
         return (0..<days).reversed().compactMap { offset in
@@ -805,9 +808,9 @@ extension UsageStore {
         }
     }
 
-    /// Cursor の取得が劣化しているか（TF-0073 の `CostSnapshot.health`）。
     /// 劣化していれば金額は実態より小さいので、その数字を根拠にした助言はしない。
     /// `degradedSourceWarnings` と違いソース表示モードは見ない——ヒント側の絞り込みは
+    /// `adviceItems(for:)` が `costSourceMode` でやる。
     public var cursorFetchDegraded: Bool {
         if case .degraded = driverHealthByID["cursor"] { return true }
         return false
@@ -844,8 +847,8 @@ extension UsageStore {
 
     public static let topSessionLimit = 3
 
-    /// `costSourceMode` に従い、含めないソースの行は作らない（`claudeOnly` なら Cursor 行なし）。
-    /// 二次ソースは driver が返した会話だけを並べる —— ローカル走査が空になる環境（#73）では
+    /// 二次ソースは driver が返した会話だけを並べる —— ローカル走査が空になる環境では
+    /// 単に行が増えず、両ソースとも 0 件ならセクションごと消える。
     public func topSessionRows(for report: RetokReport, limit: Int = topSessionLimit) -> [TopSessionRow] {
         let mode = settings.costSourceMode
         var rows: [TopSessionRow] = []

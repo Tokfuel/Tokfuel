@@ -32,7 +32,6 @@ public enum MenuBarRepresentation: String, CaseIterable, Identifiable {
     public var drawsRing: Bool { self == .ring || self == .ringAndValue }
 }
 
-/// ゲージの形。どちらも「消費 / 基準」を面積で示すもので、値の出し方は変わらない。
 public enum MenuBarGaugeShape: String, CaseIterable, Identifiable {
     case ring
     case tank
@@ -98,10 +97,8 @@ public struct MenuBarInput {
     public var todayCursor: Double = 0
     public var monthClaude: Double = 0
     public var monthCursor: Double = 0
-    /// 側ごとの予算レベル。ゲージは側ごとに塗り分けるので、今日だけしきい値を越えたときに
     public var todayLevel: BudgetLevel?
     public var monthLevel: BudgetLevel?
-    /// 追従モード中か（TF-0080）。表示する値そのものは変えず、アイコンの明滅にだけ効く。
     public var isFollowing = false
 
     public init(
@@ -164,7 +161,6 @@ public struct MenuBarContent {
 
 public enum MenuBarReadout {
 
-    /// リリースビルドでは空文字なので、この分岐は配布物に影響しない。
     public static let debugMarker: String = {
         #if DEBUG
         return "DEBUG"
@@ -217,7 +213,7 @@ public enum MenuBarReadout {
         case noLimit
     }
 
-    /// 初めて値が入る」ので、届いていないことを理由に選択肢を塞ぐと永久に選べなくなる。
+    /// 月間予算は 32 日集計が届くまで 0 のままなので、届いていないことを理由に選択肢を塞ぐと永久に選べなくなる。
     public static func ratioUnavailability(metric: MenuBarMetric, basis: MenuBarPercentBasis,
                                     dailyLimit: Double,
                                     monthlyLimit: Double) -> RatioUnavailability? {
@@ -258,7 +254,6 @@ public enum MenuBarReadout {
     }
 
 
-    /// 消費 ÷ 基準。基準が 0 以下なら nil（割合として意味を持たない）。クランプしない。
     public static func fraction(spend: Double, basis: Double) -> Double? {
         guard basis > 0, spend.isFinite else { return nil }
         return spend / basis
@@ -380,7 +375,7 @@ public enum MenuBarReadout {
                  showsRemaining: side.ratioShowsRemaining) ?? 0
     }
 
-    /// ツールチップ 1 側ぶん。リング表現では画面に数字が出ないので、
+    /// リング表現では画面に数字が出ないので、ツールチップに割合を添える。
     private static func toolTip(_ side: Side, input: MenuBarInput) -> String {
         let scope = side.showsRemaining && side.limit > 0 ? "残り予算" : "推定コスト"
         let head = "\(side.label)の\(scope): \(amountText(side, input: input))"
@@ -388,7 +383,7 @@ public enum MenuBarReadout {
         return "\(head)（\(percent)）"
     }
 
-    /// 側を横に並べる。2 つ並ぶのは「今日と今月」だけなので、後ろに「月」を添えて
+    /// 2 つ並ぶのは「今日と今月」だけなので、後ろに「月」を添えて区別する。
     private static func joined(_ texts: [String]) -> String {
         guard texts.count == 2 else { return texts.joined(separator: " · ") }
         return "\(texts[0]) · 月 \(texts[1])"

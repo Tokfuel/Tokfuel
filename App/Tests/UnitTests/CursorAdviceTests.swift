@@ -11,7 +11,8 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// Cursor 由来の「節約のヒント」の判定（TF-0078）。しきい値の境目と、
+/// Cursor 由来の「節約のヒント」の判定。しきい値の境目と、
+/// 根拠にできないデータからは何も言わないことを見る。
 struct CursorAdviceTests {
     private func keys(_ hints: [RetokReport.Advice]) -> [String] { hints.map(\.key) }
 
@@ -188,7 +189,7 @@ struct AdviceCompositionTests {
     }
 
     /// 取得が劣化していれば、金額が揃っていても Cursor 由来は出さない。
-    /// 抑止は `CostSnapshot.health`（TF-0073）経由で効く。
+    /// 抑止は `CostSnapshot.health` 経由で効く。
     @Test func 劣化していればCursor由来だけが消える() {
         for reason: CostSnapshot.Degradation in [.signedOut, .credentialsRejected,
                                                  .remoteUnavailable] {

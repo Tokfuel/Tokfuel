@@ -24,6 +24,7 @@ public enum CostSourceMode: String, CaseIterable, Identifiable {
     }
 
     /// `sourceID` は `claudeSourceID` か `CostDriver.id`。単独モードは自分の id 以外を落とすので、
+    /// 将来ドライバが増えても「◯◯ のみ」に他ソースが紛れ込まない。
     public func includes(sourceID: String) -> Bool {
         switch self {
         case .combined, .sideBySide: return true
@@ -33,6 +34,7 @@ public enum CostSourceMode: String, CaseIterable, Identifiable {
         }
     }
 
+    /// 二次ソース 1 つだけを見るモードか。そのソースが取れていないときは表示額そのものが
     /// 不明になるので、メニューバーは 0 円ではなく「—」を出す。
     public var showsSingleSecondarySource: Bool {
         switch self {

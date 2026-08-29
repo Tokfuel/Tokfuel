@@ -100,7 +100,8 @@ struct MenuBarRingTests {
         #expect(double > single)
     }
 
-    /// 半透明の色は暗いメニューバーで背景と混ざってほぼ見えなくなるため
+    /// 半透明の色は暗いメニューバーで背景と混ざってほぼ見えなくなるため、
+    /// 色付きのときは中間グレーのトラックを使う。
     @Test func 色付きでもトラックの濃さが保たれる() {
         let plain = ink(MenuBarImage.ring(seg([0]), template: true)!)
         let warning = ink(MenuBarImage.ring(seg([0], .warning), template: false)!)
@@ -139,7 +140,7 @@ struct MenuBarTankTests {
     }
 }
 
-/// 追従モード（TF-0080）の明滅。実際の見え方は実機でしか確かめられないが、
+/// 追従モードの明滅。実際の見え方は実機でしか確かめられないが、
 struct MenuBarGlowTests {
     private func plain(_ level: BudgetLevel? = nil) -> NSImage {
         MenuBarImage.statusItem(for: content(gauges: seg([0.5], level)))!

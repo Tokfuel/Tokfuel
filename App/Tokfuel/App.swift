@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
     private var refreshTimer: Timer?
     private var outsideClickMonitor: Any?
-    /// 使用額が動いている間だけ更新間隔を上げる状態機械（TF-0080）。判定はここが持つ。
+    /// 使用額が動いている間だけ更新間隔を上げる状態機械。判定はここが持つ。
     private var scheduler = RefreshScheduler()
     private var isFollowing = false
     private var lastFullReload = Date.distantPast
@@ -63,11 +63,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
-        // README 用スクリーンショットの生成（TF-0015）。常駐せずに書き出して終了する。
+        // README 用スクリーンショットの生成。常駐せずに書き出して終了する。
         if CommandLine.arguments.contains("--screenshot") {
             ScreenshotRenderer.runAndExit()
         }
-        // PR の ui-preview 📸 ラベル用（TF-0034）。全画面をまとめて 1 ディレクトリに書き出す。
+        // ui-preview 用。全画面をまとめて 1 ディレクトリに書き出す。
         if CommandLine.arguments.contains("--ui-preview") {
             ScreenshotRenderer.runAllAndExit()
         }

@@ -2,8 +2,8 @@ import Foundation
 import TokfuelCore
 import TokfuelClaude
 
-/// 実額を出せる（`retok.py` の `codex_cost()`）。推測レートは使わない — retok が持つ確定値のみ。
-/// しないため）、Codex 分はこの driver が `--provider codex` で別プロセス実行して取る。
+/// retok は `--provider claude` に絞っているため Codex 分を二重計上しない。
+/// Codex 分はこの driver が `--provider codex` で別プロセス実行して取る。
 public struct CodexCostDriver {
     public let id = "codex"
     public let displayName = "Codex"
@@ -33,6 +33,7 @@ extension CodexCostDriver: CostDriver {
     }
 
     /// retok の `--days` は「reference からの遡り日数」なので、from を含めるために必要な日数に
+    /// 変換する。from が未来やパース不能なら nil（呼び出し側は空を返す）。
     public static func daysNeeded(from: String, reference: Date) -> Int? {
         guard let fromDate = dayFormatter.date(from: from) else { return nil }
         guard let day = Calendar.current.dateComponents([.day], from: fromDate, to: reference).day

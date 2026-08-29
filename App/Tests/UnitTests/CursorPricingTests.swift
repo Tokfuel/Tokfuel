@@ -12,9 +12,8 @@ import Testing
 @testable import Tokfuel
 
 /// CursorPricing はハードコードした単価表を持たない — CursorPricingService のキャッシュだけを
-/// 見る。テストは全て同じ UserDefaults キーを共有するキャッシュを触るので、他のテスト（この
-/// ファイル・CursorCostDriverTests.swift の両方）と並行に走っても衝突しないよう、各テストは
-/// （setCachedRatesForTesting は丸ごと置き換えず差分マージなので、他のテストが積んだキーは
+/// 見る。テストは同じ UserDefaults キーを共有するので、各テストは自分専用のキー名
+/// （"unittest-cursorpricing-" 接頭辞）だけを足し引きする（差分マージなので他テストのキーは壊さない）。
 struct CursorPricingTests {
     private func rate(_ key: String, input: Double, output: Double) -> CursorPricingService.CachedRate {
         CursorPricingService.CachedRate(key: key, input: input, output: output)
@@ -56,7 +55,7 @@ struct CursorPricingTests {
     }
 
     @Test func 未登録のモデルは0() {
-        // ——「キャッシュが空」を仮定せず「このキーは無い」だけを仮定する。
+        // setCachedRatesForTesting を呼ばない——「キャッシュが空」ではなく「このキーは無い」だけを仮定する。
         let neverSeeded = "unittest-cursorpricing-never-\(UUID().uuidString)"
         #expect(CursorPricing.cost(modelID: neverSeeded,
                                    inputTokens: 1_000_000, outputTokens: 1_000_000) == 0)

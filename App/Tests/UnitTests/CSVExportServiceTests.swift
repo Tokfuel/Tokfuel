@@ -23,7 +23,7 @@ private func makeReport(
                advice: [], topSessions: [])
 }
 
-/// retok の daily 集計が cost / output しか持たない制約（Issue #8 のコメント参照）の下での
+/// retok の daily 集計が cost / output しか持たない制約の下での
 struct CSVExportServiceTests {
     private static let exportDate = DateComponents(
         calendar: Calendar(identifier: .gregorian), year: 2026, month: 8, day: 5

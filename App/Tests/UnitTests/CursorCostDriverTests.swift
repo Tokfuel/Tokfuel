@@ -23,7 +23,9 @@ private func localDateString(iso: String) -> String {
     return UsageStore.dateString(date)
 }
 
-/// キーは呼び出し側で他のテストと重ならないようにする（"utestN-" 接頭辞を付ける等）——
+/// 自分が足したキーだけ剥がす（差分マージなので他の並行テストのキーは壊さない）。
+/// キーは呼び出し側で重ならないようにする——同じキーを共有すると、片方の後始末が
+/// もう片方の実行中にキーを剥がしてしまう。
 private func withPricing(_ rates: [(key: String, input: Double, output: Double)], _ body: () -> Void) {
     let cached = rates.map {
         CursorPricingService.CachedRate(key: $0.key, input: $0.input, output: $0.output)
@@ -33,7 +35,8 @@ private func withPricing(_ rates: [(key: String, input: Double, output: Double)]
     body()
 }
 
-/// costEntry の金額は CursorPricing 経由で CursorPricingService のキャッシュを見るので、
+/// costEntry の金額は CursorPricing 経由でキャッシュを見るので、
+/// 金額を検証するテストはここでキャッシュを差し込んでから読む。
 struct CursorCostDriverParsingTests {
     private static let epoch: Double = 1785312000000
     private static let iso = "2025-10-02T06:19:31.163Z"
@@ -239,7 +242,7 @@ struct CursorUsageReaderScanTests {
     }
 }
 
-/// composerData / bubbleId のフィクスチャから会話単位の内訳を起こせるか（TF-0077）。
+/// composerData / bubbleId のフィクスチャから会話単位の内訳を起こせるか。
 struct CursorUsageReaderSessionTests {
     private static let iso = "2025-10-02T06:19:31.163Z"
     private static let isoNextDay = "2025-10-03T09:00:00.000Z"
@@ -306,7 +309,7 @@ struct CursorUsageReaderSessionTests {
         }
     }
 
-    /// Cursor 3.x では価格を引けないモデルが $0 になる（#73）。$0 の会話は行にしない。
+    /// 価格を引けないモデルが $0 になる。$0 の会話は行にしない。
     @Test func 価格を引けない会話は行にしない() {
         let db = makeCursorFixtureDB(rows: [
             ("composerData:c1", """
@@ -378,7 +381,8 @@ struct CursorCostDriverTests {
 
 }
 
-/// `SQLITE_OPEN_READONLY` はそれを開けず、しかも失敗するのは `open` ではなく `prepare` なので、
+/// `SQLITE_OPEN_READONLY` は WAL 残存 DB を開けず、失敗は `prepare` で起きるので、
+/// 「テーブルが無い DB」と同じ静かな空返しに紛れる。ここが壊れると Cursor は常に 0 円になる。
 struct CursorSQLiteWALTests {
     /// この 3 点が揃ったときだけ素の読み取り専用が `SQLITE_CANTOPEN` になるので、
     private func makeCheckpointedWALDB(extraSQL: String) -> URL {

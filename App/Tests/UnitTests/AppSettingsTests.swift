@@ -26,7 +26,7 @@ struct AppSettingsTests {
         #expect(defaults.bool(forKey: "launchAtLogin") == true)
     }
 
-    /// 追従モード（TF-0080）は未設定なら両方オン。bool(forKey:) が未設定を false と
+    /// 追従モードは未設定なら両方オン。bool(forKey:) が未設定を false と
     /// 読むので、既定オンの設定は存在確認を挟まないと黙ってオフで始まる。
     @Test func 追従モードの既定はオン() {
         let name = "tokfuel-tests-\(UUID().uuidString)"
@@ -59,7 +59,7 @@ struct AppSettingsTests {
         #expect(reloaded.appearanceMode == .dark)
     }
 
-    /// TF-0116: JPY で設定した上限額は、レートが更新されても勝手に変わらない
+    /// JPY で設定した上限額は、レートが更新されても勝手に変わらない
     /// （ネイティブ単位でそのまま保存し、時間経過だけでは再変換しない）。
     @Test func 円で設定した予算上限はレート更新後も変わらない() {
         let name = "tokfuel-tests-\(UUID().uuidString)"

@@ -11,7 +11,7 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// 追従モード（TF-0080）の状態遷移。発火の閾値・リセット・復帰の境界を突く。
+/// 追従モードの状態遷移。発火の閾値・リセット・復帰の境界を突く。
 /// 時刻は引数で渡すので、待たずに 5 分後を作れる。
 struct RefreshSchedulerTests {
     private let t0 = Date(timeIntervalSince1970: 1_700_000_000)

@@ -1,12 +1,13 @@
 import Foundation
 import TokfuelCore
 
-/// 単価はハードコードしない——`CursorPricingService` が Cursor 公式の価格表
-/// （「下限の推定値」という前提を崩さないための意図的な選択 — それらしい単価を捏造しない）。
+/// 単価はハードコードしない——`CursorPricingService` のキャッシュだけを参照する。
+/// キャッシュが無い、またはモデルが表に無ければ 0（それらしい単価を捏造しない）。
 public enum CursorPricing {
     private static func rate(for modelID: String) -> (input: Double, output: Double)? {
         let lower = modelID.lowercased()
         // cachedRates() はキー長の降順で並んでいるので、hasPrefix で探すだけで
+        // 「より具体的なモデル名が先にマッチする」が自然に成り立つ。
         guard let cached = CursorPricingService.cachedRates()
             .first(where: { lower.hasPrefix($0.key) })
         else { return nil }

@@ -13,6 +13,7 @@ public struct PopoverView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var settings: AppSettings
     // private ではない — ScreenshotRenderer がフッターのアップデートボタンをプレビュー
+    // させるために、フィクスチャの UpdateChecker を渡せるようにする。
     @ObservedObject var updater: UpdateChecker
     public var onOpenSettings: () -> Void = {}
     public var onOpenAbout: () -> Void = {}
@@ -44,7 +45,7 @@ public struct PopoverView: View {
                         chartSection(report)
                         modelBreakdown(report)
                         topSessionsSection(report)
-                        // ヒントは Claude だけの話ではない（Cursor 由来も並ぶ）ので、
+                        // ソースの選択による絞り込みは store 側の合成に任せる。
                         adviceSection(report)
                     } else if store.retokError == nil {
                         loadingSection
@@ -79,7 +80,8 @@ public struct PopoverView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-            // まとめラベルにしない）。
+            // 並べて表示はヒーローを分割せず、内訳キャプション 1 行が担う。0 円のソースは載せない
+            // （"その他" のような曖昧なまとめラベルにしない）。
             if mode == .sideBySide {
                 Text(Self.sideBySideCaption(
                     claudeCost: store.todayCost(forSource: CostSourceMode.claudeSourceID),
@@ -127,6 +129,8 @@ public struct PopoverView: View {
     }
 
     /// 注意書き（アイコンと文字）の色。金額の下でオレンジは予算ゲージの警告色と紛れるので、
+    /// 「取れていない」ことを言い切る赤にする。外観に合わせて振るのは、暗い側で映える明度が
+    /// そのままライト側ではコントラスト不足になるため。
     public static let warningTint = Color(nsColor: NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             ? NSColor(srgbRed: 1.00, green: 0.30, blue: 0.24, alpha: 1)
@@ -141,13 +145,14 @@ public struct PopoverView: View {
 
     /// 指定アプリを前面に出す。見つからなければ何もしない（アンインストール直後など）。
     /// サインインの完了は監視しない——10 分ごとの定期更新か、次にポップオーバーを開いた
+    /// ときの再取得が新しいトークンを拾う。
     public static func activateApp(bundleID: String) {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
         else { return }
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
 
-    /// （"その他" のような曖昧なまとめラベルにしない）。
+    /// 0 円のソースは載せない（"その他" のような曖昧なまとめラベルにしない）。
     /// 取得できなかったソースは 0 円として並べず「—」にする——0 円と「不明」は別の情報。
     public static func sideBySideCaption(claudeCost: Double,
                                   driverBreakdown: [(name: String, cost: Double)],
@@ -203,7 +208,7 @@ public struct PopoverView: View {
                 case .cumulative: cumulativeChart(report)
                 }
             }
-            // Y は水平線 2〜3 本 — 色と線は情報を持つときだけ使う（TF #53）。
+            // 色と線は情報を持つときだけ使う。
             .chartXAxis {
                 let period = store.reportPeriod
                 AxisMarks(values: xAxisValues(report)) { value in
@@ -216,6 +221,7 @@ public struct PopoverView: View {
                 }
             }
             // 系列を表示通貨建てで描くので、automatic の目盛りも円なら 0 / 500 / 1000
+            // のようにきれいな整数になる（USD 目盛りをラベルだけ換算すると端数が残る）。
             .chartYAxis {
                 let currency = settings.displayCurrency
                 let rate = Money.currentRate()
@@ -231,7 +237,7 @@ public struct PopoverView: View {
             }
             .id(settings.displayCurrency)
             .frame(height: 110)
-            // （stale-while-revalidate — TF #53）。
+            // 再解析中も前回の絵を隠さない。右下の小さなインジケーターだけで進行を示す。
             .overlay(alignment: .bottomTrailing) {
                 if store.isReportLoading {
                     ProgressView()
@@ -262,7 +268,7 @@ public struct PopoverView: View {
         .chartLegend(showsLegend ? .visible : .hidden)
     }
 
-    /// 上限の参照線を破線で添える — ずれた期間に線を引くと嘘になる（TF #53）。
+    /// 上限の参照線を破線で添える — ずれた期間に線を引くと嘘になる。
     private func cumulativeChart(_ report: RetokReport) -> some View {
         let points = UsageStore.cumulativeRows(
             from: store.chartRows(for: report),
@@ -706,6 +712,7 @@ public struct MeterBar: View {
 }
 
 /// 出どころ（Claude / Cursor）はバッジで示す — 同じリストに 2 系統が並ぶので、
+/// どちらを見て言っているのかが分からないとヒントを判断に使えない。
 public struct AdviceRow: View {
     public let advice: RetokReport.Advice
     public let source: String
@@ -729,6 +736,7 @@ public struct AdviceRow: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // キーボードフォーカスと押下のセマンティクスが要るため——タップでしか開けないと、
+            // キーボード利用者は展開の中にあるコピーボタンに到達できない。
             Button {
                 withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
             } label: {
@@ -778,6 +786,7 @@ public struct AdviceRow: View {
                 copyPrompt()
             } label: {
                 // 「プロンプトをコピー」だとヒント本文の複製と読めるので、
+                // 何のためのプロンプトなのかをラベルで言い切る。
                 Label(didCopy ? "コピーしました" : "改善プロンプトをコピー",
                       systemImage: didCopy ? "checkmark" : "doc.on.doc")
                     .font(.caption2)

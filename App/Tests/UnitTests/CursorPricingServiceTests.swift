@@ -12,6 +12,7 @@ import Testing
 @testable import Tokfuel
 
 /// cursor.com のドキュメントページは API ではないので、パーサーはページの見た目の変化に
+/// 弱くならないよう防御的でなければならない。ネットワーク自体は叩かない。
 struct CursorPricingServiceTests {
     private let sample = """
     # Models & Pricing

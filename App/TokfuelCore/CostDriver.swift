@@ -23,6 +23,7 @@ public struct CostSnapshot: Sendable, Equatable {
     public enum Degradation: Sendable, Equatable {
         case signedOut
         /// 失効させられている。ディスクのトークンは `exp` が先でも失効しうるので、
+        /// 「サインインし直す」以外に回復手段が無い。
         case credentialsRejected
         case remoteUnavailable
 
@@ -34,6 +35,7 @@ public struct CostSnapshot: Sendable, Equatable {
                 return "未サインイン。サインインしてください"
             case .credentialsRejected:
                 // 単に再サインインでは足りない。アプリは自分がまだ有効だと思っているので、
+                // サインアウトでその状態を壊す必要がある。
                 return "サインイン切れ。サインアウトして再サインインしてください"
             case .remoteUnavailable:
                 return "使用量 API に接続できません"

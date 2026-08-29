@@ -50,7 +50,7 @@ public final class AppSettings: ObservableObject {
     @Published public var menuBarShowsRemaining: Bool {
         didSet { persist(menuBarShowsRemaining, forKey: Keys.menuBarShowsRemaining) }
     }
-    /// 使用額が動いている間だけ更新間隔を上げる（TF-0080）。オフなら常に 10 分間隔。
+    /// 使用額が動いている間だけ更新間隔を上げる。オフなら常に 10 分間隔。
     @Published public var adaptiveRefreshEnabled: Bool {
         didSet { persist(adaptiveRefreshEnabled, forKey: Keys.adaptiveRefreshEnabled) }
     }
@@ -65,6 +65,7 @@ public final class AppSettings: ObservableObject {
     }
 
     /// レート未取得（`rate <= 0`）のときは変換すると誤った値を確定保存しかねないため、
+    /// 何もせず据え置く（次に切り替えたときにレートが揃っていれば変換される）。
     @Published public var displayCurrency: DisplayCurrency {
         didSet {
             persist(displayCurrency.rawValue, forKey: Money.currencyKey)
@@ -198,6 +199,7 @@ public final class AppSettings: ObservableObject {
         }
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         // 新キーが未設定なら旧 menuBarDisplay を読み替える。旧キーは消さないので、
+        // 古いバージョンに戻しても設定はそのまま残る。
         let legacy = MenuBarReadout.migrated(legacy: defaults.string(forKey: Keys.legacyMenuBarDisplay))
         menuBarMetric = MenuBarMetric(rawValue: defaults.string(forKey: Keys.menuBarMetric) ?? "")
             ?? legacy?.metric ?? .today
@@ -209,6 +211,7 @@ public final class AppSettings: ObservableObject {
         menuBarGaugeShape = MenuBarGaugeShape(
             rawValue: defaults.string(forKey: Keys.menuBarGaugeShape) ?? "") ?? .ring
         // 既定はアイコンあり。bool(forKey:) は未設定を false と読むので、存在確認だけ object で
+        // 行い、値の解釈は bool に任せる。
         menuBarShowsIcon = defaults.object(forKey: Keys.menuBarShowsIcon) == nil
             ? true : defaults.bool(forKey: Keys.menuBarShowsIcon)
         menuBarShowsRemaining = defaults.bool(forKey: Keys.menuBarShowsRemaining)
@@ -227,7 +230,8 @@ public final class AppSettings: ObservableObject {
         costModelBreakdownMode = CostModelBreakdownMode(
             rawValue: defaults.string(forKey: Keys.costModelBreakdownMode) ?? "") ?? .combined
         claudeDirectory = defaults.string(forKey: Keys.claudeDirectory) ?? Self.defaultClaudeDirectory
-        // 表示通貨のユーザーだけ、一度だけネイティブ単位へ変換する（TF-0116）。self のプロパティは
+        // 旧バージョンは budgetLimit/dailyBudgetLimit を常に USD で保存していた。USD 以外の
+        // 表示通貨のユーザーだけ、一度だけネイティブ単位へ変換する。self のプロパティは
         // 全部そろうまで読めない（2 段階初期化）ので、ここではローカル変数だけで完結させる。
         var migratedBudgetLimit = defaults.double(forKey: Keys.budgetLimit)
         var migratedDailyBudgetLimit = defaults.double(forKey: Keys.dailyBudgetLimit)

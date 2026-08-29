@@ -1,7 +1,7 @@
 import Foundation
 
-/// 使用額が動いている間だけ更新間隔を上げる「追従モード」の状態機械（TF-0080）。
-/// タイマーもストアも触らない。時刻を引数で受け取るのは、テストから固定値を渡せるようにするため
+/// 使用額が動いている間だけ更新間隔を上げる「追従モード」の状態機械。
+/// タイマーもストアも触らない。時刻を引数で受け取るのは、テストから固定値を渡せるようにするため。
 struct RefreshScheduler {
     static let baseInterval: TimeInterval = 600
     static let followInterval: TimeInterval = 60
@@ -16,7 +16,7 @@ struct RefreshScheduler {
         let intervalChanged: Bool
     }
 
-    /// （一時的に取得できなかっただけのソースが、復帰時に増加として誤発火しないようにする）。
+    /// ソースごとに前回値を記録する。一時的に取得できなかったソースが復帰しても増加と誤認しない。
     private var lastCosts: [String: Double] = [:]
     /// 1 回でも観測したか。初回は比較相手が無いので、起動直後の「0 → 実額」で発火させない。
     private var hasBaseline = false

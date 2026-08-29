@@ -9,8 +9,8 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// `RetokReport` を CSV に書き出す（TF-0008）。新しい分析はせず、すでにデコード済みの
-/// 同梱する制約があるため、日別行はある値だけを載せ、無い値は期間合計セクションで補う。
+/// すでにデコード済みの `RetokReport` を CSV に書き出す。retok の daily 集計が cost / output
+/// しか持たない制約があるため、日別行はある値だけを載せ、無い値は期間合計セクションで補う。
 public enum CSVExportService {
     public enum Granularity: String {
         case daily, monthly
@@ -97,6 +97,7 @@ public enum CSVExportService {
 
         do {
             // BOM 付き UTF-8: ヘッダーとモデル名以外は日本語（期間ラベルなど）を含むので、
+            // Excel などが文字化けしないようにする。
             var data = Data([0xEF, 0xBB, 0xBF])
             data.append(Data(content.utf8))
             try data.write(to: url)

@@ -20,7 +20,7 @@ public struct SettingsView: View {
     #endif
 
     #if DEBUG
-    /// UI プレビュー撮影用（TF-0034）。折りたたみセクションを開いた状態も別絵で撮るための入口。
+    /// UI プレビュー撮影用。折りたたみセクションを開いた状態も別絵で撮るための入口。
     public init(
         store: UsageStore,
         settings: AppSettings = .shared,
@@ -296,7 +296,7 @@ public struct SettingsView: View {
     }
 
     /// 通貨の変換は `AppSettings.displayCurrency` の切り替え時に 1 回だけ行われるため、
-    /// ここでは変換しない（毎回変換すると為替レートの更新で表示額がドリフトする — TF-0116）。
+    /// ここでは変換しない（毎回変換すると為替レートの更新で表示額がドリフトする）。
     private func budgetField(_ keyPath: ReferenceWritableKeyPath<AppSettings, Double>) -> Binding<Double> {
         Binding(
             get: { settings[keyPath: keyPath] },
@@ -310,7 +310,7 @@ public struct SettingsView: View {
         var id: String { option.rawValue }
     }
 
-    /// ——行ごとに組み直すと、同じ計算を表現の数だけやり直すことになる。
+    /// 行ごとに組み直すと同じ計算を表現の数だけやり直すので、入力はここで 1 度だけ作る。
     private var representationRows: [RepresentationRow] {
         let input = store.menuBarInput()
         return MenuBarRepresentation.allCases.map { option in

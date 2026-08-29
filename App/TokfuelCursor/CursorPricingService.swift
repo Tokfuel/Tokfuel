@@ -1,8 +1,8 @@
 import Foundation
 import TokfuelCore
 
-/// （無ければ空——`CursorPricing` はハードコードした表を持たないので、未知のモデルと同じ
-/// 扱いで 0 になる）にフォールバックする。retok と違い、これはオマケの精度向上でしかないので、
+/// 失敗は静かに諦め、既存のキャッシュ（無ければ空——未知のモデルと同じ扱いで 0 になる）に
+/// フォールバックする。retok と違い精度向上のオマケなので、失敗をユーザーに見せない。
 public enum CursorPricingService {
     public struct CachedRate: Codable, Sendable {
         public let key: String
@@ -82,7 +82,8 @@ public enum CursorPricingService {
     }
 
 
-    /// （ページの見た目が変わってもクラッシュしない——このページは API ではなくドキュメントなので、
+    /// ページの見た目が変わってもクラッシュしない——API ではなくドキュメントなので、
+    /// 列の追加や並び替えが将来起きても壊れて見えないことを優先する。
     public static func parseTable(_ markdown: String) -> [CachedRate] {
         var rates: [CachedRate] = []
         for line in markdown.split(separator: "\n", omittingEmptySubsequences: true) {

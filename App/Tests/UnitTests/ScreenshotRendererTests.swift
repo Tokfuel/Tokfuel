@@ -13,7 +13,7 @@ import Testing
 
 #if DEBUG
 
-/// スクリーンショット生成（TF-0015）の引数解釈。README の絵は CI が撮るので、
+/// README の絵は CI が撮るので、引数解釈が壊れると全自動プレビューが止まる。
 struct ScreenshotArgumentTests {
     @Test func フラグの次の引数を出力先にする() {
         #expect(ScreenshotRenderer.outputPath(
@@ -32,7 +32,7 @@ struct ScreenshotArgumentTests {
     }
 }
 
-/// ui-preview（TF-0034）の引数解釈。`--screenshot` の出力先パースと同じ形。
+/// `--screenshot` と同じ形で `--ui-preview` の出力先を解釈する。
 struct UIPreviewArgumentTests {
     @Test func フラグの次の引数を出力先ディレクトリにする() {
         #expect(ScreenshotRenderer.outputDirectory(
@@ -83,7 +83,7 @@ struct ScreenshotFixtureTests {
     }
 
     @Test func 節約のヒントは両ソースぶんが絵に出る() {
-        // popover-advice の絵はここが空だと「節約のヒント」ごと消える（TF-0078）。
+        // popover-advice の絵はここが空だと「節約のヒント」ごと消える。
         #expect(!ScreenshotRenderer.fixtureReport().advice.isEmpty)
         let cursor = CursorAdvice.hints(for: .init(
             modelCosts: ScreenshotRenderer.cursorModelCosts,
@@ -93,7 +93,7 @@ struct ScreenshotFixtureTests {
                                                CursorAdvice.Key.unpricedModels].sorted())
     }
 
-    /// `popover-sessions` の絵（TF-0077）は、Claude と Cursor が 1 本のリストに混ざった
+    /// `popover-sessions` の絵は、Claude と Cursor が 1 本のリストに混ざった状態を写す。
     @Test func セッションのフィクスチャはClaudeとCursorが混ざる() {
         let store = ScreenshotRenderer.sessionsFixtureStore()
         #expect(store.driverSessionsByID["cursor"]?.count == 2)

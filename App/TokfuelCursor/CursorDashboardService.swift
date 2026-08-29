@@ -21,6 +21,7 @@ public enum CursorDashboardService {
     }
 
     /// 取得の結果。`Snapshot?` では潰れてしまう 2 つの失敗を分ける——呼び出し側
+    /// がサインイン導線を出すかどうかを決められるようにする。
     public enum FetchOutcome: Equatable {
         case success(Snapshot)
         case noCredentials
@@ -53,7 +54,7 @@ public enum CursorDashboardService {
         )?.daily
     }
 
-    /// 日別 + モデル別。同一キャッシュを共有するので `dailyCosts` の直後でも追加通信しない。
+    /// `dailyCosts` と同一キャッシュを共有するので、直後に呼んでも追加通信しない。
     public static func fetchSnapshot(
         from: String,
         to: String,
@@ -197,7 +198,7 @@ public enum CursorDashboardService {
             return 0
         }
 
-        /// 0 以下を `notCharged` に丸める。金額 0 の請求は表示にも合算にも出さないので、
+        /// 0 以下を `notCharged` に丸める。金額 0 の請求は表示にも合算にも出さない。
         static func billing(_ usd: Double) -> Charge { usd > 0 ? .billed(usd) : .notCharged }
     }
 
@@ -232,7 +233,7 @@ public enum CursorDashboardService {
         return ParsedPage(totalCount: total, events: events)
     }
 
-    /// 名目額が入るので、金額欄から先に読むと請求されない利用まで積み上がる（#100）。
+    /// 名目額が入るので、金額欄から先に読むと請求されない利用まで積み上がる。
     public static func charge(_ event: [String: Any]) -> Charge {
         let kind = (event["kind"] as? String)?.uppercased() ?? ""
         if kind.contains("INCLUDED") || kind.contains("NOT_CHARGED") { return .notCharged }

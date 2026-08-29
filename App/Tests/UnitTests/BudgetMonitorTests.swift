@@ -43,6 +43,7 @@ struct BudgetLevelTests {
 }
 
 /// 使い捨ての UserDefaults スイート。重複抑止の状態は UserDefaults に載るので、
+/// テストごとに独立したドメインを使い、実ユーザーの設定には触らない。
 private func withScratchDefaults(_ body: (UserDefaults) throws -> Void) rethrows {
     let name = "tokfuel.tests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: name)!

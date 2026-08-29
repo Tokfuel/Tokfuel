@@ -10,7 +10,7 @@ import TokfuelClaude
 import TokfuelCursor
 import TokfuelCodex
 
-/// （TF-0015 / #62）。手描きのモックアップと違い、UI を変えれば絵も追従する。
+/// 手描きモックではなく実 UI を撮るので、UI を変えれば絵も追従する。
 @MainActor
 public enum ScreenshotRenderer {
     public static let canvas = CGSize(width: 640, height: 584)
@@ -70,7 +70,6 @@ public enum ScreenshotRenderer {
         return arguments[next]
     }
 
-    /// `--ui-preview <dir>` 付きで起動されたときの入口（TF-0034）。PR の ui-preview 📸 ラベル用に、
     public static func runAllAndExit(arguments: [String] = CommandLine.arguments) -> Never {
         do {
             guard let dirPath = outputDirectory(arguments: arguments) else { throw RenderError.usage }
@@ -97,15 +96,12 @@ public enum ScreenshotRenderer {
         return arguments[next]
     }
 
-    ///   `chromeTint`（ライトは tertiary）と、ダーク既定の `popover` を見比べる用（TF-0096）
-    ///   最初の 1 画面に入らないため、ここでしか見えない）
-    ///   展開しないと出ないので、折り畳んだ `popover-advice` では絵に写らない
+    /// 1 画面に入らない状態や折り畳み内の UI は、別名のスクリーンショットでしか写せない。
     public static func allScreens() throws -> [(name: String, data: Data)] {
         let store = fixtureStore()
-        // probeSize がそのまま最終サイズになる。About は幅 320 だけを持つので、
         let settingsSize = CGSize(width: 460, height: 620)
         let aboutProbeSize = CGSize(width: 320, height: 800)
-        // 予算アラートは幅 360 だけを持つので、高さは fittingSize へ縮める（About と同じ）。
+        // About / 予算アラートは幅だけ固定し、高さは fittingSize に任せる（probeSize が最終サイズになる）。
         let alertProbeSize = CGSize(width: 360, height: 400)
         let consentProbeSize = CGSize(width: 460, height: 400)
         return [
@@ -140,9 +136,7 @@ public enum ScreenshotRenderer {
         ]
     }
 
-    /// （`available` は nil のまま）なので、ボタンを出したい画面だけ `.preview(version:)` を渡す。
-    /// 描けず、本文が空の絵になるため。
-    /// 折り返しの下にあるセクション（節約のヒント）は、そうしないと絵に写らない。
+    /// アップデート提示や折り畳み下のセクションは、引数や scrollsToBottom でないと絵に写らない。
     private static func renderPNG(store: UsageStore, updater: UpdateChecker = .shared,
                                   scrollsToBottom: Bool = false) throws -> Data {
         let view = NSHostingView(rootView: composition(store: store, updater: updater, now: Date()))
@@ -150,7 +144,6 @@ public enum ScreenshotRenderer {
         return try capture(view, size: canvas, scrollsToBottom: scrollsToBottom)
     }
 
-    /// 敷く（ポップオーバーの合成と違い透明にしない）。`probeSize` は最初のレイアウト用の仮サイズ
     private static func renderStandalone<V: View>(
         _ rootView: V, probeSize: CGSize, scrollsToBottom: Bool = false,
         colorScheme: ColorScheme = .dark
@@ -177,7 +170,7 @@ public enum ScreenshotRenderer {
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.layoutSubtreeIfNeeded()
 
-        // だけで、開いた DisclosureGroup の中身は下にスクロールしないと写らない。
+        // DisclosureGroup の中身は scrollsToBottom でないと写らない。
         if scrollsToBottom {
             RunLoop.current.run(until: Date().addingTimeInterval(settleSeconds))
             scrollToBottom(in: hosting)
@@ -203,7 +196,7 @@ public enum ScreenshotRenderer {
         return nil
     }
 
-    /// ウィンドウの appearance を見るので、environment だけ変えても絵が追従しない。
+    /// NSAppearance 依存色は environment だけでは変わらないので、ウィンドウの appearance を揃える。
     private static func nsAppearance(for colorScheme: ColorScheme) -> NSAppearance? {
         NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
     }
@@ -240,7 +233,7 @@ public enum ScreenshotRenderer {
         return png
     }
 
-    /// 自身のドメインなので、インストール済み Tokfuel.app の設定には触らない。
+    /// インストール済み Tokfuel.app の UserDefaults には触らない（専用ドメインで上書きする）。
     private static func prepareDefaults() {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: UsageEventLog.enabledKey)
@@ -257,9 +250,7 @@ public enum ScreenshotRenderer {
         settings.budgetWarnPercent = 80
         settings.budgetPeriod = .calendarMonth
         settings.budgetAlertStyle = .notification
-        // 並べて表示にして、TF-0032 の Cursor 二次ソースをヒーローに写す。
         settings.costSourceMode = .sideBySide
-        // 追従モードのトグル（TF-0080）。実行環境の UserDefaults に依らず既定オンの絵にする。
         settings.adaptiveRefreshEnabled = true
         settings.activityAnimationEnabled = true
         settings.appearanceMode = .dark
@@ -289,7 +280,6 @@ public enum ScreenshotRenderer {
                        startPoint: .top, endPoint: .bottom)
     }
 
-    /// 本物と同じフォーマッタに通すので、指標「今日」× 表現「金額」の表示と一致する。
     private static func menuBar(now: Date) -> some View {
         HStack(spacing: 14) {
             Image(systemName: "apple.logo")
@@ -328,25 +318,20 @@ public enum ScreenshotRenderer {
     }
 
 
-    /// 実データを読まずに描くための固定データ。日付だけは「今日」を基準にずらすので、
     public static func fixtureStore() -> UsageStore {
         let store = UsageStore(costDrivers: [CursorCostDriver(), CodexCostDriver()])
         store.report = fixtureReport()
         store.budgetSpend = budgetSpend
-        // Cursor（二次ソース、TF-0032）。ヒーロー合計と内訳キャプションに出る今日ぶんだけ積む。
         store.driverDailyByID = ["cursor": [dateString(daysAgo: 0): cursorTodayCost]]
-        // モデル別内訳は「節約のヒント」の Cursor 由来（TF-0078）の入力でもある。
         store.driverModelByID = ["cursor": cursorModelCosts]
         store.lastUpdated = Date()
         return store
     }
 
-    /// 金額の下に劣化の注意書きが出る絵になる。
     public static func degradedCursorStore() -> UsageStore {
         degradedCursorStore(reason: .remoteUnavailable)
     }
 
-    /// Cursor の取得が劣化した状態。`credentialsRejected` の絵にはサインインボタンが付く。
     public static func degradedCursorStore(reason: CostSnapshot.Degradation) -> UsageStore {
         let store = fixtureStore()
         store.driverDailyByID = ["cursor": [:]]
@@ -362,9 +347,7 @@ public enum ScreenshotRenderer {
                                            spend: budgetSpend, limit: budgetLimit)!)
     }
 
-    /// 「高コストのセッション」を写すためのフィクスチャ（TF-0077）。README の 1 枚目には
-    /// 折り返しの下で入らないので、`popover-sessions` 画面だけがこちらを使う。
-    /// 末尾までスクロールするので、その下の節約のヒントは空にしてセッションが写るようにする。
+    /// README の 1 枚目に入らないセッション一覧は、専用画面で末尾までスクロールして撮る。
     public static func sessionsFixtureStore() -> UsageStore {
         let store = fixtureStore()
         store.report = fixtureReport(topSessions: claudeTopSessions, advice: [])
@@ -388,7 +371,7 @@ public enum ScreenshotRenderer {
         ]
     }
 
-    /// cursorModelCosts から作る）と並んだ状態——ソースバッジと severity 順——を写す。
+    /// Claude 由来（retok）と Cursor 由来のヒントが並んだ状態——ソースバッジと severity 順——を写す。
     public static let fixtureAdvice: [RetokReport.Advice] = [
         RetokReport.Advice(
             severity: "medium",

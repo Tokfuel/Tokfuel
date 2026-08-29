@@ -30,7 +30,7 @@ public enum MenuBarImage {
     private static let single: [(radius: CGFloat, width: CGFloat)] = [(5.7, 2.2)]
     private static let double: [(radius: CGFloat, width: CGFloat)] = [(3.2, 1.7), (6.3, 1.7)]
 
-    /// 追従モード（TF-0080）の明滅で 1 周期に使う秒数。
+    /// 追従モードの明滅で 1 周期に使う秒数。
     public static let glowCycle: TimeInterval = 2
     public static let glowFrameInterval: TimeInterval = 1.0 / 12
     private static let glowMinAlpha: CGFloat = 0.35
@@ -42,7 +42,9 @@ public enum MenuBarImage {
         return glowing(image, phase: glowPhase)
     }
 
-    /// （平常時のアイコン）はアルファだけが意味を持つので、この方式ならメニューバーの
+    /// 色を足さずアルファだけを動かすのは、予算しきい値の色をそのまま活かすため。
+    /// テンプレート画像（平常時のアイコン）はアルファだけが意味を持つので、この方式ならメニューバーの
+    /// 明暗への追従も壊さずに済む。
     public static func glowing(_ base: NSImage, phase: Double) -> NSImage {
         let size = base.size
         let cycle = min(max(phase, 0), 1)
@@ -52,7 +54,8 @@ public enum MenuBarImage {
             let travel = rect.height + band
             let originY = rect.minY - band + travel * CGFloat(cycle)
             let bandRect = NSRect(x: rect.minX, y: originY, width: rect.width, height: band)
-            // 掛ける。帯の外側は触らないので、通り過ぎたところは元の濃さに戻る。
+            // destinationIn は「塗った矩形の中だけ」を転送先のアルファに掛ける。帯の外側は触らないので、
+            // 通り過ぎたところは元の濃さに戻る。
             let opaque = NSColor(white: 0, alpha: 1)
             let gradient = NSGradient(colors: [opaque,
                                                NSColor(white: 0, alpha: glowMinAlpha),
@@ -117,6 +120,7 @@ public enum MenuBarImage {
         return NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
             glyph?.draw(in: rect)
             // sourceIn は「塗った矩形の中だけ」を転送先のアルファに掛ける。掛け算なので
+            // 一度薄くした上を濃く塗り直しても戻らない。下側と上側を 1 回ずつ塗り分ける。
             let split = rect.minY + rect.height * level
             if level > 0 {
                 filled.set()
@@ -178,7 +182,8 @@ public enum MenuBarImage {
     private static let neutral = NSColor(white: 0.62, alpha: 1)
 
     /// テンプレート描画ではアルファだけが意味を持つので、黒を薄めれば OS が明暗に合わせて
-    /// 塗り替えてくれる。一方、色付きの画像は明暗に追従しないため、リング色を薄める方式は
+    /// 塗り替えてくれる。色付きの画像は明暗に追従しないため、半透明の色は背景と混ざって
+    /// ほぼ見えなくなる。そこで色付きのときは明暗どちらでも沈まない中間グレーを使う。
     private static func trackColor(colored: Bool) -> NSColor {
         colored ? NSColor(white: 0.55, alpha: 0.65) : NSColor(white: 0, alpha: 0.35)
     }

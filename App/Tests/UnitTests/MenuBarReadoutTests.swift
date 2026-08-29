@@ -238,7 +238,7 @@ struct MenuBarRenderabilityTests {
     }
 }
 
-/// メニューバーに出す内容の組み立て。金額の書式は表示通貨に依存するため、
+/// 金額の書式は表示通貨に依存するため、このスイート内で通貨を固定して検証する。
 struct MenuBarContentTests {
     @Test func リング表現は数字を持たない() {
         let input = MenuBarInput(metric: .today, representation: .ring,
@@ -311,6 +311,7 @@ struct MenuBarContentTests {
 
     @Test func ゲージは基準にかかわらず予算レベルの色を受け取る() {
         // ゲージは給油機アイコンと入れ替わるので、ここで色を落とすと予算超過の赤が
+        // どこにも出なくなる。分母の取り方（基準）とは無関係に渡す。
         for basis in MenuBarPercentBasis.allCases {
             let input = MenuBarInput(metric: .today, representation: .ring, basis: basis,
                                      gauge: MenuBarGauge(todaySpend: 9, todayBasis: 10),
