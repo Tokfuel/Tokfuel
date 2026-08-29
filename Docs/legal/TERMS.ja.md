@@ -6,7 +6,7 @@
 
 ## ライセンス
 
-Tokfuel は [MIT License](../LICENSE) で公開されているオープンソースソフトウェアです（© [Tokfuel](https://github.com/Tokfuel)）。使用、複製、改変、再配布の権利はライセンス本文が定めます。
+Tokfuel は [MIT License](../../LICENSE) で公開されているオープンソースソフトウェアです（© [Tokfuel](https://github.com/Tokfuel)）。使用、複製、改変、再配布の権利はライセンス本文が定めます。
 
 ## 無保証
 
@@ -14,7 +14,7 @@ MIT License が定めるとおり、本ソフトウェアは**「現状のまま
 
 ## 同梱のサードパーティソフトウェア
 
-Tokfuel はコスト分析のために [retok](https://github.com/d-date/retok) を無改変で同梱しています。retok は [Daiki Matsudate (@d-date)](https://github.com/d-date) 氏の著作物で、[MIT License](../App/Tokfuel/Resources/LICENSE-retok) の下で提供されています。為替レートは [Frankfurter API](https://frankfurter.dev) がその規約の下で提供します。
+Tokfuel はコスト分析のために [retok](https://github.com/d-date/retok) を無改変で同梱しています。retok は [Daiki Matsudate (@d-date)](https://github.com/d-date) 氏の著作物で、[MIT License](../../App/Tokfuel/Resources/LICENSE-retok) の下で提供されています。為替レートは [Frankfurter API](https://frankfurter.dev) がその規約の下で提供します。
 
 ## 商標
 

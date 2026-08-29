@@ -14,7 +14,7 @@ struct ADRIndexEN: StaticPage {
             An ADR (Architecture Decision Record) keeps a technical decision in the repo \
             instead of scattering it across Issues and chat, so “why this shape” stays \
             discoverable later. Expand a section below to read Decision, background, \
-            options, and consequences. The files under ADR/ in git are the bilingual \
+            options, and consequences. The files under Docs/adr/ in git are the bilingual \
             canonical source; when they diverge, Japanese wins.
             """)
             .foregroundStyle(.secondary)
@@ -237,8 +237,8 @@ struct ADRIndexEN: StaticPage {
 
                     Text("""
                     Large direction changes start as a GitHub Issue (label ADR), then land as an \
-                    ADR once agreed. When you add an ADR or change its status, update the INDEX in \
-                    the same PR.
+                    ADR once agreed. When you add an ADR or change its status, update the README \
+                    catalog in the same PR.
                     """)
                     .foregroundStyle(.secondary)
                 }
@@ -252,7 +252,7 @@ struct ADRIndexEN: StaticPage {
                     .linkStyle(.underline(.heavy))
                 Link("Tests & verification", target: "\(sitePath)/docs/testing")
                     .linkStyle(.underline(.heavy))
-                Link("ADR/ (git canonical)", target: "https://github.com/Tokfuel/Tokfuel/tree/main/ADR")
+                Link("Docs/adr/ (git canonical)", target: "https://github.com/Tokfuel/Tokfuel/tree/main/Docs/adr")
                     .linkStyle(.underline(.heavy))
             }
         }

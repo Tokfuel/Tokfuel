@@ -79,9 +79,9 @@ struct PrivacyOverviewJA: StaticPage {
             .foregroundStyle(.secondary)
 
             HStack(spacing: 16) {
-                Link("プライバシーポリシー", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/PRIVACY.ja.md")
+                Link("プライバシーポリシー", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/legal/PRIVACY.ja.md")
                     .linkStyle(.underline(.heavy))
-                Link("利用規約", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/TERMS.ja.md")
+                Link("利用規約", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/legal/TERMS.ja.md")
                     .linkStyle(.underline(.heavy))
             }
         }

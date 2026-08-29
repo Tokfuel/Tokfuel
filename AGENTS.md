@@ -16,6 +16,28 @@
 UT [`UnitTests/`](App/Tests/UnitTests/)、IT [`IntegrationTests/`](App/Tests/IntegrationTests/)、
 シナリオ [`TestDocs/`](App/Tests/TestDocs/)、通し [`E2E/`](App/Tests/E2E/)）。
 
+## Project Structure
+
+```
+.
+├── .agents/skills/                # Agent skills 正本
+├── .claude/skills -> ../.agents/skills
+├── .cursor/skills -> ../.agents/skills
+├── .codex/skills -> ../.agents/skills
+├── App/                           # macOS アプリ・SPM・テスト
+├── Site/                          # Ignite サイト
+├── Scripts/                       # build / release / screenshot 等
+├── Docs/                          # ナレッジ索引・法務・ADR
+│   ├── handbook/                  # 運用・検証の正本
+│   ├── adr/                       # アーキテクチャ意思決定（日英ディレクトリ）
+│   ├── legal/                     # プライバシー・利用規約（ユーザー向け法務）
+├── ADR/                           # 移設リダイレクト（正本は Docs/adr/）
+├── .github/workflows/             # CI・プレビュー・リリース
+├── AGENTS.md / CLAUDE.md
+├── CONTRIBUTING.md
+└── README.md / README.ja.md
+```
+
 ## グラウンドルール（違反禁止）
 
 1. **ローカルオンリー**：Claude / Cursor / Codex 由来の利用データ（プロンプト、transcript、
@@ -92,16 +114,19 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 [GitHub Project #1](https://github.com/orgs/Tokfuel/projects/1) からも見える。
 
 このサイクルは [`.agents/skills/`](.agents/skills/) 配下のスキルが回す
-（`.claude/skills` は Claude Code 互換のための symlink）。
+（`.claude/skills` `.cursor/skills` `.codex/skills` は正本への symlink。詳細は
+[`Docs/handbook/skills.md`](Docs/handbook/skills.md)）。
 
 - **`ideation`**：アイデアを GitHub Issue に仕立てる（起案のみ）。
 - **`implementation`**：Issue 番号を起点に実装して出荷する（Issue 本文が仕様）。
 - **`task-select`**：オープンな Issue を見渡し、次に実装する項目を選ぶ。
-- **`write-adr`**：技術的意思決定を [`ADR/`](ADR/) に起草する（1 決定 = 1 ディレクトリ、
-  本文は `NNNN-slug(.ja).md`。型は [`ADR/TEMPLATE/`](ADR/TEMPLATE/)、一覧は
-  [`ADR/INDEX.ja.md`](ADR/INDEX.ja.md)）。
+- **`write-adr`**：技術的意思決定を [`Docs/adr/`](Docs/adr/) に起草する（1 決定 = 1 ディレクトリ、
+  本文は `NNNN-slug(.ja).md`。型は [`Docs/adr/TEMPLATE/`](Docs/adr/TEMPLATE/)、一覧は
+  [`Docs/adr/README.ja.md`](Docs/adr/README.ja.md)）。
+- **`create-pr`**：コミット、push、Pull Request 作成（[git-workflow](Docs/handbook/git-workflow.md)）。
+- **`auto-create-documentation`**：構成・運用変更を ADR / handbook に記録する。
 
-アーキテクチャ上の決定は [`ADR/NNNN-slug/`](ADR/) に置く（`NNNN-slug.ja.md` と
+アーキテクチャ上の決定は [`Docs/adr/NNNN-slug/`](Docs/adr/) に置く（`NNNN-slug.ja.md` と
 `NNNN-slug.md`）。ずれたときは日本語を正本とする。大きな方針は Issue（ラベル `ADR 🏯`）
 で議論し、合意を ADR に落とす。
 
@@ -132,6 +157,22 @@ CI（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）が、`App/Tokfuel
 - コード内のコメントは、周囲の既存コード（英語）に合わせる。
 - 英語のみ・旧形式のまま残っている古い Issue / PR は、内容に手を入れる機会に新形式へ寄せれば足りる。
   翻訳だけを目的にした一括の書き換えはしない。
+
+## Git / Pull Request
+
+ブランチ・コミット・PR の手順は [`create-pr`](.agents/skills/create-pr/SKILL.md) と
+[Git / PR 運用](Docs/handbook/git-workflow.md) を正本とする。GitHub 上のテンプレートは
+[`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)。
+
+## 変更の記録
+
+構成、CI、運用手順、エージェント規約を変更するときは `auto-create-documentation` スキルを使う。
+
+- 長期的な選択は [`Docs/adr/`](Docs/adr/) に記録する（[`write-adr`](.agents/skills/write-adr/SKILL.md)）。
+- 現在の正本・コマンド・手順は [`Docs/handbook/`](Docs/handbook/) に記録する。
+- 記録不要な局所修正では、その理由を完了報告に一文で述べる。
+
+詳細は [repository-maintenance.md](Docs/handbook/repository-maintenance.md)。
 
 ## 規約
 

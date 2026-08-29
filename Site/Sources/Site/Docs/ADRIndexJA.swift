@@ -13,7 +13,7 @@ struct ADRIndexJA: StaticPage {
             Text("""
             ADR（Architecture Decision Record）は、技術的な意思決定を Issue や会話に \
             散らさず残す短い記録です。「なぜその形にしたか」をあとから追えるようにします。 \
-            下のトグルを開いて、決定・背景・比較・結果を読んでください。git 上の ADR/ が \
+            下のトグルを開いて、決定・背景・比較・結果を読んでください。git 上の Docs/adr/ が \
             日英の正本で、ずれたときは日本語を正とします。
             """)
             .foregroundStyle(.secondary)
@@ -233,7 +233,7 @@ struct ADRIndexJA: StaticPage {
 
                     Text("""
                     大きな方針変更は、先に GitHub Issue（ラベル ADR）で議論し、合意した内容を ADR に \
-                    落とします。新規 ADR を足したり状態を変えたら、同じ PR で INDEX も更新します。
+                    落とします。新規 ADR を足したり状態を変えたら、同じ PR で README の一覧も更新します。
                     """)
                     .foregroundStyle(.secondary)
                 }
@@ -247,7 +247,7 @@ struct ADRIndexJA: StaticPage {
                     .linkStyle(.underline(.heavy))
                 Link("テストと検証", target: "\(sitePath)/ja/docs/testing")
                     .linkStyle(.underline(.heavy))
-                Link("ADR/（git 正本）", target: "https://github.com/Tokfuel/Tokfuel/tree/main/ADR")
+                Link("Docs/adr/（git 正本）", target: "https://github.com/Tokfuel/Tokfuel/tree/main/Docs/adr")
                     .linkStyle(.underline(.heavy))
             }
         }
