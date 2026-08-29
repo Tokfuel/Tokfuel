@@ -11,8 +11,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// `CursorPricingService` のキャッシュを差し込んでからテスト本体を実行し、自分が足したキー
-/// だけ剥がす（`setCachedRatesForTesting` は差分マージなので並行テストのキーは壊さない）。
 private func withPricing(
     _ rates: [(key: String, input: Double, output: Double)],
     _ body: () -> Void
@@ -26,8 +24,6 @@ private func withPricing(
 }
 
 struct CursorDashboardServiceParsingTests {
-    /// 従量課金イベント。実応答では `chargedCents` = `totalCents` + `cursorTokenFee` で、
-    /// Cursor 自身が Cost 列に出すのは `totalCents` 側（"$1.66"）。
     @Test func 従量課金はtotalCentsを請求額にする() {
         let event: [String: Any] = [
             "kind": "USAGE_EVENT_KIND_USAGE_BASED",
@@ -63,7 +59,6 @@ struct CursorDashboardServiceParsingTests {
         #expect(CursorDashboardService.charge(event) == .notCharged)
     }
 
-    /// `kind` が無い旧応答・形式変更時の代替。Cost 列が "-" なら金額欄の名目額は使わない。
     @Test func kindが無くてもCost列が課金なしなら合算しない() {
         let event: [String: Any] = [
             "usageBasedCosts": "-",
@@ -81,7 +76,6 @@ struct CursorDashboardServiceParsingTests {
         #expect(abs(usd - 0.597996) < 0.0001)
     }
 
-    /// 金額欄が無いイベントは、公式価格表のキャッシュでトークンから金額化する（#91）。
     @Test func 金額欄が無ければ価格表とトークンで金額化する() {
         withPricing([(key: "utest-dash-grok", input: 3, output: 15)]) {
             let event: [String: Any] = [
@@ -93,7 +87,6 @@ struct CursorDashboardServiceParsingTests {
                 Issue.record("価格表から金額を出せていない")
                 return
             }
-            // 1M × $3 + 0.1M × $15 = $4.5
             #expect(abs(usd - 4.5) < 0.0001)
         }
     }
@@ -180,7 +173,6 @@ struct CursorDashboardServiceParsingTests {
     }
 }
 
-/// キャッシュ（`CursorDashboardService` の static な共有状態）のキーは (from, to)。
 /// 並行実行されるテストが同じ窓を使うと互いの結果を拾ってしまうので、テストごとに違う窓を使う。
 /// イベントの日付は API 応答の timestamp だけで決まるため、窓をずらしても検証内容は変わらない。
 private func uniqueWindow(daysAgo: Int) -> (from: String, to: String) {
@@ -225,8 +217,6 @@ struct CursorDashboardServiceFetchTests {
         #expect(abs((result[today] ?? 0) - 3.0) < 0.0001)
     }
 
-    /// #100: プラン枠内のイベントは金額にも内訳にも乗らない。
-    /// #91: 金額欄が無いイベントは公式価格表でトークンから金額化して合算に乗せる。
     @Test func プラン枠内は合算せず金額欄が無いぶんは価格表で金額化する() async throws {
         CursorDashboardService.resetCacheForTesting()
         let window = uniqueWindow(daysAgo: 104)
@@ -288,8 +278,6 @@ struct CursorDashboardServiceFetchTests {
                 return (payload, response)
             }
         ))
-        // プラン枠内の 62.3386 セントは乗らない。従量課金の $0.65430135 と、金額欄が無い
-        // composer の 1M × $1 + 0.1M × $5 = $1.5 だけが合算される。
         #expect(abs((result.daily[today] ?? 0) - 2.15430135) < 0.0001)
         #expect(result.byModel.keys.sorted()
                 == ["utest-fetch-composer-2.5-fast", "utest-fetch-sonnet"])

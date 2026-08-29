@@ -12,9 +12,7 @@ import Testing
 @testable import Tokfuel
 
 /// cursor.com のドキュメントページは API ではないので、パーサーはページの見た目の変化に
-/// 弱くならないよう防御的でなければならない。ここでは実ページの抜粋（2026-07-30 時点）と、
-/// 崩れた行の両方に対する振る舞いを確認する。ネットワーク自体は叩かない（parseTable は
-/// 純粋関数）。
+/// 弱くならないよう防御的でなければならない。ネットワーク自体は叩かない。
 struct CursorPricingServiceTests {
     private let sample = """
     # Models & Pricing
@@ -55,9 +53,7 @@ struct CursorPricingServiceTests {
 
     @Test func 列が足りない行や価格が読めない行はスキップする() {
         let rates = CursorPricingService.parseTable(sample)
-        // "not a price row" の Input 列は "Input" という文字列で $ が無いためスキップされる。
         #expect(rates.contains { $0.key == "not-a-price-row" } == false)
-        // パイプで始まらない段落や、列が足りない行も無視される。
         #expect(rates.count == 4)
     }
 

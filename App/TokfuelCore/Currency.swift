@@ -1,6 +1,5 @@
 import Foundation
 
-/// 金額の表示通貨。コストは内部的に常に USD で持ち、表示時だけ変換する。
 public enum DisplayCurrency: String, CaseIterable, Identifiable {
     case usd, jpy
     public var id: String { rawValue }
@@ -12,7 +11,6 @@ public enum DisplayCurrency: String, CaseIterable, Identifiable {
     }
 }
 
-/// USD 建ての金額を表示通貨でフォーマットする。
 /// 通貨設定とレートは UserDefaults から直接読むため、どの actor からでも呼べる。
 public enum Money {
     public static let currencyKey = "displayCurrency"
@@ -64,8 +62,6 @@ public enum Money {
         currency == .jpy && rate > 0 ? amount / rate : amount
     }
 
-    /// ある表示通貨のネイティブ単位から、別の表示通貨のネイティブ単位へ USD 経由で変換する。
-    /// 通貨が同じなら素通し。`rate <= 0`（未取得）のときは `usdAmount`/`displayAmount` の
     /// ガードにより実質何もしない（値をそのまま返す）。
     public nonisolated static func convert(
         _ amount: Double,
@@ -82,8 +78,6 @@ public enum Money {
         currency == .jpy && rate > 0 ? "¥" : "$"
     }
 
-    /// チャート Y 軸向けの短い表記。プロット値は表示通貨建て（`displayAmount`）を渡す。
-    /// 円は桁区切りを付けず、1 万以上は「万」に畳んで軸幅を抑える。
     public nonisolated static func formatAxis(
         _ displayAmount: Double,
         currency: DisplayCurrency,
@@ -104,12 +98,7 @@ public enum Money {
     }
 }
 
-/// Frankfurter API (https://frankfurter.dev) から USD→JPY レートを取得する。
-/// 日本円表示を選んだときだけ呼ばれる、1 日 1 回キャッシュの通信機能。
-/// 送るのはレートの問い合わせだけで、使用データや個人情報は含まない。
 public enum ExchangeRateService {
-    /// キャッシュが今日のものならスキップし、必要なら取得して UserDefaults に保存する。
-    /// 取得できたら true（表示の再描画が必要）。
     @discardableResult
     public static func refreshIfNeeded(now: Date = Date()) async -> Bool {
         let defaults = UserDefaults.standard

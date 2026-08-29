@@ -34,7 +34,6 @@ import Testing
         #expect(CostSourceMode.codexOnly.includes(sourceID: "codex"))
         #expect(!CostSourceMode.codexOnly.includes(sourceID: "claude"))
         #expect(!CostSourceMode.codexOnly.includes(sourceID: "cursor"))
-        // 未知のドライバが増えても、合算には入り「◯◯ のみ」には混ざらない。
         #expect(CostSourceMode.combined.includes(sourceID: "gemini"))
         #expect(!CostSourceMode.cursorOnly.includes(sourceID: "gemini"))
     }
@@ -42,7 +41,6 @@ import Testing
     @Test func Codex未インストールなら選択肢から外す() {
         #expect(CostSourceMode.available(codexInstalled: true).contains(.codexOnly))
         #expect(!CostSourceMode.available(codexInstalled: false).contains(.codexOnly))
-        // 他の選択肢は減らさない。
         #expect(CostSourceMode.available(codexInstalled: false).count
                 == CostSourceMode.allCases.count - 1)
         #expect(CostSourceMode.resolved(.codexOnly, codexInstalled: false) == .combined)
@@ -53,7 +51,6 @@ import Testing
 
 @MainActor
 struct CostSourceModeSettingsTests {
-    /// 保存済みの `codexOnly` は、Codex が消えた Mac では合算として読み込む。
     @Test func 保存済みのCodexのみは未インストールなら合算へ落ちる() {
         let name = "tokfuel-tests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!
@@ -62,7 +59,6 @@ struct CostSourceModeSettingsTests {
 
         #expect(AppSettings(defaults: defaults, codexInstalled: false).costSourceMode == .combined)
         #expect(AppSettings(defaults: defaults, codexInstalled: true).costSourceMode == .codexOnly)
-        // 保存値そのものは書き換えない（Codex が戻れば選択も戻る）。
         #expect(defaults.string(forKey: "costSourceMode") == CostSourceMode.codexOnly.rawValue)
     }
 
@@ -141,12 +137,11 @@ struct CostSourceModeUsageStoreTests {
         withSourceMode(.codexOnly) { #expect(store.todayCost == 1) }
         withSourceMode(.cursorOnly) { #expect(store.todayCost == 2) }
         withSourceMode(.claudeOnly) { #expect(store.todayCost == 4) }
-        // 並べて表示の Cursor 側は二次ソース合計のまま（この Issue では拡張しない）。
+        // 並べて表示の Cursor 側は二次ソース合計のまま。
         #expect(store.secondaryTodayCost == 3)
         #expect(store.todayCost(forSource: CostSourceMode.codexSourceID) == 1)
     }
 
-    /// Codex 未インストール（driverDailyByID に codex が無い）なら「Codex のみ」は $0。
     @Test func Codexのデータが無ければCodexのみは0になる() {
         let store = UsageStore()
         let today = Self.dateString(Date())
@@ -168,7 +163,6 @@ struct CostSourceModeUsageStoreTests {
         withSourceMode(.claudeOnly) { #expect(store.budgetSpend == 40) }
         withSourceMode(.cursorOnly) { #expect(store.budgetSpend == 20) }
         withSourceMode(.codexOnly) { #expect(store.budgetSpend == 10) }
-        // 予算の分母（settings.budgetLimit）は変わらず、消費だけが選んだソースぶんになる。
         #expect(store.claudeBudgetSpend == 40)
         #expect(store.secondaryBudgetSpend == 30)
     }
@@ -197,7 +191,6 @@ struct CostSourceModeUsageStoreTests {
         #expect(store.degradedSourceWarnings.map(\.id) == ["cursor"])
         #expect(store.todayCostUnavailable)
 
-        // Claude を含むモードは注意書きだけ出し、金額は隠さない（retok 側のエラー行が担う）。
         settings.costSourceMode = .combined
         #expect(store.degradedSourceWarnings.map(\.id) == ["cursor"])
         #expect(store.todayCostUnavailable == false)
@@ -250,7 +243,6 @@ struct CostSourceModeUsageStoreTests {
     }
 
     @Test func chartRowsは表示窓より前の日を落とす() {
-        // retok は --days 1 でも前後の日が daily に混ざることがある。
         let store = UsageStore()
         let today = Self.dateString(Date())
         let yesterday = Self.dateString(
@@ -336,7 +328,6 @@ struct CostSourceModeUsageStoreTests {
         #expect(content.title.contains(Money.format(2)))
     }
 
-    /// 取得できていない Cursor を 0 円として出すと「使っていない」と読めてしまう。
     /// メニューバーはポップオーバーより情報量が少ないぶん、この誤読が起きやすい。
     @Test func Cursorが取れていなければ金額ではなく不明にする() {
         let input = MenuBarInput(
@@ -356,7 +347,6 @@ struct CostSourceModeUsageStoreTests {
     }
 
     @Test func Cursorのみで取れていなければ割合も不明() {
-        // 0% は「使っていない」と同義に見えるので出さない。
         let input = MenuBarInput(
             metric: .today, representation: .percent, costSourceMode: .cursorOnly,
             gauge: MenuBarGauge(todaySpend: 0, todayBasis: 20, monthSpend: 0, monthBasis: 20),

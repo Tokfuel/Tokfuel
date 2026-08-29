@@ -12,7 +12,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// テスト用のエポックミリ秒 → "YYYY-MM-DD"。実装側と同じ UsageStore.dateString を使う。
 private func localDateString(epochMillis: Double) -> String {
     UsageStore.dateString(Date(timeIntervalSince1970: epochMillis / 1000))
 }
@@ -24,10 +23,9 @@ private func localDateString(iso: String) -> String {
     return UsageStore.dateString(date)
 }
 
-/// CursorPricingService のキャッシュを差し込んでからテスト本体を実行し、自分が足したキーだけ
-/// 剥がす（setCachedRatesForTesting は差分マージなので他の並行テストのキーは壊さない）。
-/// キーは呼び出し側で他のテストと重ならないようにする（"utestN-" 接頭辞を付ける等）——
-/// 同じキーを複数テストが共有すると、片方の後始末がもう片方の実行中にキーを剥がしてしまう。
+/// 自分が足したキーだけ剥がす（差分マージなので他の並行テストのキーは壊さない）。
+/// キーは呼び出し側で重ならないようにする——同じキーを共有すると、片方の後始末が
+/// もう片方の実行中にキーを剥がしてしまう。
 private func withPricing(_ rates: [(key: String, input: Double, output: Double)], _ body: () -> Void) {
     let cached = rates.map {
         CursorPricingService.CachedRate(key: $0.key, input: $0.input, output: $0.output)
@@ -37,10 +35,8 @@ private func withPricing(_ rates: [(key: String, input: Double, output: Double)]
     body()
 }
 
-/// 実機の Cursor `state.vscdb` で確認したスキーマ形に対するパースを検証する。
-/// costEntry の金額は CursorPricing 経由で CursorPricingService のキャッシュを見るので、
-/// 金額を検証するテストはここでキャッシュを差し込んでから読む（既存の
-/// CursorDashboardService.resetCacheForTesting() と同じ、テストごとに差し替えて後始末する形）。
+/// costEntry の金額は CursorPricing 経由でキャッシュを見るので、
+/// 金額を検証するテストはここでキャッシュを差し込んでから読む。
 struct CursorCostDriverParsingTests {
     private static let epoch: Double = 1785312000000
     private static let iso = "2025-10-02T06:19:31.163Z"
@@ -127,7 +123,6 @@ struct CursorCostDriverParsingTests {
     }
 
     @Test func unifiedModeはモデル名として使わない() {
-        // unifiedMode は UI モード（chat / 2 等）でありモデル ID ではない。JSON の数値なので
         // stringValue() の時点で弾かれ、そもそも価格表を引く対象にならない——キャッシュは不要。
         let json = """
         {"createdAt": "\(Self.iso)", "tokenCount": {"inputTokens": 1000000, "outputTokens": 0}, "unifiedMode": 2}
@@ -146,7 +141,6 @@ struct CursorCostDriverParsingTests {
     }
 }
 
-/// `cursorDiskKV` を持つ最小の SQLite フィクスチャを作る。scan()／scanSessions() で共用する。
 private func makeCursorFixtureDB(rows: [(key: String, value: String)]) -> URL {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("cursor-fixture-\(UUID().uuidString).sqlite")
@@ -167,7 +161,6 @@ private func makeCursorFixtureDB(rows: [(key: String, value: String)]) -> URL {
     return url
 }
 
-/// `cursorDiskKV` を持つ最小の SQLite フィクスチャを作って scan() を検証する。
 struct CursorUsageReaderScanTests {
     private func makeFixtureDB(rows: [(key: String, value: String)]) -> URL {
         makeCursorFixtureDB(rows: rows)
@@ -214,7 +207,6 @@ struct CursorUsageReaderScanTests {
         withPricing([("utest7-claude-4-sonnet", 3.0, 15.0), ("utest7-gpt-5", 1.25, 10.0)]) {
             let day = localDateString(iso: Self.iso)
             let totals = CursorUsageReader.scan(dbPath: db.path, from: day, to: day)
-            // sonnet $3, not gpt-5 $1.25
             #expect(totals[day] == 3.0)
         }
     }
@@ -250,7 +242,7 @@ struct CursorUsageReaderScanTests {
     }
 }
 
-/// composerData / bubbleId のフィクスチャから会話単位の内訳を起こせるか（TF-0077）。
+/// composerData / bubbleId のフィクスチャから会話単位の内訳を起こせるか。
 struct CursorUsageReaderSessionTests {
     private static let iso = "2025-10-02T06:19:31.163Z"
     private static let isoNextDay = "2025-10-03T09:00:00.000Z"
@@ -317,7 +309,7 @@ struct CursorUsageReaderSessionTests {
         }
     }
 
-    /// Cursor 3.x では価格を引けないモデルが $0 になる（#73）。$0 の会話は行にしない。
+    /// 価格を引けないモデルが $0 になる。$0 の会話は行にしない。
     @Test func 価格を引けない会話は行にしない() {
         let db = makeCursorFixtureDB(rows: [
             ("composerData:c1", """
@@ -372,7 +364,6 @@ struct CursorCostDriverTests {
         #expect(sessions.isEmpty)
     }
 
-    /// セッション単位を持たない driver は既定実装のまま空を返す（CodexCostDriver は無改変）。
     @Test func セッションを持たないdriverは既定で空() async {
         let sessions = await CodexCostDriver().sessions(from: "2026-01-01", to: "2026-12-31")
         #expect(sessions.isEmpty)
@@ -390,16 +381,10 @@ struct CursorCostDriverTests {
 
 }
 
-/// WAL モードの `state.vscdb` を読み取り専用で開けるか。
-///
-/// 実機の Cursor は WAL でチェックポイント済み（`-wal` / `-shm` が無い）状態を残す。素の
-/// `SQLITE_OPEN_READONLY` はそれを開けず、しかも失敗するのは `open` ではなく `prepare` なので、
+/// `SQLITE_OPEN_READONLY` は WAL 残存 DB を開けず、失敗は `prepare` で起きるので、
 /// 「テーブルが無い DB」と同じ静かな空返しに紛れる。ここが壊れると Cursor は常に 0 円になる。
 struct CursorSQLiteWALTests {
-    /// 実機の Cursor と同じ状態を作る: WAL モードで書き、チェックポイントして閉じ、
-    /// `-wal` / `-shm` を消す（Cursor 終了後のディレクトリはこの形になっている）。
     /// この 3 点が揃ったときだけ素の読み取り専用が `SQLITE_CANTOPEN` になるので、
-    /// どれかを省くと回帰テストとして意味を失う。
     private func makeCheckpointedWALDB(extraSQL: String) -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("cursor-wal-\(UUID().uuidString).sqlite")
@@ -412,7 +397,6 @@ struct CursorSQLiteWALTests {
         for suffix in ["-wal", "-shm"] {
             try? FileManager.default.removeItem(atPath: url.path + suffix)
         }
-        // 前提の確認: 片付いた WAL DB は素の読み取り専用では prepare できない。
         var plain: OpaquePointer?
         #expect(sqlite3_open_v2(url.path, &plain, SQLITE_OPEN_READONLY, nil) == SQLITE_OK)
         var stmt: OpaquePointer?
@@ -456,10 +440,7 @@ struct CursorSQLiteWALTests {
     }
 }
 
-/// ダッシュボード API に届かなかったことを `CostSnapshot.health` で伝えられるか。
-/// 金額が 0 になる点は昔から同じで、変わったのは「その 0 の意味が UI に届く」ところ。
 struct CursorCostDriverHealthTests {
-    /// 実在するが中身が空の DB。`isAvailable` を通し、ローカルスキャンは空になる。
     private func makeEmptyDB() -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("cursor-health-\(UUID().uuidString).sqlite")
@@ -500,7 +481,6 @@ struct CursorCostDriverHealthTests {
     }
 
     @Test func 認証拒否はcredentialsRejectedで伝える() async {
-        // トークンはあるのにサーバが失効させている状態（実機で観測した 401）。
         // サインインし直せば直る種類なので、到達不能とは区別する。
         let url = makeEmptyDB()
         defer { try? FileManager.default.removeItem(at: url) }

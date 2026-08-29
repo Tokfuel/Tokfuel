@@ -1,6 +1,5 @@
 import Foundation
 
-/// retok の集計言語。auto は OS のロケールに従う。
 public enum ReportLanguage: String, CaseIterable, Identifiable, Sendable {
     case auto, en, ja
     public var id: String { rawValue }
@@ -11,7 +10,6 @@ public enum ReportLanguage: String, CaseIterable, Identifiable, Sendable {
         case .ja: return "日本語"
         }
     }
-    /// retok に渡す実際の言語コード。
     public var resolved: String {
         switch self {
         case .auto: return Locale.current.language.languageCode?.identifier ?? "en"
@@ -21,7 +19,6 @@ public enum ReportLanguage: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// 予算の集計期間の起点。
 public enum BudgetPeriod: String, CaseIterable, Identifiable, Sendable {
     case rolling30
     case calendarMonth
@@ -34,7 +31,6 @@ public enum BudgetPeriod: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// 予算のしきい値に達したときの知らせ方。
 public enum BudgetAlertStyle: String, CaseIterable, Identifiable, Sendable {
     case notification
     case alert
@@ -51,7 +47,6 @@ public enum BudgetAlertStyle: String, CaseIterable, Identifiable, Sendable {
     public var usesAlertWindow: Bool { self != .notification }
 }
 
-/// 「今週」の週始まり。Calendar.weekday（1 = 日曜 … 7 = 土曜）に対応する。
 public enum WeekStart: String, CaseIterable, Identifiable, Sendable {
     case saturday, sunday, monday
     public var id: String { rawValue }
@@ -71,7 +66,6 @@ public enum WeekStart: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// 推移チャートとコストレポートの集計窓（暦ベース。日数は日々変わる）。
 public enum ReportPeriod: String, CaseIterable, Identifiable, Sendable {
     case today, thisWeek, thisMonth, thisYear
     public var id: String { rawValue }
@@ -94,7 +88,6 @@ public enum ReportPeriod: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// アプリ UI の外観。既定は macOS の外観に追従する。
 public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
     case system, light, dark
     public var id: String { rawValue }

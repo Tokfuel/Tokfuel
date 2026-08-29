@@ -1,7 +1,6 @@
 import Foundation
 import TokfuelCore
 
-/// Claude Codeのトランスクリプトから、人間のプロンプト数とセッション数だけを集計する。
 /// コストとモデル内訳はretokが担当するため、UIで使わないtool_useの分類は保持しない。
 public enum TranscriptScanner {
     public struct FileSummary: Codable {

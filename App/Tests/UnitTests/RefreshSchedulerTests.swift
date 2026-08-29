@@ -11,7 +11,7 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// 追従モード（TF-0080）の状態遷移。発火の閾値・リセット・復帰の境界を突く。
+/// 追従モードの状態遷移。発火の閾値・リセット・復帰の境界を突く。
 /// 時刻は引数で渡すので、待たずに 5 分後を作れる。
 struct RefreshSchedulerTests {
     private let t0 = Date(timeIntervalSince1970: 1_700_000_000)
@@ -19,7 +19,6 @@ struct RefreshSchedulerTests {
     private let follow = RefreshScheduler.followInterval
     private let duration = RefreshScheduler.followDuration
 
-    /// 起動直後の「未観測 → 実額」は動きとみなさない（毎回の起動で追従に入ってしまう）。
     @Test func 初回の観測では追従しない() {
         var scheduler = RefreshScheduler()
         let decision = scheduler.observe(costs: ["claude": 12.34], now: t0)
@@ -55,7 +54,6 @@ struct RefreshSchedulerTests {
         #expect(over.isFollowing)
     }
 
-    /// 過去日の再計算でコストが下がることがある。減少では追従に入らない。
     @Test func 減少では発火しない() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 5.0], now: t0)
@@ -64,7 +62,6 @@ struct RefreshSchedulerTests {
         #expect(decision.interval == base)
     }
 
-    /// ソースは独立に見る。Claude が止まっていても Cursor が動けば追従する。
     @Test func 別ソースの増加でも発火する() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 5.0, "cursor": 1.0], now: t0)
@@ -73,7 +70,6 @@ struct RefreshSchedulerTests {
         #expect(decision.isFollowing)
     }
 
-    /// 後から見つかったソース（Cursor の初回スナップショット）は 0 からの増加として扱う。
     @Test func 新しいソースの出現でも発火する() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 5.0], now: t0)
@@ -92,7 +88,6 @@ struct RefreshSchedulerTests {
         #expect(decision.isFollowing == false)
     }
 
-    /// 5 分ちょうどで切れる。直前までは追従、境界では基準間隔へ戻る。
     @Test func 無風のまま5分で基準間隔へ戻る() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 1.0], now: t0)
@@ -113,7 +108,6 @@ struct RefreshSchedulerTests {
         #expect(scheduler.followUntil == nil)
     }
 
-    /// 追従中に動くたび、残り時間は 5 分へ戻る（最初の発火から 5 分では切れない）。
     @Test func 追従中に動いたら残り時間をリセットする() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 1.0], now: t0)
@@ -123,7 +117,6 @@ struct RefreshSchedulerTests {
                                       now: t0.addingTimeInterval(duration - 60))
         #expect(again.followRemaining == duration)
 
-        // 最初の発火から 5 分を過ぎても、リセット後の 5 分はまだ残っている。
         let later = scheduler.resolve(now: t0.addingTimeInterval(duration + 60))
         #expect(later.isFollowing)
         #expect(later.interval == follow)
@@ -153,7 +146,6 @@ struct RefreshSchedulerTests {
         #expect(decision.intervalChanged == false)
     }
 
-    /// 追従中に設定をオフにしたら、その場で基準間隔へ戻る。
     @Test func 追従中に設定をオフにすると戻る() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 1.0], now: t0)
@@ -164,7 +156,6 @@ struct RefreshSchedulerTests {
         #expect(off.intervalChanged)
     }
 
-    /// オフの間の増分は、オンに戻した瞬間の発火に使わない（戻した途端に追従に入らない）。
     @Test func オフの間の増分では戻した直後に発火しない() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 1.0], now: t0)
@@ -174,7 +165,6 @@ struct RefreshSchedulerTests {
         #expect(back.isFollowing == false)
     }
 
-    /// 間隔が変わらない回は intervalChanged を立てない（タイマーを張り替え続けない）。
     @Test func 同じ間隔が続く間は張り替えを求めない() {
         var scheduler = RefreshScheduler()
         _ = scheduler.observe(costs: ["claude": 1.0], now: t0)

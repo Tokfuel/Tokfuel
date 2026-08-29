@@ -1,7 +1,6 @@
 import Foundation
 import TokfuelCore
 
-/// バンドルした retok（Python スクリプト）を実行して JSON レポートを得る。
 public enum RetokService {
     private final class ProcessHolder: @unchecked Sendable {
         private let lock = NSLock()

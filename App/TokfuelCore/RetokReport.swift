@@ -1,6 +1,5 @@
 import Foundation
 
-/// retok --json の出力。コスト・トークン・キャッシュ効率・推奨事項を保持する。
 public struct RetokReport: Codable, Sendable {
     public struct Totals: Codable, Sendable {
         public var cost: Double = 0

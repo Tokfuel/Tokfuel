@@ -9,19 +9,14 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// コスト閲覧専用のポップオーバー。
-/// 情報の優先度: 1) 今日いくら使ったか（ヒーロー） 2) 上限への近さ（予算・クォータ、
-/// 設定時のみ） 3) 傾向と内訳（グラフ・モデル別・高額セッション）。
 public struct PopoverView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject private var settings: AppSettings
     // private ではない — ScreenshotRenderer がフッターのアップデートボタンをプレビュー
-    // させるために、フィクスチャの UpdateChecker を渡せるようにする（既定は実物の .shared）。
+    // させるために、フィクスチャの UpdateChecker を渡せるようにする。
     @ObservedObject var updater: UpdateChecker
     public var onOpenSettings: () -> Void = {}
     public var onOpenAbout: () -> Void = {}
-    /// ui-preview / スクリーンショット用。節約のヒントを開いた状態で描き、
-    /// 展開時にしか出ないコピーボタンを絵に写す。
     public var initiallyExpandsAdvice = false
 
     public init(
@@ -49,9 +44,7 @@ public struct PopoverView: View {
                     if let report = store.report {
                         chartSection(report)
                         modelBreakdown(report)
-                        // セッションは二次ソースも出せるのでソースモードの外に置く。
                         topSessionsSection(report)
-                        // ヒントは Claude だけの話ではない（Cursor 由来も並ぶ）ので、
                         // ソースの選択による絞り込みは store 側の合成に任せる。
                         adviceSection(report)
                     } else if store.retokError == nil {
@@ -67,7 +60,6 @@ public struct PopoverView: View {
         .frame(width: 360, height: 520)
         .onAppear {
             UsageEventLog.shared.log(.tabOpen, meta: ["tab": "cost"])
-            // サインインしに行ったあとの初回だけ、10 分の定期更新を待たずに拾い直す。
             if store.awaitingSignInRecheck {
                 store.awaitingSignInRecheck = false
                 store.reloadReport()
@@ -75,10 +67,7 @@ public struct PopoverView: View {
         }
     }
 
-    // MARK: - 1. 今日のコスト（ヒーロー）
 
-    /// ヒーローは常に合計 1 つ。予算ゲージの分母（合算）と主役の数字を一致させ、
-    /// 「今日使いすぎているか」に一目で答える（TF #53）。
     private var heroSection: some View {
         let mode = settings.costSourceMode
         return VStack(alignment: .leading, spacing: 2) {
@@ -91,9 +80,8 @@ public struct PopoverView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-            // 並べて表示はヒーローを分割せず、内訳キャプション 1 行が担う。二次ソースは
-            // driver ごとの実名で出し、0 円のソースは載せない（"その他" のような曖昧な
-            // まとめラベルにしない）。
+            // 並べて表示はヒーローを分割せず、内訳キャプション 1 行が担う。0 円のソースは載せない
+            // （"その他" のような曖昧なまとめラベルにしない）。
             if mode == .sideBySide {
                 Text(Self.sideBySideCaption(
                     claudeCost: store.todayCost(forSource: CostSourceMode.claudeSourceID),
@@ -123,7 +111,6 @@ public struct PopoverView: View {
                 Label("\(warning.name): \(warning.message)",
                       systemImage: "exclamationmark.triangle")
                 if let bundleID = warning.signInBundleID {
-                    // 手順は注意書きの 1 行が担う。ボタンは実際にできること（前面に出す）を
                     // そのままラベルにする——押しても Tokfuel はサインインを代行しない。
                     Button("\(warning.name) を開く") {
                         store.awaitingSignInRecheck = true
@@ -143,15 +130,13 @@ public struct PopoverView: View {
 
     /// 注意書き（アイコンと文字）の色。金額の下でオレンジは予算ゲージの警告色と紛れるので、
     /// 「取れていない」ことを言い切る赤にする。外観に合わせて振るのは、暗い側で映える明度が
-    /// そのままライト側ではコントラスト不足になるため（ライトでは暗い側へ寄せる）。
+    /// そのままライト側ではコントラスト不足になるため。
     public static let warningTint = Color(nsColor: NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             ? NSColor(srgbRed: 1.00, green: 0.30, blue: 0.24, alpha: 1)
             : NSColor(srgbRed: 0.82, green: 0.10, blue: 0.06, alpha: 1)
     })
 
-    /// フッターの常設操作口（⋯ メニュー）の色。ライトでは tertiary、ダークでは secondary。
-    /// セマンティック色そのものは外観追従だが、tertiary はダークで薄すぎるので段階を上げる。
     public static let chromeTint = Color(nsColor: NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             ? .secondaryLabelColor
@@ -167,8 +152,7 @@ public struct PopoverView: View {
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
 
-    /// 並べて表示のヒーロー内訳キャプション。driver ごとの実名で並べ、0 円のソースは省く
-    /// （"その他" のような曖昧なまとめラベルにしない）。
+    /// 0 円のソースは載せない（"その他" のような曖昧なまとめラベルにしない）。
     /// 取得できなかったソースは 0 円として並べず「—」にする——0 円と「不明」は別の情報。
     public static func sideBySideCaption(claudeCost: Double,
                                   driverBreakdown: [(name: String, cost: Double)],
@@ -179,9 +163,7 @@ public struct PopoverView: View {
         return parts.joined(separator: " · ")
     }
 
-    // MARK: - 2. 上限への近さ（設定している人にだけ見える）
 
-    /// 予算の消費状況（今日・月）。上限を設定していなければ現れない。
     /// 並べて表示でもゲージの分母は合算（設定した上限との近さを見るため）。
     @ViewBuilder
     private var budgetSection: some View {
@@ -198,7 +180,6 @@ public struct PopoverView: View {
         }
     }
 
-    // MARK: - 3. 傾向と内訳
 
     private func chartSection(_ report: RetokReport) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -227,8 +208,7 @@ public struct PopoverView: View {
                 case .cumulative: cumulativeChart(report)
                 }
             }
-            // 軸は両形式で共通: X はラベルのみ（縦グリッドとティックは引かない）、
-            // Y は水平線 2〜3 本 — 色と線は情報を持つときだけ使う（TF #53）。
+            // 色と線は情報を持つときだけ使う。
             .chartXAxis {
                 let period = store.reportPeriod
                 AxisMarks(values: xAxisValues(report)) { value in
@@ -257,8 +237,7 @@ public struct PopoverView: View {
             }
             .id(settings.displayCurrency)
             .frame(height: 110)
-            // 再解析中も前回の絵を隠さない。右下の小さなインジケーターだけで進行を示す
-            // （stale-while-revalidate — TF #53）。
+            // 再解析中も前回の絵を隠さない。右下の小さなインジケーターだけで進行を示す。
             .overlay(alignment: .bottomTrailing) {
                 if store.isReportLoading {
                     ProgressView()
@@ -270,10 +249,8 @@ public struct PopoverView: View {
         }
     }
 
-    /// 日別の積み上げバー。塗りはフラット単色（TF #53）。
     private func dailyChart(_ report: RetokReport) -> some View {
         let rows = store.chartRows(for: report)
-        // 凡例は系列が 2 つ以上あるときだけ意味を持つ（単独ソースでは 1 色しか出ない）。
         let showsLegend = Set(rows.map(\.source)).count > 1
         return Chart(rows, id: \.id) { row in
             BarMark(
@@ -291,8 +268,7 @@ public struct PopoverView: View {
         .chartLegend(showsLegend ? .visible : .hidden)
     }
 
-    /// 期間の累積折れ線（合計 1 本）。予算窓と表示窓が一致するとき（store が判定する）だけ、
-    /// 上限の参照線を破線で添える — ずれた期間に線を引くと嘘になる（TF #53）。
+    /// 上限の参照線を破線で添える — ずれた期間に線を引くと嘘になる。
     private func cumulativeChart(_ report: RetokReport) -> some View {
         let points = UsageStore.cumulativeRows(
             from: store.chartRows(for: report),
@@ -321,7 +297,6 @@ public struct PopoverView: View {
         }
     }
 
-    /// チャート系列用。内部 USD を表示通貨建てに直す（軸のきれいな目盛りのため）。
     private func chartAmount(_ usd: Double) -> Double {
         Money.displayAmount(
             forUSD: usd,
@@ -329,9 +304,6 @@ public struct PopoverView: View {
             rate: Money.currentRate())
     }
 
-    /// チャート直下の副次統計 1 行。期間合計と（Claude を含むときだけ）プロンプト単価、
-    /// 累積ビューでは暦月予算の着地予測を添える。かつての 3 列 stats 行の置き換えで、
-    /// キャッシュヒット率は出さない（ユーザーが操作できない診断値。異常時は節約のヒントが伝える）。
     private func chartCaption(_ report: RetokReport) -> some View {
         var parts = ["合計 \(Self.money(store.periodTotalCost(for: report)))"]
         if settings.costSourceMode.includes(sourceID: CostSourceMode.claudeSourceID),
@@ -380,9 +352,6 @@ public struct PopoverView: View {
         }
     }
 
-    /// 高コストの会話。Claude（retok のセッション）と二次ソース（Cursor の会話）を
-    /// コスト降順で 1 本のリストにする。どちらの会話かが分かるようソース名を添え、
-    /// ローカル DB から起こした二次ソースには「推定」まで添える（合計とは別物）。
     @ViewBuilder
     private func topSessionsSection(_ report: RetokReport) -> some View {
         let rows = store.topSessionRows(for: report)
@@ -410,8 +379,6 @@ public struct PopoverView: View {
         }
     }
 
-    /// retok（Claude）由来と Cursor 由来を 1 つのリストで出す。合成・並び順・ソースごとの
-    /// 抑止はすべて store が決める（ここは並べるだけ）。
     @ViewBuilder
     private func adviceSection(_ report: RetokReport) -> some View {
         let items = store.adviceItems(for: report)
@@ -426,7 +393,6 @@ public struct PopoverView: View {
         }
     }
 
-    // MARK: - 状態表示
 
     private var loadingSection: some View {
         HStack {
@@ -447,19 +413,15 @@ public struct PopoverView: View {
         }
     }
 
-    // MARK: - フッター（操作はここに集約）
 
     private var footerBar: some View {
         HStack {
             if let date = store.lastUpdated {
                 Text("更新 \(date, style: .time)")
                     .font(.caption)
-                    // ⋯ と同じく、ダークでは tertiary だと背景に溶ける。
                     .foregroundStyle(Self.chromeTint)
             }
             #if DEBUG
-            // どちらの構成を入れたかを、ホバーせずひと目で分かるようにする。
-            // リリースビルドにはコンパイルされない。
             Text(MenuBarReadout.debugMarker)
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.white)
@@ -500,10 +462,7 @@ public struct PopoverView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
-            // アクセントのオレンジは「注意して見るもの」（予算の警告・アップデート）に
-            // 取っておく。常設の操作口は灰色のままにする。
             // borderlessButton のラベルはティントで塗られるので、
-            // ラベル側の foregroundStyle ではなくここで色を指定する。
             // tertiary はダークで背景に溶けやすいので、外観に合わせて一段上げる。
             .tint(Self.chromeTint)
         }
@@ -511,10 +470,6 @@ public struct PopoverView: View {
         .padding(.vertical, 8)
     }
 
-    /// アップデートがあるときだけ「⋯」の左に出す常設ボタン（TF #29）。縦のスペースを
-    /// 取らない控えめな訴求にする。右クリックでその版を次回起動まで抑制する（「後で」相当）。
-    /// 進行中はスピナーに、失敗時は警告アイコン（ホバーで理由）に、その場差し替え不可の
-    /// 実行形態ではラベルをリリースページ導線に、それぞれ差し替わる。
     @ViewBuilder
     private var updateFooterButton: some View {
         if let update = updater.available {
@@ -536,8 +491,6 @@ public struct PopoverView: View {
                     .foregroundStyle(.orange)
                     .help(message + skipHint)
                 case .idle:
-                    // フッターの DEBUG バッジと同じカプセル型のレシピ（塗り + 白文字）で、
-                    // 他の要素より一段目立たせる。
                     Button {
                         updater.installOffered()
                     } label: {
@@ -559,7 +512,6 @@ public struct PopoverView: View {
         }
     }
 
-    // MARK: - 部品・ユーティリティ
 
     private func sectionHeader(_ title: String, badge: String? = nil) -> some View {
         HStack(spacing: 6) {
@@ -577,7 +529,6 @@ public struct PopoverView: View {
         }
     }
 
-    /// 期間ピッカー用バインディング。設定変更など画面外からの書き換えを
     /// period_change として誤記録しないよう、ピッカー操作のときだけ記録する。
     private var reportPeriodSelection: Binding<ReportPeriod> {
         Binding(get: { store.reportPeriod },
@@ -588,7 +539,6 @@ public struct PopoverView: View {
                 })
     }
 
-    /// チャート形式トグル用バインディング。期間ピッカーと同じ理由で操作時だけ記録する。
     private var chartStyleSelection: Binding<CostChartStyle> {
         Binding(get: { store.costChartStyle },
                 set: { style in
@@ -598,7 +548,6 @@ public struct PopoverView: View {
                 })
     }
 
-    /// X 軸に出すカテゴリ値（`shortDate` と同じ MM/DD）。チャートの X と一致させる。
     private func xAxisValues(_ report: RetokReport) -> [String] {
         let dates: [String]
         switch store.costChartStyle {
@@ -608,7 +557,6 @@ public struct PopoverView: View {
         case .daily:
             let fromRows = Array(Set(store.chartRows(for: report).map(\.date))).sorted()
             if fromRows.isEmpty {
-                // chartRows が空でも、retok の余剰日を軸に載せない。
                 let from = UsageStore.reportWindowStart(days: report.periodDays)
                 dates = report.dailySorted.map(\.date).filter { $0 >= from }
             } else {
@@ -621,7 +569,6 @@ public struct PopoverView: View {
             weekStart: settings.weekStart.weekday)
     }
 
-    /// 期間に応じて X 軸ラベル用の MM/DD を間引く。今年は月初だけ（必要ならさらに間引く）。
     public nonisolated static func xAxisShortDates(
         fromISODates dates: [String],
         period: ReportPeriod,
@@ -641,7 +588,6 @@ public struct PopoverView: View {
                 return Calendar.current.component(.weekday, from: date) == weekStart
             }.map(shortDate)
         case .thisYear:
-            // 週ごとだと約 52 個になり潰れる。月初に落とす。多すぎるときだけ均等間引き。
             let monthStarts = dates.filter { iso in
                 guard let date = f.date(from: iso) else { return false }
                 return Calendar.current.component(.day, from: date) == 1
@@ -653,7 +599,6 @@ public struct PopoverView: View {
         }
     }
 
-    /// 軸に載せる文字列。今年は「M月」にして幅を抑える（カテゴリ値自体は MM/DD のまま）。
     public nonisolated static func xAxisLabel(_ shortDate: String, period: ReportPeriod) -> String {
         guard period == .thisYear else { return shortDate }
         let parts = shortDate.split(separator: "/")
@@ -661,7 +606,6 @@ public struct PopoverView: View {
         return "\(month)月"
     }
 
-    /// 先頭と末尾を含むよう、最大 `maxCount` 個へ均等に間引く。
     public nonisolated static func evenlySpaced(_ items: [String], maxCount: Int) -> [String] {
         guard maxCount > 0, !items.isEmpty else { return [] }
         guard items.count > maxCount, maxCount > 1 else { return items }
@@ -691,13 +635,11 @@ public struct PopoverView: View {
             .replacingOccurrences(of: "-20251001", with: "")
     }
 
-    // 表示通貨（USD / JPY）を反映するフォーマッタ。actor 隔離なしで呼べる。
     public nonisolated static func money(_ value: Double) -> String {
         Money.format(value)
     }
 }
 
-/// 予算 1 本ぶんの行（タイトル・右肩の状態テキスト・メーター）。今日と月で共用。
 public struct BudgetRow: View {
     public let title: String
     public let spend: Double
@@ -705,8 +647,6 @@ public struct BudgetRow: View {
     public let level: BudgetLevel
     public let warnPercent: Int
 
-    /// 色は状態を示すときだけ付ける: 平常はニュートラル、警告でオレンジ、超過で赤。
-    /// 平常までアクセント色で塗ると、警告のオレンジと見分けがつかない（TF #53）。
     private var color: Color {
         switch level {
         case .over: return .red
@@ -731,7 +671,6 @@ public struct BudgetRow: View {
         }
     }
 
-    /// 右肩の 1 行。平常は消費/上限、警告は残額、超過は超過額（アイコンは超過のみ）。
     @ViewBuilder
     private var trailingStatus: some View {
         switch level {
@@ -749,7 +688,6 @@ public struct BudgetRow: View {
     }
 }
 
-/// 細い水平メーター。予算・モデル別で共用する。marker を渡すと目盛り線を引く。
 public struct MeterBar: View {
     public let fraction: Double
     public var marker: Double? = nil
@@ -773,18 +711,14 @@ public struct MeterBar: View {
     }
 }
 
-/// 節約のヒント 1 件。タップで詳細を開閉する。
 /// 出どころ（Claude / Cursor）はバッジで示す — 同じリストに 2 系統が並ぶので、
 /// どちらを見て言っているのかが分からないとヒントを判断に使えない。
 public struct AdviceRow: View {
     public let advice: RetokReport.Advice
     public let source: String
     @State private var isExpanded: Bool
-    /// コピー直後だけラベルを差し替えるためのフラグ。数秒で自分で戻る。
     @State private var didCopy = false
 
-    /// `initiallyExpanded` は ui-preview / スクリーンショット用。展開時にしか出ない
-    /// コピーボタンを絵に写すために使う（`SettingsView.initiallyShowsAdvanced` と同じ役目）。
     public init(advice: RetokReport.Advice, source: String, initiallyExpanded: Bool = false) {
         self.advice = advice
         self.source = source
@@ -801,8 +735,6 @@ public struct AdviceRow: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // 開閉はタイトル行だけで受ける。詳細やコピーボタンまで受けると、ボタンを
-            // 押しただけで畳まれる。onTapGesture ではなく Button にするのは、
             // キーボードフォーカスと押下のセマンティクスが要るため——タップでしか開けないと、
             // キーボード利用者は展開の中にあるコピーボタンに到達できない。
             Button {
@@ -847,8 +779,6 @@ public struct AdviceRow: View {
         }
     }
 
-    /// ヒントを読んで自分で対策を組み立てる代わりに、そのまま Claude へ貼れる文面を渡す。
-    /// 生成は `AdvicePrompt`（純粋関数）が持ち、ここは載せて合図を出すだけ。
     private var copyButton: some View {
         HStack {
             Spacer()
@@ -862,8 +792,6 @@ public struct AdviceRow: View {
                     .font(.caption2)
             }
             .buttonStyle(.plain)
-            // Color.accentColor はシステムの青を返し、ポップオーバー根の .tint(.orange) を
-            // 無視する。ShapeStyle の .tint なら他のボタンと同じ色で揃う。
             .foregroundStyle(didCopy ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
             .help("この指摘をどう直すかを Claude に相談するための文面をコピーします")
             .accessibilityLabel("改善プロンプトをコピー")

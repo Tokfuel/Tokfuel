@@ -5,7 +5,6 @@ import Foundation
 @testable import TokfuelStore
 @testable import TokfuelSettings
 
-/// UsageStore テスト用。App と同じ Cursor + Codex ドライバを注入する。
 @MainActor
 enum UsageStoreTestFixtures {
     static var defaultDrivers: [any CostDriver] {

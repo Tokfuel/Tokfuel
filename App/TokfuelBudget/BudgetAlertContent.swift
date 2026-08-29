@@ -2,9 +2,7 @@ import Foundation
 import TokfuelCore
 import TokfuelSettings
 
-// BudgetMonitor.Kind / Message と同じモジュール。BudgetLevel は Core。
 
-/// アラートウィンドウに出す 1 件の中身。`BudgetMonitor` の判断結果をそのまま運ぶ。
 public struct BudgetAlertContent: Equatable, Sendable {
     public var kind: BudgetMonitor.Kind
     public var level: BudgetLevel

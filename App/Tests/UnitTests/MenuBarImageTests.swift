@@ -12,8 +12,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// 画像に乗ったインクの総量（アルファの合計）。トラックが円周を覆うので
-/// 「色の付いたピクセル数」では塗りの増減が出ない。濃さで測る。
 private func ink(_ image: NSImage) -> Double {
     guard let tiff = image.tiffRepresentation,
           let bitmap = NSBitmapImageRep(data: tiff) else { return 0 }
@@ -26,7 +24,6 @@ private func ink(_ image: NSImage) -> Double {
     return total
 }
 
-/// 画像の下半分／上半分に乗ったインク。タンクが下から塗られることを見るのに使う。
 private func inkHalves(_ image: NSImage) -> (bottom: Double, top: Double) {
     guard let tiff = image.tiffRepresentation,
           let bitmap = NSBitmapImageRep(data: tiff) else { return (0, 0) }
@@ -35,7 +32,6 @@ private func inkHalves(_ image: NSImage) -> (bottom: Double, top: Double) {
     for x in 0..<bitmap.pixelsWide {
         for y in 0..<bitmap.pixelsHigh {
             let a = Double(bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0)
-            // NSBitmapImageRep の y は上が 0。
             if y < mid { top += a } else { bottom += a }
         }
     }
@@ -53,7 +49,6 @@ private func content(shape: MenuBarGaugeShape = .ring, showsIcon: Bool = true,
                    iconLevel: iconLevel)
 }
 
-/// 配色。リングは段階を常に示すので平常時も色を持ち、アイコン単体は平常時を無彩色に保つ。
 struct MenuBarPaletteTests {
     @Test func ゲージは段階で青オレンジ赤に変わる() {
         #expect(menuBarRingColor(for: .ok) == .systemBlue)
@@ -68,7 +63,6 @@ struct MenuBarPaletteTests {
     }
 }
 
-/// リングの見た目そのものは実機で確かめるしかないが、「描けているか」はここで押さえる。
 struct MenuBarRingTests {
     @Test func 描ける本数は1本と2本だけ() {
         #expect(MenuBarImage.ring([], template: true) == nil)
@@ -83,7 +77,6 @@ struct MenuBarRingTests {
     }
 
     @Test func 塗りが0でもトラックは描く() {
-        // 「使っていない」ことが空のリングとして見えるように、下地は常に出す。
         #expect(ink(MenuBarImage.ring(seg([0]), template: true)!) > 0)
     }
 
@@ -96,7 +89,6 @@ struct MenuBarRingTests {
     }
 
     @Test func 超過分は満タンで止まる() {
-        // クランプが効いていないと弧が二周ぶん引かれて濃さが変わる。
         let full = ink(MenuBarImage.ring(seg([1]), template: true)!)
         let over = ink(MenuBarImage.ring(seg([2.5]), template: true)!)
         #expect(abs(over - full) < 0.001)
@@ -108,9 +100,8 @@ struct MenuBarRingTests {
         #expect(double > single)
     }
 
-    /// 色付きのトラックは、リング色を薄めたものではなくグレーで描く。
-    /// 半透明の色は暗いメニューバーで背景と混ざってほぼ見えなくなるため
-    /// （非テンプレート画像は明暗に追従できない）。
+    /// 半透明の色は暗いメニューバーで背景と混ざってほぼ見えなくなるため、
+    /// 色付きのときは中間グレーのトラックを使う。
     @Test func 色付きでもトラックの濃さが保たれる() {
         let plain = ink(MenuBarImage.ring(seg([0]), template: true)!)
         let warning = ink(MenuBarImage.ring(seg([0], .warning), template: false)!)
@@ -118,7 +109,6 @@ struct MenuBarRingTests {
     }
 }
 
-/// タンク（給油機を下から塗り上げる燃料計）。
 struct MenuBarTankTests {
     private func tank(_ fill: Double, _ level: BudgetLevel? = nil,
                       template: Bool = true) -> NSImage {
@@ -130,7 +120,6 @@ struct MenuBarTankTests {
     }
 
     @Test func 塗りが増えるとインクも濃くなる() {
-        // 空でもグリフの形は薄く出し、塗るほど濃くなる。
         let empty = ink(tank(0))
         let half = ink(tank(0.5))
         let full = ink(tank(1))
@@ -140,10 +129,8 @@ struct MenuBarTankTests {
     }
 
     @Test func 下から塗り上がる() {
-        // 半分まで塗ったら、下半分のほうが上半分より濃くなる。
         let halves = inkHalves(tank(0.5))
         #expect(halves.bottom > halves.top)
-        // 空なら上下がほぼそろう（どちらも薄いグリフだけ）。
         let emptyHalves = inkHalves(tank(0))
         #expect(emptyHalves.bottom > 0 && emptyHalves.top > 0)
     }
@@ -153,8 +140,7 @@ struct MenuBarTankTests {
     }
 }
 
-/// 追従モード（TF-0080）の明滅。実際の見え方は実機でしか確かめられないが、
-/// 「アルファだけを動かしている」ことと「テンプレート可否を変えない」ことはここで押さえる。
+/// 追従モードの明滅。実際の見え方は実機でしか確かめられないが、
 struct MenuBarGlowTests {
     private func plain(_ level: BudgetLevel? = nil) -> NSImage {
         MenuBarImage.statusItem(for: content(gauges: seg([0.5], level)))!
@@ -190,7 +176,6 @@ struct MenuBarGlowTests {
     }
 }
 
-/// ステータス項目 1 個ぶんの画像の組み立て。
 struct MenuBarStatusItemImageTests {
     private let oneSide = 1 * MenuBarImage.side
     private var twoSide: CGFloat { MenuBarImage.side * 2 + 3 }
@@ -222,7 +207,6 @@ struct MenuBarStatusItemImageTests {
     }
 
     @Test func ゲージを描けない指定でもアイコンに戻す() {
-        // ここで nil を返すとステータス項目が消えてクリックできなくなる。
         #expect(MenuBarImage.statusItem(for: content(gauges: seg([0.1, 0.2, 0.3]))) != nil)
         #expect(MenuBarImage.statusItem(for: content(showsIcon: false, gauges: [])) != nil)
     }
@@ -236,21 +220,17 @@ struct MenuBarStatusItemImageTests {
                     .isTemplate == false)
     }
 
-    /// ゲージなしのアイコンは今までどおり、平常時はテンプレート（無彩色）のまま。
-    /// ゲージの青がアイコン単体の見え方まで変えてしまわないことを押さえる。
     @Test func ゲージが無ければ平常時のアイコンは無彩色() {
         #expect(MenuBarImage.statusItem(for: content(iconLevel: .ok))?.isTemplate == true)
         #expect(MenuBarImage.statusItem(for: content(iconLevel: .warning))?.isTemplate == false)
     }
 
     @Test func 明滅の1コマでも項目が消えない() {
-        // nil を返すとステータス項目が消えてクリックできなくなる。位相を一周させて確かめる。
         for phase in stride(from: 0.0, through: 1.0, by: 0.1) {
             #expect(MenuBarImage.statusItem(for: content(gauges: seg([0.5])),
                                             glowPhase: phase) != nil)
             #expect(MenuBarImage.statusItem(for: content(), glowPhase: phase) != nil)
         }
-        // 位相を渡さなければ通常の画像のまま。
         #expect(MenuBarImage.statusItem(for: content(), glowPhase: nil) != nil)
     }
 

@@ -11,7 +11,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// retok --json 出力の縮小サンプル。実際のキー名（snake_case）と一致させている。
 private let sampleJSON = Data("""
 {
   "period_days": 7,
@@ -69,8 +68,7 @@ struct RetokReportTests {
         #expect(report.cost(on: "2026-01-01") == nil)
     }
 
-    /// 追従モード（TF-0080）は 1 日ぶんの結果を長期集計に重ねる。
-    /// 日別だけが差し替わり、期間・合計・モデル別は元のまま残る。
+    /// 1 日ぶんの結果を長期集計に重ねる（レポートごと差し替えると推移グラフが痩せる）。
     @Test func 日別だけを重ねられる() throws {
         let report = try decode()
         let merged = report.merging(daily: ["2026-07-28": .init(cost: 44.0, output: 10),

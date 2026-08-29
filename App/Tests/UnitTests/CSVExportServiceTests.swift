@@ -23,15 +23,12 @@ private func makeReport(
                advice: [], topSessions: [])
 }
 
-/// retok の daily 集計が cost / output しか持たない制約（Issue #8 のコメント参照）の下での
-/// CSV 組み立てを検証する。日別行は実データだけ、prompts・セッション・モデル別は
-/// 期間合計セクションで補う設計。
+/// retok の daily 集計が cost / output しか持たない制約の下での
 struct CSVExportServiceTests {
     private static let exportDate = DateComponents(
         calendar: Calendar(identifier: .gregorian), year: 2026, month: 8, day: 5
     ).date!
 
-    /// 期間ラベル・書き出し日時は固定し、粒度・通貨まわりだけを差し替えて呼べるようにする。
     private func csv(_ report: RetokReport, appVersion: String = "1.0",
                      currency: DisplayCurrency = .usd, rate: Double = 0,
                      rateDate: String? = nil,

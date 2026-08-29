@@ -11,7 +11,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// コピーされる文面の検査。貼った先で意味が通らないと、ボタンがあっても使われない。
 struct AdvicePromptTests {
     private let advice = RetokReport.Advice(
         severity: "info",
@@ -36,7 +35,6 @@ struct AdvicePromptTests {
     @Test func 依頼として何を返すべきかを含む() {
         let text = AdvicePrompt.text(for: advice, source: "Claude")
         #expect(text.contains("# 依頼"))
-        // 解釈・手順・確かめ方の 3 点を頼む形になっていること。
         #expect(text.contains("1. "))
         #expect(text.contains("2. "))
         #expect(text.contains("3. "))
@@ -50,7 +48,6 @@ struct AdvicePromptTests {
 
     @Test func 記法の取りこぼしがない() {
         let text = AdvicePrompt.text(for: advice, source: "Claude")
-        // 継続行（\）の書き損じは、そのまま本文に円記号として出る。
         #expect(!text.contains("\\"))
         #expect(!text.hasSuffix("\n"))
     }

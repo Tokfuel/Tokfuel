@@ -11,8 +11,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// どちらの構成を入れたか分からなくなるのを防ぐ目印。
-/// リリースビルドでは何も付かないことも合わせて押さえる。
 struct MenuBarDebugMarkerTests {
     @Test func 構成に応じて目印を付ける() {
         #if DEBUG
@@ -57,8 +55,6 @@ struct MenuBarSettingRawValueTests {
     }
 }
 
-/// 1 つの enum だった頃の設定を捨てずに引き継ぐ。ここが崩れると既存ユーザーの
-/// メニューバーが黙って既定表示に戻る。
 struct MenuBarMigrationTests {
     @Test func 旧設定は指標と表現に読み替えられる() {
         let cost = MenuBarReadout.migrated(legacy: "cost")
@@ -91,7 +87,6 @@ struct MenuBarMigrationTests {
     }
 }
 
-/// パーセントとリングが共有する分母の決め方。
 struct MenuBarGaugeTests {
     @Test func 予算上限基準は上限をそのまま分母にする() {
         let gauge = MenuBarReadout.gauge(basis: .budgetLimit, todaySpend: 3, monthSpend: 90,
@@ -113,7 +108,6 @@ struct MenuBarGaugeTests {
 
     @Test func 平常運転の月は100パーセントになる() {
         // 平均は「実績のある日」で割るので、掛ける相手も暦日数ではなく稼働日数。
-        // 平日だけ使う人（30 日中 22 日）が平常運転なら 100% と読めること。
         let gauge = MenuBarReadout.gauge(basis: .dailyAverage30, todaySpend: 10, monthSpend: 220,
                                          dailyLimit: 0, monthlyLimit: 0,
                                          dailyAverage: 10, activeDays: 22)
@@ -138,7 +132,6 @@ struct MenuBarGaugeTests {
     }
 }
 
-/// 消費 / 基準 → 塗り分率・パーセント文字列。
 struct MenuBarRatioTests {
     @Test func 基準がなければ割合を出さない() {
         #expect(MenuBarReadout.fraction(spend: 1, basis: 0) == nil)
@@ -155,7 +148,6 @@ struct MenuBarRatioTests {
 
     @Test func 残りモードのリングは残り分を塗る() {
         #expect(MenuBarReadout.ringFill(spend: 25, basis: 100, showsRemaining: true) == 0.75)
-        // 超過しても負にはならず、空のリングで止まる。
         #expect(MenuBarReadout.ringFill(spend: 142, basis: 100, showsRemaining: true) == 0)
     }
 
@@ -171,14 +163,11 @@ struct MenuBarRatioTests {
     }
 
     @Test func 極端に小さい基準でも桁が溢れない() {
-        // Int 変換のクラッシュ回避。100% でのクランプではない。
         #expect(MenuBarReadout.percentText(spend: 1, basis: 1e-300,
                                           showsRemaining: false) == "999999%")
     }
 }
 
-/// 設定 UI で選べるか。判定に使うのは設定値だけで、非同期に届く集計値は見ない。
-/// 集計値で塞ぐと「選ばないと集計が走らない → 永久に選べない」の行き止まりになる。
 struct MenuBarSelectabilityTests {
     private func selectable(_ metric: MenuBarMetric, _ representation: MenuBarRepresentation,
                             _ basis: MenuBarPercentBasis,
@@ -203,7 +192,6 @@ struct MenuBarSelectabilityTests {
         #expect(selectable(.today, .ring, .budgetLimit, daily: 10))
         #expect(!selectable(.month, .ring, .budgetLimit, daily: 10))
         #expect(selectable(.month, .ring, .budgetLimit, monthly: 100))
-        // 今日と今月は両方の上限を要求する（片側だけ欠けたリングを出さない）。
         #expect(!selectable(.both, .ring, .budgetLimit, daily: 10))
         #expect(selectable(.both, .ring, .budgetLimit, daily: 10, monthly: 100))
     }
@@ -224,7 +212,6 @@ struct MenuBarSelectabilityTests {
     }
 }
 
-/// 実際に描けるか（分母が入っているか）。描けなければ金額表示に落とす。
 struct MenuBarRenderabilityTests {
     private let full = MenuBarGauge(todaySpend: 5, todayBasis: 10,
                                    monthSpend: 25, monthBasis: 100)
@@ -251,8 +238,7 @@ struct MenuBarRenderabilityTests {
     }
 }
 
-/// メニューバーに出す内容の組み立て。金額の書式は表示通貨に依存するため、
-/// ここでは通貨に依らない性質だけを見る（書式そのものは MoneyFormattingTests が持つ）。
+/// 金額の書式は表示通貨に依存するため、このスイート内で通貨を固定して検証する。
 struct MenuBarContentTests {
     @Test func リング表現は数字を持たない() {
         let input = MenuBarInput(metric: .today, representation: .ring,
@@ -266,7 +252,6 @@ struct MenuBarContentTests {
         let input = MenuBarInput(metric: .both, representation: .ring,
                                  gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10,
                                                      monthSpend: 25, monthBasis: 100))
-        // 先頭 = 内側 = 今日、次 = 外側 = 今月。
         #expect(MenuBarReadout.content(for: input).gauges.map(\.fill) == [0.5, 0.25])
     }
 
@@ -281,7 +266,6 @@ struct MenuBarContentTests {
 
     @Test func リングと数値はリングと同じ割合を数字でも出す() {
         // リングは割合のインジケーターなので、添える数字も割合。
-        // リングが形で示す値に、桁で読める精度を足す関係にする。
         let input = MenuBarInput(metric: .today, representation: .ringAndValue,
                                  gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
         let content = MenuBarReadout.content(for: input)
@@ -290,7 +274,6 @@ struct MenuBarContentTests {
     }
 
     @Test func リングと数値は超過をクランプせず桁で出す() {
-        // リングは満タンで止まるが、どれだけ超えたかは数字だけが伝えられる。
         let input = MenuBarInput(metric: .today, representation: .ringAndValue,
                                  gauge: MenuBarGauge(todaySpend: 14.2, todayBasis: 10))
         let content = MenuBarReadout.content(for: input)
@@ -337,7 +320,6 @@ struct MenuBarContentTests {
         }
     }
 
-    /// 今日だけしきい値を越えたら、今日のゲージだけ色が変わる。
     @Test func ゲージは側ごとに色を持つ() {
         let input = MenuBarInput(metric: .both, representation: .ring,
                                  gauge: MenuBarGauge(todaySpend: 9, todayBasis: 10,
@@ -363,7 +345,6 @@ struct MenuBarContentTests {
     }
 
     @Test func タンクはアイコン自身がゲージなので併記できない() {
-        // アイコンを別に並べると給油機が 2 つ出てしまう。
         let input = MenuBarInput(metric: .today, representation: .ring, shape: .tank,
                                  showsIcon: false,
                                  gauge: MenuBarGauge(todaySpend: 5, todayBasis: 10))
@@ -374,7 +355,6 @@ struct MenuBarContentTests {
     }
 
     @Test func 文字だけの表現ではアイコンを消せない() {
-        // 数字だけが浮いていると、何のアプリの値なのか分からなくなる。
         for representation in [MenuBarRepresentation.amount, .percent, .iconOnly] {
             let input = MenuBarInput(metric: .today, representation: representation,
                                      showsIcon: false,
@@ -392,7 +372,6 @@ struct MenuBarContentTests {
 
     @Test func 残り表示は予算上限基準のときだけ割合を反転する() {
         // 「いつもの 1 日に対する残り」という概念は無いので、平均基準では消費側の割合を出す。
-        // 金額（残 上限 − 消費）と割合が食い違わないようにする。
         let average = MenuBarInput(metric: .today, representation: .percent,
                                    basis: .dailyAverage30, showsRemaining: true,
                                    gauge: MenuBarGauge(todaySpend: 9, todayBasis: 4),

@@ -9,15 +9,6 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// 実機確認用: Cursor 二次ソースが今日コストに乗るかを PNG と stdout で検証する。
-///
-/// ```
-/// TOKFUEL_CURSOR_DB=.../fixture.sqlite \
-///   Tokfuel --verify-cursor-ui /tmp/cursor-ui.png
-/// ```
-///
-/// 配布ビルドには含まれない。`ScreenshotRenderer` と同じ NSHostingView 描画経路を使い、
-/// フィクスチャではなく `CursorCostDriver` の実スキャン結果を `UsageStore` に載せる。
 @MainActor
 public enum VerifyCursorUI {
     public static func runAndExit(arguments: [String] = CommandLine.arguments) -> Never {
@@ -71,7 +62,6 @@ public enum VerifyCursorUI {
         let from = UsageStore.dateString(
             Calendar.current.date(byAdding: .day, value: -29, to: Date()) ?? Date()
         )
-        // CostDriver 本番経路（ダッシュボード優先 → ローカルフォールバック）
         CursorDashboardService.resetCacheForTesting()
         let snapshot = await driver.snapshot(from: from, to: today)
         let daily = snapshot.daily

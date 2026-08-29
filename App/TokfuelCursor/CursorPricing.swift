@@ -1,12 +1,8 @@
 import Foundation
 import TokfuelCore
 
-/// Cursor の bubble はトークン数だけを持ち、金額を持たない。ここで $/MTok を掛けて金額化する。
-///
-/// 単価はハードコードしない——`CursorPricingService` が Cursor 公式の価格表
-/// （<https://cursor.com/docs/models-and-pricing>）から毎日取得したキャッシュだけを参照する。
-/// キャッシュがまだ無い（初回起動・オフライン等）、またはモデルがキャッシュに無ければ 0 を返す
-/// （「下限の推定値」という前提を崩さないための意図的な選択 — それらしい単価を捏造しない）。
+/// 単価はハードコードしない——`CursorPricingService` のキャッシュだけを参照する。
+/// キャッシュが無い、またはモデルが表に無ければ 0（それらしい単価を捏造しない）。
 public enum CursorPricing {
     private static func rate(for modelID: String) -> (input: Double, output: Double)? {
         let lower = modelID.lowercased()

@@ -11,13 +11,10 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// 日別コストのフィクスチャ。
 private func daily(_ pairs: [String: Double]) -> [String: RetokReport.DailyCost] {
     pairs.mapValues { RetokReport.DailyCost(cost: $0, output: 0) }
 }
 
-/// `todayCost` は「不明」を返さない。レポート未取得も使っていない日も 0 として数える。
-/// これでメニューバーの `bothCosts` 表示から金額が消えなくなる（Issue #4）。
 @MainActor
 struct UsageStoreTodayCostTests {
     private static func dateString(_ date: Date) -> String {
@@ -99,7 +96,7 @@ struct UsageStoreTodayCostTests {
         #expect(store.driverBreakdown.first?.cost == 3.1)
     }
 
-    /// 追従モード（TF-0080）の入力。表示モードで合成する前の生の値をソース別に返す。
+    /// 追従モードの入力。表示モードで合成する前の生の値をソース別に返す。
     @Test func todayCostBySourceはソース別の今日の額を返す() {
         let store = UsageStore()
         let today = Self.dateString(Date())
@@ -112,8 +109,7 @@ struct UsageStoreTodayCostTests {
         #expect(costs["codex"] == 0)
     }
 
-    /// 劣化中（TF-0073）の 0 は「使っていない」ではなく「取れなかった」。
-    /// これを 0 として渡すと、復旧した瞬間の 0 → 実額を「使用中」と読んで追従モードに入る。
+    /// 劣化中の 0 は「使っていない」ではなく「取れなかった」。
     @Test func todayCostBySourceは劣化したソースを外す() {
         let store = UsageStore()
         let today = Self.dateString(Date())
@@ -126,7 +122,6 @@ struct UsageStoreTodayCostTests {
         #expect(costs["claude"] == 4.5)
         #expect(costs["cursor"] == nil)
 
-        // 取得できるようになったら、また比較対象に戻る。
         store.applyDriverSnapshots(["cursor": CostSnapshot(daily: [today: 1.5], byModel: [:])])
         #expect(store.todayCostBySource["cursor"] == 1.5)
     }
@@ -145,9 +140,7 @@ struct UsageStoreTodayCostTests {
     }
 }
 
-/// 二次ソースが「$0」なのか「取れなかった」のかを UI に伝える経路。
-/// ここが黙って空辞書を返していたため、Cursor の使用量 API が止まった日に
-/// 「Cursor を使っていない」と読める画面になっていた。
+/// driverDailyByID が黙って空辞書を返していたため、API 停止日に劣化が伝わらなかった回帰を防ぐ。
 @MainActor
 struct UsageStoreDegradedSourceTests {
     @Test func 劣化したソースは表示名と説明を返す() {
@@ -186,7 +179,6 @@ struct UsageStoreDegradedSourceTests {
     }
 
     @Test func 認証を持たないソースにはボタンを出さない() {
-        // Codex は認証を持たない（signInBundleID の既定が nil）。
         let store = UsageStore(costDrivers: [CodexCostDriver()])
         store.applyDriverSnapshots([
             CodexCostDriver().id: CostSnapshot(daily: [:], byModel: [:],
@@ -215,7 +207,7 @@ struct UsageStoreDegradedSourceTests {
     }
 
     @Test func 劣化したソースは0円ではなく不明として並ぶ() {
-        // 0 円と「取れなかった」を同じ見た目にしない（Issue の出発点そのもの）。
+        // 0 円と「取れなかった」を同じ見た目にしない。
         let caption = PopoverView.sideBySideCaption(
             claudeCost: 12.34,
             driverBreakdown: [],
@@ -234,7 +226,6 @@ struct UsageStoreDegradedSourceTests {
         ])
         #expect(store.todayCostUnavailable)
 
-        // 取れていれば通常表示に戻る。
         store.applyDriverSnapshots(["cursor": CostSnapshot(daily: [:], byModel: [:])])
         #expect(store.todayCostUnavailable == false)
     }
@@ -247,7 +238,7 @@ struct UsageStoreDegradedSourceTests {
     }
 }
 
-/// 「高コストのセッション」の Claude / 二次ソースのマージ（TF-0077）。
+/// Claude と二次ソースの会話をコスト降順でマージする。
 @MainActor
 struct UsageStoreTopSessionTests {
     private func report(_ sessions: [(String, String, Double)]) -> RetokReport {
@@ -265,7 +256,6 @@ struct UsageStoreTopSessionTests {
                              lastUsed: "2026-07-30")
     }
 
-    /// 共有設定を汚さないよう、テストごとに専用の UserDefaults スイートで store を作る。
     private func store(mode: CostSourceMode) -> UsageStore {
         let settings = AppSettings(defaults: UserDefaults(suiteName: "top-sessions-\(UUID())")!)
         settings.costSourceMode = mode
@@ -297,7 +287,6 @@ struct UsageStoreTopSessionTests {
         #expect(cursorOnly.topSessionRows(for: report).map(\.title) == ["cursor-a"])
     }
 
-    /// ローカル走査が空になる環境（#73）では Cursor 行が増えないだけで、$0 の行は並ばない。
     @Test func 二次ソースが空なら行は増えない() {
         let store = store(mode: .combined)
         #expect(store.topSessionRows(for: report([("s1", "claude-a", 4.0)])).count == 1)
@@ -333,8 +322,6 @@ struct UsageStoreTopSessionTests {
     }
 }
 
-/// メニューバーの割合表示の分母になる日次平均。
-/// 使い始めた直後でも不当に小さくならないことが要点。
 @MainActor
 struct UsageStoreDailyAverageTests {
     @Test func 今日を除いた実績日の平均を返す() {
@@ -350,7 +337,6 @@ struct UsageStoreDailyAverageTests {
     }
 
     @Test func 記録の無い日は頭数に入れない() {
-        // 3 日しか使っていないユーザーでも、30 で割らず 3 で割る。
         let costs = daily(["2026-07-01": 3, "2026-07-02": 3, "2026-07-03": 3])
         #expect(UsageStore.dailyAverage(in: costs, since: "2026-06-30",
                                        before: "2026-07-30") == 3)
@@ -362,8 +348,6 @@ struct UsageStoreDailyAverageTests {
                                        since: "2026-06-30", before: "2026-07-30") == 0)
     }
 
-    /// 稼働日数は平均と同じ「実績のある日」を数える。数え方がずれると、
-    /// 平均 × 稼働日数で出す月側の分母が平常運転でも 100% に届かなくなる。
     @Test func 稼働日数は実績のある日だけを数える() {
         let costs = daily(["2026-06-30": 5, "2026-07-01": 2, "2026-07-02": 0, "2026-07-03": 4])
         #expect(UsageStore.activeDays(in: costs, since: "2026-07-01") == 2)
@@ -372,13 +356,11 @@ struct UsageStoreDailyAverageTests {
     }
 
     @Test func 稼働日数は今日を含める() {
-        // 平均（今日を除く）と違い、こちらは「期間内にいくら使ったか」の相手なので今日も数える。
         let costs = daily(["2026-07-29": 3, "2026-07-30": 3])
         #expect(UsageStore.activeDays(in: costs, since: "2026-07-01") == 2)
     }
 }
 
-/// デバッグ上書きが実データを置き換えるのは、スイッチが ON のときだけ。
 @MainActor
 struct DebugOverrideTests {
     @Test func オフなら上書きしない() {
