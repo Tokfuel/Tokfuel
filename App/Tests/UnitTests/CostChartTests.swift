@@ -13,7 +13,6 @@ import Testing
 
 // TF #53 — 推移チャートの累積化・集計期間の丸め・着地予測・レポートキャッシュ。
 
-/// 積み上げ行 → 累積列の畳み込み。折れ線の形が崩れると予算比較が嘘になる。
 struct CumulativeRowsTests {
     private let dates = ["2026-07-01", "2026-07-02", "2026-07-03"]
 
@@ -60,7 +59,6 @@ struct CumulativeRowsTests {
     }
 }
 
-/// 暦月予算の着地予測（月初からの日次ペース × 月の日数）。
 struct MonthEndProjectionTests {
     private let calendar: Calendar = {
         var cal = Calendar(identifier: .gregorian)
@@ -78,7 +76,6 @@ struct MonthEndProjectionTests {
     }
 
     @Test func 月半ばの消費を月末まで線形に伸ばす() {
-        // 7/15 までに $150 → 日次 $10 × 31 日 = $310。
         let p = UsageStore.monthEndProjection(spend: 150, now: date("2026-07-15"),
                                               calendar: calendar)
         #expect(p != nil)
@@ -97,7 +94,6 @@ struct MonthEndProjectionTests {
     }
 }
 
-/// 推移チャート X 軸の間引き。今年で週ごとだとラベルが潰れる。
 struct ChartXAxisLabelTests {
     private func isoDates(from start: String, count: Int) -> [String] {
         let f = DateFormatter()
@@ -132,7 +128,6 @@ struct ChartXAxisLabelTests {
         #expect(labels.count <= 6)
         #expect(labels.first == "01/01")
         #expect(labels.contains("07/01") || labels.contains("06/01") || labels.contains("08/01"))
-        // 週ごと（約 52）まで残っていないこと。
         #expect(labels.count < 12)
     }
 
@@ -143,7 +138,6 @@ struct ChartXAxisLabelTests {
     }
 }
 
-/// 旧ローリング日数 → 暦期間への移行と、暦窓の日数計算。
 struct ReportPeriodTests {
     private let tokyo: TimeZone = TimeZone(identifier: "Asia/Tokyo")!
 
@@ -191,7 +185,6 @@ struct ReportPeriodTests {
     }
 
     @Test func 今週は月曜始まりで数える() {
-        // 2026-07-31 は金曜。月曜始まりなら 7/27〜7/31 の 5 日。
         let w = UsageStore.reportWindow(
             period: .thisWeek, weekStart: .monday,
             endingOn: date("2026-07-31"), timeZone: tokyo)
@@ -200,7 +193,6 @@ struct ReportPeriodTests {
     }
 
     @Test func 今週は日曜始まりにも切り替えられる() {
-        // 同じ金曜でも日曜始まりなら 7/26〜7/31 の 6 日。
         let w = UsageStore.reportWindow(
             period: .thisWeek, weekStart: .sunday,
             endingOn: date("2026-07-31"), timeZone: tokyo)
@@ -233,7 +225,6 @@ struct ReportPeriodTests {
     }
 }
 
-/// 直近レポートのディスクキャッシュ。実ユーザーの Application Support には触れない。
 struct ReportCacheTests {
     private func fixture() -> RetokReport {
         RetokReport(

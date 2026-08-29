@@ -11,10 +11,8 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// 表示通貨の設定（UserDefaults）を共有するため直列実行にする。
 @Suite(.serialized)
 struct MoneyFormattingTests {
-    /// テスト中だけ表示通貨とレートを設定し、終わったら消す。
     private func withJPY(rate: Double?, _ body: () -> Void) {
         let defaults = UserDefaults.standard
         defaults.set(DisplayCurrency.jpy.rawValue, forKey: Money.currencyKey)
@@ -59,8 +57,6 @@ struct MoneyFormattingTests {
     }
 
     // メニューバーのタイトルは金額の書式に乗るため、表示通貨を握っているこのスイート内に置く
-    // （別スイートに置くと、上のテストが円に切り替えている間と並走して落ちる）。
-    // 通貨に依らない組み立ての性質は MenuBarContentTests が受け持つ。
 
     @Test func 今日と今月の金額は中黒と月で並ぶ() {
         let input = MenuBarInput(metric: .both, representation: .amount,

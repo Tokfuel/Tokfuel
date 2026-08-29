@@ -7,14 +7,11 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// 予算のしきい値に達したことを知らせるアラートの中身（TF #81）。
-/// ウィンドウの生成と使い回しは `BudgetAlertWindow` が持ち、ここは純粋な表示層。
 public struct BudgetAlertView: View {
     public let content: BudgetAlertContent
     public var onClose: () -> Void = {}
     public var onOpenSettings: () -> Void = {}
 
-    /// 超過は赤、しきい値到達は橙。メニューバーアイコンの色分けと同じ約束。
     private var accent: Color { content.isOver ? .red : .orange }
 
     public var body: some View {
@@ -62,7 +59,6 @@ public struct BudgetAlertView: View {
                     .monospacedDigit()
                     .foregroundStyle(accent)
             }
-            // ポップオーバーの予算ゲージと同じメーターを使う（見え方を揃える）。
             MeterBar(fraction: content.ratio, color: accent)
         }
     }

@@ -9,7 +9,6 @@ public enum AppSupport {
     }
 }
 
-/// Tokfuel 自身の UI 利用イベント（CU-0013）。名前は JSONL 上の `event` 値になる。
 public enum UsageEvent: String {
     case appLaunch = "app_launch"
     case popoverOpen = "popover_open"
@@ -22,15 +21,9 @@ public enum UsageEvent: String {
     case experimentExposure = "experiment_exposure"   // CU-0014 用の予約
 }
 
-/// アプリ自身の利用イベントをローカル JSONL に追記する（CU-0013）。
-/// 記録するのは Tokfuel の UI イベントだけで、トランスクリプト内容・プロジェクト名・
-/// コストは決して書かない。データは Mac の外に出ない（原則 1）。
-/// 通知経路（BudgetMonitor）など MainActor 外からも呼べるよう、直列キューで書き込む。
 public final class UsageEventLog: @unchecked Sendable {
     public static let shared = UsageEventLog()
 
-    /// 記録の ON/OFF の UserDefaults キー。既定値の解釈は `isEnabled(in:)` の一箇所に置き、
-    /// `AppSettings.eventLogEnabled`（設定画面のトグル）も同じ実装を読む。
     public static let enabledKey = "eventLogEnabled"
     public static func isEnabled(in defaults: UserDefaults) -> Bool {
         defaults.object(forKey: enabledKey) == nil ? true : defaults.bool(forKey: enabledKey)
@@ -39,9 +32,7 @@ public final class UsageEventLog: @unchecked Sendable {
     public static let schemaVersion = 1
     public static let retentionMonths = 12
 
-    /// ファイル名とタイムスタンプはユーザーの地域設定（和暦など）に依存させない。
     private static let gregorian = Calendar(identifier: .gregorian)
-    /// ISO8601DateFormatter はスレッド安全（Apple のドキュメント明記）だが Sendable 宣言が
     /// ないため、Swift 6 の検査を明示的に免除する。
     nonisolated(unsafe) private static let iso8601 = ISO8601DateFormatter()
 
@@ -50,7 +41,6 @@ public final class UsageEventLog: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.akidon0000.tokfuel.usage-event-log")
     private var didPrune = false
 
-    /// 既定の保存先: ~/Library/Application Support/Tokfuel/events/
     public static var defaultDirectory: URL {
         AppSupport.directory.appendingPathComponent("events", isDirectory: true)
     }
@@ -61,9 +51,7 @@ public final class UsageEventLog: @unchecked Sendable {
         self.defaults = defaults
     }
 
-    // MARK: - 書き込み
 
-    /// Analytics 注入。App 起動時に AnalyticsService へ接続する。
     nonisolated(unsafe) public static var analyticsTracker: ((UsageEvent, [String: String]) -> Void)?
 
     /// イベントを 1 行追記する。無効時は何もしない。失敗は致命的ではないため握りつぶす。
@@ -85,12 +73,10 @@ public final class UsageEventLog: @unchecked Sendable {
                     try line.write(to: file)
                 }
             } catch {
-                // ログ欠落はアプリの動作に影響させない。
             }
         }
     }
 
-    /// {"v":1,"ts":"…","event":"…","meta":{…}} + 改行。キーはテスト安定のためソートする。
     public static func encodeLine(event: UsageEvent, meta: [String: String], date: Date) -> Data? {
         struct Line: Encodable {
             let v: Int
@@ -109,16 +95,12 @@ public final class UsageEventLog: @unchecked Sendable {
         return data
     }
 
-    // MARK: - ローテーションと削除
 
-    /// 月ごとのファイル名（YYYY-MM.jsonl）。グレゴリオ暦・ローカルタイムゾーンで切る。
     public static func fileName(for date: Date) -> String {
         let comps = gregorian.dateComponents([.year, .month], from: date)
         return String(format: "%04d-%02d.jsonl", comps.year ?? 0, comps.month ?? 0)
     }
 
-    /// retentionMonths より古い月のファイル名なら true。不正な名前は消さない。
-    /// ゼロ埋めの YYYY-MM は辞書順 = 時系列なので文字列比較で足りる。
     public static func isExpired(fileName name: String, now: Date) -> Bool {
         guard name.hasSuffix(".jsonl"), isValidMonthStem(name) ,
               let cutoff = gregorian.date(byAdding: .month, value: -retentionMonths, to: now)
@@ -135,8 +117,6 @@ public final class UsageEventLog: @unchecked Sendable {
         return true
     }
 
-    /// プロセスにつき 1 回、保持期間を過ぎた月ファイルを削除する。queue 上で呼ぶこと。
-    /// 基準時刻はイベントの日時ではなく常に現在時刻（過去日時のイベントに引きずられない）。
     private func pruneIfNeeded() {
         guard !didPrune else { return }
         didPrune = true
@@ -147,9 +127,7 @@ public final class UsageEventLog: @unchecked Sendable {
         }
     }
 
-    // MARK: - 管理操作（設定画面から）
 
-    /// Finder で開くための保存先。未作成でもボタンが無反応にならないよう、先に作る。
     public func revealDirectoryURL() -> URL {
         queue.sync {
             try? FileManager.default.createDirectory(at: directory,
@@ -158,7 +136,6 @@ public final class UsageEventLog: @unchecked Sendable {
         }
     }
 
-    /// 全イベントを削除する。結果を待つ必要はないため非同期（直列キューが順序を保証）。
     public func deleteAll() {
         queue.async { [self] in
             try? FileManager.default.removeItem(at: directory)

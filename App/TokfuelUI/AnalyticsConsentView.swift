@@ -7,8 +7,6 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// 初回 Analytics 同意ダイアログの中身（#22）。
-/// ウィンドウの出し方は `AppDelegate` が持ち、ここは純粋な表示層。
 /// ui-preview（`ScreenshotRenderer`）も同じビューを撮るので、文面を変えたら絵も追従する。
 public struct AnalyticsConsentView: View {
     public var onAllow: () -> Void = {}

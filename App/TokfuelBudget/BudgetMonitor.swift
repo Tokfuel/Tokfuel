@@ -3,7 +3,6 @@ import TokfuelCore
 import TokfuelSettings
 import UserNotifications
 
-/// 予算レベルの判定と、レベルが上がったときの一度きりの通知を担う。
 @MainActor
 public enum BudgetMonitor {
 
@@ -118,7 +117,6 @@ public enum BudgetMonitor {
         return delivery(for: style, notificationsAvailable: notificationsAvailable)
     }
 
-    /// レベルが上がったときに一度だけ通知を送る。アラートウィンドウ用の中身が必要なら返す。
     @discardableResult
     public static func notifyIfNeeded(kind: Kind = .monthly, level: BudgetLevel,
                                       spend: Double, limit: Double, periodKey: String,

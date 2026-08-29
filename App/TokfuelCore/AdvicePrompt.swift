@@ -1,17 +1,9 @@
 import Foundation
 
-/// 「節約のヒント」1 件を、Claude にそのまま貼れるプロンプトへ変換する。
-///
 /// ヒントは「何が起きているか」しか言わない。読んで自分で対策を組み立てる手間を省くため、
-/// 指摘と根拠を持たせたうえで「自分の使い方に当ててほしい」と頼む形に組み替える。
-///
 /// 描画から切り離した純粋関数にしてあるので、文面はヘッドレスで検査できる
 /// （`AdvicePromptTests`）。ここが出すのは文字列だけで、送信も保存もしない。
 public enum AdvicePrompt {
-    /// クリップボードに載せる本文。
-    /// - Parameters:
-    ///   - advice: 対象のヒント。
-    ///   - source: 出どころのバッジ文字列（`Claude` / `Cursor`）。
     public static func text(for advice: RetokReport.Advice, source: String) -> String {
         """
         Claude Code などの利用コストを可視化する Tokfuel が、私の直近の使い方から\

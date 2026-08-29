@@ -11,7 +11,6 @@ import Testing
 @testable import TokfuelUI
 @testable import Tokfuel
 
-/// 固定日時（ローカルタイムゾーン）を作る。BudgetMonitor は Calendar.current の
 /// タイムゾーンで日付文字列を作るため、テスト側も同じ前提で組み立てる。
 private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
     var cal = Calendar(identifier: .gregorian)
@@ -44,7 +43,6 @@ struct BudgetLevelTests {
 }
 
 /// 使い捨ての UserDefaults スイート。重複抑止の状態は UserDefaults に載るので、
-/// テストごとに独立したドメインを使い、実ユーザーの設定には触らない。
 private func withScratchDefaults(_ body: (UserDefaults) throws -> Void) rethrows {
     let name = "tokfuel.tests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: name)!
@@ -52,8 +50,6 @@ private func withScratchDefaults(_ body: (UserDefaults) throws -> Void) rethrows
     try body(defaults)
 }
 
-/// 知らせる手段の出し分け（TF #81）。選択と実行環境の組み合わせだけで決まり、
-/// `BudgetMonitor` は `AppSettings` を読まない。
 @MainActor
 struct BudgetDeliveryTests {
     @Test func 通知を選ぶと通知だけ() {
@@ -84,7 +80,6 @@ struct BudgetDeliveryTests {
     }
 }
 
-/// 重複抑止（レベルが上がったときの 1 回だけ）。手段を変えても条件は同じ。
 @MainActor
 struct BudgetDeliveryIfNeededTests {
     private func delivery(_ level: BudgetLevel, periodKey: String = "2026-07",
@@ -140,7 +135,6 @@ struct BudgetDeliveryIfNeededTests {
     }
 
     @Test func 出せる手段が無くても抑止状態は進める() {
-        // 通知が使えない環境で「通知」を選んでいる場合。次のレベルまで何も出さない。
         withScratchDefaults { defaults in
             let first = BudgetMonitor.deliveryIfNeeded(
                 level: .warning, periodKey: "2026-07", style: .notification,
@@ -154,7 +148,6 @@ struct BudgetDeliveryIfNeededTests {
     }
 }
 
-/// 通知とアラートウィンドウが同じ文面を使う（経路で言い方が変わらない）。
 @MainActor
 struct BudgetMessageTests {
     @Test func OKのときは文面を作らない() {

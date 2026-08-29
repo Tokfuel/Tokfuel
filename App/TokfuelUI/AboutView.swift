@@ -7,8 +7,6 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// 「Tokfuel について」ウィンドウ。バージョン・作者・謝辞（retok / Frankfurter）をまとめる。
-/// retok の帰属表示（© Daiki Matsudate, MIT）はアプリ内のここに常設する。
 public struct AboutView: View {
     public init() {}
 

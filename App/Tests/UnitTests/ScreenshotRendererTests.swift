@@ -14,7 +14,6 @@ import Testing
 #if DEBUG
 
 /// スクリーンショット生成（TF-0015）の引数解釈。README の絵は CI が撮るので、
-/// 出力先の取り違えは気づきにくい。
 struct ScreenshotArgumentTests {
     @Test func フラグの次の引数を出力先にする() {
         #expect(ScreenshotRenderer.outputPath(
@@ -52,7 +51,6 @@ struct UIPreviewArgumentTests {
     }
 }
 
-/// 描画そのもの（ウィンドウサーバが必要）はここでは触らず、絵に写る値の整合だけを見る。
 /// フィクスチャが崩れると README の絵が「–」や空セクションだらけになるため。
 @MainActor
 struct ScreenshotFixtureTests {
@@ -70,13 +68,11 @@ struct ScreenshotFixtureTests {
     }
 
     @Test func 今日のコストが引ける() {
-        // 日付キーの書式が UsageStore とずれると、ヒーローの金額が「–」になる。
         let store = ScreenshotRenderer.fixtureStore()
         #expect(store.todayCost(forSource: CostSourceMode.claudeSourceID)
                 == ScreenshotRenderer.dailyCosts.last)
         #expect(store.todayCost(forSource: CostSourceMode.cursorSourceID)
                 == ScreenshotRenderer.cursorTodayCost)
-        // ヒーローは常に合算値（並べて表示は内訳キャプション行が担う。TF #53）。
         #expect(store.todayCost == (ScreenshotRenderer.dailyCosts.last ?? 0)
                 + ScreenshotRenderer.cursorTodayCost)
     }
@@ -93,14 +89,11 @@ struct ScreenshotFixtureTests {
             modelCosts: ScreenshotRenderer.cursorModelCosts,
             cursorTotal: ScreenshotRenderer.cursorTodayCost,
             claudeTotal: ScreenshotRenderer.dailyCosts.reduce(0, +)))
-        // 値付けできないモデル（high）と高単価モデルへの偏り（info）の 2 件。
-        // Cursor の比率は Claude が大半なので立たない。
         #expect(cursor.map(\.key).sorted() == [CursorAdvice.Key.dominantModel,
                                                CursorAdvice.Key.unpricedModels].sorted())
     }
 
     /// `popover-sessions` の絵（TF-0077）は、Claude と Cursor が 1 本のリストに混ざった
-    /// 状態を見せるためのもの。片方に寄ると「マージしている」ことが絵から読めなくなる。
     @Test func セッションのフィクスチャはClaudeとCursorが混ざる() {
         let store = ScreenshotRenderer.sessionsFixtureStore()
         #expect(store.driverSessionsByID["cursor"]?.count == 2)
@@ -125,14 +118,12 @@ struct ScreenshotFixtureTests {
     }
 
     @Test func 月間予算は警告状態になる() {
-        // 警告メーターと「残り」ラベルを絵に入れるための組み合わせ。
         #expect(BudgetMonitor.level(spend: ScreenshotRenderer.budgetSpend,
                                     limit: ScreenshotRenderer.budgetLimit,
                                     warnPercent: 80) == .warning)
     }
 
     @Test func 予算アラートのフィクスチャは警告状態で文面を持つ() {
-        // 絵に出る金額はポップオーバーの予算ゲージと同じ組み合わせにする（TF #81）。
         let content = ScreenshotRenderer.budgetAlertContent
         #expect(content.level == .warning)
         #expect(content.spend == ScreenshotRenderer.budgetSpend)

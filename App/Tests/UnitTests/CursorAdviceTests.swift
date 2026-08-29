@@ -12,18 +12,15 @@ import Testing
 @testable import Tokfuel
 
 /// Cursor 由来の「節約のヒント」の判定（TF-0078）。しきい値の境目と、
-/// 根拠にできないデータからは何も言わないことを見る。
 struct CursorAdviceTests {
     private func keys(_ hints: [RetokReport.Advice]) -> [String] { hints.map(\.key) }
 
-    // MARK: - 高単価モデルへの偏り
 
     @Test func 最上位モデルが六割ちょうどなら偏りとして出す() {
         let hint = CursorAdvice.dominantModelHint(
             modelCosts: ["claude-4.5-sonnet": 6, "gpt-5-codex": 4])
         #expect(hint?.key == CursorAdvice.Key.dominantModel)
         #expect(hint?.severity == "info")
-        // 割合は整数％で、モデル名とともにタイトルに出る。
         #expect(hint?.title == "claude-4.5-sonnet が Cursor コストの 60% を占めています")
     }
 
@@ -33,7 +30,6 @@ struct CursorAdviceTests {
     }
 
     @Test func 値付けできないモデルは偏りの分母から外す() {
-        // $0 のモデルを分母に入れても割合は変わらないが、最上位として選ばれてはいけない。
         let hint = CursorAdvice.dominantModelHint(
             modelCosts: ["claude-4.5-sonnet": 8, "gpt-5-codex": 2, "composer-1": 0])
         #expect(hint?.title.hasPrefix("claude-4.5-sonnet") == true)
@@ -44,7 +40,6 @@ struct CursorAdviceTests {
         #expect(CursorAdvice.dominantModelHint(modelCosts: [:]) == nil)
     }
 
-    // MARK: - 値付けできないモデル
 
     @Test func 価格表に無いモデルがあれば高い深刻度で出す() {
         let hint = CursorAdvice.unpricedModelsHint(
@@ -61,7 +56,6 @@ struct CursorAdviceTests {
             modelCosts: ["claude-4.5-sonnet": 8, "gpt-5-codex": 2]) == nil)
     }
 
-    // MARK: - Cursor の比率
 
     @Test func 五割ちょうどでは比率のヒントを出さない() {
         // 「50% を超えるとき」なので、ちょうど半分は対象外。
@@ -79,7 +73,6 @@ struct CursorAdviceTests {
         #expect(CursorAdvice.shareHint(cursorTotal: 0, claudeTotal: 0) == nil)
     }
 
-    // MARK: - 合成
 
     @Test func 条件がそろえば三つとも出る() {
         let hints = CursorAdvice.hints(for: .init(
@@ -113,7 +106,6 @@ struct CursorAdviceTests {
     }
 
     @Test func 値付けできないモデルだけでもそのヒントは出す() {
-        // 全モデルが $0 なら合計も $0 だが、まさにその理由を伝えるヒントは要る。
         let hints = CursorAdvice.hints(for: .init(modelCosts: ["composer-1": 0], cursorTotal: 0))
         #expect(keys(hints) == [CursorAdvice.Key.unpricedModels])
     }
@@ -140,8 +132,6 @@ struct AdviceCompositionTests {
     private static let claudeAdvice = RetokReport.Advice(
         severity: "medium", key: "adv_model_mix", title: "Claude 側のヒント", detail: "詳細")
 
-    /// 実ユーザーの状態に触れないよう、UserDefaults はテスト専用ドメインを作って使い捨てる。
-    /// store には Cursor 由来の 3 ヒントすべてが立つデータを積む（表示窓に収まる今日ぶん）。
     private static func withStore(mode: CostSourceMode,
                                   health: CostSnapshot.Health = .ok,
                                   _ body: (UsageStore) -> Void) {
@@ -173,10 +163,8 @@ struct AdviceCompositionTests {
         Self.withStore(mode: .combined) { store in
             let items = store.adviceItems(for: Self.report(claudeTotal: 10,
                                                            advice: [Self.claudeAdvice]))
-            // high（Cursor の値付け不能）→ medium（Claude）→ info（Cursor の残り 2 件）。
             #expect(items.first?.advice.key == CursorAdvice.Key.unpricedModels)
             #expect(items.map(\.advice.severity) == ["high", "medium", "info", "info"])
-            // 同じ severity ならソース名 → キーの順。
             #expect(items.suffix(2).map(\.advice.key) == [CursorAdvice.Key.dominantModel,
                                                           CursorAdvice.Key.share])
         }
@@ -214,7 +202,6 @@ struct AdviceCompositionTests {
     }
 
     @Test func 取得できていればCursor由来を出す() {
-        // 上の抑止が「health を見ている」ことの対（.ok では消えない）。
         Self.withStore(mode: .combined, health: .ok) { store in
             #expect(!store.cursorFetchDegraded)
             let items = store.adviceItems(for: Self.report(claudeTotal: 10,
@@ -224,7 +211,6 @@ struct AdviceCompositionTests {
     }
 
     @Test func 確度の報告が無ければ劣化とみなさない() {
-        // 二次ソースを持たない環境（driverHealthByID が空）で助言が消えてはいけない。
         Self.withStore(mode: .combined) { store in
             store.driverHealthByID = [:]
             #expect(!store.cursorFetchDegraded)
@@ -235,7 +221,6 @@ struct AdviceCompositionTests {
 
     @Test func 表示窓の外のCursorコストは比率に数えない() {
         Self.withStore(mode: .combined) { store in
-            // 予算窓の補完で入りうる古い日付だけにする（表示窓は 7 日）。
             store.driverDailyByID = ["cursor": ["2020-01-01": 1000]]
             store.driverModelByID = [:]
             #expect(store.adviceItems(for: Self.report(claudeTotal: 10)).isEmpty)

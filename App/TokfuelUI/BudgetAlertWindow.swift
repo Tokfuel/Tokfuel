@@ -8,24 +8,12 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// 予算アラートのウィンドウ（TF #81）。1 枚だけ作って使い回す。
-///
-/// `NSAlert.runModal()` は使わない。モーダルループはアクセサリアプリのメインスレッドを
-/// 占有し、閉じるまでメニューバーの更新まで止まってしまうため。代わりにフローティングの
-/// パネルを自前で出し、全画面の Space で作業していても見えるようにする
-/// （`.canJoinAllSpaces` + `.fullScreenAuxiliary`）。
-///
-/// パネル（`.nonactivatingPanel`）にしているのは、アクセサリアプリが他アプリのフォーカスを
-/// 奪わずにボタンのクリックを受け取れるようにするため。前面化の合図は
-/// `NSApp.requestUserAttention(.criticalRequest)` に任せる。
 @MainActor
 public final class BudgetAlertWindow {
     public static let shared = BudgetAlertWindow()
 
-    /// 表示中の中身。レベルが上がったらウィンドウを増やさず、ここを差し替える。
     public final class Model: ObservableObject {
         @Published var content: BudgetAlertContent
-        /// ボタンの動作。ウィンドウを作り直さずに差し替えられるよう、モデル側に置く。
         var onClose: () -> Void = {}
         var onOpenSettings: () -> Void = {}
         init(content: BudgetAlertContent) { self.content = content }
@@ -34,7 +22,6 @@ public final class BudgetAlertWindow {
     private var window: NSWindow?
     private var model: Model?
 
-    /// アラートを出す（すでに出ているときは中身だけ差し替える）。
     public func show(_ content: BudgetAlertContent, onOpenSettings: @escaping () -> Void = {}) {
         let model = model ?? Model(content: content)
         model.content = content
@@ -55,7 +42,6 @@ public final class BudgetAlertWindow {
         UsageEventLog.shared.log(.alertShown, meta: ["kind": "budget-\(content.kind.rawValue)"])
     }
 
-    /// 閉じる（ウィンドウは破棄せず次回に使い回す）。
     public func close() {
         window?.orderOut(nil)
     }
@@ -76,7 +62,6 @@ public final class BudgetAlertWindow {
         return panel
     }
 
-    /// モデルの変更をビューへ届けるだけの器。
     private struct Host: View {
         @ObservedObject var model: Model
 

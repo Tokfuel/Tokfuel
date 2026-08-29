@@ -1,6 +1,5 @@
 import Foundation
 
-/// ローカル暦日の保存形式（YYYY-MM-DD）を一元管理する。
 public enum LocalDay {
     public nonisolated static func string(
         from date: Date,

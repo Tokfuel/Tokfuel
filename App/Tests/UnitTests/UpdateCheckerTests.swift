@@ -44,7 +44,6 @@ struct UpdateVersionTests {
 
 struct UpdateReleaseDecodeTests {
     @Test func GitHubのレスポンスを読める() throws {
-        // /repos/{owner}/{repo}/releases/latest の実レスポンスから、使う項目だけを抜粋。
         let json = """
         {
           "tag_name": "v0.0.4",
@@ -69,7 +68,6 @@ struct UpdateReleaseDecodeTests {
     }
 }
 
-/// アップデートボタン提示の判定（新しいか・抑制中か・使えるアセットがあるか）をまとめて確かめる。
 struct UpdateEvaluateTests {
     private func release(tag: String,
                          assets: [String] = ["Tokfuel-9.9.9.dmg"]) -> UpdateChecker.Release {
@@ -139,9 +137,7 @@ struct UpdateAssetPickTests {
     }
 }
 
-/// 実アーカイブ（temp dir 内で作った zip / dmg）からの展開。ユーザー状態には触れない。
 struct UpdateExtractTests {
-    /// Contents/MacOS だけ持つ最小の偽 .app を作る。
     private func makeFakeApp(in dir: URL) throws -> URL {
         let app = dir.appendingPathComponent("Fake.app", isDirectory: true)
         let macOS = app.appendingPathComponent("Contents/MacOS", isDirectory: true)
@@ -176,7 +172,6 @@ struct UpdateExtractTests {
         let dir = try makeTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
 
-        // release.sh と同じく、.app を置いたステージングフォルダから dmg を焼く。
         let staging = dir.appendingPathComponent("staging", isDirectory: true)
         try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
         _ = try makeFakeApp(in: staging)
@@ -189,7 +184,6 @@ struct UpdateExtractTests {
         #expect(extracted.lastPathComponent == "Fake.app")
         #expect(FileManager.default.fileExists(
             atPath: extracted.appendingPathComponent("Contents/MacOS/Fake").path))
-        // detach 済み（マウントポイントに何も残っていない）ことも確かめる。
         let mount = workDir.appendingPathComponent("mount")
         #expect(!FileManager.default.fileExists(
             atPath: mount.appendingPathComponent("Fake.app").path))

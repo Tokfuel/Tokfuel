@@ -8,15 +8,11 @@ import TokfuelAnalytics
 import TokfuelClaude
 import TokfuelCursor
 
-/// 設定ウィンドウ。よく触る「一般 / メニューバー / 予算」だけを見せ、
-/// めったに変えない項目（レポート言語・スキャン場所・イベントログ）は「詳細」に畳む。
 public struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     #if DEBUG
     @ObservedObject private var debug = DebugSettings.shared
     #endif
-    /// メニューバー表示のライブプレビューに実データを出すためのストア。
-    /// 集計が非同期に届いたらプレビューも追従させたいので監視する。
     @ObservedObject var store: UsageStore
     @State private var showsAdvanced: Bool
     #if DEBUG
@@ -25,7 +21,6 @@ public struct SettingsView: View {
 
     #if DEBUG
     /// UI プレビュー撮影用（TF-0034）。折りたたみセクションを開いた状態も別絵で撮るための入口。
-    /// 通常の起動では両方とも既定の false のまま。
     public init(
         store: UsageStore,
         settings: AppSettings = .shared,
@@ -77,7 +72,6 @@ public struct SettingsView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 180)
-            // Codex CLI が無い Mac では「Codex のみ」を出さない（常に $0 になるだけのため）。
             Picker("コストのソース", selection: $settings.costSourceMode) {
                 ForEach(settings.availableCostSourceModes) { Text($0.label).tag($0) }
             }
@@ -294,7 +288,6 @@ public struct SettingsView: View {
     }
     #endif
 
-    /// 予算入力欄の単位。円を選んでいてもレート未取得なら USD 入力のまま。
     private var unitSymbol: String {
         Money.unitSymbol(
             currency: settings.displayCurrency,
@@ -302,7 +295,6 @@ public struct SettingsView: View {
         )
     }
 
-    /// 予算上限（選択中の通貨のネイティブ単位で保存）への素通しバインディング。
     /// 通貨の変換は `AppSettings.displayCurrency` の切り替え時に 1 回だけ行われるため、
     /// ここでは変換しない（毎回変換すると為替レートの更新で表示額がドリフトする — TF-0116）。
     private func budgetField(_ keyPath: ReferenceWritableKeyPath<AppSettings, Double>) -> Binding<Double> {
@@ -311,7 +303,6 @@ public struct SettingsView: View {
             set: { settings[keyPath: keyPath] = $0 })
     }
 
-    /// 表現 1 行ぶんの素材。
     private struct RepresentationRow: Identifiable {
         let option: MenuBarRepresentation
         let selectable: Bool
@@ -319,7 +310,6 @@ public struct SettingsView: View {
         var id: String { option.rawValue }
     }
 
-    /// 全行ぶんをまとめて組む。入力（集計値と日付計算）はここで 1 度だけ作る
     /// ——行ごとに組み直すと、同じ計算を表現の数だけやり直すことになる。
     private var representationRows: [RepresentationRow] {
         let input = store.menuBarInput()
@@ -336,13 +326,9 @@ public struct SettingsView: View {
         }
     }
 
-    /// 表現 1 つぶんの行（ラジオ + ラベル + 実データのプレビュー）。
-    /// 選べない表現はプレビューを出さない（出すと選べるように見える）。
     private func representationRow(_ row: RepresentationRow) -> some View {
         let selected = settings.menuBarRepresentation == row.option
         return Button {
-            // @Published は同値でも発火する。選択済みの行を押しただけで
-            // 32 日集計（python3）が走らないよう、変化したときだけ書く。
             if settings.menuBarRepresentation != row.option {
                 settings.menuBarRepresentation = row.option
             }
@@ -363,7 +349,6 @@ public struct SettingsView: View {
         .disabled(!row.selectable)
     }
 
-    /// グレーアウトや金額へのフォールバックの理由。見た目だけでは伝わらないので添える。
     private func menuBarNote(for input: MenuBarInput) -> String? {
         switch MenuBarReadout.ratioUnavailability(
             metric: settings.menuBarMetric, basis: settings.menuBarPercentBasis,
@@ -374,7 +359,6 @@ public struct SettingsView: View {
             return "予算上限を基準にするには、選んだ指標の上限を設定してください。"
                 + "予算なしで割合を見たいときは基準を「過去 30 日の日次平均」にします。"
         case nil:
-            // 選べてはいるが、まだ分母が無くて金額に落ちている状態を伝える。
             guard settings.menuBarRepresentation.needsBasis,
                   !MenuBarReadout.canRender(metric: settings.menuBarMetric,
                                             representation: settings.menuBarRepresentation,
@@ -385,7 +369,6 @@ public struct SettingsView: View {
 }
 
 #if DEBUG
-/// デバッグ用の金額入力（スライダーで大まかに、数値欄で正確に）。
 public struct DebugAmountRow: View {
     public let title: String
     public let range: ClosedRange<Double>
@@ -408,7 +391,6 @@ public struct DebugAmountRow: View {
 }
 #endif
 
-/// メニューバーの見た目を模したプレビューチップ（画像 + タイトル）。
 /// 画像は本物のステータス項目と同じ組み立てを通すので、見た目が実物と乖離しない。
 public struct MenuBarPreviewChip: View {
     public var image: NSImage?
@@ -430,7 +412,6 @@ public struct MenuBarPreviewChip: View {
     }
 }
 
-/// フォルダパス 1 件を表示し、Finder のパネルで選択・デフォルトに戻せる行。
 public struct PathRow: View {
     public let title: String
     public let note: String

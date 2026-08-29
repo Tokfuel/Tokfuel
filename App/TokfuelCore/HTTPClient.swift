@@ -1,6 +1,5 @@
 import Foundation
 
-/// 小さなHTTP取得口。成功ステータスの検証とテスト用注入を共通化する。
 public enum HTTPClient {
     public typealias Performer = @Sendable (URLRequest) async throws -> (Data, URLResponse)
 

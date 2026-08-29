@@ -1,6 +1,5 @@
 import Foundation
 
-/// 予算に対する現在の消費レベル。
 public enum BudgetLevel: Int, Comparable, Sendable {
     case ok = 0
     case warning = 1
