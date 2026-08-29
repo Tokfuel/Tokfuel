@@ -133,7 +133,7 @@
   Cursor's dashboard API (auth + date range only — no prompts); on **distribution
   builds**, Crashlytics crash reports (no consent prompt); and, only if you opt in,
   anonymous Firebase Analytics for app-UI events. Development builds never configure
-  Firebase. Details: [Privacy Policy](Docs/PRIVACY.md) · [Terms of Use](Docs/TERMS.md).
+  Firebase. Details: [Privacy Policy](Docs/legal/PRIVACY.md) · [Terms of Use](Docs/legal/TERMS.md).
 
 ## Install
 
@@ -158,7 +158,7 @@ bash Scripts/build.sh
 
 ## Architecture
 
-App code lives under [`App/`](App/). SPM targets follow **UI → Store → sources**; the executable wires them ([ADR-0002](ADR/0002-layer-spm-modules/0002-layer-spm-modules.md)). Arrows are import direction.
+App code lives under [`App/`](App/). SPM targets follow **UI → Store → sources**; the executable wires them ([ADR-0002](Docs/adr/0002-layer-spm-modules/0002-layer-spm-modules.md)). Arrows are import direction.
 
 ```mermaid
 flowchart TB
@@ -202,7 +202,7 @@ flowchart TB
   Analytics --> Core
 ```
 
-Data flows **fetch (sources) → shape / aggregate (Store) → present (UI)**. Verification lives under [`App/Tests/`](App/Tests/) (`UnitTests` is what `swift test` runs; TestDocs / E2E are docs or a separate runner). Decisions are recorded in [`ADR/`](ADR/INDEX.md).
+Data flows **fetch (sources) → shape / aggregate (Store) → present (UI)**. Verification lives under [`App/Tests/`](App/Tests/) (`UnitTests` is what `swift test` runs; TestDocs / E2E are docs or a separate runner). Decisions are recorded in [`Docs/adr/`](Docs/adr/README.md).
 
 ## Contributing
 
@@ -210,7 +210,7 @@ PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - Tests: `swift test`
 - Roadmap: [GitHub Issues](https://github.com/Tokfuel/Tokfuel/issues)
-- Architecture decisions: [ADR/INDEX.md](ADR/INDEX.md) ([日本語](ADR/INDEX.ja.md))
+- Architecture decisions: [Docs/adr/README.md](Docs/adr/README.md) ([日本語](Docs/adr/README.ja.md))
 - Found a vulnerability? Report it privately — see [SECURITY.md](SECURITY.md).
 
 ### Contributors

@@ -72,7 +72,7 @@ struct ArchitectureJA: StaticPage {
 
             Text {
                 "データの流れは取得 → 整形・合算 → 表示。決定の正本は "
-                Link("ADR-0002", target: "https://github.com/Tokfuel/Tokfuel/blob/main/ADR/0002-layer-spm-modules/0002-layer-spm-modules.ja.md")
+                Link("ADR-0002", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/adr/0002-layer-spm-modules/0002-layer-spm-modules.ja.md")
                 "。リポジトリ README にも同じ依存図がある。"
             }
             .foregroundStyle(.secondary)

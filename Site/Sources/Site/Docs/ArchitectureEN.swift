@@ -71,7 +71,7 @@ struct ArchitectureEN: StaticPage {
 
             Text {
                 "Data flows fetch → shape / aggregate → present. The decision record is "
-                Link("ADR-0002", target: "https://github.com/Tokfuel/Tokfuel/blob/main/ADR/0002-layer-spm-modules/0002-layer-spm-modules.md")
+                Link("ADR-0002", target: "https://github.com/Tokfuel/Tokfuel/blob/main/Docs/adr/0002-layer-spm-modules/0002-layer-spm-modules.md")
                 "; the repository README has the same dependency diagram."
             }
             .foregroundStyle(.secondary)
