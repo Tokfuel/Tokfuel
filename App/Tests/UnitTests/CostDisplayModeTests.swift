@@ -95,7 +95,7 @@ struct CostSourceModeUsageStoreTests {
                 RetokReport.ModelUsage(cost: $0, input: 0, output: 0, requests: 0)
             },
             daily: costs.mapValues { RetokReport.DailyCost(cost: $0, output: 0) },
-            advice: [], topSessions: [])
+            topSessions: [])
     }
 
     /// UserDefaults に残る設定を汚染しないよう、必ず元へ戻す。

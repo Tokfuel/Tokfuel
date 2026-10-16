@@ -344,6 +344,8 @@ public final class UsageStore: ObservableObject {
             } catch {
                 guard !Task.isCancelled, generation == self.reportGeneration else { return }
                 self.retokError = error.localizedDescription
+                // report が nil のままだと Cursor / Codex のチャートまで丸ごと出ないので、空で埋めて他ソースを見せる。
+                if self.report == nil { self.report = .empty(periodDays: days) }
             }
             self.isReportLoading = false
 
@@ -765,67 +767,6 @@ extension UsageStore {
             rows += cursor.map { ModelCostRow(source: "Cursor", model: $0.0, cost: $0.1) }
             return rows
         }
-    }
-
-
-    /// 1 つのリストに並べるため、出どころを添えて持つ。
-    public struct AdviceItem: Identifiable {
-        public let source: String
-        public let advice: RetokReport.Advice
-        public var id: String { "\(source)|\(advice.key)" }
-
-        public init(source: String, advice: RetokReport.Advice) {
-            self.source = source
-            self.advice = advice
-        }
-    }
-
-    public nonisolated static func severityRank(_ severity: String) -> Int {
-        switch severity {
-        case "high": return 0
-        case "medium", "warn": return 1
-        case "low": return 2
-        default: return 3
-        }
-    }
-
-    public func adviceItems(for report: RetokReport) -> [AdviceItem] {
-        let mode = settings.costSourceMode
-        var items: [AdviceItem] = []
-        if mode.includes(sourceID: CostSourceMode.claudeSourceID) {
-            items += report.advice.map { AdviceItem(source: Self.claudeSourceLabel, advice: $0) }
-        }
-        if mode.includes(sourceID: CostSourceMode.cursorSourceID) {
-            items += CursorAdvice.hints(for: cursorAdviceInput(for: report))
-                .map { AdviceItem(source: CursorAdvice.sourceLabel, advice: $0) }
-        }
-        return items.sorted { lhs, rhs in
-            let lRank = Self.severityRank(lhs.advice.severity)
-            let rRank = Self.severityRank(rhs.advice.severity)
-            if lRank != rRank { return lRank < rRank }
-            if lhs.source != rhs.source { return lhs.source < rhs.source }
-            return lhs.advice.key < rhs.advice.key
-        }
-    }
-
-    /// 劣化していれば金額は実態より小さいので、その数字を根拠にした助言はしない。
-    /// `degradedSourceWarnings` と違いソース表示モードは見ない——ヒント側の絞り込みは
-    /// `adviceItems(for:)` が `costSourceMode` でやる。
-    public var cursorFetchDegraded: Bool {
-        if case .degraded = driverHealthByID["cursor"] { return true }
-        return false
-    }
-
-    private func cursorAdviceInput(for report: RetokReport) -> CursorAdvice.Input {
-        let from = Self.reportWindowStart(days: report.periodDays)
-        let cursorTotal = (driverDailyByID["cursor"] ?? [:])
-            .filter { $0.key >= from }
-            .values.reduce(0, +)
-        return CursorAdvice.Input(
-            modelCosts: driverModelByID["cursor"] ?? [:],
-            cursorTotal: cursorTotal,
-            claudeTotal: report.totals.cost,
-            isDegraded: cursorFetchDegraded)
     }
 
 

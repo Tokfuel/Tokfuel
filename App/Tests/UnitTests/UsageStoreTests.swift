@@ -28,7 +28,7 @@ struct UsageStoreTodayCostTests {
     private func report(daily costs: [String: Double]) -> RetokReport {
         RetokReport(
             periodDays: 30, filesScanned: 0, totals: .init(), cacheHitRate: 0,
-            perModel: [:], daily: daily(costs), advice: [], topSessions: [])
+            perModel: [:], daily: daily(costs), topSessions: [])
     }
 
     @Test func レポート未取得でもゼロとして数える() {
@@ -244,7 +244,7 @@ struct UsageStoreTopSessionTests {
     private func report(_ sessions: [(String, String, Double)]) -> RetokReport {
         RetokReport(
             periodDays: 30, filesScanned: 0, totals: .init(), cacheHitRate: 0,
-            perModel: [:], daily: [:], advice: [],
+            perModel: [:], daily: [:],
             topSessions: sessions.map {
                 RetokReport.TopSession(session: $0.0, project: $0.1, cost: $0.2,
                                        prompts: 1, maxContext: 1)
@@ -374,7 +374,7 @@ struct DebugOverrideTests {
         let store = UsageStore()
         store.report = RetokReport(
             periodDays: 1, filesScanned: 0, totals: .init(), cacheHitRate: 0,
-            perModel: [:], daily: [:], advice: [], topSessions: [])
+            perModel: [:], daily: [:], topSessions: [])
         let debug = DebugSettings.shared
         debug.isActive = true
         debug.todayCost = 9

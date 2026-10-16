@@ -117,10 +117,6 @@ public enum ScreenshotRenderer {
             ("popover-sessions", try renderStandalone(
                 PopoverView(store: sessionsFixtureStore()),
                 probeSize: popoverSize, scrollsToBottom: true)),
-            ("popover-advice", try renderPNG(store: store, scrollsToBottom: true)),
-            ("popover-advice-expanded", try renderStandalone(
-                PopoverView(store: store, initiallyExpandsAdvice: true),
-                probeSize: popoverSize, scrollsToBottom: true)),
             ("settings", try renderStandalone(SettingsView(store: store), probeSize: settingsSize)),
             ("settings-advanced", try renderStandalone(
                 SettingsView(store: store, initiallyShowsAdvanced: true),
@@ -350,7 +346,7 @@ public enum ScreenshotRenderer {
     /// README の 1 枚目に入らないセッション一覧は、専用画面で末尾までスクロールして撮る。
     public static func sessionsFixtureStore() -> UsageStore {
         let store = fixtureStore()
-        store.report = fixtureReport(topSessions: claudeTopSessions, advice: [])
+        store.report = fixtureReport(topSessions: claudeTopSessions)
         store.driverSessionsByID = ["cursor": cursorSessions]
         return store
     }
@@ -371,20 +367,8 @@ public enum ScreenshotRenderer {
         ]
     }
 
-    /// Claude 由来（retok）と Cursor 由来のヒントが並んだ状態——ソースバッジと severity 順——を写す。
-    public static let fixtureAdvice: [RetokReport.Advice] = [
-        RetokReport.Advice(
-            severity: "medium",
-            key: "adv_model_mix",
-            title: "高価格モデルでの小粒セッションが 12 件 ($18.40)",
-            detail: "一問一答や軽い確認は Haiku/Sonnet で十分なことが多いです。"
-                + "/model で切り替えるか、軽い用途向けに別プロファイルを用意すると"
-                + "節約できます。")
-    ]
-
     public static func fixtureReport(
-        topSessions: [RetokReport.TopSession] = [],
-        advice: [RetokReport.Advice] = fixtureAdvice
+        topSessions: [RetokReport.TopSession] = []
     ) -> RetokReport {
         var daily: [String: RetokReport.DailyCost] = [:]
         for (offset, cost) in dailyCosts.reversed().enumerated() {
@@ -405,7 +389,6 @@ public enum ScreenshotRenderer {
                                        output: Int(cost * 890), requests: Int(cost * 6))
             },
             daily: daily,
-            advice: advice,
             topSessions: topSessions
         )
     }

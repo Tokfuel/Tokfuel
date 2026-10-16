@@ -147,7 +147,6 @@ public enum VerifyCursorUI {
                 cost: todayClaude, input: 1000, output: 100, requests: 3
             )],
             daily: [today: RetokReport.DailyCost(cost: todayClaude, output: 100)],
-            advice: [],
             topSessions: []
         )
     }

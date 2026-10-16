@@ -86,13 +86,12 @@ struct TestingEN: StaticPage {
             List {
                 ListItem { Text("RetokReport — report decoding") }
                 ListItem { Text("TranscriptScanner — transcript scanning") }
-                ListItem { Text("AdvicePrompt — saving-tip prompts") }
             }
 
             Text("Cursor / Codex").fontWeight(.bold)
             List {
                 ListItem { Text("CursorDashboardService / CursorPricing / CursorPricingService — dashboard fetch and price table") }
-                ListItem { Text("CursorCostDriver / CursorAdvice — cost estimate and advice") }
+                ListItem { Text("CursorCostDriver — cost estimate") }
                 ListItem { Text("CodexCostDriver — cost from Codex CLI sessions") }
             }
 

@@ -17,22 +17,19 @@ public struct PopoverView: View {
     @ObservedObject var updater: UpdateChecker
     public var onOpenSettings: () -> Void = {}
     public var onOpenAbout: () -> Void = {}
-    public var initiallyExpandsAdvice = false
 
     public init(
         store: UsageStore,
         settings: AppSettings = .shared,
         updater: UpdateChecker = .shared,
         onOpenSettings: @escaping () -> Void = {},
-        onOpenAbout: @escaping () -> Void = {},
-        initiallyExpandsAdvice: Bool = false
+        onOpenAbout: @escaping () -> Void = {}
     ) {
         self.store = store
         self.settings = settings
         self.updater = updater
         self.onOpenSettings = onOpenSettings
         self.onOpenAbout = onOpenAbout
-        self.initiallyExpandsAdvice = initiallyExpandsAdvice
     }
 
     public var body: some View {
@@ -45,8 +42,6 @@ public struct PopoverView: View {
                         chartSection(report)
                         modelBreakdown(report)
                         topSessionsSection(report)
-                        // ソースの選択による絞り込みは store 側の合成に任せる。
-                        adviceSection(report)
                     } else if store.retokError == nil {
                         loadingSection
                     }
@@ -379,21 +374,6 @@ public struct PopoverView: View {
         }
     }
 
-    @ViewBuilder
-    private func adviceSection(_ report: RetokReport) -> some View {
-        let items = store.adviceItems(for: report)
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                sectionHeader("節約のヒント")
-                ForEach(items) { item in
-                    AdviceRow(advice: item.advice, source: item.source,
-                              initiallyExpanded: initiallyExpandsAdvice)
-                }
-            }
-        }
-    }
-
-
     private var loadingSection: some View {
         HStack {
             Spacer()
@@ -708,105 +688,5 @@ public struct MeterBar: View {
             }
         }
         .frame(height: 6)
-    }
-}
-
-/// 出どころ（Claude / Cursor）はバッジで示す — 同じリストに 2 系統が並ぶので、
-/// どちらを見て言っているのかが分からないとヒントを判断に使えない。
-public struct AdviceRow: View {
-    public let advice: RetokReport.Advice
-    public let source: String
-    @State private var isExpanded: Bool
-    @State private var didCopy = false
-
-    public init(advice: RetokReport.Advice, source: String, initiallyExpanded: Bool = false) {
-        self.advice = advice
-        self.source = source
-        _isExpanded = State(initialValue: initiallyExpanded)
-    }
-
-    private var color: Color {
-        switch advice.severity {
-        case "high": return .red
-        case "medium", "warn": return .orange
-        default: return .secondary.opacity(0.8)
-        }
-    }
-
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // キーボードフォーカスと押下のセマンティクスが要るため——タップでしか開けないと、
-            // キーボード利用者は展開の中にあるコピーボタンに到達できない。
-            Button {
-                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
-            } label: {
-                header
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(advice.title)
-            .accessibilityHint(isExpanded ? "閉じる" : "詳細を開く")
-            if isExpanded {
-                Text(advice.detail)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                copyButton
-            }
-        }
-    }
-
-    private var header: some View {
-        HStack(spacing: 6) {
-            Image(systemName: advice.severity == "high"
-                  ? "exclamationmark.triangle.fill" : "lightbulb")
-                .font(.caption)
-                .foregroundStyle(color)
-            Text(source)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 1)
-                .background(.quaternary, in: Capsule())
-                .fixedSize()
-            Text(advice.title)
-                .font(.caption)
-                .lineLimit(isExpanded ? nil : 1)
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-        }
-    }
-
-    private var copyButton: some View {
-        HStack {
-            Spacer()
-            Button {
-                copyPrompt()
-            } label: {
-                // 「プロンプトをコピー」だとヒント本文の複製と読めるので、
-                // 何のためのプロンプトなのかをラベルで言い切る。
-                Label(didCopy ? "コピーしました" : "改善プロンプトをコピー",
-                      systemImage: didCopy ? "checkmark" : "doc.on.doc")
-                    .font(.caption2)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(didCopy ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
-            .help("この指摘をどう直すかを Claude に相談するための文面をコピーします")
-            .accessibilityLabel("改善プロンプトをコピー")
-        }
-    }
-
-    private func copyPrompt() {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(AdvicePrompt.text(for: advice, source: source), forType: .string)
-        withAnimation(.easeInOut(duration: 0.15)) { didCopy = true }
-        // 押したことが分かれば十分なので、少し置いて自分で元に戻す。
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            withAnimation(.easeInOut(duration: 0.15)) { didCopy = false }
-        }
     }
 }
