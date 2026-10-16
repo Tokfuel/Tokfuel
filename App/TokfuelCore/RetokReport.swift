@@ -52,21 +52,6 @@ public struct RetokReport: Codable, Sendable {
         }
     }
 
-    public struct Advice: Codable, Identifiable, Sendable {
-        public let severity: String
-        public let key: String
-        public let title: String
-        public let detail: String
-        public var id: String { key }
-
-        public init(severity: String, key: String, title: String, detail: String) {
-            self.severity = severity
-            self.key = key
-            self.title = title
-            self.detail = detail
-        }
-    }
-
     public struct TopSession: Codable, Identifiable, Sendable {
         public let session: String
         public let project: String
@@ -95,11 +80,10 @@ public struct RetokReport: Codable, Sendable {
     public let cacheHitRate: Double
     public let perModel: [String: ModelUsage]
     public let daily: [String: DailyCost]
-    public let advice: [Advice]
     public let topSessions: [TopSession]
 
     public init(periodDays: Int, filesScanned: Int, totals: Totals, cacheHitRate: Double,
-                perModel: [String: ModelUsage], daily: [String: DailyCost], advice: [Advice],
+                perModel: [String: ModelUsage], daily: [String: DailyCost],
                 topSessions: [TopSession]) {
         self.periodDays = periodDays
         self.filesScanned = filesScanned
@@ -107,17 +91,21 @@ public struct RetokReport: Codable, Sendable {
         self.cacheHitRate = cacheHitRate
         self.perModel = perModel
         self.daily = daily
-        self.advice = advice
         self.topSessions = topSessions
     }
 
     enum CodingKeys: String, CodingKey {
-        case totals, daily, advice
+        case totals, daily
         case periodDays = "period_days"
         case filesScanned = "files_scanned"
         case cacheHitRate = "cache_hit_rate"
         case perModel = "per_model"
         case topSessions = "top_sessions"
+    }
+
+    public static func empty(periodDays: Int) -> RetokReport {
+        RetokReport(periodDays: periodDays, filesScanned: 0, totals: Totals(), cacheHitRate: 0,
+                    perModel: [:], daily: [:], topSessions: [])
     }
 
     public var dailySorted: [(date: String, cost: Double)] {
@@ -135,6 +123,6 @@ public struct RetokReport: Codable, Sendable {
         for (date, value) in other { merged[date] = value }
         return RetokReport(periodDays: periodDays, filesScanned: filesScanned, totals: totals,
                            cacheHitRate: cacheHitRate, perModel: perModel, daily: merged,
-                           advice: advice, topSessions: topSessions)
+                           topSessions: topSessions)
     }
 }

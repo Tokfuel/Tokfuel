@@ -20,7 +20,7 @@ private func makeReport(
 ) -> RetokReport {
     RetokReport(periodDays: periodDays, filesScanned: 0, totals: totals,
                cacheHitRate: cacheHitRate, perModel: perModel, daily: daily,
-               advice: [], topSessions: [])
+               topSessions: [])
 }
 
 /// retok の daily 集計が cost / output しか持たない制約の下での

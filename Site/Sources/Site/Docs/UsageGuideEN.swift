@@ -44,8 +44,7 @@ struct UsageGuideEN: StaticPage {
             gauge — pick which in Settings. It turns orange near a budget limit and \
             red once you're over it. Click it to open the popover: current cost, a \
             daily chart for today / this week / this month / this year, a per-model \
-            breakdown, top sessions, and saving tips (from retok's Claude analysis \
-            plus Cursor-derived ones).
+            breakdown, and top sessions.
             """)
             .foregroundStyle(.secondary)
 

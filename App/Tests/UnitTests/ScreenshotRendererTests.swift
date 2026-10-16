@@ -82,17 +82,6 @@ struct ScreenshotFixtureTests {
         #expect(abs(sum - ScreenshotRenderer.cursorTodayCost) < 0.0001)
     }
 
-    @Test func 節約のヒントは両ソースぶんが絵に出る() {
-        // popover-advice の絵はここが空だと「節約のヒント」ごと消える。
-        #expect(!ScreenshotRenderer.fixtureReport().advice.isEmpty)
-        let cursor = CursorAdvice.hints(for: .init(
-            modelCosts: ScreenshotRenderer.cursorModelCosts,
-            cursorTotal: ScreenshotRenderer.cursorTodayCost,
-            claudeTotal: ScreenshotRenderer.dailyCosts.reduce(0, +)))
-        #expect(cursor.map(\.key).sorted() == [CursorAdvice.Key.dominantModel,
-                                               CursorAdvice.Key.unpricedModels].sorted())
-    }
-
     /// `popover-sessions` の絵は、Claude と Cursor が 1 本のリストに混ざった状態を写す。
     @Test func セッションのフィクスチャはClaudeとCursorが混ざる() {
         let store = ScreenshotRenderer.sessionsFixtureStore()
@@ -104,7 +93,7 @@ struct ScreenshotFixtureTests {
         defer { settings.costSourceMode = previous }
 
         let report = ScreenshotRenderer.fixtureReport(
-            topSessions: ScreenshotRenderer.claudeTopSessions, advice: [])
+            topSessions: ScreenshotRenderer.claudeTopSessions)
         let rows = store.topSessionRows(for: report)
         #expect(rows.count == UsageStore.topSessionLimit)
         #expect(Set(rows.map(\.source)) == ["Claude", "Cursor"])

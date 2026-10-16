@@ -47,7 +47,6 @@ struct RetokReportTests {
         #expect(report.totals.cost == 42.5)
         #expect(report.totals.cacheRead == 500)
         #expect(report.cacheHitRate == 0.85)
-        #expect(report.advice.first?.id == "cache-ttl")
         #expect(report.topSessions.first?.maxContext == 120_000)
     }
 

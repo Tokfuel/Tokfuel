@@ -234,7 +234,6 @@ struct ReportCacheTests {
             perModel: ["claude-sonnet-5": RetokReport.ModelUsage(cost: 12.5, input: 100,
                                                                  output: 50, requests: 8)],
             daily: ["2026-07-29": RetokReport.DailyCost(cost: 12.5, output: 50)],
-            advice: [RetokReport.Advice(severity: "info", key: "k", title: "t", detail: "d")],
             topSessions: [RetokReport.TopSession(session: "s", project: "p", cost: 1,
                                                  prompts: 2, maxContext: 3)])
     }
@@ -253,7 +252,6 @@ struct ReportCacheTests {
                                 lang: "ja", projectsPath: projects)
         #expect(loaded?.totals.cost == 12.5)
         #expect(loaded?.daily["2026-07-29"]?.cost == 12.5)
-        #expect(loaded?.advice.first?.key == "k")
         #expect(loaded?.topSessions.first?.maxContext == 3)
     }
 

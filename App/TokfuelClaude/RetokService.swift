@@ -42,6 +42,25 @@ public enum RetokService {
         }
     }
 
+    // retok は 0 件のとき専用の終了コードを持たず、ロケール済みの文を stderr に出して
+    // exit 1 するだけ。同梱物を改変できないので、文面で空と本当の失敗を見分ける。
+    static func isNoTranscriptsMessage(_ stderr: String, localesDir: URL?) -> Bool {
+        let text = stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return false }
+        var known: Set<String> = ["No transcripts found in the selected period."]
+        if let localesDir,
+           let files = try? FileManager.default.contentsOfDirectory(
+               at: localesDir, includingPropertiesForKeys: nil) {
+            for file in files where file.pathExtension == "json" {
+                guard let data = try? Data(contentsOf: file),
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let message = json["no_transcripts"] as? String else { continue }
+                known.insert(message)
+            }
+        }
+        return known.contains(text)
+    }
+
     private static func findPython() -> String? {
         let candidates = [
             "/opt/homebrew/bin/python3",
@@ -104,6 +123,10 @@ public enum RetokService {
             try Task.checkCancellation()
             guard process.terminationStatus == 0 else {
                 let msg = String(data: errorData, encoding: .utf8) ?? "unknown"
+                if isNoTranscriptsMessage(
+                    msg, localesDir: script.deletingLastPathComponent().appendingPathComponent("locales")) {
+                    return RetokReport.empty(periodDays: days)
+                }
                 throw RetokError.runFailed(String(msg.prefix(200)))
             }
             return try JSONDecoder().decode(RetokReport.self, from: data)

@@ -87,13 +87,12 @@ struct TestingJA: StaticPage {
             List {
                 ListItem { Text("RetokReport — レポートのデコード") }
                 ListItem { Text("TranscriptScanner — トランスクリプト走査") }
-                ListItem { Text("AdvicePrompt — 節約ヒント用プロンプト") }
             }
 
             Text("Cursor / Codex").fontWeight(.bold)
             List {
                 ListItem { Text("CursorDashboardService / CursorPricing / CursorPricingService — ダッシュボード取得と価格表") }
-                ListItem { Text("CursorCostDriver / CursorAdvice — コスト推定とアドバイス") }
+                ListItem { Text("CursorCostDriver — コスト推定") }
                 ListItem { Text("CodexCostDriver — Codex CLI セッション由来のコスト") }
             }
 
